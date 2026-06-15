@@ -1,0 +1,6 @@
+# Phase 3 generates a richer robots policy + sitemap.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /g/

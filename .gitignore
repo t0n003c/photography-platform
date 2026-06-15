@@ -1,0 +1,42 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+/dist
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+
+# local env files (NEVER commit real secrets)
+.env
+.env*.local
+!.env.example
+
+# docker / local data
+/docker/data/
+docker-compose.override.yaml
+
+# testing
+/coverage
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# drizzle
+/drizzle/meta/_journal.bak
+
+# os
+Thumbs.db

@@ -1,0 +1,12 @@
+# Copy to docker/compose.override.yaml for local development conveniences.
+# (Compose auto-merges compose.override.yaml when present.)
+#
+# Example: expose Postgres/Redis to the host and mount source for live reload.
+#
+# services:
+#   db:
+#     ports:
+#       - "5432:5432"
+#   redis:
+#     ports:
+#       - "6379:6379"
