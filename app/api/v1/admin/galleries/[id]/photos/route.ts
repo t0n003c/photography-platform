@@ -1,13 +1,35 @@
 import { z } from "zod";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { requireRole } from "@/src/auth/session";
 import { ok, notFound, parseJson } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
-import { gallery, galleryPhoto } from "@/src/db/schema";
+import { gallery, galleryPhoto, photo } from "@/src/db/schema";
+import { serializePhotos } from "@/src/db/queries/photos";
 
 export const dynamic = "force-dynamic";
+
+// GET — the gallery's photos in order (admin; includes pending photos), so the
+// editor can show current membership.
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const a = await requireRole("admin");
+  if (a.error) return a.error;
+  const { id } = await ctx.params;
+
+  const rows = await db
+    .select({ photo, sortOrder: galleryPhoto.sortOrder })
+    .from(galleryPhoto)
+    .innerJoin(photo, eq(galleryPhoto.photoId, photo.id))
+    .where(and(eq(galleryPhoto.galleryId, id), isNull(photo.deletedAt)))
+    .orderBy(asc(galleryPhoto.sortOrder), asc(photo.id));
+
+  const data = await serializePhotos(rows.map((r) => r.photo));
+  return ok({ data });
+}
 
 const PutSchema = z.object({
   items: z.array(
