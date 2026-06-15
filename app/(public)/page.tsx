@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Instagram } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
+import { HeroMedia } from "@/components/webgl/hero-media";
 import { Gallery } from "@/components/gallery/gallery";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -33,13 +34,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="relative">
         {hero ? (
-          <div className="relative h-[72vh] w-full overflow-hidden">
-            <ResponsiveImage
-              photo={hero}
-              sizes="100vw"
-              priority
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+          <HeroMedia photo={hero} className="h-[72vh] w-full">
             <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 flex items-end">
               <Container className="pb-12">
@@ -65,7 +60,7 @@ export default async function HomePage() {
                 </div>
               </Container>
             </div>
-          </div>
+          </HeroMedia>
         ) : (
           <Container className="py-24">
             <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
