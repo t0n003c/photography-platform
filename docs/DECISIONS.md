@@ -200,3 +200,25 @@ This is the running decision log for the self-hosted photography platform.
   - shadcn components theme automatically via CSS variables.
   - A tiny inline theme-detection script runs before hydration (a standard, accepted cost).
 - **Alternatives considered:** **Hand-rolled theme context + localStorage** (full control, but you re-solve SSR no-flash, system-preference sync, and persistence — needless solo cost); **CSS `prefers-color-scheme` only** (simplest, but cannot honor a manual user override or persist a choice).
+
+---
+
+## ADR-0014: Zod 4 + access-control roles for Better Auth
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Implementing auth (Phase 2), the `@better-auth/passkey` plugin's transitive `better-call` peer requires `zod@^4`, and Better Auth already bundles Zod 4 internally. The admin plugin also rejects custom role names unless they are declared via its access-control config.
+- **Decision:** Pin the project to **Zod 4** (our usage — `z.object/string/enum/coerce/email/url/infer` — is compatible). Declare the **owner/admin/staff** roles through Better Auth's `createAccessControl` + `adminAc` statements so `adminRoles` validates; `owner`/`admin` get full admin-plugin capability, `staff` is a content-only role.
+- **Consequences:** Single Zod version across the tree; passkeys install cleanly; roles are first-class and enforceable. Verified sign-up → sign-in → session end-to-end.
+- **Alternatives considered:** Stay on Zod 3 + `--legacy-peer-deps` (fragile, two Zod copies); use only the plugin's default `admin`/`user` roles (loses the owner/staff distinction the product needs).
+
+---
+
+## ADR-0015: Worker applies DB migrations on boot
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** `docker compose up` must bring the platform up with a correct schema, but the production `web` image is a slim Next.js standalone bundle without `drizzle-kit`. The `worker` image already carries the full dependencies and source.
+- **Decision:** The **worker runs Drizzle migrations on startup** (programmatic migrator, `RUN_MIGRATIONS=true` default) before consuming jobs. Single-instance by design; idempotent via the Drizzle journal.
+- **Consequences:** Self-contained `docker compose up`; no separate migration step for the common case. If the worker is scaled out, migrations should move to a dedicated one-shot init service (noted for Phase 7).
+- **Alternatives considered:** A dedicated init container (cleaner for multi-replica, more moving parts now); migrating from the web image (would bloat the standalone image with dev tooling).

@@ -37,20 +37,22 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 2 — Core data & API
+## Phase 2 — Core data & API ✅ (completed 2026-06-14)
 
-- [ ] Design and implement the Drizzle schema (users, sessions, media, galleries, categories, locations, client grants, audit log, page-config).
-- [ ] Set up Drizzle migrations (generate, apply, CI gate).
-- [ ] Integrate Better Auth: password authentication.
-- [ ] Add TOTP (authenticator) second factor.
-- [ ] Add passkeys (WebAuthn).
-- [ ] Implement account lockout + rate-limiting (login, sensitive endpoints).
-- [ ] Configure secure sessions, CSRF protection, security headers, and a strict Content-Security-Policy.
-- [ ] Build the media pipeline: upload → enqueue (BullMQ) → worker runs sharp → generate derivatives → persist metadata to DB.
-- [ ] Implement `StorageProvider` (**MinIO/S3 default**, filesystem alternate driver) with originals/derivatives separation per `MEDIA-ARCHITECTURE.md`.
-- [ ] Build core REST API (media, galleries, categories, locations, auth, admin operations).
-- [ ] Implement audit logging for sensitive/admin actions.
-- [ ] **Summary + pause for approval.**
+- [x] Design and implement the Drizzle schema (auth tables + galleries, grants, photos/variants, categories, locations, favorites, downloads, page-configs, store stubs, audit log, contact).
+- [x] Set up Drizzle migrations (generate + apply; worker auto-applies on boot).
+- [x] Integrate Better Auth: password authentication.
+- [x] Add TOTP (authenticator) second factor _(plugin enabled; enroll/verify routes live under /api/auth)._
+- [x] Add passkeys (WebAuthn) _(@better-auth/passkey plugin enabled)._
+- [x] Implement account lockout + rate-limiting (Better Auth Redis rate-limit + custom login/2FA/reset rules; app-level Redis limiter for uploads/contact/downloads/unlock).
+- [~] Secure sessions (Redis), CSRF (Better Auth + SameSite), security headers, CSP. _CSP ships **Report-Only** first per SECURITY.md §5.2; flip to enforce after the Phase 3/4 UI lands._
+- [x] Build the media pipeline: chunked upload → BullMQ → sharp derivatives (AVIF/WebP/JPEG × thumb–xlarge) + LQIP + dominant color → StorageProvider → DB. Idempotent; verified end-to-end.
+- [x] `StorageProvider` (MinIO/S3 default) with originals/derivatives separation + authorized media-serving route.
+- [x] Build core REST API (public portfolio, client-gallery share-token tier, admin CRUD, contact, store stub) per `API-DESIGN.md`.
+- [x] Implement audit logging for sensitive/admin actions.
+- [x] **Summary + pause for approval.**
+
+> Deferred within Phase 2 (small, tracked): full EXIF/capture-date extraction (needs an EXIF parser dep — pending approval), the zip-build worker for multi-photo downloads (rows + endpoints exist, builder stubbed), admin category/location membership editing on photos, CSP enforce-mode, and step-up (fresh-auth) gating on destructive admin ops.
 
 ---
 
