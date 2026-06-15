@@ -1,0 +1,180 @@
+# Tech Stack — Self-Hosted Photography Platform
+
+**Status:** Phase 0 planning. No application code written yet.
+**Product:** Self-hosted photography portfolio + private client galleries + light (deferred) print store, replacing WordPress/WooCommerce.
+**Deployment target:** Docker Compose on a NAS, behind Nginx Proxy Manager + Cloudflare Tunnel.
+**Operating constraints that shape every choice below:**
+
+- **Single operator.** No platform team. Every dependency has a maintenance cost paid by one person.
+- **Self-hosted on modest hardware** (NAS-class CPU, limited RAM, spinning or SSD disk). No managed control planes, no auto-scaling. RAM and image-processing CPU are the scarce resources.
+- **Long-lived.** This replaces a site that has run for years. Favor boring, well-maintained tech and portability over novelty or vendor lock-in.
+- **Privacy/ownership.** Client photos and customer data stay on hardware the operator controls. Hosted SaaS for core data paths is disqualifying unless explicitly future/optional.
+- **Recurring cost sensitivity.** Per-seat/per-MAU SaaS pricing is a structural negative for a one-person business.
+
+Each section presents 2-3 realistic options, then a clearly marked **Recommendation**. A consolidated summary table is at the end.
+
+---
+
+## 1. Framework
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Next.js 15 (App Router) + React + TS** | Largest ecosystem; Server Components reduce client JS for an image-heavy site; built-in image optimization, route handlers, streaming, ISR; first-class Serwist/PWA and shadcn support; standalone output runs cleanly in Docker. | App Router has sharp edges (caching model, RSC mental model); framework churn between majors; self-hosting needs care (image loader, standalone build). |
+| **Remix / React Router 7** | Excellent web-fundamentals model (loaders/actions, nested routing, progressive enhancement); simpler mental model; great forms story for galleries/contact. | Smaller ecosystem; fewer turnkey integrations (image pipeline, PWA) — more glue to write solo; image optimization is DIY. |
+| **Astro + islands** | Best raw Lighthouse for content/portfolio; ships near-zero JS by default; great for the public marketing/portfolio surface. | Weaker fit for a stateful, auth-gated app (client galleries, favorites, downloads, admin); you'd bolt a React SPA island onto it anyway and lose the simplicity. |
+
+**Recommendation: Next.js 15 App Router + React + TypeScript** — because the product is half static-portfolio and half stateful authenticated app, and Next is the only option that does both well without two frameworks. RSC keeps client JS low on image-heavy pages (good Lighthouse), route handlers give us a clean API surface for galleries/auth/webhooks, and the ecosystem (shadcn, Serwist, Better Auth, Drizzle) is built and documented against Next first, which matters enormously for a solo maintainer. Standalone output Dockerizes cleanly for the NAS.
+
+---
+
+## 2. Styling / UI
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Tailwind CSS + shadcn/ui (+ next-themes)** | Utility CSS = fast iteration, no naming bikeshed; shadcn gives you copy-in, fully-owned components (Radix primitives underneath) with no runtime dependency to track; trivial dark mode via `next-themes`; accessible primitives out of the box. | Verbose className soup if undisciplined; shadcn components are owned code you must maintain; Tailwind upgrades occasionally need migration. |
+| **CSS Modules / vanilla-extract / Panda** | Scoped, type-safe (vanilla-extract/Panda); zero-runtime; clean separation. | You build the entire component library and a11y behavior yourself — a large, ongoing solo cost; slower to a polished UI. |
+| **MUI / Mantine (full component lib)** | Batteries-included components; fast to assemble admin UI. | Heavy runtime + opinionated design system that fights a bespoke photography aesthetic; theming to match a high-end portfolio look is a fight; larger client bundle hurts Lighthouse. |
+
+**Recommendation: Tailwind CSS + shadcn/ui, dark mode via next-themes** — because a single operator needs accessible, polished components *now* without owning a runtime component dependency forever. shadcn's "copy the code into your repo" model means no version-lock to a UI vendor, full control over the bespoke aesthetic the product demands, and Radix underneath handles the hard a11y. Tailwind keeps styling velocity high. `next-themes` solves dark mode (a hard requirement) in a few lines with no flash-of-wrong-theme.
+
+---
+
+## 3. Database
+
+| Option | Pros | Cons |
+|---|---|---|
+| **PostgreSQL 16** | Rock-solid relational store; rich types (JSONB, arrays, full-text, `citext`); strong constraints for galleries/access/orders; runs fine in one Docker container; trivially backed up; great Drizzle support; headroom for future print-store invoicing. | A separate service to run/back up vs. an embedded file; slightly more ops than SQLite. |
+| **SQLite / libSQL (Turso)** | Zero-service, single file, fast reads, dead-simple backup; great for low write concurrency. | Concurrent writes + multiple worker processes (web + BullMQ workers) is its weak spot; migrations and richer relational/transactional needs of an order/invoice system are a stretch; libSQL/Turso pulls toward a hosted model we want to avoid. |
+| **MySQL / MariaDB** | Familiar (WordPress legacy), mature. | Weaker type system and constraint ergonomics than Postgres; JSON and full-text less pleasant; no compelling advantage here given a green-field schema. |
+
+**Recommendation: PostgreSQL 16** — because the app is genuinely relational (users, galleries, access grants, expiring share links, favorites, future orders/invoices) and we run multiple processes (web + worker) that write concurrently, which is exactly where SQLite struggles. Postgres in a single container is a well-understood ops burden, backs up with `pg_dump`/volume snapshots, and gives JSONB + full-text + strong constraints we'll lean on. It also leaves clean headroom for the deferred payment/invoicing schema without a future migration off SQLite.
+
+---
+
+## 4. ORM / Data access
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Drizzle (SQL-first)** | Thin, no separate query engine/binary; schema is TypeScript, migrations are plain SQL you can read and review; near-zero runtime weight (good for a constrained NAS and serverful long-running processes); SQL-shaped API keeps you close to the DB. | You write more explicit SQL-ish code; fewer batteries (no built-in studio parity with Prisma's polish, though `drizzle-kit`/`drizzle-studio` exist); relational query API younger than Prisma's. |
+| **Prisma** | Excellent DX, great docs, mature migrations, Studio GUI. | Historically a heavier runtime (separate query engine binary), more memory and a heavier cold path — a real cost on NAS hardware and in long-lived worker processes; schema lives in its own DSL; generated client adds build steps. (Improving, but still heavier than Drizzle.) |
+| **Raw SQL / Kysely** | Maximum control; Kysely gives type-safe query building with no ORM overhead. | More boilerplate for everyday CRUD; you hand-roll migrations and mapping; more solo maintenance for the common path. |
+
+**Recommendation: Drizzle** — because on constrained, always-on self-hosted hardware the runtime weight and lack of a separate query-engine binary matter, and because SQL-first migrations are plain, reviewable `.sql` files (important for a long-lived production DB where you must trust every migration). It's type-safe enough to be productive, light enough to be cheap, and stays close to Postgres features (JSONB, partial indexes, etc.). Kysely is the fallback if we ever want pure query-builder ergonomics; Prisma's DX is nice but its runtime/footprint tax isn't worth it here.
+
+---
+
+## 5. Authentication
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Better Auth** | Self-hostable, framework-native (Next), owns its tables in *our* Postgres via Drizzle; password + **TOTP 2FA** + **WebAuthn/passkeys** + rate limiting + lockout + session management as first-class/plugin features, not bolt-ons; policy control over required factors; no per-MAU cost. | Younger project — smaller community, API still maturing; we own upgrade risk. |
+| **Lucia** | Was the go-to "own your auth" library; flexible. | Maintainer has signaled it's moving to a learning-resource / maintenance posture rather than a maintained dependency — a poor bet for a long-lived app. |
+| **Auth.js / NextAuth** | Widely used; many OAuth providers; mature-ish. | Passkeys and 2FA are bolt-on/experimental rather than core; opinionated session/adapter model; building the *strong-factor passkey + admin-controlled-factor* policy we want is friction. |
+| **Clerk / Auth0 (hosted)** | Turnkey, polished, passkeys/2FA built in. | Hosted control plane = data leaves our hardware; recurring per-MAU cost; structurally at odds with a self-hosted, privacy-owned, single-operator product. |
+
+**Recommendation: Better Auth** — because it is the only option that delivers passkeys, TOTP 2FA, rate limiting and lockout as *core* capabilities, stores everything in our own Postgres (no data leaving the NAS, no recurring fee), and lets an admin policy declare which factors are required. We treat **passkeys as a stronger, passwordless-capable factor** and let the admin policy gate sensitive surfaces accordingly. Lucia is effectively a dead end for new builds; Auth.js makes our security requirements bolt-ons; hosted vendors violate the self-host/cost constraints. Risk (project youth) is accepted and mitigated by pinning versions and owning the schema.
+
+---
+
+## 6. Media storage
+
+| Option | Pros | Cons |
+|---|---|---|
+| **MinIO (S3-compatible, self-hosted) (default)** | S3 API locally = immediate cloud-S3 parity and a drop-in path to cloud later; presigned URLs; clean separation of app and blobs; maximum portability from day one. | Another service to run, secure, and back up; slightly more operational surface than raw disk. |
+| **Filesystem volume on NAS (alternate driver)** | Simplest possible; the NAS *is* a storage appliance; zero extra service; trivial backup/snapshot; fast local reads; no API overhead. | Not S3-API portable on its own; you manage paths/permissions; scaling beyond one box needs a move. |
+| **Cloud S3 / Cloudflare R2** | Durable, offloads storage; R2 has no egress fees. | Recurring cost; data leaves owned hardware; egress/latency for an image-heavy site; against the self-host ethos for the *default* path. |
+
+**Recommendation: MinIO (S3-compatible) from day one, behind a `StorageProvider` abstraction (filesystem as the alternate driver)** — because running MinIO as a **core service from the start** buys maximum portability and immediate cloud-S3 parity: presigned URLs, an S3 API identical to R2/AWS, and a clean app/blob separation, so a later move to off-site cloud is purely operational. The **`StorageProvider` interface** is unchanged and non-negotiable: app code never touches `fs` or S3 directly. The **filesystem driver still exists as a selectable alternate** (config swap, one driver) for operators who prefer raw disk on the NAS, but MinIO is the default. *(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)*
+
+---
+
+## 7. Cache / sessions / rate-limit store
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Redis or Valkey** | Standard for sessions, rate-limit counters, cache, and the BullMQ backing store (BullMQ *requires* Redis-protocol); fast; one container. | Another service + its memory footprint; persistence config to get right. |
+| **Postgres-only (no Redis)** | One fewer service; `pg` can do advisory locks, simple counters. | No native fit for BullMQ; rate-limit/session hot paths hit the primary DB; loses the natural cache tier. |
+| **Valkey specifically (vs Redis)** | BSD-licensed, community-governed fork after Redis's license change; drop-in Redis-protocol compatible. | Slightly newer brand; otherwise equivalent. |
+
+**Recommendation: Valkey (Redis-protocol), one container** — because we need a Redis-protocol store anyway for BullMQ, and the same instance cleanly serves sessions, rate-limit/lockout counters, and a cache tier. We prefer **Valkey** for its open BSD license and community governance (insulating a long-lived project from licensing surprises), while remaining 100% Redis-protocol compatible so every Redis-targeting library (BullMQ, Better Auth rate-limit) just works.
+
+---
+
+## 8. Image processing
+
+| Option | Pros | Cons |
+|---|---|---|
+| **sharp (libvips)** | Fast, low-memory C/libvips core ideal for a constrained box; native Node API; AVIF/WebP/JPEG, resize, EXIF read/strip, blur/LQIP generation; runs inline in our worker. | Native binary to ship in Docker (manageable); AVIF encoding is CPU-heavy (mitigated by doing it async in the worker). |
+| **ImageMagick** | Ubiquitous, feature-rich CLI. | Heavier memory, slower, shelling out to a CLI is clunkier and riskier than an in-process API; more attack surface historically. |
+| **External service (Thumbor / imgproxy)** | On-the-fly transforms, offloads CPU; URL-based. | Another always-on service; imgproxy is great but adds ops; on-the-fly generation competes for the same NAS CPU; we prefer pre-generating fixed derivatives. |
+
+**Recommendation: sharp (libvips), run asynchronously in the worker** — because libvips is the most memory- and CPU-efficient option, which is decisive on NAS hardware, and an in-process API beats shelling out to ImageMagick. We **preserve originals untouched**, generate **responsive AVIF/WebP derivatives + a tiny LQIP/blur placeholder** on upload via a BullMQ job (keeping the request path fast), and **strip/normalize EXIF** (privacy: remove GPS/camera serials; keep orientation). imgproxy stays a future option if on-the-fly transforms are ever needed, but pre-generated fixed derivatives are simpler and cache better.
+
+---
+
+## 9. Job queue / background work
+
+| Option | Pros | Cons |
+|---|---|---|
+| **BullMQ (Redis/Valkey)** | Mature, robust; retries, backoff, repeatable/scheduled jobs, concurrency, events; perfect for image derivative generation, email sends, link expiry sweeps; we already run Valkey. | Requires Redis-protocol store (already have it); separate worker process to run. |
+| **pg-boss** | Uses Postgres we already run — no extra store; transactional with app data. | Throughput/feature set below BullMQ; ties queue load to the primary DB. |
+| **Graphile Worker** | Postgres-backed, very efficient `LISTEN/NOTIFY`, low overhead. | Smaller ecosystem; again couples queue to the DB; fewer batteries than BullMQ. |
+
+**Recommendation: BullMQ** — because the heaviest async work (CPU-bound image derivative generation) belongs off the primary database and off the request path, and BullMQ's retries/backoff/concurrency/scheduling are exactly what derivative jobs, email delivery, and expiring-link sweeps need. Since we run Valkey already, BullMQ adds no new dependency *category*. pg-boss/Graphile Worker are reasonable Postgres-only alternatives, but we deliberately keep heavy image jobs away from the DB.
+
+---
+
+## 10. PWA / service worker
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Serwist** | Actively maintained successor in the Workbox lineage; first-class Next App Router integration; precaching, runtime caching strategies, offline; installable PWA. | Newer name; config has a learning curve. |
+| **next-pwa** | Was the common Next PWA plugin. | Maintenance has lagged and App Router support is shaky — a poor bet for a long-lived app. |
+| **Hand-rolled service worker** | Total control. | You reimplement caching strategies, versioning, and update flows yourself — large solo cost and easy to get subtly wrong (stale caches). |
+
+**Recommendation: Serwist** — because it's the maintained, App-Router-aware path to an installable PWA with sensible precache/runtime caching (great for a gallery the operator shows clients on the go), without hand-rolling the error-prone service-worker lifecycle. next-pwa's stagnation makes it a liability; a hand-rolled SW isn't worth the maintenance for one person.
+
+---
+
+## 11. Email
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Abstracted `EmailProvider` + SMTP driver + Resend driver** | SMTP works with *any* provider or self-hosted relay (no lock-in, no recurring fee if you have a relay); Resend driver gives great deliverability/DX when wanted; swapping is config. | You maintain the small abstraction; SMTP deliverability depends on your relay/reputation. |
+| **Resend only** | Excellent DX, modern API, good deliverability, React Email support. | Recurring cost; hosted dependency for a core path (contact form, gallery invites, password resets). |
+| **Postmark / SES** | Postmark = top-tier transactional deliverability; SES = cheapest at scale. | Postmark pricier per volume; SES setup/reputation is fiddly; both hosted. |
+
+**Recommendation: An `EmailProvider` interface with SMTP and Resend drivers, SMTP as the portable default** — because the operator must never be locked to one mail vendor for password resets, gallery invites, and contact replies. SMTP works everywhere (including a self-hosted/relayed setup at zero marginal cost); Resend is the drop-in driver when better deliverability/DX is wanted. Postmark/SES can become additional drivers if volume or deliverability demands it — the seam makes that a non-event.
+
+---
+
+## 12. Payments (DEFERRED — build seams only)
+
+| Option | Pros | Cons |
+|---|---|---|
+| **`PaymentProvider` interface stub now; Stripe driver later** | Zero payment code/risk now; clean seam so the print store can grow into invoicing/checkout without rearchitecting; Stripe = best docs, most features, self-host-friendly via API+webhooks. | Stripe is not merchant-of-record — *you* handle sales tax/VAT obligations. |
+| **Lemon Squeezy / Paddle (merchant of record)** | MoR handles global sales tax/VAT for you — big admin relief for a solo seller. | Higher fees; more opinionated/hosted checkout; less flexible than raw Stripe. |
+| **Build payments now** | — | Premature: out of scope, adds compliance/PCI surface and maintenance before there's revenue to justify it. |
+
+**Recommendation: Ship only a `PaymentProvider` interface stub now; plan Stripe as the first driver** — because payments are explicitly deferred, so we build *seams not features*: an interface plus the order/invoice schema headroom in Postgres, and nothing that processes money. When activated, Stripe is the likely driver for its API/webhook fit with a self-hosted app; **Lemon Squeezy/Paddle remain a deliberate future alternative** if offloading global tax/VAT compliance outweighs their higher fees. No PCI surface enters the system until that decision is made.
+
+---
+
+## Consolidated stack summary
+
+| Concern | Chosen tech | One-line why |
+|---|---|---|
+| Framework | **Next.js 15 App Router + React + TS** | Does static portfolio *and* stateful auth app well in one framework; RSC keeps image-heavy pages light. |
+| Styling / UI | **Tailwind + shadcn/ui + next-themes** | Owned, accessible components with no UI-vendor runtime lock-in; effortless dark mode. |
+| Database | **PostgreSQL 16** | Genuinely relational data + concurrent web/worker writes + headroom for future invoicing. |
+| ORM | **Drizzle** | Light runtime and plain reviewable SQL migrations — right for constrained, long-lived self-hosting. |
+| Auth | **Better Auth** | Passkeys + TOTP 2FA + rate-limit/lockout as core, in our own Postgres, no per-MAU fee. |
+| Media storage | **MinIO (S3) behind `StorageProvider`; filesystem alternate** | MinIO core from day one for portability + cloud-S3 parity; abstraction makes filesystem/cloud a config swap, not a rewrite. |
+| Cache / sessions / rate-limit | **Valkey (Redis-protocol)** | One store for sessions, rate-limits, cache, and BullMQ; open BSD license for longevity. |
+| Image processing | **sharp (libvips), async in worker** | Lowest CPU/RAM on NAS; AVIF/WebP + LQIP off the request path; strips EXIF, preserves originals. |
+| Job queue | **BullMQ** | Robust retries/backoff/concurrency for heavy image jobs, kept off the primary DB and request path. |
+| PWA | **Serwist** | Maintained, App-Router-aware installable PWA without a hand-rolled service worker. |
+| Email | **`EmailProvider`: SMTP + Resend** | SMTP for portability/zero lock-in; Resend driver for deliverability when wanted. |
+| Payments (deferred) | **`PaymentProvider` stub (Stripe-bound)** | Seams + schema headroom only; no money/PCI surface until justified; MoR option preserved. |
+| Topology | **web + worker processes, shared Postgres/Valkey** | Long CPU-bound media jobs run out-of-band so the site stays responsive. |
+| Deployment | **Docker Compose on NAS, NPM + Cloudflare Tunnel** | Reproducible, portable, no exposed inbound ports; runs on owned hardware. |

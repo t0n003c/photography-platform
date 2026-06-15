@@ -1,0 +1,202 @@
+# Architecture Decision Records (ADRs)
+
+This is the running decision log for the self-hosted photography platform.
+
+**How this log works.** Each ADR captures one significant decision and the reasoning behind it at the time it was made. ADRs are **append-only**: we never delete or rewrite an accepted ADR. When a decision changes, we add a **new** ADR that records the new choice and references the old one, and we edit the old ADR's **Status** to `Superseded by ADR-00NN` (leaving its body intact as history). This preserves *why* past choices were made so future maintainers don't relitigate settled trade-offs or repeat abandoned ones.
+
+**Statuses used:** `Proposed` → `Accepted` → (`Superseded by ADR-00NN` | `Deprecated`).
+
+**Template per entry:**
+
+```
+## ADR-000N: <title>
+- Status:
+- Date:
+- Context:
+- Decision:
+- Consequences:
+- Alternatives considered:
+```
+
+---
+
+## ADR-0001: Framework — Next.js 15 App Router
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The product is two things at once: a public, image-heavy marketing/portfolio site (must score well on Lighthouse/accessibility) and a stateful, authenticated application (private client galleries, favorites, downloads, admin, a future print store). We are a single operator self-hosting on a NAS via Docker. We need one framework that serves both surfaces and has strong, well-documented integrations for the rest of the stack.
+- **Decision:** Use **Next.js 15 with the App Router**, React, and TypeScript. Use React Server Components to minimize client JS on portfolio pages, route handlers for the API surface (auth, galleries, webhooks), and `output: "standalone"` for a lean Docker image.
+- **Consequences:**
+  - One framework covers static + stateful surfaces; no second framework to maintain.
+  - The App Router caching/RSC model has a learning curve and occasional sharp edges we must understand deliberately.
+  - We inherit Next's major-version upgrade cadence; we pin versions and upgrade intentionally.
+  - Image optimization, PWA (Serwist), auth (Better Auth), and shadcn all have first-class Next support, lowering solo integration cost.
+- **Alternatives considered:** **Remix / React Router 7** (excellent web-fundamentals model, but smaller ecosystem and more glue to write for image optimization/PWA solo); **Astro + islands** (best static Lighthouse, but a poor fit for the stateful auth-gated half — we'd bolt on a React SPA and lose the simplicity).
+
+---
+
+## ADR-0002: ORM — Drizzle over Prisma
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** We run PostgreSQL 16 (see ADR-0004) on constrained, always-on NAS hardware with multiple long-lived Node processes (web + worker). We need type-safe data access, trustworthy migrations for a long-lived production DB, and low runtime overhead.
+- **Decision:** Use **Drizzle** (SQL-first). Schema is defined in TypeScript; migrations are generated as plain, reviewable `.sql` files via `drizzle-kit`. App code accesses the DB only through Drizzle.
+- **Consequences:**
+  - Minimal runtime weight and no separate query-engine binary — meaningful on NAS hardware and in always-on worker processes.
+  - Migrations are plain SQL we can read and audit before applying to production data.
+  - We write somewhat more explicit, SQL-shaped code than with a heavier ORM, and the relational query API is younger than some alternatives.
+- **Alternatives considered:** **Prisma** (great DX/Studio/migrations, but a heavier runtime/footprint and a separate DSL — the tax isn't worth it here); **raw SQL / Kysely** (max control and type-safe building, but more boilerplate for the common CRUD path — Kysely kept as a fallback if we ever want pure query-builder ergonomics).
+
+---
+
+## ADR-0003: Authentication — Better Auth
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Client galleries are private and access-controlled; the admin surface is sensitive. We require real authentication with password login, **TOTP 2FA**, **WebAuthn/passkeys**, rate limiting, account lockout, and managed sessions — and an admin policy that controls which factors are required. As a self-hosted, privacy-owned, single-operator product, hosted auth vendors (recurring per-MAU cost, data leaving our hardware) are disqualifying for the core path.
+- **Decision:** Use **Better Auth**, storing all auth tables in our own PostgreSQL via Drizzle. Enable password + TOTP + WebAuthn/passkeys + rate limiting + lockout + sessions. Treat **passkeys as a stronger, passwordless-capable factor**; an admin policy declares required factors per surface. Pin versions and own the schema to manage the project's relative youth.
+- **Consequences:**
+  - Passkeys/2FA/rate-limit/lockout are core capabilities, not bolt-ons; all credentials live on our hardware; no recurring fee.
+  - We accept the risk of a younger library (smaller community, maturing API), mitigated by version pinning and owning the migrations.
+  - Auth schema becomes part of our Postgres backup/restore story.
+- **Alternatives considered:** **Lucia** (signaled move to maintenance/learning-resource posture — a poor long-lived bet); **Auth.js/NextAuth** (mature, but passkeys/2FA are bolt-on/experimental and the required-factor policy is friction); **Clerk/Auth0** (turnkey but hosted control plane, recurring per-MAU cost — against self-host/privacy/cost constraints).
+
+---
+
+## ADR-0004: Database — PostgreSQL 16
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Data is genuinely relational — users, galleries, access grants, expiring share links, favorites/download controls, and a future print-store order/invoice model. Multiple processes (web + BullMQ worker) write concurrently. We self-host one box.
+- **Decision:** Use **PostgreSQL 16** in a single Docker container. Back up via `pg_dump` and volume snapshots. Lean on JSONB, full-text search, and strong constraints.
+- **Consequences:**
+  - A well-understood relational store with headroom for deferred invoicing/payments without a future engine migration.
+  - One more service to run and back up than an embedded file DB, accepted as standard ops.
+  - Concurrent web/worker writes are handled natively (a known SQLite weakness avoided).
+- **Alternatives considered:** **SQLite/libSQL** (zero-service and simple, but concurrent multi-process writes and a richer order/invoice model are its weak spots; libSQL/Turso leans hosted); **MySQL/MariaDB** (mature and familiar from the WordPress legacy, but weaker type/constraint/JSON ergonomics with no offsetting advantage on a green-field schema).
+
+---
+
+## ADR-0005: Media storage — MinIO (S3-compatible) from day one behind a StorageProvider abstraction
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The platform is image-heavy; originals must be preserved and many derivatives served. We deploy on a NAS, which is itself a storage appliance. We want maximum portability and immediate cloud-S3 parity (presigned URLs, an identical S3 API to AWS/R2) so a potential move to off-site cloud is purely operational, while still preserving a raw-disk option.
+- **Decision:** Define a **`StorageProvider` interface** (unchanged). The **default driver is MinIO (S3-compatible)**, run as a **core (non-optional, non-profile-gated) service** in Docker Compose from day one. Provide the **NAS filesystem volume** driver as a **selectable alternate**. App code never touches `fs` or S3 directly — only the interface (put/get/delete/presign). *(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)*
+- **Consequences:**
+  - Maximum portability and immediate cloud-S3 parity: presigned URLs and an S3 API identical to R2/AWS, so a later move off the NAS is operational, not a rewrite.
+  - MinIO is a core always-on service to run, secure, and back up (its bucket becomes the media system of record and is backup-critical).
+  - Switching to the filesystem driver (or cloud R2 for off-site durability) is a config + driver change, not a refactor; the `StorageProvider` abstraction is preserved exactly as designed.
+- **Alternatives considered:** **Filesystem-first as default** (cheapest/simplest local disk on the appliance with trivial snapshot backups, but not S3-API portable on its own — kept as the selectable alternate driver instead); **cloud S3/R2** (durable and off-site, but recurring cost, data leaving owned hardware, and egress/latency — against the self-host ethos for the default path, preserved as a future driver).
+
+---
+
+## ADR-0006: Job queue — BullMQ on Valkey
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The heaviest work is CPU-bound image derivative generation, which must not block HTTP requests or load the primary database. We also need reliable async email delivery and scheduled sweeps (e.g., expiring share-link cleanup). We already run a Redis-protocol store (see ADR-0007).
+- **Decision:** Use **BullMQ** backed by **Valkey**, executed in a **dedicated worker process** (see ADR-0010). Use it for image derivative jobs, email sends, and repeatable/scheduled maintenance jobs, with retries and backoff.
+- **Consequences:**
+  - Heavy image jobs run off the request path and off the primary DB; the site stays responsive.
+  - Robust retries/backoff/concurrency/scheduling out of the box.
+  - Adds no new dependency *category* — Valkey is already present.
+- **Alternatives considered:** **pg-boss** and **Graphile Worker** (both Postgres-backed, removing a dependency, but they couple queue load to the primary DB — deliberately avoided for heavy image work; reasonable if we ever want to drop Valkey).
+
+---
+
+## ADR-0007: Cache / sessions / rate-limit store — Valkey
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** We need a fast store for sessions, rate-limit/lockout counters (used by Better Auth), and a general cache tier — and BullMQ (ADR-0006) requires a Redis-protocol backend. Licensing stability matters for a long-lived project.
+- **Decision:** Run a single **Valkey** instance (Redis-protocol compatible) serving sessions, rate-limit counters, cache, and the BullMQ backing store.
+- **Consequences:**
+  - One service covers multiple concerns; every Redis-targeting library works unchanged.
+  - **Valkey's** BSD license and community governance insulate us from future licensing surprises.
+  - We manage one more container plus its persistence/memory configuration.
+- **Alternatives considered:** **Redis** (functionally equivalent; passed over for licensing/governance preference); **Postgres-only, no Redis-protocol store** (one fewer service, but no native BullMQ fit and hot-path counters would hit the primary DB).
+
+---
+
+## ADR-0008: Image pipeline — sharp, async, originals preserved, EXIF stripped
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Uploads must yield responsive, modern-format derivatives and a fast-loading placeholder, without blowing the limited CPU/RAM budget of NAS hardware or blocking the upload request. Privacy requires removing location/identifying metadata from public derivatives, while originals must remain pristine.
+- **Decision:** Use **sharp (libvips)** inside the **BullMQ worker**. On upload, preserve the **original untouched**, then asynchronously generate **responsive AVIF/WebP derivatives** plus a tiny **LQIP/blur placeholder**, and **strip/normalize EXIF** on derivatives (remove GPS and camera serials; honor/normalize orientation).
+- **Consequences:**
+  - Lowest CPU/RAM footprint of the realistic options; AVIF's encoding cost is absorbed off the request path.
+  - Originals are always recoverable; derivatives can be regenerated by re-running the job.
+  - Public images leak no GPS/serial metadata.
+  - We ship sharp's native binary in the Docker image (standard, manageable).
+- **Alternatives considered:** **ImageMagick** (ubiquitous but heavier RAM/CPU and a clunkier shell-out); **external service (Thumbor/imgproxy)** (great on-the-fly transforms, but another always-on service competing for the same NAS CPU — we prefer pre-generated fixed derivatives that cache well; imgproxy kept as a future option).
+
+---
+
+## ADR-0009: PWA — Serwist
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The product must be an installable PWA with good offline/caching behavior (the operator shows galleries to clients on the go) and strong Lighthouse scores, on Next.js App Router.
+- **Decision:** Use **Serwist** for the service worker: precaching, runtime caching strategies, offline support, and installability, integrated with the App Router.
+- **Consequences:**
+  - Maintained, App-Router-aware PWA without hand-rolling the error-prone service-worker lifecycle.
+  - We learn/maintain Serwist's configuration and caching-strategy choices (and must manage cache versioning on deploys).
+- **Alternatives considered:** **next-pwa** (formerly common, but maintenance has lagged and App Router support is shaky — a liability for a long-lived app); **hand-rolled service worker** (total control, but reimplementing caching/versioning/update flows is a large solo cost and easy to get subtly wrong).
+
+---
+
+## ADR-0010: Topology — separate web and worker processes over shared Postgres + Valkey
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Background work (image derivatives, email, scheduled sweeps) is CPU-bound and bursty. Running it inside the web process would compete with request handling and risk degrading site responsiveness on limited NAS CPU. We deploy with Docker Compose.
+- **Decision:** Run **two application processes** as separate Compose services from the **same image**: a **web** service (Next.js, handling HTTP/RSC/API) and a **worker** service (BullMQ consumer). Both share the same **PostgreSQL** and **Valkey** instances. The web service enqueues jobs; the worker executes them.
+- **Consequences:**
+  - Heavy/bursty work is isolated from request handling; the site stays responsive.
+  - Worker concurrency can be tuned independently to fit the NAS CPU budget.
+  - Slightly more orchestration (two services, shared config/secrets, ordered startup) and we must ensure idempotent, retry-safe jobs.
+- **Alternatives considered:** **Single combined process** (simpler to deploy, but background CPU spikes would degrade HTTP latency); **separate physical machines** (more isolation, but unnecessary and costlier for a single-box NAS deployment).
+
+---
+
+## ADR-0011: Email — EmailProvider interface with SMTP and Resend drivers
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Email is on critical paths: password resets, gallery invites, and contact-form notifications. We must not be locked to a single hosted vendor for these, and we want zero recurring cost where a relay is available, while keeping the option of better deliverability/DX.
+- **Decision:** Define an **`EmailProvider` interface**. Ship an **SMTP** driver (portable default; works with any provider or self-hosted relay) and a **Resend** driver (better deliverability/DX when wanted). Selection is configuration; app code calls only the interface.
+- **Consequences:**
+  - No lock-in for core email; SMTP runs at zero marginal cost with an available relay.
+  - Switching providers, or adding Postmark/SES drivers later, is config + a small driver, not a refactor.
+  - SMTP deliverability depends on the relay/reputation we configure — an operational responsibility.
+- **Alternatives considered:** **Resend only** (great DX/deliverability, but a hosted dependency and recurring cost on a core path); **Postmark / SES** (top-tier deliverability / lowest cost at scale respectively, but hosted and fiddlier — preserved as future drivers behind the same interface).
+
+---
+
+## ADR-0012: Payments — deferred; PaymentProvider seam only (Stripe-bound)
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** A light print store is in scope to be **architected** for invoicing/payments **later**, not built now. Introducing real payment processing prematurely adds PCI/compliance surface and maintenance before there's revenue to justify it.
+- **Decision:** Ship only a **`PaymentProvider` interface stub** plus **schema headroom** in PostgreSQL for an order/invoice model. **No money-processing code** is implemented now. When activated, **Stripe** is the planned first driver (API + webhooks fit a self-hosted app).
+- **Consequences:**
+  - Zero payment/PCI surface enters the system until a deliberate future decision.
+  - The print store can grow into invoicing/checkout without rearchitecting — only a driver and UI are added.
+  - Stripe (not a merchant of record) would leave sales-tax/VAT obligations to the operator — to be weighed at activation.
+- **Alternatives considered:** **Lemon Squeezy / Paddle** (merchant-of-record handling global tax/VAT — major admin relief, at higher fees and more opinionated checkout; preserved as a deliberate future alternative); **building payments now** (premature scope, compliance/maintenance burden ahead of revenue — rejected).
+
+---
+
+## ADR-0013: Dark mode — next-themes with class strategy
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Dark mode is a hard product requirement for a photography site (dark UIs flatter imagery), it must respect the OS preference, persist the user's choice, and **not flash the wrong theme** on load. We use Tailwind + shadcn/ui.
+- **Decision:** Use **`next-themes`** with Tailwind's `class` dark-mode strategy and shadcn's CSS-variable tokens. Support system / light / dark with persisted preference and a no-flash inline script on first paint.
+- **Consequences:**
+  - Correct, persisted, system-aware theming with no flash-of-incorrect-theme, in a few lines.
+  - shadcn components theme automatically via CSS variables.
+  - A tiny inline theme-detection script runs before hydration (a standard, accepted cost).
+- **Alternatives considered:** **Hand-rolled theme context + localStorage** (full control, but you re-solve SSR no-flash, system-preference sync, and persistence — needless solo cost); **CSS `prefers-color-scheme` only** (simplest, but cannot honor a manual user override or persist a choice).
