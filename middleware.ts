@@ -11,7 +11,10 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     // Next dev needs eval; prod is nonce-only.
     `script-src 'self' 'nonce-${nonce}'${isProd ? "" : " 'unsafe-eval'"}`,
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    // Styles use 'unsafe-inline' (NOT a nonce): a nonce would make the browser
+    // ignore 'unsafe-inline' and block React/Tailwind inline styles. Style-based
+    // XSS is low-risk; scripts remain strict nonce-only.
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "media-src 'self' blob:",
     "font-src 'self'",

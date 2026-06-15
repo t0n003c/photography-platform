@@ -31,7 +31,9 @@ COPY worker ./worker
 COPY remotion ./remotion
 
 # Pre-download the Remotion headless browser when the feature is enabled.
-RUN if [ "$INSTALL_REMOTION_DEPS" = "true" ]; then npx remotion browser ensure; fi
+RUN if [ "$INSTALL_REMOTION_DEPS" = "true" ]; then \
+      node -e "require('@remotion/renderer').ensureBrowser().then(()=>process.exit(0)).catch((e)=>{console.error(e);process.exit(1)})"; \
+    fi
 
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 worker \
