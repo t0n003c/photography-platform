@@ -15,24 +15,25 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Define provider abstractions: `StorageProvider` (**MinIO/S3 default**, filesystem alternate driver), `EmailProvider` (SMTP/Resend), `PaymentProvider` (stub, deferred).
 - [x] Author `DEPLOYMENT.md` (topology, compose plan, volumes, env, networking, backups, upgrade, run-book).
 - [x] Author this `ROADMAP.md` (phased plan).
-- [ ] Cross-reference companion docs: `MEDIA-ARCHITECTURE.md`, `SECURITY.md`, `CACHING-STRATEGY.md` (authored alongside Phase 0).
+- [x] Cross-reference companion docs: `MEDIA-ARCHITECTURE.md`, `SECURITY.md`, `CACHING-STRATEGY.md` (authored alongside Phase 0).
 - [x] **Summary + pause for approval.**
 
 ---
 
-## Phase 1 — Scaffold
+## Phase 1 — Scaffold ✅ (completed 2026-06-14)
 
-- [ ] Initialize repo structure (app, worker, shared packages/modules, `docs/`).
-- [ ] Configure TypeScript (strict), ESLint, Prettier, editorconfig, commit hooks.
-- [ ] Stand up base Next.js 15 App Router project (TS) with a placeholder public route and health route.
-- [ ] Author `Dockerfile` (multi-stage, shared image for `web` and `worker`).
-- [ ] Author Compose stack: `web`, `db` (postgres 16), `redis`/valkey, `worker`, and `minio` — all **core, always-on** services (minio is the default storage backend, not profile-gated).
-- [ ] Add internal/proxy networks, volumes (`pgdata`, `redisdata`, `miniodata` mapped to NAS storage; `media` only for the filesystem alternate driver).
-- [ ] Create `.env.example` with all variable names (no secrets) per `DEPLOYMENT.md` §5.
-- [ ] Implement `/api/health` and per-service healthchecks (`pg_isready`, `redis-cli ping`, app HTTP, worker heartbeat).
-- [ ] Wire `depends_on` with `service_healthy` conditions and restart policies.
-- [ ] Verify a **hello-world** runs end-to-end under `docker compose up` (web reachable, worker connects to db/redis).
-- [ ] **Summary + pause for approval.**
+- [x] Initialize repo structure (app, worker, shared `src/` modules, `docs/`) per `FOLDER-STRUCTURE.md`.
+- [x] Configure TypeScript (strict), ESLint, Prettier. _(editorconfig + commit hooks deferred to Phase 2.)_
+- [x] Stand up base Next.js 15 App Router project (TS) with a hello-world home route and `/api/health` route.
+- [x] Author Dockerfiles (`Dockerfile.web` standalone + `Dockerfile.worker`).
+- [x] Author Compose stack: `web`, `db` (postgres 16), `redis`, `worker`, and `minio` (+ `minio-init` bucket bootstrap) — all **core, always-on** services.
+- [x] Add internal network and volumes (`pgdata`, `redisdata`, `miniodata`).
+- [x] Create `.env.example` with all variable names (no secrets) per `DEPLOYMENT.md` §5.
+- [x] Implement `/api/health` and per-service healthchecks (`pg_isready`, `redis-cli ping`, web HTTP, worker HTTP heartbeat).
+- [x] Wire `depends_on` with `service_healthy` conditions and restart policies.
+- [x] Verify a **hello-world** runs end-to-end under `docker compose up` — all five services healthy; worker connected to Redis; bucket created; home page served.
+- [x] Push to GitHub (`t0n003c/photography-platform`, private).
+- [x] **Summary + pause for approval.**
 
 ---
 
