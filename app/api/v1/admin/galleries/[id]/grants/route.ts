@@ -9,7 +9,9 @@ import { generateShareToken } from "@/src/auth/grant";
 import { hashPassword } from "@/src/lib/password";
 import { getEnv } from "@/src/lib/env";
 import { db } from "@/src/db/client";
-import { gallery, galleryAccessGrant } from "@/src/db/schema";
+import { gallery, galleryAccessGrant, client } from "@/src/db/schema";
+import { enqueueEmail } from "@/src/email/send";
+import { galleryInvite } from "@/src/email/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +76,7 @@ export async function POST(
   const body = parsed.data;
 
   const exists = await db
-    .select({ id: gallery.id })
+    .select({ id: gallery.id, title: gallery.title })
     .from(gallery)
     .where(and(eq(gallery.id, id), isNull(gallery.deletedAt)))
     .limit(1);
@@ -109,9 +111,30 @@ export async function POST(
     metadata: { galleryId: id },
   });
 
+  const shareUrl = `${getEnv().APP_BASE_URL}/g/${raw}`;
+
+  // Email the client an invite if this grant is bound to one.
+  if (body.clientId) {
+    const c = await db
+      .select({ email: client.email, name: client.name })
+      .from(client)
+      .where(eq(client.id, body.clientId))
+      .limit(1);
+    if (c[0]?.email) {
+      await enqueueEmail(
+        galleryInvite({
+          to: c[0].email,
+          clientName: c[0].name,
+          galleryTitle: exists[0]!.title,
+          shareUrl,
+        }),
+      );
+    }
+  }
+
   return created({
     grant: { id: grantId, galleryId: id, expiresAt },
-    shareUrl: `${getEnv().APP_BASE_URL}/g/${raw}`,
+    shareUrl,
     tokenShownOnce: true,
   });
 }

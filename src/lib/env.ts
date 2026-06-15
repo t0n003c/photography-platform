@@ -29,7 +29,16 @@ const EnvSchema = z.object({
     .transform((v) => v === "true"),
   STORAGE_FS_PATH: z.string().default("/data/media"),
 
-  EMAIL_DRIVER: z.enum(["smtp", "resend"]).default("smtp"),
+  // Email — defaults to "log" so nothing is sent externally without config.
+  EMAIL_DRIVER: z.enum(["log", "smtp", "resend"]).default("log"),
+  EMAIL_FROM: z.string().default("Studio <hello@example.com>"),
+  CONTACT_NOTIFY_EMAIL: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+
   PAYMENTS_DRIVER: z.enum(["stub", "stripe"]).default("stub"),
 
   WORKER_HEALTH_PORT: z.coerce.number().default(9091),

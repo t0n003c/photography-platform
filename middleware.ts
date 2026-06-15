@@ -23,12 +23,38 @@ export function middleware(request: NextRequest) {
     "form-action 'self'",
     "object-src 'none'",
     "upgrade-insecure-requests",
+    "report-uri /api/csp-report",
   ].join("; ");
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // ── Caching (CACHING-STRATEGY.md) ──────────────────────────────────────────
+  // Private surfaces must never be cached at shared layers; public read APIs are
+  // CDN-cacheable with stale-while-revalidate. The media route sets its own
+  // (immutable vs no-store) and is left alone.
+  const path = request.nextUrl.pathname;
+  const isPrivate =
+    path.startsWith("/admin") ||
+    path.startsWith("/login") ||
+    path.startsWith("/g/") ||
+    path.startsWith("/api/v1/admin") ||
+    path.startsWith("/api/v1/g") ||
+    path.startsWith("/api/auth");
+  if (isPrivate) {
+    res.headers.set("Cache-Control", "private, no-store");
+  } else if (
+    request.method === "GET" &&
+    path.startsWith("/api/v1") &&
+    !path.startsWith("/api/v1/media")
+  ) {
+    res.headers.set(
+      "Cache-Control",
+      "public, s-maxage=60, stale-while-revalidate=300",
+    );
+  }
 
   res.headers.set("Content-Security-Policy-Report-Only", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");

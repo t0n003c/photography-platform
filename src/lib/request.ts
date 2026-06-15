@@ -5,8 +5,13 @@ export function clientIp(req: Request): string {
   const h = req.headers;
   const cf = h.get("cf-connecting-ip");
   if (cf) return cf.trim();
-  const xff = h.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
+  // Only trust X-Forwarded-For OUTSIDE production. In production the edge
+  // (Cloudflare Tunnel) sets cf-connecting-ip; trusting arbitrary XFF would let
+  // a client forge the rate-limit/lockout/audit identity (SECURITY.md §3.1).
+  if (process.env.NODE_ENV !== "production") {
+    const xff = h.get("x-forwarded-for");
+    if (xff) return xff.split(",")[0]!.trim();
+  }
   return "0.0.0.0";
 }
 

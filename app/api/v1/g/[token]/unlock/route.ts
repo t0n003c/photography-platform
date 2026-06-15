@@ -26,10 +26,17 @@ export async function POST(
   ctx: { params: Promise<{ token: string }> },
 ) {
   const { token } = await ctx.params;
+
+  // Rate-limit token RESOLUTION (per IP) before any DB lookup, so token
+  // probing is throttled even on misses (SECURITY.md §3.1).
+  const ip = clientIp(req);
+  const ipRl = await rateLimit(`gunlock-ip:${ip}`, 30, 900);
+  if (!ipRl.ok) return tooMany(ipRl.retryAfter);
+
   const grant = await resolveGrant(token);
   if (!grant) return notFound();
 
-  const rl = await rateLimit(`gunlock:${grant.id}:${clientIp(req)}`, 10, 900);
+  const rl = await rateLimit(`gunlock:${grant.id}:${ip}`, 10, 900);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   const parsed = await parseJson(req, bodySchema);
