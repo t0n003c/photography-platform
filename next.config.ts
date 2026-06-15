@@ -1,3 +1,4 @@
+import withSerwist from "@serwist/next";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -14,8 +15,13 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "minio" },
     ],
   },
-  // NOTE: Serwist PWA integration and full security headers/CSP are wired in
-  // Phase 3 / Phase 2 respectively. Kept out of the Phase 1 scaffold on purpose.
+  // NOTE: full security headers/CSP are wired in Phase 2.
 };
 
-export default nextConfig;
+const withPWA = withSerwist({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+});
+
+export default withPWA(nextConfig);

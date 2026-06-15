@@ -1,14 +1,13 @@
-// PWA service-worker configuration — PLACEHOLDER (wired in Phase 3).
+// PWA service-worker configuration — ACTIVE.
 //
-// Phase 3 enables Serwist via next.config.ts (withSerwist) to precache the app
-// shell, runtime-cache gallery thumbnails (stale-while-revalidate), and make the
-// site installable. See docs/CACHING-STRATEGY.md and docs/PERFORMANCE.md.
+// Serwist is wired via next.config.ts (withSerwist) which compiles app/sw.ts
+// into public/sw.js. The actual service-worker logic (precache of the app
+// shell + runtime caching via defaultCache) lives in app/sw.ts.
 //
-// Kept as an inert config object so the documented file exists without pulling
-// the dependency into the Phase 1 build.
+// This object documents the source/dest mapping used by next.config.ts and is
+// kept in sync with it.
 
 export const serwistConfig = {
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
-  // runtimeCaching / precache rules added in Phase 3.
 } as const;
