@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "minio" },
     ],
   },
+  typescript: {
+    // `tsc` (`npm run typecheck`, run in CI + pre-commit) is the type gate and
+    // excludes remotion/ (Remotion compositions compile only under Remotion's
+    // own bundler). Next's build-time type pass ignores that exclude and would
+    // wrongly check those files, so we disable it here — app code is still fully
+    // typechecked by tsc.
+    ignoreBuildErrors: true,
+  },
   // NOTE: full security headers/CSP are wired in Phase 2.
 };
 

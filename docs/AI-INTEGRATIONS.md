@@ -9,9 +9,17 @@ trade-offs, the abstraction (provider seam) it would sit behind, and an explicit
 > the owner's explicit approval. The **only** exception is Instagram, which is
 > already abstracted behind `InstagramProvider` and is **inert without a token**
 > (`IG_ACCESS_TOKEN` unset → it falls back to recent public photos and makes no
-> external calls). Remotion and the tagging/alt-text integration are **not wired**
-> at all yet — they require sign-off because they change cost, privacy posture,
-> and (for Remotion) the deployment shape.
+> external calls). **Remotion is now IMPLEMENTED but OPT-IN and OFF by default**
+> (`VIDEO_RENDER_ENABLED=false`; the admin endpoint returns 501 and the worker
+> never loads Remotion until enabled) — enabling it changes the deployment shape
+> (see below). The tagging/alt-text integration is still **not wired**.
+
+> **Status: Remotion slideshow video — IMPLEMENTED (opt-in).** A `video-render`
+> BullMQ queue + worker renders an MP4 slideshow (`remotion/` composition,
+> `src/video/render.ts`) and stores it; the gallery editor has a "Slideshow video"
+> card. To enable: build the worker with `--build-arg INSTALL_REMOTION_DEPS=true`
+> (bakes the headless Chromium) and set `VIDEO_RENDER_ENABLED=true`. The
+> `compose.prod.yaml` worker `build.args` already wires the build arg. ADR-0023.
 
 ---
 

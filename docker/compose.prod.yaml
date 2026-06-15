@@ -23,6 +23,11 @@ services:
 
   worker:
     <<: *logging
+    build:
+      # Set INSTALL_REMOTION_DEPS=true (+ VIDEO_RENDER_ENABLED=true in .env) to
+      # bake the headless Chromium for slideshow-video rendering. Off by default.
+      args:
+        INSTALL_REMOTION_DEPS: "${INSTALL_REMOTION_DEPS:-false}"
     deploy:
       resources:
         limits:

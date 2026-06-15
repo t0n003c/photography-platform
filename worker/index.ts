@@ -7,6 +7,7 @@ import { db } from "@/src/db/client";
 import { IMAGE_QUEUE, type ProcessImageJob } from "@/src/queue/jobs/image";
 import { EMAIL_QUEUE, type SendEmailJob } from "@/src/queue/jobs/email";
 import { ZIP_QUEUE, type BuildZipJob } from "@/src/queue/jobs/zip";
+import { VIDEO_QUEUE, type RenderVideoJob } from "@/src/queue/jobs/video";
 import { processImage } from "@/src/image/pipeline";
 import { buildZip } from "@/src/zip/build";
 import { getEmailProvider } from "@/src/email";
@@ -72,6 +73,25 @@ async function bootstrap() {
     console.error(`[worker] zip job ${job?.id} failed:`, err.message),
   );
 
+  // Video consumer — Remotion is dynamically imported so it (and its heavy deps)
+  // only load when a render job actually runs (opt-in feature).
+  const videoWorker = new Worker<RenderVideoJob>(
+    VIDEO_QUEUE,
+    async (job) => {
+      console.log(`[worker] rendering video for gallery ${job.data.galleryId}`);
+      const { renderGalleryVideo } = await import("@/src/video/render");
+      await renderGalleryVideo(job.data);
+      return { ok: true };
+    },
+    { connection: getBullConnection(), concurrency: 1 },
+  );
+  videoWorker.on("ready", () =>
+    console.log(`[worker] listening on queue "${VIDEO_QUEUE}"`),
+  );
+  videoWorker.on("failed", (job, err) =>
+    console.error(`[worker] video job ${job?.id} failed:`, err.message),
+  );
+
   // Liveness endpoint for the compose healthcheck (worker has no HTTP surface).
   const port = getEnv().WORKER_HEALTH_PORT;
   http
@@ -88,7 +108,12 @@ async function bootstrap() {
 
   async function shutdown(signal: string) {
     console.log(`[worker] ${signal} received, closing…`);
-    await Promise.all([worker.close(), emailWorker.close(), zipWorker.close()]);
+    await Promise.all([
+      worker.close(),
+      emailWorker.close(),
+      zipWorker.close(),
+      videoWorker.close(),
+    ]);
     process.exit(0);
   }
   process.on("SIGTERM", () => void shutdown("SIGTERM"));

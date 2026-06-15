@@ -76,6 +76,14 @@ export const gallery = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     passwordHash: text("password_hash"),
     downloadEnabled: boolean("download_enabled").notNull().default(false),
+    // Optional Remotion-rendered slideshow video (opt-in feature).
+    videoStatus: text("video_status", {
+      enum: ["none", "pending", "rendering", "ready", "failed"],
+    })
+      .notNull()
+      .default("none"),
+    videoStorageKey: text("video_storage_key"),
+    videoGeneratedAt: timestamp("video_generated_at", { withTimezone: true }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

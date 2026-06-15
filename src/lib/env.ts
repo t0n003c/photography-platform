@@ -46,6 +46,13 @@ const EnvSchema = z.object({
   // back to recent public photos. Inert without a token.
   IG_ACCESS_TOKEN: z.string().optional(),
 
+  // Remotion slideshow video rendering — opt-in (needs the Chromium-enabled
+  // worker image). Off by default; the admin endpoint returns 501 when false.
+  VIDEO_RENDER_ENABLED: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
+
   WORKER_HEALTH_PORT: z.coerce.number().default(9091),
 });
 

@@ -3,6 +3,7 @@ import { getBullConnection } from "@/src/redis/client";
 import { IMAGE_QUEUE, type ProcessImageJob } from "@/src/queue/jobs/image";
 import { EMAIL_QUEUE, type SendEmailJob } from "@/src/queue/jobs/email";
 import { ZIP_QUEUE, type BuildZipJob } from "@/src/queue/jobs/zip";
+import { VIDEO_QUEUE, type RenderVideoJob } from "@/src/queue/jobs/video";
 
 // Factory keeps the variable's type exactly equal to the constructor's return
 // type, avoiding BullMQ's generic-default inference mismatch.
@@ -63,4 +64,22 @@ let zipQueue: ReturnType<typeof createZipQueue> | undefined;
 export function getZipQueue() {
   zipQueue ??= createZipQueue();
   return zipQueue;
+}
+
+function createVideoQueue() {
+  return new Queue<RenderVideoJob>(VIDEO_QUEUE, {
+    connection: getBullConnection(),
+    defaultJobOptions: {
+      attempts: 1,
+      removeOnComplete: 200,
+      removeOnFail: 500,
+    },
+  });
+}
+
+let videoQueue: ReturnType<typeof createVideoQueue> | undefined;
+
+export function getVideoQueue() {
+  videoQueue ??= createVideoQueue();
+  return videoQueue;
 }

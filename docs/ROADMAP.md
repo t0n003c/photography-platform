@@ -144,12 +144,15 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
+## Post-v1, round 2 ✅ (completed 2026-06-15)
+
+- [x] **Public client-gallery viewer UI** (`/g/[token]`) — unlock, favorites, single + zip downloads, lightbox.
+- [x] **Remotion slideshow video** — implemented **opt-in** (off by default; Chromium baked only when enabled). ADR-0023; `AI-INTEGRATIONS.md`.
+
 ## Deferred / Out of scope (require explicit sign-off)
 
 - [ ] Real payments / checkout (live `PaymentProvider`, gateway integration, tax, fulfillment).
-- [ ] **Remotion** gallery-video rendering (needs Chromium in the worker → changes deployment shape) — see `AI-INTEGRATIONS.md`.
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
-- [ ] A public **client-gallery viewer UI** (`/g/[token]`) that consumes the favorites/download APIs (API complete; UI not built).
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 
 ---

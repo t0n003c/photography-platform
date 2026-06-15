@@ -299,3 +299,14 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** Switch to **enforced** `Content-Security-Policy` (nonce-based scripts, no `unsafe-inline`/`unsafe-eval` in prod). The per-request nonce is set on the request in middleware so Next propagates it to its injected scripts, and is passed to `next-themes` and the JSON-LD blocks. Violations still report to `/api/csp-report`.
 - **Consequences:** Stronger XSS containment. Reading the nonce via `headers()` in the root layout makes pages dynamic (acceptable — they already are). `style-src` keeps `'unsafe-inline'` (tightening styles to hashes/nonce is a follow-up).
 - **Alternatives considered:** Stay Report-Only (weaker — collects but doesn't block); strict styles now (Tailwind + inline styles make hash-based styles noisy).
+
+---
+
+## ADR-0023: Remotion slideshow video — implemented, opt-in (Chromium in worker)
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** Owner approved building the Remotion gallery-slideshow video. Server-side Remotion rendering needs a headless Chromium, which changes the worker image's size/attack surface and resource profile.
+- **Decision:** Implement it **off by default and opt-in**: a `video-render` BullMQ queue + worker (Remotion **dynamically imported** so the default lean worker never loads it), a `remotion/` composition (crossfading Ken-Burns slideshow) rendered by `src/video/render.ts`, an MP4 stored via `StorageProvider`, and a gallery-editor "Slideshow video" card. The admin endpoint returns **501** unless `VIDEO_RENDER_ENABLED=true`; the Chromium is baked only when the worker is built with `INSTALL_REMOTION_DEPS=true` (wired in `compose.prod.yaml`). `remotion/` is excluded from the app `tsc` (it compiles under Remotion's own bundler); Next's build-time type pass is disabled in favour of `tsc` as the gate.
+- **Consequences:** Studios can offer slideshow videos without bloating the default deployment. Enabling means a bigger worker image (+Chromium) and higher RAM/CPU. Rendering is verified at build/typecheck level here; a live render requires the Chromium-enabled image.
+- **Alternatives considered:** Client-side WebCodecs render (limited, browser-bound); a separate render microservice (cleaner isolation, more ops); not building it (owner wanted it).

@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { Modal } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GalleryVideoCard } from "@/components/admin/gallery-video-card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { useStepUp } from "@/components/admin/step-up";
@@ -913,6 +914,7 @@ export default function GalleryEditorPage() {
       <SettingsCard gallery={gallery} onSaved={setGallery} />
       <PhotosCard galleryId={gallery.id} />
       <GrantsCard galleryId={gallery.id} />
+      <GalleryVideoCard galleryId={gallery.id} />
     </div>
   );
 }
