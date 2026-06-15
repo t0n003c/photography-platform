@@ -1,0 +1,56 @@
+import { NextResponse, type NextRequest } from "next/server";
+
+// Global security headers + nonce-based CSP (SECURITY.md §5). CSP ships in
+// Report-Only first (per §5.2) so the WebGL/PWA work in later phases can be
+// validated before enforcing. Baseline headers are enforced now.
+export function middleware(request: NextRequest) {
+  const nonce = btoa(crypto.randomUUID());
+  const isProd = process.env.NODE_ENV === "production";
+
+  const csp = [
+    "default-src 'self'",
+    // Next dev needs eval; prod is nonce-only.
+    `script-src 'self' 'nonce-${nonce}'${isProd ? "" : " 'unsafe-eval'"}`,
+    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    "img-src 'self' data: blob:",
+    "media-src 'self' blob:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+
+  res.headers.set("Content-Security-Policy-Report-Only", csp);
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  );
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  if (isProd) {
+    res.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
+  return res;
+}
+
+export const config = {
+  matcher: [
+    // Everything except Next static assets + a few public files.
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|robots.txt|sw.js).*)",
+  ],
+};

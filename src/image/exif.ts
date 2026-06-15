@@ -8,13 +8,21 @@ export interface ExtractedMetadata {
   width?: number;
   height?: number;
   format?: string;
+  orientation?: number;
+  space?: string;
 }
 
 export async function extractMetadata(
   input: Buffer,
 ): Promise<ExtractedMetadata> {
   const meta = await sharp(input).metadata();
-  return { width: meta.width, height: meta.height, format: meta.format };
+  return {
+    width: meta.width,
+    height: meta.height,
+    format: meta.format,
+    orientation: meta.orientation,
+    space: meta.space,
+  };
 }
 
 /** Web-safe pipeline base: normalise orientation, drop all metadata (incl. GPS). */

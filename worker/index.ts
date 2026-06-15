@@ -3,16 +3,16 @@ import { Worker } from "bullmq";
 import { getBullConnection } from "@/src/redis/client";
 import { getEnv } from "@/src/lib/env";
 import { IMAGE_QUEUE, type ProcessImageJob } from "@/src/queue/jobs/image";
+import { processImage } from "@/src/image/pipeline";
 
 // ── BullMQ consumer ─────────────────────────────────────────────────────────
-// Phase 1: the handler is a no-op that logs. Phase 2 plugs in the real
-// sharp → derivatives → LQIP → storage → DB pipeline (src/image, src/storage).
+// Runs the sharp → derivatives → LQIP → storage → DB pipeline. Idempotent on
+// the photo id; failures mark the photo `failed` and are retried by BullMQ.
 const worker = new Worker<ProcessImageJob>(
   IMAGE_QUEUE,
   async (job) => {
-    console.log(`[worker] received ${job.name} for photo ${job.data.photoId}`);
-    // TODO(Phase 2): generate variants + LQIP, persist via StorageProvider,
-    // write photo_variants rows, mark photo ready.
+    console.log(`[worker] processing photo ${job.data.photoId}`);
+    await processImage(job.data);
     return { ok: true };
   },
   {
