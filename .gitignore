@@ -48,3 +48,6 @@ docker-compose.override.yaml
 
 # os
 Thumbs.db
+
+# TypeScript incremental build cache
+*.tsbuildinfo
