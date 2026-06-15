@@ -6,6 +6,7 @@ import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { location } from "@/src/db/schema";
+import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export async function PATCH(
     metadata: { fields: Object.keys(updates) },
   });
 
+  await invalidate(CACHE_KEYS.locations);
   return ok({ id });
 }
 
@@ -101,5 +103,6 @@ export async function DELETE(
     userAgent: userAgent(req),
   });
 
+  await invalidate(CACHE_KEYS.locations);
   return noContent();
 }

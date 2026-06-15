@@ -41,6 +41,11 @@ const EnvSchema = z.object({
 
   PAYMENTS_DRIVER: z.enum(["stub", "stripe"]).default("stub"),
 
+  // Instagram (optional) — when IG_ACCESS_TOKEN is set, the "From the field"
+  // home section pulls the real IG feed via the Graph API; otherwise it falls
+  // back to recent public photos. Inert without a token.
+  IG_ACCESS_TOKEN: z.string().optional(),
+
   WORKER_HEALTH_PORT: z.coerce.number().default(9091),
 });
 

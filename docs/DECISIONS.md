@@ -255,3 +255,47 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** Build the effect with **React Three Fiber + a hand-written GLSL** depth-of-field/parallax shader (no `@react-three/drei`, to keep the dependency/version surface minimal). It is a **separate `ssr:false` dynamic chunk** mounted only behind a runtime gate — `requestIdleCallback` + WebGL support + not `prefers-reduced-motion` + not Save-Data — over a static `<picture>` that is always the SSR LCP and full fallback. Lenis smooth scroll is likewise reduced-motion-gated. The canvas is `pointer-events-none`, `aria-hidden`, and IntersectionObserver-gated.
 - **Consequences:** Three.js is excluded from the home page's 119 kB First-Load JS; the site is fully usable (and fully rendered) with WebGL/JS off; motion preferences are honored. The interactive shader itself needs an in-browser visual check (headless verifies the split + fallback only).
 - **Alternatives considered:** `drei` helpers (extra dep + React-19/fiber-9 version alignment risk); a CSS-only parallax (no real DoF); eager-loading the canvas (would blow the JS budget and risk LCP/INP).
+
+---
+
+## ADR-0019: WebP-primary delivery; originals preserved for downloads
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** Owner directive: optimise uploads to small, fast, high-quality app images to save storage, while client downloads must be full original quality. The earlier ladder emitted AVIF+WebP+JPEG × 5 buckets (15 derivatives/photo).
+- **Decision:** App delivery is **WebP-primary** — WebP (q82, effort 4) at every responsive bucket (thumb→xlarge) plus **one JPEG fallback** at `large` for the `<img>` tag / rare non-WebP client. AVIF and JPEG-proliferation are dropped (≈6 derivatives vs 15 → less storage + faster encode). **Originals are stored untouched** and are what the client-gallery ZIP/single downloads serve (full size + quality).
+- **Consequences:** ~60% fewer derivative objects and faster processing; near-universal browser support via WebP+JPEG; originals remain the irreplaceable backup asset. AVIF (best ratio) is forgone per the WebP directive but the format list is centralised in `derivatives.ts` if revisited.
+- **Alternatives considered:** Keep AVIF primary (best compression, slowest encode, more storage); WebP-only with no JPEG (tiny compat risk for the `<img>` fallback).
+
+---
+
+## ADR-0020: Original-quality client downloads via a zip-build worker
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** Clients need to download their photos at full original quality, individually and in bulk.
+- **Decision:** Single downloads stream the **original** file through an authorized grant route. Bulk downloads enqueue a **`zip-build` BullMQ job**; the worker archives the originals (favorites or whole gallery) with `archiver`, stores the zip, and flips the `download` row to `ready` with a 24h-expiring, grant-authorized file URL the client polls for.
+- **Consequences:** Full-quality delivery without blocking the request; downloads are access-controlled + logged + expiring. The zip is currently buffered in memory (bounded to 500 photos) — streaming to storage is a noted follow-up for very large galleries.
+- **Alternatives considered:** Zipping synchronously in the request (times out / blocks); serving a signed MinIO URL (MinIO isn't publicly exposed).
+
+---
+
+## ADR-0021: Step-up (fresh-auth) on destructive admin actions
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** The security audit flagged that sensitive/destructive admin actions only checked role, not recency of authentication (SECURITY.md §2.4).
+- **Decision:** `requireFreshAuth(role, maxAgeSec=900)` gates the most destructive ops (gallery delete, client delete, grant revoke/rotate). When the session is older than the freshness window it returns **403 `STEP_UP_REQUIRED`**; the admin UI's `StepUpProvider` prompts re-authentication (password or passkey), which mints a fresh session, then retries the action once.
+- **Consequences:** A stolen, idle admin session can't immediately perform destructive/exfiltration actions. Freshness uses session-creation time as the proxy (re-auth resets it); a dedicated `lastStrongAuthAt` is a possible refinement. Applied to low-frequency ops only, to avoid step-up fatigue on batch operations.
+- **Alternatives considered:** No step-up (audit finding); Redis `lastStrongAuthAt` updated via auth hooks (more moving parts; session.createdAt is sufficient given re-auth resets it).
+
+---
+
+## ADR-0022: Enforce nonce-based CSP (was Report-Only)
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** SECURITY.md §5.2 planned to ship CSP Report-Only first, then enforce once the WebGL/PWA surfaces were validated.
+- **Decision:** Switch to **enforced** `Content-Security-Policy` (nonce-based scripts, no `unsafe-inline`/`unsafe-eval` in prod). The per-request nonce is set on the request in middleware so Next propagates it to its injected scripts, and is passed to `next-themes` and the JSON-LD blocks. Violations still report to `/api/csp-report`.
+- **Consequences:** Stronger XSS containment. Reading the nonce via `headers()` in the root layout makes pages dynamic (acceptable — they already are). `style-src` keeps `'unsafe-inline'` (tightening styles to hashes/nonce is a follow-up).
+- **Alternatives considered:** Stay Report-Only (weaker — collects but doesn't block); strict styles now (Tailwind + inline styles make hash-based styles noisy).

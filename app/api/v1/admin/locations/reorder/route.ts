@@ -6,6 +6,7 @@ import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { location } from "@/src/db/schema";
+import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -37,5 +38,6 @@ export async function PATCH(req: Request) {
     userAgent: userAgent(req),
     metadata: { count: parsed.data.items.length },
   });
+  await invalidate(CACHE_KEYS.locations);
   return ok({ reordered: parsed.data.items.length });
 }

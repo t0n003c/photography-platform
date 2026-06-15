@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { JsonLd } from "@/components/seo/json-ld";
 import { orgJsonLd } from "@/src/lib/seo";
@@ -24,18 +25,21 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Per-request CSP nonce (set by middleware) — propagated to inline scripts.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <JsonLd data={orgJsonLd()} />
+        <JsonLd data={orgJsonLd()} nonce={nonce} />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          nonce={nonce}
         >
           {children}
         </ThemeProvider>

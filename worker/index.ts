@@ -6,7 +6,9 @@ import { getEnv } from "@/src/lib/env";
 import { db } from "@/src/db/client";
 import { IMAGE_QUEUE, type ProcessImageJob } from "@/src/queue/jobs/image";
 import { EMAIL_QUEUE, type SendEmailJob } from "@/src/queue/jobs/email";
+import { ZIP_QUEUE, type BuildZipJob } from "@/src/queue/jobs/zip";
 import { processImage } from "@/src/image/pipeline";
+import { buildZip } from "@/src/zip/build";
 import { getEmailProvider } from "@/src/email";
 
 // The worker runs the sharp → derivatives → LQIP → storage → DB pipeline and,
@@ -53,6 +55,23 @@ async function bootstrap() {
     console.error(`[worker] email job ${job?.id} failed:`, err.message),
   );
 
+  // Zip consumer — bundles original files for client-gallery downloads.
+  const zipWorker = new Worker<BuildZipJob>(
+    ZIP_QUEUE,
+    async (job) => {
+      console.log(`[worker] building zip ${job.data.downloadId}`);
+      await buildZip(job.data);
+      return { ok: true };
+    },
+    { connection: getBullConnection(), concurrency: 1 },
+  );
+  zipWorker.on("ready", () =>
+    console.log(`[worker] listening on queue "${ZIP_QUEUE}"`),
+  );
+  zipWorker.on("failed", (job, err) =>
+    console.error(`[worker] zip job ${job?.id} failed:`, err.message),
+  );
+
   // Liveness endpoint for the compose healthcheck (worker has no HTTP surface).
   const port = getEnv().WORKER_HEALTH_PORT;
   http
@@ -69,7 +88,7 @@ async function bootstrap() {
 
   async function shutdown(signal: string) {
     console.log(`[worker] ${signal} received, closing…`);
-    await Promise.all([worker.close(), emailWorker.close()]);
+    await Promise.all([worker.close(), emailWorker.close(), zipWorker.close()]);
     process.exit(0);
   }
   process.on("SIGTERM", () => void shutdown("SIGTERM"));

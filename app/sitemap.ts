@@ -6,6 +6,9 @@ import {
   getPublicGalleries,
 } from "@/src/db/queries/public";
 
+// Generated per-request (reads the DB) — not prerendered at build time.
+export const dynamic = "force-dynamic";
+
 const STATIC_ROUTES: {
   path: string;
   changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];

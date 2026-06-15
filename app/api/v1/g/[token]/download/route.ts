@@ -1,11 +1,10 @@
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/src/db/client";
-import { download, photoVariant } from "@/src/db/schema";
+import { download } from "@/src/db/schema";
 import { resolveGrant } from "@/src/auth/grant";
 import {
-  ok,
   accepted,
+  ok,
   notFound,
   forbidden,
   problem,
@@ -16,18 +15,19 @@ import { rateLimit } from "@/src/lib/ratelimit";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { newId } from "@/src/lib/id";
 import { grantAuthorizesPhoto } from "@/src/db/queries/photos";
+import { getZipQueue } from "@/src/queue/queues";
 
 export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   kind: z.enum(["single", "zip"]),
   photoId: z.string().optional(),
-  variant: z.string().optional(),
-  selection: z.array(z.string()).optional(),
+  // zip selection: the whole gallery or just this grant's favorites
+  scope: z.enum(["all", "favorites"]).optional(),
 });
 
-// POST /api/v1/g/:token/download — record a download and hand back a media URL
-// (single) or kick off a zip build job (zip). canDownload is required.
+// POST /api/v1/g/:token/download — downloads are ORIGINAL, full quality.
+// single → an authorized original-file URL; zip → kick off a build of originals.
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ token: string }> },
@@ -39,7 +39,7 @@ export async function POST(
 
   const parsed = await parseJson(req, bodySchema);
   if ("error" in parsed) return parsed.error;
-  const { kind, photoId, variant } = parsed.data;
+  const { kind, photoId, scope } = parsed.data;
 
   const ip = clientIp(req);
   const ua = userAgent(req);
@@ -47,28 +47,10 @@ export async function POST(
   if (kind === "single") {
     const rl = await rateLimit(`gdl:single:${grant.id}`, 60, 3600);
     if (!rl.ok) return tooMany(rl.retryAfter);
-
     if (!photoId) {
       return problem(422, "VALIDATION_ERROR", "photoId is required for single downloads.");
     }
     if (!(await grantAuthorizesPhoto(grant, photoId))) return notFound();
-
-    // Pick a delivery variant: prefer webp at large/xlarge.
-    const vrows = await db
-      .select()
-      .from(photoVariant)
-      .where(eq(photoVariant.photoId, photoId));
-    if (vrows.length === 0) {
-      return problem(409, "NOT_READY", "This photo is not ready for download yet.");
-    }
-    const pick =
-      vrows.find(
-        (v) =>
-          v.format === "webp" &&
-          (v.sizeBucket === "xlarge" || v.sizeBucket === "large"),
-      ) ??
-      vrows.find((v) => v.sizeBucket === "xlarge" || v.sizeBucket === "large") ??
-      vrows[0];
 
     const id = newId();
     await db.insert(download).values({
@@ -79,18 +61,18 @@ export async function POST(
       galleryId: grant.galleryId,
       clientId: grant.clientId,
       photoId,
-      variant: variant ?? pick.sizeBucket,
+      variant: "original",
       ipAddress: ip,
       userAgent: ua,
     });
 
     return ok({
       download: { id, status: "ready" },
-      url: `/api/v1/media/v/${pick.id}?t=${encodeURIComponent(token)}`,
+      url: `/api/v1/g/${token}/photos/${photoId}/original`,
     });
   }
 
-  // kind === "zip"
+  // kind === "zip" — build an archive of original files (1 concurrent / grant).
   const rl = await rateLimit(`gdl:zip:${grant.id}`, 5, 3600);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
@@ -102,13 +84,13 @@ export async function POST(
     grantId: grant.id,
     galleryId: grant.galleryId,
     clientId: grant.clientId,
+    variant: scope ?? "all",
     ipAddress: ip,
     userAgent: ua,
   });
 
-  // DEFERRED: the actual zip-build worker (bundling the selection into an
-  // archive and flipping status -> "ready"/"failed") is a later phase. The row
-  // stays "building" until that worker runs; clients poll the URL below.
+  await getZipQueue().add("build", { downloadId: id }, { jobId: id });
+
   return accepted({
     download: { id, status: "building", kind: "zip" },
     poll: `/api/v1/g/${token}/download/${id}`,

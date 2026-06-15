@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────
+  # Fast, DB-free gate: lint, types, unit tests, and a production build.
+  # ────────────────────────────────────────────────────────────────────────
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Lighthouse budgets against the full Docker stack (DB + Redis + MinIO +
+  # web + worker). Aspirational for now — does not fail the pipeline.
+  # ────────────────────────────────────────────────────────────────────────
+  lighthouse:
+    name: Lighthouse
+    runs-on: ubuntu-latest
+    needs: build-test
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env
+        run: |
+          cp .env.example .env
+          # Strong auth secret (the template ships an obvious placeholder).
+          SECRET="$(openssl rand -base64 48)"
+          # Replace the BETTER_AUTH_SECRET line, keep everything else intact.
+          sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${SECRET}|" .env
+          # WEB_PORT=3000 is already the template default; ensure it stays so.
+          grep -q '^WEB_PORT=3000$' .env || echo 'WEB_PORT=3000' >> .env
+
+      - name: Bring up stack
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+
+      - name: Wait for /api/health
+        run: |
+          for i in $(seq 1 60); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/health || true)"
+            if [ "$code" = "200" ]; then echo "web is healthy"; exit 0; fi
+            echo "waiting for web... ($i) [http $code]"
+            sleep 5
+          done
+          echo "web never became healthy"
+          docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env logs --no-color | tail -200
+          exit 1
+
+      - name: Seed (owner + taxonomy)
+        # The worker image already has the app + tsx + env baked in, so run the
+        # seed inside it against the compose network.
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env run --rm worker npm run db:seed
+        # Alternative (host-side) if you prefer not to use the worker image —
+        # requires DATABASE_URL/REDIS_URL pointed at the published ports:
+        #   DATABASE_URL=postgres://photog:photog@127.0.0.1:5432/photography \
+        #   REDIS_URL=redis://127.0.0.1:6379 npx tsx scripts/seed.ts
+
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci
+          if-no-files-found: ignore
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env down -v
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Playwright end-to-end (incl. the WebGL hero) against the full stack.
+  # ────────────────────────────────────────────────────────────────────────
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env
+        run: |
+          cp .env.example .env
+          SECRET="$(openssl rand -base64 48)"
+          sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${SECRET}|" .env
+          grep -q '^WEB_PORT=3000$' .env || echo 'WEB_PORT=3000' >> .env
+
+      - name: Bring up stack
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+
+      - name: Wait for /api/health
+        run: |
+          for i in $(seq 1 60); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/health || true)"
+            if [ "$code" = "200" ]; then echo "web is healthy"; exit 0; fi
+            echo "waiting for web... ($i) [http $code]"
+            sleep 5
+          done
+          echo "web never became healthy"
+          docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env logs --no-color | tail -200
+          exit 1
+
+      - name: Seed (owner + taxonomy)
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env run --rm worker npm run db:seed
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env down -v

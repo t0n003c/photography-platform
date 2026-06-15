@@ -6,6 +6,7 @@ import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { pageConfig } from "@/src/db/schema";
+import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -76,5 +77,6 @@ export async function PATCH(
     metadata: { fields: Object.keys(updates) },
   });
 
+  await invalidate(CACHE_KEYS.pageConfig(current.scope));
   return ok({ id });
 }

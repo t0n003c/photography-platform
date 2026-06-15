@@ -5,28 +5,30 @@ description: Apply when generating, reviewing, or wiring up responsive image var
 
 # Image Optimization Ruleset
 
-The concrete rules for producing and serving photo variants. Derived from `docs/MEDIA-ARCHITECTURE.md` §4–§5 and `docs/PERFORMANCE.md` §2. Apply these verbatim; quality numbers are Phase-0 starting points to be tuned against SSIM/visual review.
+The concrete rules for producing and serving photo variants. Derived from `docs/MEDIA-ARCHITECTURE.md` §4–§5 and `docs/PERFORMANCE.md` §2, reflecting the **implemented WebP-primary strategy (ADR-0019)**. Apply these verbatim.
 
 ## 1. Size buckets (fixed width ladder)
 Generate a fixed ladder of widths; heights follow the source aspect ratio. **Never crop in the pipeline.**
 
-| Bucket     | Target CSS px | Generated widths | Use |
-|------------|---------------|------------------|-----|
-| `thumb`    | 200           | 200, 400 (1×/2×) | grid thumbnails, contact sheets |
-| `small`    | 800           | 800              | mobile full-bleed, list views |
-| `medium`   | 1600          | 1600             | desktop gallery / lightbox default |
-| `large`    | 2400          | 2400             | hi-DPI lightbox, large displays |
-| `original` | native        | native           | print sales / authorized downloads only |
+| Bucket     | Target CSS px | Generated width | Use |
+|------------|---------------|-----------------|-----|
+| `thumb`    | 400           | 400             | grid thumbnails, contact sheets |
+| `small`    | 800           | 800             | mobile full-bleed, list views |
+| `medium`   | 1600          | 1600            | desktop gallery / lightbox default |
+| `large`    | 2400          | 2400            | hi-DPI lightbox, large displays |
+| `xlarge`   | 3840          | 3840            | 4K / very large displays |
+| `original` | native        | native          | **full-quality client ZIP downloads** / print sales only |
 
-- `thumb` ships 1×/2× as two files (cheap). `small`/`medium`/`large` handle DPR via `srcset` width descriptors, **not** separate 2× files.
-- `original` is **never web-optimized, never in `srcset`** — served only via authenticated download/print paths.
+- Responsive buckets handle DPR via `srcset` width descriptors, **not** separate 2× files.
+- `original` is **preserved untouched, never web-optimized, never in `srcset`** — served only via authenticated download (client ZIP) / print paths.
 
-## 2. Formats & quality (priority order — emit all three per non-original bucket)
-| Format | Role | sharp settings |
-|--------|------|----------------|
-| AVIF | primary `<source>` | `{ quality: 50, effort: 4 }`, 4:2:0 chroma for photos |
-| WebP | fallback `<source>` | `{ quality: 72 }` |
-| JPEG | universal `<img>` fallback | `{ quality: 78, mozjpeg: true }`, progressive |
+## 2. Formats & quality (WebP-primary — ADR-0019)
+App delivery is **WebP at every responsive bucket** + **one JPEG fallback** at the `large` bucket only. AVIF and per-bucket JPEG proliferation are dropped to cut storage + encode CPU.
+
+| Format | Role | Buckets | sharp settings |
+|--------|------|---------|----------------|
+| WebP | primary `<source>` | all five | `{ quality: 82, effort: 4 }` |
+| JPEG | single `<img>` fallback | `large` **only** | `{ quality: 82, mozjpeg: true }`, progressive |
 
 ## 3. Never upscale
 - `sharp.resize(width, null, { withoutEnlargement: true })`.
@@ -34,8 +36,8 @@ Generate a fixed ladder of widths; heights follow the source aspect ratio. **Nev
 - The DB (`photo_variants`) records exactly which variants exist; `srcset` must only list real files.
 
 ## 4. srcset / sizes generation
-- A server helper reads the photo's variant rows and emits a `<picture>`: one `<source type="image/avif">`, one `<source type="image/webp">`, an `<img>` JPEG fallback.
-- Each `<source>` `srcset` = `"<url> <width>w"` entries for every existing variant of that format, plus a gallery-context `sizes` string.
+- A server helper reads the photo's variant rows and emits a `<picture>`: one `<source type="image/webp">` (the WebP ladder), and an `<img>` pointing at the single `large` JPEG fallback.
+- The WebP `<source>` `srcset` = `"<url> <width>w"` entries for every existing WebP variant, plus a gallery-context `sizes` string.
 - **Always set `width`/`height`** (from extracted dimensions) on the `<img>` to reserve layout space and eliminate CLS.
 - Below-the-fold images: `loading="lazy" decoding="async"`. Gallery grids virtualize/lazy-load (never fetch 500 images up front).
 - **Exactly one priority/LCP image per page** (hero or first gallery image): eager + `fetchpriority="high"` + preload, **not** lazy. Never more than one.
@@ -43,9 +45,8 @@ Generate a fixed ladder of widths; heights follow the source aspect ratio. **Nev
 Reference output shape:
 ```html
 <picture>
-  <source type="image/avif" srcset="…/small.avif 800w, …/medium.avif 1600w, …/large.avif 2400w" sizes="(max-width: 768px) 100vw, 50vw">
-  <source type="image/webp" srcset="…/small.webp 800w, …" sizes="…">
-  <img src="…/medium.jpg" width="1600" height="1067" loading="lazy" decoding="async"
+  <source type="image/webp" srcset="…/thumb.webp 400w, …/small.webp 800w, …/medium.webp 1600w, …/large.webp 2400w, …/xlarge.webp 3840w" sizes="(max-width: 768px) 100vw, 50vw">
+  <img src="…/large.jpg" width="1600" height="1067" loading="lazy" decoding="async"
        style="background-image:url(data:…lqip…)">
 </picture>
 ```
@@ -65,7 +66,7 @@ Reference output shape:
 
 - For web variants do **not** call `withMetadata()` (except to set the sRGB ICC). sharp drops metadata by default — rely on that so no GPS can leak even if extraction logic changes.
 - Extract displayable fields (`capturedAt`, camera/make/model/lens, exposure, dimensions) to DB columns and render from the DB — never re-read metadata off the served file.
-- **Originals are immutable and never stripped**; they are access-controlled, never served raw.
+- **Originals are immutable, preserved untouched, and never stripped**; they back full-quality client ZIP downloads / print sales, are access-controlled, and never served raw.
 
 ## 7. Delivery / caching
 - Variant URLs are content-addressed + opaque (content hash + per-photo salt) → served `Cache-Control: public, max-age=31536000, immutable`, cached at Cloudflare. New versions get new URLs (no purge).
@@ -73,7 +74,7 @@ Reference output shape:
 - **Private gallery variants** use signed/opaque keys and are `private, no-store` — never publicly cacheable.
 
 ## Quick review checklist
-- [ ] All three formats present per bucket, AVIF first, in `<picture>` priority order.
+- [ ] WebP present at every responsive bucket; exactly ONE JPEG fallback at `large`; no AVIF.
 - [ ] No upscaling; skipped buckets reflect a narrow original; `srcset` lists only existing files.
 - [ ] `width`/`height` set; below-fold lazy; exactly one priority image.
 - [ ] LQIP + blurhash + dominant color in DB; inlined.

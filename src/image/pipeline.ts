@@ -4,9 +4,14 @@ import { db } from "@/src/db/client";
 import { photo, photoVariant } from "@/src/db/schema";
 import { getStorage } from "@/src/storage";
 import { variantKey } from "@/src/storage/keys";
-import { BUCKETS, FORMATS, generateVariant } from "@/src/image/derivatives";
+import {
+  BUCKETS,
+  FALLBACK_BUCKET,
+  generateVariant,
+  type GeneratedVariant,
+} from "@/src/image/derivatives";
 import { generateLqip } from "@/src/image/lqip";
-import { extractMetadata } from "@/src/image/exif";
+import { extractMetadata, parseExif } from "@/src/image/exif";
 import { MAX_PIXELS } from "@/src/image/validate";
 import { newId } from "@/src/lib/id";
 import { writeAudit } from "@/src/lib/audit";
@@ -52,41 +57,52 @@ export async function processImage(data: ProcessImageJob): Promise<void> {
     // Skip buckets wider than the original (never upscale), keep the smallest.
     const buckets = BUCKETS.filter((bk, i) => bk.width <= width || i === 0);
 
-    for (const bucket of buckets) {
-      for (const format of FORMATS) {
-        const v = await generateVariant(original, bucket, format);
-        const key = variantKey(p.id, v.sizeBucket, v.format);
-        await storage.put(key, v.body, {
-          contentType: `image/${format}`,
-          cacheControl: "public, max-age=31536000, immutable",
-        });
-        await db
-          .insert(photoVariant)
-          .values({
-            id: newId(),
-            photoId: p.id,
-            format: v.format,
-            sizeBucket: v.sizeBucket,
+    const upsertVariant = async (v: GeneratedVariant) => {
+      const key = variantKey(p.id, v.sizeBucket, v.format);
+      await storage.put(key, v.body, {
+        contentType: `image/${v.format}`,
+        cacheControl: "public, max-age=31536000, immutable",
+      });
+      await db
+        .insert(photoVariant)
+        .values({
+          id: newId(),
+          photoId: p.id,
+          format: v.format,
+          sizeBucket: v.sizeBucket,
+          storageKey: key,
+          width: v.width,
+          height: v.height,
+          byteSize: v.body.byteLength,
+        })
+        .onConflictDoUpdate({
+          target: [
+            photoVariant.photoId,
+            photoVariant.format,
+            photoVariant.sizeBucket,
+          ],
+          set: {
             storageKey: key,
             width: v.width,
             height: v.height,
             byteSize: v.body.byteLength,
-          })
-          .onConflictDoUpdate({
-            target: [
-              photoVariant.photoId,
-              photoVariant.format,
-              photoVariant.sizeBucket,
-            ],
-            set: {
-              storageKey: key,
-              width: v.width,
-              height: v.height,
-              byteSize: v.body.byteLength,
-            },
-          });
-      }
+          },
+        });
+    };
+
+    // WebP at every applicable size (primary app format — small + fast).
+    for (const bucket of buckets) {
+      await upsertVariant(await generateVariant(original, bucket, "webp"));
     }
+    // One JPEG fallback (for the <img> tag + the rare non-WebP client).
+    const fb =
+      buckets.find((b) => b.name === FALLBACK_BUCKET) ??
+      buckets[buckets.length - 1] ??
+      buckets[0];
+    if (fb) await upsertVariant(await generateVariant(original, fb, "jpeg"));
+
+    // Extract a normalized EXIF subset (GPS kept admin-only; never in public DTO).
+    const ex = parseExif(meta.exif);
 
     await db
       .update(photo)
@@ -94,12 +110,20 @@ export async function processImage(data: ProcessImageJob): Promise<void> {
         processingStatus: "ready",
         width,
         height,
+        captureDate: ex.captureDate,
         dominantColor,
         lqip,
         exif: {
-          orientation: meta.orientation ?? null,
+          make: ex.make ?? null,
+          model: ex.model ?? null,
+          lens: ex.lens ?? null,
+          focalLength: ex.focalLength ?? null,
+          fNumber: ex.fNumber ?? null,
+          exposureTime: ex.exposureTime ?? null,
+          iso: ex.iso ?? null,
+          orientation: meta.orientation ?? ex.orientation ?? null,
           space: meta.space ?? null,
-          format: meta.format ?? null,
+          gps: ex.gps ?? null,
         },
         processingError: null,
       })
@@ -111,7 +135,7 @@ export async function processImage(data: ProcessImageJob): Promise<void> {
       action: "photo.processed",
       entityType: "photo",
       entityId: p.id,
-      metadata: { variants: buckets.length * FORMATS.length },
+      metadata: { variants: buckets.length + 1 },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

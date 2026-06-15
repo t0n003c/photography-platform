@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { KeyRound, Loader2, Monitor, ShieldCheck, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -350,6 +351,7 @@ function TwoFactorCard({
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [totpURI, setTotpURI] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   function reset() {
@@ -357,9 +359,29 @@ function TwoFactorCard({
     setPassword("");
     setCode("");
     setTotpURI("");
+    setQrDataUrl("");
     setBackupCodes([]);
     setPending(false);
   }
+
+  // Render the TOTP URI as a scannable QR code whenever it changes.
+  useEffect(() => {
+    if (!totpURI) {
+      setQrDataUrl("");
+      return;
+    }
+    let active = true;
+    QRCode.toDataURL(totpURI)
+      .then((dataUrl) => {
+        if (active) setQrDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (active) setQrDataUrl("");
+      });
+    return () => {
+      active = false;
+    };
+  }, [totpURI]);
 
   function openModal() {
     reset();
@@ -493,6 +515,21 @@ function TwoFactorCard({
           </form>
         ) : stage === "confirm" ? (
           <form onSubmit={submitConfirm} className="space-y-4">
+            {qrDataUrl && (
+              <div className="flex flex-col items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrDataUrl}
+                  alt="Scan with your authenticator app"
+                  width={180}
+                  height={180}
+                  className="rounded-md border bg-white p-2"
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Scan with your authenticator app.
+                </p>
+              </div>
+            )}
             <div>
               <p className="mb-1.5 text-sm font-medium">Setup key (TOTP URI)</p>
               <div className="select-all break-all rounded-md border bg-[hsl(var(--muted))] p-3 font-mono text-xs">

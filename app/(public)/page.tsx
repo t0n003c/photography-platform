@@ -11,6 +11,7 @@ import {
   getPublishedLocations,
   getCategoryPhotos,
 } from "@/src/db/queries/public";
+import { getInstagramProvider } from "@/src/instagram";
 import { buildMetadata, SITE, imageGalleryJsonLd } from "@/src/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +21,11 @@ const GRID_SIZES =
   "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw";
 
 export default async function HomePage() {
-  const [featured, categories, locations] = await Promise.all([
+  const [featured, categories, locations, instagram] = await Promise.all([
     getFeaturedPhotos(13),
     getPublishedCategories(),
     getPublishedLocations(),
+    getInstagramProvider().getFeed(6),
   ]);
 
   const hero = featured[0];
@@ -135,8 +137,10 @@ export default async function HomePage() {
         </Container>
       )}
 
-      {/* Instagram-style section (real IG API integration deferred) */}
-      {featured.length >= 4 && (
+      {/* From the field — Instagram feed via InstagramProvider (Graph driver
+          when IG_ACCESS_TOKEN is set, recent public photos otherwise). Hidden
+          when the feed is empty. */}
+      {instagram.length > 0 && (
         <Container className="py-16">
           <div className="flex items-end justify-between">
             <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -152,17 +156,27 @@ export default async function HomePage() {
             </a>
           </div>
           <div className="mt-6 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
-            {featured.slice(0, 6).map((p) => (
-              <div
-                key={p.id}
+            {instagram.map((item) => (
+              <a
+                key={item.id}
+                href={item.permalink}
+                target={item.permalink.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  item.permalink.startsWith("http")
+                    ? "noreferrer noopener"
+                    : undefined
+                }
                 className="relative aspect-square overflow-hidden rounded-md bg-[hsl(var(--muted))]"
               >
-                <ResponsiveImage
-                  photo={p}
-                  sizes="(max-width: 640px) 33vw, 16vw"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.imageUrl}
+                  alt={item.caption ?? "From the field"}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
-              </div>
+              </a>
             ))}
           </div>
         </Container>

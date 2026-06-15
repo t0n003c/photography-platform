@@ -28,6 +28,9 @@ export function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Setting the CSP on the REQUEST lets Next.js read the nonce and apply it to
+  // its own injected <script> tags (required for enforced, nonce-based CSP).
+  requestHeaders.set("content-security-policy", csp);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 
@@ -56,7 +59,8 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  res.headers.set("Content-Security-Policy-Report-Only", csp);
+  // Enforced (nonce-based) CSP. Violations are still reported to /api/csp-report.
+  res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

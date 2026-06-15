@@ -42,9 +42,13 @@ A build that drops any category below budget on any tracked route fails CI (§8)
 
 Photos dominate bytes and the LCP element, so this is where most of the budget is spent.
 
-- **Modern formats first.** Serve AVIF, then WebP, then JPEG via `<picture>`/`srcset`
-  (formats and size ladder defined in `MEDIA-ARCHITECTURE.md` §4). AVIF typically cuts
-  bytes 30–50% vs. JPEG at equivalent quality.
+- **WebP-primary delivery (ADR-0019).** Serve **WebP** across the responsive buckets
+  (`thumb`/`small`/`medium`/`large`/`xlarge`) at quality ~82 via `<picture>`/`srcset`, with
+  exactly **one JPEG fallback** at the `large` bucket for the `<img>` (formats and size
+  ladder defined in `MEDIA-ARCHITECTURE.md` §4). WebP at q82 is near-visually-lossless for
+  portfolio display at a fraction of the bytes; AVIF and per-bucket JPEG proliferation were
+  dropped to cut storage + encode CPU. **Originals are preserved untouched** and used only
+  for full-quality client ZIP downloads / print sales — never in `srcset`.
 - **Responsive `srcset`/`sizes`.** Every image ships width-descriptor `srcset` entries for
   exactly the variants that exist, plus a context-appropriate `sizes` so the browser
   downloads the smallest sufficient file for its viewport × DPR. No oversized downloads.

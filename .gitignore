@@ -30,6 +30,11 @@ docker-compose.override.yaml
 # backups (produced by scripts/backup.sh)
 /backups/
 
+# external reference skills installed via `npx skills add` (kept local, not app code)
+/.agents/
+/skills-lock.json
+/.claude/skills/remotion-best-practices
+
 # testing
 /coverage
 

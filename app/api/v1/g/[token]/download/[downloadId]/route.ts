@@ -34,8 +34,12 @@ export async function GET(
   const d = rows[0];
   if (!d) return notFound();
 
-  // NOTE: zip downloads remain "building" until the zip-build worker (a later
-  // phase) bundles the archive and flips status to "ready"/"failed".
+  // When a zip build is ready, hand back the authorized file URL.
+  const url =
+    d.status === "ready" && d.kind === "zip"
+      ? `/api/v1/g/${token}/download/${d.id}/file`
+      : null;
+
   return ok({
     download: {
       id: d.id,
@@ -47,5 +51,6 @@ export async function GET(
       expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null,
       createdAt: d.createdAt.toISOString(),
     },
+    url,
   });
 }

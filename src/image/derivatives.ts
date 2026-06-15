@@ -13,9 +13,19 @@ export const BUCKETS = [
 
 export type SizeBucket = (typeof BUCKETS)[number]["name"];
 
-// AVIF primary, WebP fallback, JPEG last resort (PERFORMANCE.md).
-export const FORMATS = ["avif", "webp", "jpeg"] as const;
+// App delivery is WebP-primary (ADR-0019): WebP at every responsive size for
+// small, fast, high-quality display + storage savings, plus ONE JPEG fallback
+// (at the FALLBACK_BUCKET) for the <img> tag and the rare non-WebP client.
+// Originals are preserved untouched for full-quality client downloads.
+export const FORMATS = ["webp", "jpeg"] as const;
 export type VariantFormat = (typeof FORMATS)[number];
+
+// JPEG fallback is generated only at this size (kept modest to limit storage).
+export const FALLBACK_BUCKET = "large";
+
+// Quality tuned for near-visually-lossless at meaningfully smaller size.
+const WEBP_QUALITY = 82;
+const JPEG_QUALITY = 82;
 
 export interface GeneratedVariant {
   format: VariantFormat;
@@ -35,11 +45,9 @@ export async function generateVariant(
     withoutEnlargement: true,
   });
   const encoded =
-    format === "avif"
-      ? pipeline.avif({ quality: 55 })
-      : format === "webp"
-        ? pipeline.webp({ quality: 72 })
-        : pipeline.jpeg({ quality: 80, mozjpeg: true });
+    format === "webp"
+      ? pipeline.webp({ quality: WEBP_QUALITY, effort: 4 })
+      : pipeline.jpeg({ quality: JPEG_QUALITY, mozjpeg: true });
   const { data, info } = await encoded.toBuffer({ resolveWithObject: true });
   return {
     format,

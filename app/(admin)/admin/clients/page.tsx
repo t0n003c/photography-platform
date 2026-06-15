@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
+import { useStepUp } from "@/components/admin/step-up";
 import { api, ApiError } from "@/src/lib/api-client";
 
 interface ClientRow {
@@ -109,6 +110,7 @@ function ClientModal({
 
 export default function ClientsPage() {
   const { toast } = useToast();
+  const { runWithStepUp } = useStepUp();
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -165,7 +167,9 @@ export default function ClientsPage() {
     if (!window.confirm(`Delete ${client.name || client.email}?`)) return;
     setDeletingId(client.id);
     try {
-      await api.del(`/api/v1/admin/clients/${client.id}`);
+      await runWithStepUp(() =>
+        api.del(`/api/v1/admin/clients/${client.id}`),
+      );
       setClients((prev) => prev.filter((c) => c.id !== client.id));
       toast("Client deleted", "success");
     } catch (err) {

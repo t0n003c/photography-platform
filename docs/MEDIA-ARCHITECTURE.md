@@ -12,8 +12,9 @@ photography platform.
 ## 1. Core principles
 
 1. **Originals are sacred.** Original uploads are the only irreplaceable asset. They are
-   written once, never mutated, and never have EXIF stripped. Everything else (every
-   AVIF/WebP/JPEG variant, every LQIP) is *regenerable* from the original.
+   written once, never mutated, and never have EXIF stripped, and are used for full-quality
+   client ZIP downloads. Everything else (every WebP/JPEG variant, every LQIP) is
+   *regenerable* from the original.
 2. **Derivatives are disposable.** Any derivative can be deleted and rebuilt by replaying
    the pipeline. This is what lets us add a new format/size years later (backfill) and
    keeps derivative backups optional.
@@ -115,7 +116,8 @@ derivatives/<aa>/<bb>/<photoId>/<storageSalt>/lqip.txt   (optional; LQIP also li
   unguessable: even if someone learns a `photoId`, they cannot construct the derivative
   key without the per-photo salt (which is only served to authorized viewers via signed
   URLs).
-- `<size>` ∈ `{thumb, small, medium, large}`; `<format>` ∈ `{avif, webp, jpg}`.
+- `<size>` ∈ `{thumb, small, medium, large, xlarge}`; `<format>` ∈ `{webp, jpg}`
+  (WebP at every size; **one** JPEG fallback at the `large` bucket — ADR-0019).
 
 ### 3.3 Example key set (shown as a tree; on MinIO/S3 these are object keys, on the filesystem driver these are paths under the storage root)
 
@@ -133,18 +135,12 @@ derivatives/<aa>/<bb>/<photoId>/<storageSalt>/lqip.txt   (optional; LQIP also li
     │   └── a1/
     │       └── 01J8XK…/
     │           └── 7c4e9af2/                    # storageSalt
-    │               ├── thumb.avif
     │               ├── thumb.webp
-    │               ├── thumb.jpg
-    │               ├── small.avif
     │               ├── small.webp
-    │               ├── small.jpg
-    │               ├── medium.avif
     │               ├── medium.webp
-    │               ├── medium.jpg
-    │               ├── large.avif
     │               ├── large.webp
-    │               ├── large.jpg
+    │               ├── large.jpg                 # the ONE JPEG fallback
+    │               ├── xlarge.webp
     │               └── lqip.txt
     └── b2/ …
 ```
@@ -158,37 +154,40 @@ derivatives/<aa>/<bb>/<photoId>/<storageSalt>/lqip.txt   (optional; LQIP also li
 We generate a fixed ladder of widths. Heights follow the source aspect ratio (we never
 crop in the pipeline; cropping/art-direction is a future, separate concern).
 
-| Bucket   | Target width (CSS px) | Generated widths (DPR-aware) | Typical use                         |
-| -------- | --------------------- | ---------------------------- | ----------------------------------- |
-| `thumb`  | 200                   | 200, 400                     | Grid thumbnails, contact sheets     |
-| `small`  | 800                   | 800                          | Mobile full-bleed, list views       |
-| `medium` | 1600                  | 1600                         | Desktop gallery / lightbox default  |
-| `large`  | 2400                  | 2400                         | Hi-DPI lightbox, large displays     |
-| `original` | (native)            | native                       | Print sales / authorized downloads  |
+| Bucket   | Target width (CSS px) | Generated width | Typical use                         |
+| -------- | --------------------- | --------------- | ----------------------------------- |
+| `thumb`  | 400                   | 400             | Grid thumbnails, contact sheets     |
+| `small`  | 800                   | 800             | Mobile full-bleed, list views       |
+| `medium` | 1600                  | 1600            | Desktop gallery / lightbox default  |
+| `large`  | 2400                  | 2400            | Hi-DPI lightbox, large displays     |
+| `xlarge` | 3840                  | 3840            | 4K / very large displays            |
+| `original` | (native)            | native          | Full-quality client ZIP downloads / print sales |
 
-- **Why these:** they map cleanly onto common breakpoints and DPR. `thumb` ships at 1×/2×
-  (200 and 400) because thumbnails are tiny and a doubled file is cheap. The larger
-  buckets handle DPR through `srcset` width descriptors rather than separate 2× files,
-  which keeps the variant count manageable.
-- **`original`** is never web-optimized. It is served only through authenticated download
-  / print-fulfillment paths, never referenced from `srcset`.
+- **Why these:** they map cleanly onto common breakpoints and DPR. The responsive buckets
+  handle DPR through `srcset` width descriptors, which keeps the variant count manageable.
+- **`original`** is never web-optimized. **Originals are preserved untouched** and served
+  only through authenticated paths — full-quality **client ZIP downloads** and
+  print-fulfillment — never referenced from `srcset`.
 
-### 4.2 Formats and quality
+### 4.2 Formats and quality (ADR-0019 — WebP-primary)
 
-For each non-original bucket we emit three formats, in priority order:
+App delivery is **WebP-primary**. We emit **WebP at every responsive bucket**
+(`thumb`/`small`/`medium`/`large`/`xlarge`) plus exactly **one JPEG fallback** at the
+`large` bucket:
 
-| Format | Role          | sharp quality (approx) | Notes                                   |
-| ------ | ------------- | ---------------------- | --------------------------------------- |
-| AVIF   | primary       | `quality: 50`, `effort: 4` | Best compression; primary `<source>` |
-| WebP   | fallback      | `quality: 72`          | Broad support; second `<source>`        |
-| JPEG   | last resort   | `quality: 78`, `mozjpeg: true` | Universal `<img src>` fallback   |
+| Format | Role                       | Buckets | sharp settings | Notes |
+| ------ | -------------------------- | ------- | -------------- | ----- |
+| WebP   | primary `<source>`         | all five | `quality: 82`, `effort: 4` | Small, fast, broadly supported |
+| JPEG   | single `<img>` fallback    | `large` only | `quality: 82`, `mozjpeg: true`, progressive | The lone fallback for the rare non-WebP client |
 
-Quality numbers are starting points to be tuned against SSIM/visual review during Phase 1;
-they are intentionally perceptual-quality-first because this is a photography portfolio.
-
-- **Chroma/encoding:** AVIF uses 4:2:0 for photographic content. `effort` is kept moderate
-  (4) to bound CPU per image; raise for one-off backfills where latency does not matter.
-- **Progressive JPEG** for better perceived load on the fallback path.
+- **Why dropped AVIF + per-bucket JPEG:** the earlier "three formats × every bucket" matrix
+  multiplied **storage and encode CPU**. WebP at quality ~82 is near-visually-lossless for
+  portfolio display at a fraction of the bytes; a single `large` JPEG covers the universal
+  `<img src>` fallback. AVIF and JPEG-proliferation were dropped to cut storage and encode
+  time. (AVIF can be reintroduced later as a backfill if measured to be worth it.)
+- **Originals are preserved untouched** and used for **full-quality client ZIP downloads**
+  (and print sales). Nothing about the WebP-primary delivery strategy touches the original.
+- **Progressive JPEG** for better perceived load on the single fallback.
 
 ### 4.3 Upscaling, DPR, srcset/sizes
 
@@ -199,19 +198,19 @@ they are intentionally perceptual-quality-first because this is a photography po
   letting the browser pick by viewport × device pixel ratio. We do not hand-author `1x/2x`
   except for `thumb`.
 - **srcset/sizes generation:** a server helper reads the photo's variant rows and emits a
-  `<picture>` with one `<source type="image/avif">`, one `<source type="image/webp">`, and
-  an `<img>` JPEG fallback. Each `<source>` gets a `srcset` of `"<url> <width>w"` entries
-  for every existing variant of that format, plus the gallery-context `sizes` string.
+  `<picture>` with one `<source type="image/webp">` (the WebP ladder across all buckets) and
+  an `<img>` pointing at the single `large` JPEG fallback. The `<source>` gets a `srcset` of
+  `"<url> <width>w"` entries for every existing WebP variant, plus the gallery-context
+  `sizes` string.
 
   Example output shape:
 
   ```html
   <picture>
-    <source type="image/avif"
-            srcset="…/small.avif 800w, …/medium.avif 1600w, …/large.avif 2400w"
+    <source type="image/webp"
+            srcset="…/thumb.webp 400w, …/small.webp 800w, …/medium.webp 1600w, …/large.webp 2400w, …/xlarge.webp 3840w"
             sizes="(max-width: 768px) 100vw, 50vw">
-    <source type="image/webp" srcset="…/small.webp 800w, …" sizes="…">
-    <img src="…/medium.jpg" width="1600" height="1067"
+    <img src="…/large.jpg" width="1600" height="1067"
          loading="lazy" decoding="async"
          style="background-image:url(data:…lqip…)">
   </picture>
@@ -433,7 +432,8 @@ I/O.
 
 ## 9. Open questions for Phase 1
 
-- Exact AVIF/WebP/JPEG quality values pinned against SSIM + human review.
-- Whether to add a JPEG XL variant once browser support is broad enough to matter.
+- WebP quality (currently ~82) re-validated against SSIM + human review per surface.
+- Whether to reintroduce AVIF (or add JPEG XL) as a backfilled `<source>` once the
+  storage/encode-CPU cost is justified by measured byte savings (dropped in ADR-0019).
 - Watermarking strategy for proof galleries (likely a separate, on-the-fly derivative).
 - Resumable upload protocol choice (tus vs. chunked custom).

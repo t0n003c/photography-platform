@@ -12,6 +12,7 @@ import {
 } from "@/src/db/schema";
 import { serializePhotos, type PhotoDTO } from "@/src/db/queries/photos";
 import { encodeCursor, decodeCursor } from "@/src/lib/cursor";
+import { cached, CACHE_KEYS } from "@/src/lib/cache";
 
 // Read layer for the public site (RSC). Server Components call these directly
 // (no HTTP hop); the matching Route Handlers exist for the PWA/client fetches.
@@ -51,17 +52,19 @@ const PAGE = 48;
 
 // ── Categories ───────────────────────────────────────────────────────────────
 export async function getPublishedCategories(): Promise<CategorySummary[]> {
-  return db
-    .select({
-      id: collection.id,
-      slug: collection.slug,
-      name: collection.name,
-      description: collection.description,
-      coverPhotoId: collection.coverPhotoId,
-    })
-    .from(collection)
-    .where(eq(collection.isPublished, true))
-    .orderBy(asc(collection.sortOrder), asc(collection.name));
+  return cached(CACHE_KEYS.categories, 300, () =>
+    db
+      .select({
+        id: collection.id,
+        slug: collection.slug,
+        name: collection.name,
+        description: collection.description,
+        coverPhotoId: collection.coverPhotoId,
+      })
+      .from(collection)
+      .where(eq(collection.isPublished, true))
+      .orderBy(asc(collection.sortOrder), asc(collection.name)),
+  );
 }
 
 export async function getCategoryBySlug(
@@ -111,17 +114,19 @@ export async function getCategoryPhotos(
 
 // ── Locations ────────────────────────────────────────────────────────────────
 export async function getPublishedLocations(): Promise<LocationSummary[]> {
-  return db
-    .select({
-      id: location.id,
-      slug: location.slug,
-      name: location.name,
-      region: location.region,
-      coverPhotoId: location.coverPhotoId,
-    })
-    .from(location)
-    .where(eq(location.isPublished, true))
-    .orderBy(asc(location.sortOrder), asc(location.name));
+  return cached(CACHE_KEYS.locations, 300, () =>
+    db
+      .select({
+        id: location.id,
+        slug: location.slug,
+        name: location.name,
+        region: location.region,
+        coverPhotoId: location.coverPhotoId,
+      })
+      .from(location)
+      .where(eq(location.isPublished, true))
+      .orderBy(asc(location.sortOrder), asc(location.name)),
+  );
 }
 
 export async function getLocationBySlug(
@@ -275,7 +280,18 @@ export async function resolvePageConfig(
       .where(eq(pageConfig.id, explicitId))
       .limit(1);
     if (rows[0]) return rows[0];
+    // Fall through to the default lookup, but skip the cache when an explicit
+    // id was requested.
+    return loadDefaultPageConfig(scope);
   }
+  return cached(CACHE_KEYS.pageConfig(scope), 300, () =>
+    loadDefaultPageConfig(scope),
+  );
+}
+
+async function loadDefaultPageConfig(
+  scope: "home" | "gallery" | "category" | "location" | "about" | "global",
+) {
   const rows = await db
     .select()
     .from(pageConfig)

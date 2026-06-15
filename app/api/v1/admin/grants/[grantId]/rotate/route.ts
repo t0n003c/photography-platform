@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/src/auth/session";
+import { requireFreshAuth } from "@/src/auth/session";
 import { ok, notFound } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
@@ -15,7 +15,7 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ grantId: string }> },
 ) {
-  const a = await requireRole("admin");
+  const a = await requireFreshAuth("admin");
   if (a.error) return a.error;
   const { grantId } = await ctx.params;
 

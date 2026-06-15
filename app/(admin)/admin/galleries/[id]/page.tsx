@@ -5,13 +5,17 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
   Check,
   Copy,
   Download,
   Eye,
+  GripVertical,
   Heart,
   Loader2,
   Plus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +24,7 @@ import { Modal } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
+import { useStepUp } from "@/components/admin/step-up";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { api, ApiError } from "@/src/lib/api-client";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -219,6 +224,7 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -246,11 +252,40 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
   }, [galleryId, toast]);
 
   const selectedSet = new Set(selected);
+  const photoById = new Map(library.map((p) => [p.id, p]));
 
   const toggle = (id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  };
+
+  // Move the item at `from` so it sits at index `to` (used by both drag-drop
+  // and the keyboard up/down fallback).
+  const moveItem = (from: number, to: number) => {
+    setSelected((prev) => {
+      if (
+        from === to ||
+        from < 0 ||
+        to < 0 ||
+        from >= prev.length ||
+        to >= prev.length
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    const from = selected.indexOf(dragId);
+    const to = selected.indexOf(targetId);
+    moveItem(from, to);
+    setDragId(null);
   };
 
   const save = async () => {
@@ -292,9 +327,105 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
             description="Upload photos before adding them to a gallery."
           />
         ) : (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-            {library.map((photo) => {
-              const isSel = selectedSet.has(photo.id);
+          <div className="space-y-6">
+            {selected.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Order</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    Drag tiles, or use the arrow buttons, to reorder.
+                  </p>
+                </div>
+                <ol className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                  {selected.map((id, index) => {
+                    const photo = photoById.get(id);
+                    const hasVariants =
+                      !!photo && photo.variants.length > 0;
+                    return (
+                      <li
+                        key={id}
+                        draggable
+                        onDragStart={() => setDragId(id)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleDrop(id);
+                        }}
+                        onDragEnd={() => setDragId(null)}
+                        className={
+                          "group relative aspect-square overflow-hidden rounded-lg border bg-[hsl(var(--muted))] " +
+                          (dragId === id ? "opacity-50 ring-2 ring-[hsl(var(--ring))]" : "")
+                        }
+                      >
+                        {photo && hasVariants ? (
+                          <ResponsiveImage
+                            photo={photo}
+                            sizes="(max-width:768px) 33vw, 160px"
+                            className="h-full w-full"
+                          />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center"
+                            style={{
+                              backgroundColor:
+                                photo?.dominantColor ?? "hsl(var(--muted))",
+                            }}
+                          >
+                            <Badge tone="amber">
+                              {photo ? "Processing" : "Missing"}
+                            </Badge>
+                          </div>
+                        )}
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-black/60 px-1 text-[10px] font-semibold text-white"
+                        >
+                          {index + 1}
+                        </span>
+                        <GripVertical
+                          aria-hidden="true"
+                          className="absolute right-1 top-1 h-4 w-4 text-white/80 drop-shadow"
+                        />
+                        <div className="absolute inset-x-1 bottom-1 flex items-center justify-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                          <button
+                            type="button"
+                            aria-label="Move earlier"
+                            disabled={index === 0}
+                            onClick={() => moveItem(index, index - 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Move later"
+                            disabled={index === selected.length - 1}
+                            onClick={() => moveItem(index, index + 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Remove from gallery"
+                            onClick={() => toggle(id)}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white hover:bg-red-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Library</p>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                {library.map((photo) => {
+                  const isSel = selectedSet.has(photo.id);
               const hasVariants = photo.variants.length > 0;
               return (
                 <button
@@ -336,8 +467,10 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
                     <Check className="h-3 w-3" />
                   </span>
                 </button>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
@@ -533,6 +666,7 @@ function grantStatus(g: Grant): { tone: "red" | "amber" | "green"; label: string
 
 function GrantsCard({ galleryId }: { galleryId: string }) {
   const { toast } = useToast();
+  const { runWithStepUp } = useStepUp();
   const [grants, setGrants] = useState<Grant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -560,7 +694,9 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
   const revoke = async (id: string) => {
     setBusyId(id);
     try {
-      await api.post(`/api/v1/admin/grants/${id}/revoke`);
+      await runWithStepUp(() =>
+        api.post(`/api/v1/admin/grants/${id}/revoke`),
+      );
       toast("Link revoked", "success");
       await load();
     } catch (err) {
@@ -573,8 +709,8 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
   const rotate = async (id: string) => {
     setBusyId(id);
     try {
-      const res = await api.post<{ shareUrl: string }>(
-        `/api/v1/admin/grants/${id}/rotate`,
+      const res = await runWithStepUp(() =>
+        api.post<{ shareUrl: string }>(`/api/v1/admin/grants/${id}/rotate`),
       );
       setRotatedUrl(res.shareUrl);
       toast("Link rotated", "success");

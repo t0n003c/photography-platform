@@ -7,6 +7,7 @@ import { newId } from "@/src/lib/id";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { collection } from "@/src/db/schema";
+import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -67,5 +68,6 @@ export async function POST(req: Request) {
     metadata: { slug: body.slug },
   });
 
+  await invalidate(CACHE_KEYS.categories);
   return created({ id, slug: body.slug });
 }

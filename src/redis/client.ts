@@ -17,9 +17,24 @@ export function getBullConnection() {
 }
 
 let appRedis: Redis | null = null;
+let loggedRedisError = false;
 
 // Shared connection for app-level use (cache, rate-limit) — NOT for BullMQ.
+// Lazy-connect + an error handler so a missing Redis (e.g. at build time) never
+// emits an unhandled error; callers (the cache layer, rate limiter) handle
+// failures gracefully.
 export function getRedis(): Redis {
-  if (!appRedis) appRedis = new IORedis(getEnv().REDIS_URL);
+  if (!appRedis) {
+    appRedis = new IORedis(getEnv().REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+    });
+    appRedis.on("error", (err: Error) => {
+      if (!loggedRedisError) {
+        loggedRedisError = true;
+        console.warn("[redis] connection error:", err.message);
+      }
+    });
+  }
   return appRedis;
 }

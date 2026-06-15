@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { and, eq, isNull } from "drizzle-orm";
-import { requireRole } from "@/src/auth/session";
+import { requireRole, requireFreshAuth } from "@/src/auth/session";
 import { ok, noContent, notFound, parseJson } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
@@ -100,7 +100,7 @@ export async function DELETE(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const a = await requireRole("admin");
+  const a = await requireFreshAuth("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
 
