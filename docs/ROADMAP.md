@@ -88,17 +88,20 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 5 — Admin / CMS
+## Phase 5 — Admin / CMS ✅ (completed 2026-06-14)
 
-- [ ] Build drag-and-drop upload with chunked, resumable transfer and progress UI.
-- [ ] Build the media library with batch operations (select, move, tag, delete).
-- [ ] Organize media into galleries, categories, and locations.
-- [ ] Create and manage **private client galleries**.
-- [ ] Implement per-client access grants.
-- [ ] Implement expiring share links.
-- [ ] Implement per-gallery download and favorites controls.
-- [ ] Build a data-driven layout/design manager persisted as **page-config**.
-- [ ] **Summary + pause for approval.**
+- [x] Build drag-and-drop upload with chunked, resumable transfer and progress UI.
+- [x] Build the media library with batch operations (select, reprocess, delete, organize).
+- [x] Organize media into galleries, categories, and locations (incl. new category/location membership endpoints).
+- [x] Create and manage **private client galleries** (settings, photo-membership picker).
+- [x] Implement per-client access grants (create with one-time share token, revoke, rotate, edit).
+- [x] Implement expiring share links (per-grant expiry + per-gallery expiry).
+- [x] Implement per-gallery download + per-grant favorites/download/view controls.
+- [x] Build a data-driven layout/design manager persisted as **page-config** (per-scope grid/spacing/theme/hero + set default).
+- [x] Plus: auth-gated shell, **login** (password + TOTP + passkey), **account/security** (2FA enroll, passkeys, sessions), clients CRUD, taxonomy CRUD + reorder, contact inbox, dashboard.
+- [x] **Summary + pause for approval.**
+
+> Deferred within Phase 5 (tracked): in-gallery drag-to-reorder of photos (membership order = selection order for now); 2FA QR image (the `otpauth://` URI is shown as text); richer hero editor (photo picker/height/overlay — currently enabled + headline); the interactive admin UI is build- + API-verified but a full click-through visual pass is recommended in-browser.
 
 ---
 
