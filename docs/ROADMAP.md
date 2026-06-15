@@ -74,17 +74,17 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 4 — High-end interaction layer
+## Phase 4 — High-end interaction layer ✅ (completed 2026-06-14)
 
-- [ ] Integrate Three.js / React Three Fiber with custom GLSL shaders.
-- [ ] Add Lenis smooth scroll.
-- [ ] Implement rAF-driven effects.
-- [ ] Add WebGL depth-of-field on hero / featured imagery.
-- [ ] Respect `prefers-reduced-motion` (disable/reduce effects).
-- [ ] Lazy-load effects **off the critical path**; never block LCP/INP.
-- [ ] Ensure the site is fully usable with WebGL disabled (graceful fallback).
-- [ ] Re-verify performance targets still met with effects enabled.
-- [ ] **Summary + pause for approval.**
+- [x] Integrate Three.js / React Three Fiber with custom GLSL shaders.
+- [x] Add Lenis smooth scroll (rAF-driven; disabled under reduced-motion).
+- [x] Implement rAF-driven effects (pointer-lerped parallax + focal breathing).
+- [x] Add WebGL depth-of-field on the hero (multi-tap disk blur, pointer focal point).
+- [x] Respect `prefers-reduced-motion` (WebGL + smooth scroll fully disabled).
+- [x] Lazy-load effects **off the critical path** (ssr:false dynamic chunk; Three.js excluded from the 119 kB home First-Load JS; mounted after an idle + capability gate).
+- [x] Ensure the site is fully usable with WebGL disabled (static `<picture>` is the SSR LCP + fallback; also gated on Save-Data + WebGL support).
+- [~] Re-verify performance — code-split + SSR-fallback verified headlessly; **interactive WebGL render + a formal Lighthouse pass are best confirmed in-browser (Phase 6)**.
+- [x] **Summary + pause for approval.**
 
 ---
 

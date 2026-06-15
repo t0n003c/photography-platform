@@ -244,3 +244,14 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** Public data pages use **`export const dynamic = "force-dynamic"`** and read the DB per request (RSC, no HTTP hop); the sitemap wraps DB calls in try/catch. CDN/edge + route caching (`CACHING-STRATEGY.md`) is layered in Phase 6 for performance without build-time DB coupling.
 - **Consequences:** `docker build` needs no DB; pages are always fresh. Until Phase 6 caching lands, every public hit queries Postgres (fine at studio scale; Cloudflare will absorb most reads once cache headers are set).
 - **Alternatives considered:** ISR with build-time prerender (needs a reachable DB at build — breaks the slim image build); running migrations + a DB during `docker build` (couples build to infra).
+
+---
+
+## ADR-0018: WebGL as strict progressive enhancement (R3F + raw GLSL, no drei)
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** Phase 4 calls for a high-end WebGL/Three.js treatment that must never tank Core Web Vitals or accessibility. Three.js is large (~600 kB) and WebGL is unavailable/unwanted for some users.
+- **Decision:** Build the effect with **React Three Fiber + a hand-written GLSL** depth-of-field/parallax shader (no `@react-three/drei`, to keep the dependency/version surface minimal). It is a **separate `ssr:false` dynamic chunk** mounted only behind a runtime gate — `requestIdleCallback` + WebGL support + not `prefers-reduced-motion` + not Save-Data — over a static `<picture>` that is always the SSR LCP and full fallback. Lenis smooth scroll is likewise reduced-motion-gated. The canvas is `pointer-events-none`, `aria-hidden`, and IntersectionObserver-gated.
+- **Consequences:** Three.js is excluded from the home page's 119 kB First-Load JS; the site is fully usable (and fully rendered) with WebGL/JS off; motion preferences are honored. The interactive shader itself needs an in-browser visual check (headless verifies the split + fallback only).
+- **Alternatives considered:** `drei` helpers (extra dep + React-19/fiber-9 version alignment risk); a CSS-only parallax (no real DoF); eager-loading the canvas (would blow the JS budget and risk LCP/INP).
