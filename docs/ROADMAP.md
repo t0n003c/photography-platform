@@ -105,14 +105,16 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 6 — Integrations & hardening
+## Phase 6 — Integrations & hardening ✅ (completed 2026-06-15)
 
-- [ ] Implement email flows: contact form notifications and gallery invites (`EmailProvider`: SMTP/Resend).
-- [ ] Add `PaymentProvider` / invoice seams (stubbed; real payments deferred).
-- [ ] Security pass against `SECURITY.md` + automated security tests.
-- [ ] Performance pass + Lighthouse audits across key pages.
-- [ ] Wire caching per `CACHING-STRATEGY.md` (HTTP, data, image/derivative, Redis layers).
-- [ ] **Summary + pause for approval.**
+- [x] Email flows: contact notifications + gallery invites via `EmailProvider` (log default / SMTP / Resend), enqueued through BullMQ, sent by the worker.
+- [x] `PaymentProvider` / invoice seams (factory + `isPaymentsEnabled`; checkout gated, still 501 — real payments deferred).
+- [x] Security pass against `SECURITY.md` (audit) + fixes: fail-closed prod secret (`instrumentation.ts`), contact dual rate-limit keys, XFF trusted only outside prod, token-resolution rate-limit ordering. Vitest + 37 unit tests.
+- [~] Performance: Lighthouse CI budgets (`lighthouserc.json`) wired; **the actual Lighthouse run needs a browser/CI — run `npx @lhci/cli autorun` against the built app**.
+- [x] Caching per `CACHING-STRATEGY.md`: middleware enforces private `no-store` (admin/login/client-gallery/auth) + CDN `s-maxage`+SWR on public read APIs; media route immutable vs no-store; CSP report endpoint.
+- [x] **Summary + pause for approval.**
+
+> Deferred within Phase 6 (tracked, from the security audit): **step-up auth** (`isFresh` exists but isn't enforced on destructive admin ops — needs a real `lastStrongAuthAt` + UI support); a **Redis query cache** for hot public lists (HTTP/CDN layer done; data-layer cache is a follow-up); flipping CSP from Report-Only to **enforce** (after a clean report window); tighter AVIF magic-byte sniffing. Real secrets must be set at deploy (now fail-closed in prod).
 
 ---
 
