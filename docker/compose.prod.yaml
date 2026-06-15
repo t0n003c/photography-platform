@@ -1,0 +1,53 @@
+# Production overlay for the NAS. Use WITH the base file:
+#   docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+# Adds resource limits, log rotation, and an OPTIONAL Cloudflare Tunnel
+# (enable with `--profile tunnel` + TUNNEL_TOKEN in .env). NPM stays external.
+name: photography-platform
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  web:
+    <<: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1024M
+    # The base file publishes ${WEB_PORT:-3000}:3000 for NPM to proxy to.
+
+  worker:
+    <<: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+
+  db:
+    <<: *logging
+
+  redis:
+    <<: *logging
+
+  minio:
+    <<: *logging
+
+  # Optional: Cloudflare Tunnel (egress-only; no inbound ports on the NAS).
+  # Configure the tunnel's public hostname → http://web:3000 (or → your NPM)
+  # in the Cloudflare dashboard, then set TUNNEL_TOKEN in .env.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [internal]
+    <<: *logging

@@ -1,350 +1,280 @@
 # DEPLOYMENT
 
-> **Phase 0 planning document.** This describes the intended deployment topology, operations, and lifecycle for the self-hosted photography platform. Compose snippets here are **illustrative planning drafts** — the real, finalized Compose stack is produced in **Phase 7** (see `ROADMAP.md`). No application code or production Compose files exist yet.
+> **Final deployment guide + run-book** for the self-hosted photography platform. This reflects the implemented Compose stack under `docker/`, the real env set in `.env.example`, and the operational scripts in `scripts/`. All commands are run from the repo root.
 
-## 1. Overview
-
-The platform is a single **Next.js 15 (App Router, TypeScript)** application serving the public site, the admin/CMS, and the API, plus a **separate BullMQ worker process** sharing the same codebase. Supporting services are **PostgreSQL 16**, **Redis/Valkey**, and **MinIO** — an S3-compatible object store that is the **default media-storage backend and a core, always-on service**. A filesystem driver remains available as a selectable alternate.
-
-The stack runs on a **NAS** (e.g. Synology / Unraid) under Docker. **Nginx Proxy Manager (NPM)** and **Cloudflare Tunnel (`cloudflared`)** are **external** to this Compose project — they run elsewhere on the NAS (or their own containers) and route inbound traffic to the `web` service. There are **no public inbound ports**; all external traffic arrives via **Cloudflare Tunnel egress** only.
+The application is a single **Next.js 15 (App Router, TypeScript)** process (`web`, `:3000`, standalone output) plus a **separate BullMQ worker** (`worker`) sharing the same codebase. Backing services are **PostgreSQL 16**, **Redis 7**, and **MinIO** (S3-compatible object store — the default media backend). Everything runs on a **NAS** under Docker. **Nginx Proxy Manager (NPM)** and **Cloudflare Tunnel (`cloudflared`)** front the stack; the tunnel is **egress-only**, so the NAS opens **no public inbound ports**.
 
 ---
 
-## 2. Topology Diagram
+## 1. Overview & Topology
 
 ```mermaid
 flowchart TD
     User([Visitor / Client Browser])
+
     subgraph CF[Cloudflare Edge]
-        Edge[Cloudflare Edge\nTLS termination, WAF, CDN]
+        Edge[Cloudflare Edge<br/>TLS termination, WAF, CDN cache]
     end
     User -->|HTTPS| Edge
 
-    subgraph NAS[NAS / Docker Host]
-        direction TB
-        Tunnel[cloudflared\nCloudflare Tunnel\negress-only, no inbound ports]
-        NPM[Nginx Proxy Manager\nreverse proxy / vhost routing]
+    subgraph NAS[NAS / Docker Host — no public inbound ports]
+        Tunnel[cloudflared<br/>Cloudflare Tunnel<br/>egress-only]
+        NPM[Nginx Proxy Manager<br/>external infrastructure<br/>reverse proxy]
 
-        subgraph Compose[Compose project: photo-platform]
-            direction TB
-            Web[web\nNext.js 15 app\npublic + admin + API]
-            Worker[worker\nBullMQ jobs + sharp]
-            DB[(db\nPostgreSQL 16)]
-            Redis[(redis\nRedis / Valkey)]
-            MinIO[(minio\nS3 object store\ncore, default driver)]
-            Storage[/storage volume\nfilesystem alternate driver/]
+        subgraph Compose[Compose project: photography-platform]
+            Web[web<br/>Next.js 15 :3000<br/>public + admin + API]
+            Worker[worker<br/>BullMQ + sharp<br/>runs DB migrations on boot]
+            DB[(db<br/>Postgres 16)]
+            Redis[(redis<br/>Redis 7 appendonly)]
+            MinIO[(minio<br/>S3 object store<br/>originals + derivatives)]
         end
     end
 
-    Edge -.->|Tunnel protocol| Tunnel
+    Edge -.->|Tunnel protocol, outbound| Tunnel
     Tunnel --> NPM
-    NPM -->|HTTP, internal network| Web
+    NPM -->|HTTP, internal only| Web
 
     Web --> DB
     Web --> Redis
     Web --> MinIO
-    Web -.->|alternate driver| Storage
-
     Worker --> DB
     Worker --> Redis
     Worker --> MinIO
-    Worker -.->|alternate driver| Storage
-
     Web -->|enqueue jobs| Redis
     Worker -->|consume jobs| Redis
 ```
 
-**Trust boundary:** Cloudflare terminates TLS and enforces edge security. `cloudflared` makes an outbound-only connection to Cloudflare; nothing on the NAS listens on a public port. NPM is the single internal entry point to `web`.
+**Trust boundary & key facts:**
+
+- Cloudflare terminates TLS and provides WAF/CDN. `cloudflared` makes an **outbound-only** connection to Cloudflare — nothing on the NAS listens on a public port; no router port-forwarding.
+- **NPM is external infrastructure** (it runs outside this Compose project, or `cloudflared` can point straight at `web`). The tunnel's public hostname maps to either NPM or directly to `http://web:3000`.
+- **Only `web` is proxied to.** `db`, `redis`, `minio`, and `worker` are reachable on the internal bridge network only.
 
 ---
 
-## 3. Compose Topology — Service by Service
+## 2. Services
 
-The Compose project defines five services. `web`, `worker`, `db`, `redis`, and `minio` are **all core, always-on services** — `minio` is the default media-storage backend and is **not** profile-gated. (Operators who select the filesystem alternate driver may simply leave MinIO unused, but it starts by default.)
+Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod overlay: log rotation, resource limits, optional tunnel) and `docker/compose.dev.yaml` (dev overlay: publishes `db`/`redis` to the host for host-run tooling).
 
-| Service | Role | Network exposure | Persistence |
+| Service | Image / Build | Purpose | Ports | Volumes | Healthcheck | Restart |
+| --- | --- | --- | --- | --- | --- | --- |
+| `web` | build `docker/Dockerfile.web` (Next.js standalone, node:22) | Public site + admin/CMS + API | `${WEB_PORT:-3000}:3000` (for NPM) | none (stateless) | `GET /api/health` (node fetch) | `unless-stopped` |
+| `worker` | build `docker/Dockerfile.worker` (tsx, node:22) | BullMQ image + email queues; **runs DB migrations on boot** | none (internal `:9091` health only) | none (stateless) | `GET :9091/health` | `unless-stopped` |
+| `db` | `postgres:16-alpine` | System of record (users, galleries, grants, media metadata) | internal only | `pgdata` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
+| `redis` | `redis:7-alpine` (`--appendonly yes`) | BullMQ broker + sessions + rate limiting | internal only | `redisdata` | `redis-cli ping` | `unless-stopped` |
+| `minio` | `minio/minio:latest` | Default S3 media store (originals + derivatives) | `9000:9000` (S3 API), `9001:9001` (console) | `miniodata` | `mc ready local` | `unless-stopped` |
+| `minio-init` | `minio/mc:latest` | **One-shot**: creates the `${S3_BUCKET}` bucket, then exits | — | none | — | runs once |
+| `cloudflared` | `cloudflare/cloudflared:latest` | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile) | none (egress-only) | none | — | `unless-stopped` |
+
+**Notes:**
+
+- `web` and `worker` both `depends_on` `db`, `redis`, and `minio` with `condition: service_healthy`, so they only start once backing services report healthy (avoids migration/connection races).
+- `worker` runs **two BullMQ workers** (image pipeline + email), each at **concurrency 4** (`worker/index.ts`).
+- On boot the worker applies Drizzle migrations from `src/db/migrations` (gated by `RUN_MIGRATIONS`, default `true`), so `docker compose up` is self-contained.
+- The prod overlay adds JSON-file log rotation (10 MB × 3) and resource limits: `web` 1.5 CPU / 1 GB, `worker` 2 CPU / 2 GB.
+- `cloudflared` is gated behind the `tunnel` profile and only starts with `--profile tunnel` + a `TUNNEL_TOKEN`. If you run NPM/cloudflared externally, leave the profile off.
+
+---
+
+## 3. Volumes & Persistence
+
+| Volume | Backs | NAS mapping (example) | Tier |
 | --- | --- | --- | --- |
-| `web` | Next.js app (public + admin + API) | Reachable by NPM on the internal network only | none (stateless) |
-| `worker` | BullMQ worker, sharp pipeline | internal only | none (stateless) |
-| `db` | PostgreSQL 16 | internal only | `pgdata` volume |
-| `redis` | Redis/Valkey (queue + cache) | internal only | optional `redisdata` volume |
-| `minio` | **Core** S3-compatible store (default media backend) | internal only (proxied if needed) | `miniodata` volume (mapped to NAS storage) |
+| `pgdata` | Postgres 16 data directory | `/volume1/docker/photo/pg` | **Critical** — system of record |
+| `miniodata` | MinIO objects — **originals + derivatives** | `/volume1/photos/minio` | **Critical (originals)**; derivatives regenerable |
+| `redisdata` | Redis appendonly (AOF) file | `/volume1/docker/photo/redis` | Important — protects in-flight queue jobs |
 
-### 3.1 `web`
-- **Image:** built from the monorepo `Dockerfile` (app target).
-- **Depends on:** `db` (condition `service_healthy`), `redis` (condition `service_healthy`), and `minio` (condition `service_healthy`) — MinIO is a core dependency since it is the default storage backend.
-- **Healthcheck:** HTTP GET against a lightweight `/api/health` route that checks process liveness (and optionally DB/Redis reachability).
-- **Restart policy:** `unless-stopped`.
-- **Resource limits:** CPU + memory caps sized for the NAS (e.g. `deploy.resources.limits`); reservations so the app is not starved by the worker during large batch jobs.
-- **Volumes:** none required with the default MinIO driver; read access to the shared media volume is mounted only when the filesystem alternate driver is selected.
-- **Networks:** `internal` (to reach db/redis/minio) and `proxy` (to be reachable by NPM).
+- **`pgdata`** — must persist; never a tmpfs/throwaway volume.
+- **`miniodata`** — the irreplaceable asset. Holds source **originals** (cannot be recreated) and **derivatives** (thumbnails/resized/LQIP, regenerable by re-running the sharp pipeline). Map this to durable NAS storage.
+- **`redisdata`** — `redis` runs with `--appendonly yes` so queued media-processing/email jobs survive a restart. Cache misses after restart are harmless.
 
-### 3.2 `worker`
-- **Image:** same image as `web`, different entrypoint/command (worker process).
-- **Depends on:** `db` (`service_healthy`), `redis` (`service_healthy`), and `minio` (`service_healthy`).
-- **Healthcheck:** worker liveness probe (e.g. a heartbeat key in Redis or a small internal health endpoint / `pgrep`-style command).
-- **Restart policy:** `unless-stopped`.
-- **Resource limits:** higher memory ceiling than `web` (sharp + image decoding are memory-hungry); CPU limit to avoid saturating the NAS during derivative generation.
-- **Volumes:** none required with the default MinIO driver (it writes derivatives to MinIO over the S3 API); **read/write** access to the shared media volume is mounted only when the filesystem alternate driver is selected.
-- **Networks:** `internal` only (no proxy exposure).
-
-### 3.3 `db` (PostgreSQL 16)
-- **Healthcheck:** `pg_isready`.
-- **Restart policy:** `unless-stopped`.
-- **Volumes:** `pgdata` → Postgres data directory.
-- **Resource limits:** memory tuned for `shared_buffers` / connection pool; CPU limit appropriate to NAS.
-- **Networks:** `internal` only.
-
-### 3.4 `redis` (Redis/Valkey)
-- **Healthcheck:** `redis-cli ping`.
-- **Restart policy:** `unless-stopped`.
-- **Persistence:** see §4 for the on/off rationale.
-- **Networks:** `internal` only.
-
-### 3.5 `minio` (core, default media-storage backend)
-- **Healthcheck:** MinIO `/minio/health/live` endpoint.
-- **Restart policy:** `unless-stopped`.
-- **Volumes:** `miniodata` → object store data, **mapped to NAS storage** (e.g. `/volume1/photos/minio`).
-- **Env vars:** `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` (server credentials). The app reads `S3_ENDPOINT` (e.g. `http://minio:9000`), `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `S3_BUCKET` (see §5). A one-time bucket-create (init/`mc`) ensures `S3_BUCKET` exists on first start.
-- **Networks:** `internal` only.
-
-### 3.6 Dependency ordering
-
-```
-db    (healthy) ─┐
-redis (healthy)  ┼──► web
-minio (healthy)  ┴──► worker
-```
-
-`web` and `worker` both wait for `db`, `redis`, and `minio` to report **healthy** (not merely started) before launching, preventing migration/connection/storage races.
-
-### 3.7 Illustrative Compose skeleton (PLANNING DRAFT — finalized in Phase 7)
-
-> This is a **non-final illustration** to convey shape and intent. Image names, tags, exact healthcheck commands, and resource numbers are placeholders.
-
-```yaml
-# planning draft — NOT the production compose file (see Phase 7)
-name: photo-platform
-
-services:
-  web:
-    image: photo-platform:latest        # built from ./Dockerfile
-    command: ["node", "server.js"]       # app entrypoint (illustrative)
-    env_file: [.env]
-    depends_on:
-      db:    { condition: service_healthy }
-      redis: { condition: service_healthy }
-      minio: { condition: service_healthy }   # core: default storage backend
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
-    networks: [internal, proxy]
-    # volumes:
-    #   - media:/app/storage:ro          # only for the filesystem alternate driver
-    deploy:
-      resources:
-        limits:   { cpus: "1.0", memory: 1g }
-        reservations: { memory: 512m }
-
-  worker:
-    image: photo-platform:latest
-    command: ["node", "worker.js"]       # worker entrypoint (illustrative)
-    env_file: [.env]
-    depends_on:
-      db:    { condition: service_healthy }
-      redis: { condition: service_healthy }
-      minio: { condition: service_healthy }   # core: default storage backend
-    healthcheck:
-      test: ["CMD", "node", "scripts/worker-health.js"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
-    networks: [internal]
-    # volumes:
-    #   - media:/app/storage:rw          # only for the filesystem alternate driver
-    deploy:
-      resources:
-        limits:   { cpus: "2.0", memory: 2g }
-        reservations: { memory: 1g }
-
-  db:
-    image: postgres:16
-    env_file: [.env]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks: [internal]
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: valkey/valkey:8               # or redis:7
-    command: ["valkey-server", "--appendonly", "yes"]   # persistence on (see §4)
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-    networks: [internal]
-    volumes:
-      - redisdata:/data
-
-  minio:                                 # CORE service — default media-storage backend
-    image: minio/minio
-    command: ["server", "/data", "--console-address", ":9001"]
-    env_file: [.env]
-    environment:
-      MINIO_ROOT_USER:     ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
-    networks: [internal]
-    volumes:
-      - miniodata:/data                  # mapped to NAS storage (see §4)
-
-networks:
-  internal:           # service-to-service, not reachable from outside
-    internal: true
-  proxy:              # bridges web <-> Nginx Proxy Manager
-
-volumes:
-  pgdata:
-  redisdata:
-  miniodata:
-  media:
-```
+To map a named volume to a NAS path, override it with a bind mount or a `local`-driver volume in your overlay; the defaults are Docker-managed named volumes.
 
 ---
 
-## 4. Volumes & Persistence
+## 4. Environment
 
-| Volume | Backs | NAS mapping | Backup tier |
-| --- | --- | --- | --- |
-| `pgdata` | PostgreSQL data directory | NAS share, e.g. `/volume1/docker/photo/pg` | **Critical** — dump + volume backup |
-| `miniodata` | MinIO object store — originals **and** derivatives (default backend) | NAS share, e.g. `/volume1/photos/minio` | **Critical** (originals); derivatives regenerable |
-| `redisdata` | Redis/Valkey AOF/RDB (if persistence on) | `/volume1/docker/photo/redis` | Optional |
-| `media` | Filesystem media (only when filesystem alternate driver is selected) | NAS share, e.g. `/volume1/photos/media` | **Critical** (originals) when in use |
+All config is supplied via environment variables. Copy the committed template and fill in real values:
 
-**Postgres (`pgdata`)** — durable, must persist; never use a throwaway/tmpfs volume.
+```bash
+cp .env.example .env
+```
 
-**Redis persistence — rationale:** Redis serves two roles. As a **cache** it is fully ephemeral and could run without persistence. As the **BullMQ broker** it holds queue state; losing it mid-flight drops in-progress jobs. Decision: **persistence ON** (AOF) so queued media-processing jobs survive a restart, accepting the small disk/perf cost. Cache misses after a restart are harmless (rebuilt on demand).
+`.env` is git-ignored and read by **both** `web` and `worker`. `src/lib/env.ts` parses and validates it with Zod. Variable **groups** (names only — see `.env.example` for the full list):
 
-**MinIO (`miniodata`)** — the **default** media system of record. Holds **originals** (irreplaceable, must be backed up) and **derivatives** (thumbnails/resized variants, **regenerable** from originals via the sharp pipeline), as objects under the configured bucket(s). Backup-critical for originals. The volume is mapped to NAS storage.
+- **App** — `NODE_ENV`, `WEB_PORT` (host port; container always listens on `3000`), `APP_BASE_URL`, `NEXT_PUBLIC_APP_URL`.
+- **Database** — `DATABASE_URL`, and the values the `db` container itself uses: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`.
+- **Redis** — `REDIS_URL`.
+- **Auth (Better Auth)** — `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
+- **Storage (S3 / MinIO)** — `STORAGE_DRIVER` (`minio` default, `filesystem` alternate), `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE`, the MinIO server creds `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, and `STORAGE_FS_PATH` (filesystem driver only).
+- **Email** — `EMAIL_DRIVER` (`log` default, `smtp`, `resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`, `RESEND_API_KEY`.
+- **Payments** — `PAYMENTS_DRIVER` (`stub`, deferred), `STRIPE_SECRET_KEY`.
+- **Worker** — `WORKER_HEALTH_PORT` (default `9091`), `RUN_MIGRATIONS` (default `true`; set `false` to run migrations out-of-band).
+- **Tunnel** — `TUNNEL_TOKEN` (only when using the `tunnel` profile; critical secret).
+- **Seed** — `SEED_OWNER_EMAIL`, `SEED_OWNER_PASSWORD`.
 
-**Media (`media`)** — used **only when the filesystem alternate driver is selected**; then it holds originals + derivatives in subdirectories instead of MinIO. See `MEDIA-ARCHITECTURE.md` for the layout, naming, and derivative strategy (the same opaque-key scheme maps onto object keys or filesystem paths).
-
-> **Storage driver abstraction:** the app uses a `StorageProvider` interface (**MinIO/S3 default, filesystem alternate driver**), so the persistence target is `miniodata` by default and `media` only when the filesystem driver is configured. See `MEDIA-ARCHITECTURE.md`.
+> **Production fails closed on a weak auth secret.** `instrumentation.ts` runs on server boot and **throws / refuses to start** in production if `BETTER_AUTH_SECRET` is empty, equals a known default (`dev-insecure-secret-change-me`, `change-me-with-openssl-rand-base64-32`), or is shorter than 32 chars. Generate a strong value:
+>
+> ```bash
+> openssl rand -base64 48
+> ```
+>
+> Apply the same to `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD` / `S3_SECRET_ACCESS_KEY`, and `SEED_OWNER_PASSWORD`. Real secrets live only in `.env`, never in git.
 
 ---
 
-## 5. Environment Configuration
+## 5. First Deploy (NAS)
 
-All configuration is supplied via environment variables, referenced from a committed **`.env.example`** (placeholder names, no secrets) and an operator-maintained **`.env`** (real values, git-ignored). Categories (names below are representative; finalized in Phase 1/7):
+```bash
+# 1. Clone the repo onto the NAS, cd into it.
+git clone <repo-url> photography-platform && cd photography-platform
 
-- **Database:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL`.
-- **Redis:** `REDIS_URL` (and optional `REDIS_PASSWORD`).
-- **Auth secrets (Better Auth):** session/encryption secret(s) (e.g. `AUTH_SECRET`), TOTP/passkey config, cookie domain, trusted origins.
-- **Storage driver + creds:** `STORAGE_DRIVER` (defaults to `minio`/`s3`; `filesystem` is the alternate). For the default object storage: `S3_ENDPOINT` (e.g. `http://minio:9000`), `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, plus the MinIO server credentials `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`. For the filesystem alternate: a filesystem base path.
-- **Email driver:** `EMAIL_DRIVER` (`smtp` | `resend`), SMTP host/port/user/pass or `RESEND_API_KEY`, from-address.
-- **Public origin / base URL:** `APP_BASE_URL` / `NEXT_PUBLIC_ORIGIN` (the public Cloudflare hostname).
-- **Cloudflare / NPM hostnames:** the public hostname served via Tunnel and the internal upstream NPM points at (used for redirects, CSP, cookie domain, trusted proxy config).
-- **Worker / queue:** queue names, concurrency limits.
+# 2. Create and edit the env file. Set NODE_ENV=production, real DATABASE_URL,
+#    a strong BETTER_AUTH_SECRET (openssl rand -base64 48), MinIO/S3 creds,
+#    APP_BASE_URL / BETTER_AUTH_URL = your public Cloudflare hostname.
+cp .env.example .env
+$EDITOR .env
 
-> No secret values are stored in these docs or in `.env.example`. Real secrets live only in the operator's `.env` (or the NAS secret store) and are never committed.
+# 3. Build + start the production stack (base + prod overlay).
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+```
+
+On startup: `minio-init` creates the `${S3_BUCKET}` bucket; the **worker applies all DB migrations automatically** (`RUN_MIGRATIONS=true`); `web` comes up once `db`/`redis`/`minio` are healthy.
+
+```bash
+# 4. Seed the owner account + starter taxonomy (layouts, categories, locations,
+#    default page configs). Idempotent — safe to re-run.
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env \
+  run --rm worker npm run db:seed
+```
+
+This creates the owner from `SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` (change the password immediately after first login).
+
+### 5.1 NPM proxy host
+
+In Nginx Proxy Manager, create a **Proxy Host**:
+
+- **Domain Names:** your public hostname (e.g. `photos.example.com`).
+- **Scheme:** `http`, **Forward Hostname/Port:** `web` and `3000` (if NPM shares the Compose network), or the NAS IP and the published `WEB_PORT` (default `3000`) otherwise.
+- **Websockets:** on. Leave TLS to Cloudflare at the edge.
+
+### 5.2 Cloudflare Tunnel
+
+Create a tunnel in the Cloudflare Zero Trust dashboard and add a **Public Hostname** mapping:
+
+- `photos.example.com` → `http://web:3000` (tunnel inside the Compose network) **or** → your NPM address.
+
+Then either:
+
+- **In-compose tunnel:** put the tunnel token in `.env` as `TUNNEL_TOKEN` and start the stack with the profile:
+  ```bash
+  docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env \
+    --profile tunnel up -d
+  ```
+- **External tunnel / NPM:** run `cloudflared` (and/or NPM) outside this project and skip the `tunnel` profile.
+
+Verify: `https://photos.example.com/api/health` returns `{"status":"ok","service":"web"}`.
 
 ---
 
 ## 6. Networking
 
-- **Internal Docker network (`internal`):** `db`, `redis`, `minio`, `worker`, and `web` communicate by service name. Marked `internal: true` so it is not routable from outside the Compose project.
-- **`web` is the only externally reachable service**, and only via the `proxy` network shared with NPM. `db`/`redis`/`minio`/`worker` are never exposed to NPM or the host.
-- **NPM → web:** NPM defines a proxy host whose upstream is `http://web:3000` (over the shared `proxy` network). NPM does not need to terminate TLS for the public path (Cloudflare does), but may use internal certificates between Tunnel/NPM if desired.
-- **Cloudflare Tunnel → NPM:** `cloudflared` runs externally with an ingress rule mapping the public hostname (e.g. `photos.example.com`) to NPM's listening address. The tunnel is **egress-only**; no inbound ports are opened on the NAS or router.
-- **TLS:** terminated at **Cloudflare's edge**. The hop from Cloudflare to the origin is carried inside the tunnel.
-- **Trusted proxy / `X-Forwarded-*`:** because requests traverse Cloudflare → Tunnel → NPM → web, Next.js must trust forwarded headers to reconstruct the true client IP, scheme (`https`), and host. Configure the app to honor `X-Forwarded-For` / `X-Forwarded-Proto` / `X-Forwarded-Host` (and Cloudflare's `CF-Connecting-IP`) **only from the known proxy chain**, so rate-limiting, lockout, audit logs, secure-cookie issuance, and absolute URL generation use correct values. Pin the trusted upstream(s) rather than trusting all proxies.
+- **Internal bridge network (`internal`):** `db`, `redis`, `minio`, `minio-init`, `worker`, `web`, and `cloudflared` communicate by service name. Only `web` (port `${WEB_PORT:-3000}`) is published for NPM; `minio` publishes `9000`/`9001` on the host for the console/S3 API (firewall these off from the public internet — they are not behind the tunnel).
+- **TLS** is terminated at **Cloudflare's edge**; the Cloudflare → origin hop rides inside the tunnel.
+- **Trusted client IP:** `src/lib/request.ts` reads `cf-connecting-ip` (set by Cloudflare). It only falls back to `x-forwarded-for` **outside production** — in production, raw XFF is ignored so a client cannot forge the rate-limit / lockout / audit identity. Better Auth is configured with `ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"]` (`src/auth/index.ts`).
+- **Cache headers** (`middleware.ts`): all private surfaces (`/admin`, `/login`, `/g/` client galleries, `/api/v1/admin`, `/api/v1/g`, `/api/auth`) are sent `Cache-Control: private, no-store`. Public read APIs (`GET /api/v1/*`, excluding `/api/v1/media`) are edge-cacheable with `public, s-maxage=60, stale-while-revalidate=300`. The middleware also sets HSTS (prod only), a nonce-based CSP (Report-Only for now), and the standard security headers.
 
 ---
 
-## 7. Backups
+## 7. Backups & Restore
 
-**What to back up**
-1. **PostgreSQL** — logical dumps (`pg_dump`) plus periodic `pgdata` volume snapshots. The database is the system of record for users, galleries, grants, page-config, and media metadata.
-2. **Media originals** — irreplaceable source images (`miniodata` objects by default, or the `media` originals subdir when using the filesystem alternate driver). **Derivatives are NOT backed up** — they are regenerable by re-running the sharp pipeline.
-3. **Configuration** — `.env` (stored securely, separately from code), NPM and Cloudflare Tunnel config (managed in their own external locations).
+Run from the repo root with the stack up.
 
-**Schedule (target)**
-- Postgres dump: **nightly**, retained on a grandfather-father-son cadence (e.g. 7 daily / 4 weekly / 6 monthly).
-- Media originals: **nightly incremental** sync (originals change only on upload).
-- Volume snapshots (NAS-native, if available): per NAS snapshot policy.
+```bash
+# Postgres logical dump (gzip) + miniodata volume tar → ./backups
+./scripts/backup.sh
+```
 
-**Offsite option** — replicate Postgres dumps and media originals to **Cloudflare R2** (or another S3 target) on a daily/weekly cadence for disaster recovery off the NAS.
+`scripts/backup.sh` runs `pg_dump` (`--no-owner --clean --if-exists`) against the `db` service and tars the `photography-platform_miniodata` volume. Retention is the last `BACKUP_RETENTION` (default 14) of each artifact; output dir is `BACKUP_DIR` (default `./backups`).
 
-**Restore procedure (outline)**
-1. Stand up `db` from the target Compose stack (empty volume).
-2. Restore the chosen Postgres dump (`pg_restore` / `psql`).
-3. Restore media originals to the `miniodata` object store (or the `media` volume when using the filesystem alternate driver).
-4. Start `worker` and **regenerate derivatives** from originals.
-5. Start `web`, run a health check, verify a sample public gallery and admin login.
+```bash
+# Restore (DESTRUCTIVE — stop traffic first). Prompts for confirmation.
+./scripts/restore.sh backups/pg-YYYYMMDD-HHMMSS.sql.gz backups/media-YYYYMMDD-HHMMSS.tar.gz
+```
 
-> See `MEDIA-ARCHITECTURE.md` for the originals/derivatives split that makes derivative regeneration possible and keeps the backup set small.
+`scripts/restore.sh` pipes the dump into `psql`, stops `minio`, replaces the `miniodata` volume contents from the tar, and restarts `minio`. Verify the app, then resume traffic.
+
+**Recommendations:**
+
+- **Cron** the backup nightly and **copy `./backups` offsite** (Cloudflare R2 via `rclone`, or another S3 target) for disaster recovery off the NAS.
+- **Originals are irreplaceable**; **derivatives are regenerable** by reprocessing through the sharp pipeline. The media tar includes derivatives for fast restore, but a minimal recovery only needs the database + originals — derivatives can be rebuilt.
 
 ---
 
 ## 8. Upgrade Procedure
 
-**Goal:** apply new application versions and database migrations with minimal downtime and a clear rollback path.
+```bash
+# 1. Take a fresh backup first (see §7).
+./scripts/backup.sh
 
-1. **Prepare** — review the changelog and pending Drizzle migrations. Confirm a fresh backup exists (§7).
-2. **Build / pull** the new image tag (immutable, versioned tag — not only `latest`).
-3. **Run migrations** — execute Drizzle migrations against `db` (one-shot migration step or `web` startup migration gate). Prefer **backward-compatible (expand) migrations** so the old image keeps working during the swap.
-4. **Roll the app** — recreate `web` (and `worker`) on the new image. With a single host, a brief restart is acceptable ("zero-ish downtime"); for smoother cutover, start a new `web` container, wait for **healthy**, then retire the old one before NPM repoints (NPM upstream by service name keeps this simple).
-5. **Verify health** — `/api/health` green, worker consuming jobs, sample public page + admin login + one media upload → derivative generation.
+# 2. Pull the new code.
+git pull
 
-**Rollback**
-- Redeploy the **previous image tag** for `web`/`worker`.
-- **Migration caution:** rolling code back is safe; rolling the **schema** back is not generally safe. Favor expand/contract migrations so a code rollback does not require a schema rollback. If a destructive (contract) migration already ran, restore from the pre-upgrade Postgres backup instead of attempting to reverse it.
+# 3. Rebuild and roll the stack. The worker applies new migrations on boot.
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+
+# 4. Verify.
+curl -fsS https://photos.example.com/api/health
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml ps   # all healthy
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml logs -f web worker
+```
+
+Watch the worker logs for `migrations up to date` and confirm both queue workers report `listening`. Then smoke-test: a public gallery, admin login, and one upload → derivative generation.
 
 ---
 
-## 9. Run-book (one page)
+## 9. Rollback
 
-**Where things live**
-- Compose project & `Dockerfile`: repo root (finalized Phase 7).
-- App entrypoint = `web`; jobs = `worker`; both from the **same image**.
-- Data: `pgdata` (Postgres), `redisdata` (queue/cache), `miniodata` (MinIO objects — default media store, mapped to NAS storage), `media` (only when the filesystem alternate driver is selected).
-- Config: `.env` (operator-held). External: NPM proxy host + `cloudflared` ingress rule.
+```bash
+# 1. Check out the previous known-good tag/commit and rebuild.
+git checkout <previous-tag-or-commit>
+docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+```
 
-**Start / stop**
-- Start the full core stack (includes `minio`): `docker compose up -d`
-- Stop: `docker compose down` (volumes persist; data is safe)
-- Restart one service: `docker compose restart web`
+- **Keep the previous image/commit handy** before upgrading so this is fast.
+- **Migrations are forward-only.** Rolling code back is safe; rolling the **schema** back is not. If a new migration must be undone, **restore the pre-upgrade Postgres backup** from §7 rather than attempting to reverse the migration:
+  ```bash
+  ./scripts/restore.sh backups/pg-<pre-upgrade-stamp>.sql.gz backups/media-<pre-upgrade-stamp>.tar.gz
+  ```
+- Prefer expand/contract (backward-compatible) migrations so a code rollback rarely needs a schema restore.
 
-**Logs**
-- All: `docker compose logs -f`
-- One service: `docker compose logs -f web` / `worker`
-- Watch the worker during large uploads to confirm sharp derivative jobs complete.
+---
 
-**Common ops**
-- Run migrations: invoke the Drizzle migration command in the `web` image (one-shot).
-- Open a DB shell: `docker compose exec db psql -U "$POSTGRES_USER" "$POSTGRES_DB"`
-- Inspect queues: `docker compose exec redis redis-cli` (BullMQ keys).
-- Regenerate derivatives: trigger the worker's reprocess job (see admin/CMS, Phase 5).
-- Health: `curl http://web:3000/api/health` (from inside the network) or via NPM.
+## 10. Run-book (one page)
 
-**Health & connectivity checklist**
-- `db` reports healthy (`pg_isready`), `redis` responds to `ping`.
-- `web` health endpoint returns 200; worker heartbeat present.
-- NPM upstream resolves `web:3000`; Cloudflare hostname loads over HTTPS.
-- No service other than `web` is on the `proxy` network; no public inbound ports open.
+Set an alias to keep commands short: `alias dc='docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env'`
+
+| Task | Command |
+| --- | --- |
+| Start full stack | `dc up -d` (add `--build` after a code change; `--profile tunnel` for in-compose cloudflared) |
+| Stop (data persists) | `dc down` |
+| Restart one service | `dc restart web` / `dc restart worker` |
+| Service status / health | `dc ps` |
+| Logs (follow) | `dc logs -f web` · `dc logs -f worker` · `dc logs -f` |
+| Web health | `curl -fsS http://localhost:${WEB_PORT:-3000}/api/health` or `https://photos.example.com/api/health` |
+| Worker health | `dc exec worker node -e "fetch('http://localhost:9091/health').then(r=>r.text()).then(console.log)"` |
+| Run migrations manually | set `RUN_MIGRATIONS=false`, then `dc run --rm worker npm run db:migrate` (drizzle-kit) |
+| Seed owner + taxonomy | `dc run --rm worker npm run db:seed` (idempotent) |
+| psql shell | `dc exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
+| Inspect queues | `dc exec redis redis-cli` (BullMQ keys) |
+| MinIO console | browse `http://<nas-ip>:9001` (login = `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`) |
+| Backup | `./scripts/backup.sh` |
+| Restore | `./scripts/restore.sh <pg.sql.gz> <media.tar.gz>` |
+
+**Where data lives:** `pgdata` (Postgres), `redisdata` (Redis AOF), `miniodata` (MinIO objects — originals + derivatives). Config in `.env`. NPM proxy host + Cloudflare Tunnel hostname are external.
+
+**Troubleshooting:**
+
+- **`web` unhealthy / won't boot in prod** — most common cause is a weak/default `BETTER_AUTH_SECRET` (`instrumentation.ts` refuses to start). Check `dc logs web`; regenerate with `openssl rand -base64 48` and `dc up -d`. Also confirm `db`/`redis`/`minio` are healthy (`dc ps`).
+- **`worker` stuck / jobs not processing** — check `dc logs -f worker` for `listening on queue` and migration output. Confirm `redis` is healthy and reachable (`dc exec redis redis-cli ping`). Restart with `dc restart worker`; in-flight jobs survive via the Redis AOF.
+- **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), and check `miniodata` growth (`docker system df -v`). Move `miniodata`/`pgdata` to a larger NAS share if needed and copy backups offsite.
