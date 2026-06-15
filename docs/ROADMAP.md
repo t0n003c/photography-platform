@@ -129,12 +129,27 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Deferred / Out of scope for now
+## Post-v1 enhancements ✅ (completed 2026-06-15)
 
-These require explicit sign-off before any work begins:
+- [x] **Media optimization:** WebP-primary delivery + single JPEG fallback (AVIF dropped); originals preserved (ADR-0019). Full EXIF extraction.
+- [x] **Original-quality downloads:** single original stream + zip-build worker bundling originals (ADR-0020).
+- [x] **Step-up auth** on destructive admin ops + re-auth modal (ADR-0021).
+- [x] **Enforced nonce-based CSP** (was Report-Only) + CSP report endpoint (ADR-0022).
+- [x] **Redis query cache** for hot public lists with mutation invalidation.
+- [x] **2FA QR code**, **in-gallery drag-to-reorder**, swappable **InstagramProvider** (Graph + fallback).
+- [x] **CI** (GitHub Actions: lint/typecheck/test/build + Lighthouse + Playwright) and a **Playwright WebGL e2e**.
+- [x] Remotion **evaluated** (skill added locally) and proposed in `AI-INTEGRATIONS.md` (not wired — changes deployment shape).
+
+> Still needing a browser/CI to *execute* (set up, not run here): the Lighthouse pass and the Playwright suite run in CI. Smaller follow-ups: streaming zip for very large galleries, `lastStrongAuthAt` step-up refinement, tightening `style-src`.
+
+---
+
+## Deferred / Out of scope (require explicit sign-off)
 
 - [ ] Real payments / checkout (live `PaymentProvider`, gateway integration, tax, fulfillment).
-- [ ] AI auto-tagging / auto alt-text generation (pending approval).
+- [ ] **Remotion** gallery-video rendering (needs Chromium in the worker → changes deployment shape) — see `AI-INTEGRATIONS.md`.
+- [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
+- [ ] A public **client-gallery viewer UI** (`/g/[token]`) that consumes the favorites/download APIs (API complete; UI not built).
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 
 ---
