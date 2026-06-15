@@ -222,3 +222,25 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** The **worker runs Drizzle migrations on startup** (programmatic migrator, `RUN_MIGRATIONS=true` default) before consuming jobs. Single-instance by design; idempotent via the Drizzle journal.
 - **Consequences:** Self-contained `docker compose up`; no separate migration step for the common case. If the worker is scaled out, migrations should move to a dedicated one-shot init service (noted for Phase 7).
 - **Alternatives considered:** A dedicated init container (cleaner for multi-replica, more moving parts now); migrating from the web image (would bloat the standalone image with dev tooling).
+
+---
+
+## ADR-0016: Public image delivery — custom `<picture>` over `next/image`
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The sharp pipeline already pre-generates responsive AVIF/WebP/JPEG derivatives across fixed size buckets and stores them. `next/image` would re-run an optimizer over already-optimized assets and wants a loader/host config for our app-served, authz'd variant URLs.
+- **Decision:** Render a **custom `ResponsiveImage`** as a native `<picture>` with `<source>` srcsets built directly from our variant rows (AVIF → WebP → JPEG), intrinsic `width`/`height` (no CLS), LQIP/dominant-color placeholders, and `loading`/`fetchPriority` for the LCP image. No `next/image`.
+- **Consequences:** Zero double-encoding, full control over format/bucket selection, and private variants stay behind the app's authorization. We hand-manage `sizes`. Verified AVIF delivery across home + category pages.
+- **Alternatives considered:** `next/image` with a custom loader (redundant optimizer pass, host config, weaker fit for private/signed variants).
+
+---
+
+## ADR-0017: Public pages render dynamically (no build-time DB)
+
+- **Status:** Accepted
+- **Date:** 2026-06-14
+- **Context:** The `web` Docker image is built with `next build` during `docker build`, when no database is reachable. Statically prerendering DB-backed pages at build time would fail the image build.
+- **Decision:** Public data pages use **`export const dynamic = "force-dynamic"`** and read the DB per request (RSC, no HTTP hop); the sitemap wraps DB calls in try/catch. CDN/edge + route caching (`CACHING-STRATEGY.md`) is layered in Phase 6 for performance without build-time DB coupling.
+- **Consequences:** `docker build` needs no DB; pages are always fresh. Until Phase 6 caching lands, every public hit queries Postgres (fine at studio scale; Cloudflare will absorb most reads once cache headers are set).
+- **Alternatives considered:** ISR with build-time prerender (needs a reachable DB at build — breaks the slim image build); running migrations + a DB during `docker build` (couples build to infra).

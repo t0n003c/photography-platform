@@ -56,19 +56,21 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 3 — Public site
+## Phase 3 — Public site ✅ (completed 2026-06-14)
 
-- [ ] Implement responsive grid layouts: masonry, justified, and uniform.
-- [ ] Build category browsing.
-- [ ] Build location browsing.
-- [ ] Implement an accessible lightbox (keyboard, swipe, focus management).
-- [ ] Build hero and about sections.
-- [ ] Build a spam-protected contact form (honeypot/challenge + server-side validation).
-- [ ] Build the Instagram-style section.
-- [ ] SEO: metadata, JSON-LD, sitemap, robots, OpenGraph/Twitter cards.
-- [ ] Add PWA support (manifest, service worker, installability).
-- [ ] Hit performance targets (Core Web Vitals: LCP / INP / CLS).
-- [ ] **Summary + pause for approval.**
+- [x] Implement responsive grid layouts: masonry, justified, and uniform (data-driven from page-config).
+- [x] Build category browsing (index + detail with cursor "load more").
+- [x] Build location browsing (index + detail).
+- [x] Implement an accessible lightbox (keyboard nav, focus trap + restore, scroll lock, backdrop close).
+- [x] Build hero and about sections.
+- [x] Build a spam-protected contact form (honeypot `company` + min-fill-time + server-side validation + Redis rate limit).
+- [x] Build the Instagram-style section _(recent photos as feed; real IG API integration deferred)._
+- [x] SEO: metadata, JSON-LD (Organization/Breadcrumb/ImageGallery), sitemap.ts, robots.ts, OpenGraph/Twitter.
+- [x] Add PWA support (manifest, Serwist service worker, installability).
+- [~] Performance targets — built to spec (AVIF/WebP `<picture>` srcset, lazy + priority LCP, LQIP/no-CLS, RSC, minimal client JS). **Formal Lighthouse audit deferred to Phase 6** (performance-lighthouse agent).
+- [x] **Summary + pause for approval.**
+
+> Deferred within Phase 3 (tracked): public pages render **dynamically** (`force-dynamic`) so the Docker image builds without a DB — CDN/ISR caching is layered in Phase 6 per `CACHING-STRATEGY.md`; the public **client-gallery viewer UI** (`/g/[token]`) is Phase 5 (API already exists); real Instagram API integration; formal Lighthouse pass.
 
 ---
 
