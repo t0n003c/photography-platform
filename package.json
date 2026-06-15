@@ -20,6 +20,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed.ts",
     "test": "echo \"(no tests yet — added from Phase 2)\" && exit 0"
   },
   "dependencies": {
