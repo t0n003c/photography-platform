@@ -1,9 +1,4 @@
-// Drizzle schema — single source of truth for application tables.
-//
-// Phase 2 populates this per docs/DATA-MODEL.md (clients, galleries,
-// access grants, photos, variants, categories, locations, favorites,
-// page_configs, order/invoice stubs, audit_log). Better Auth manages its
-// own auth/session/passkey tables separately.
-//
-// Intentionally empty in the Phase 1 scaffold.
-export {};
+// Drizzle schema — single source of truth for all tables.
+// Auth tables are Better Auth–owned (shape only); app tables are ours.
+export * from "./auth";
+export * from "./app";

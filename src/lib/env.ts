@@ -14,6 +14,9 @@ const EnvSchema = z.object({
     .default("postgres://photog:photog@localhost:5432/photography"),
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
+  BETTER_AUTH_SECRET: z.string().default("dev-insecure-secret-change-me"),
+  BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
+
   STORAGE_DRIVER: z.enum(["minio", "filesystem"]).default("minio"),
   S3_ENDPOINT: z.string().default("http://localhost:9000"),
   S3_REGION: z.string().default("us-east-1"),

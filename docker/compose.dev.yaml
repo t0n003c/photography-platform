@@ -1,0 +1,14 @@
+# Dev overlay — publishes internal services to the host so host-run tooling
+# (drizzle-kit migrations, the worker via `npm run worker`, local `npm run dev`)
+# can reach them. Use with:
+#   docker compose -f docker/compose.yaml -f docker/compose.dev.yaml up -d
+# Not for production — the base compose keeps these ports internal-only.
+name: photography-platform
+
+services:
+  db:
+    ports:
+      - "5432:5432"
+  redis:
+    ports:
+      - "6379:6379"
