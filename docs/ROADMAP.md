@@ -118,14 +118,14 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ---
 
-## Phase 7 — Deployment
+## Phase 7 — Deployment ✅ (completed 2026-06-15)
 
-- [ ] Finalize the Compose stack for the NAS (resource limits, healthchecks, profiles).
-- [ ] Configure the NPM proxy host + Cloudflare Tunnel ingress path (egress-only, no inbound ports).
-- [ ] Finalize volumes and backups (Postgres dumps, media originals, optional R2 offsite).
-- [ ] Finalize the operational run-book (start/stop, logs, common ops).
-- [ ] Document and rehearse the upgrade + rollback procedure (Drizzle migration caution, previous image tag).
-- [ ] **Summary + pause for approval.**
+- [x] Finalize the Compose stack for the NAS (`compose.prod.yaml`: resource limits, log rotation, `tunnel` profile; healthchecks in base).
+- [x] Document the NPM proxy host + Cloudflare Tunnel ingress path (egress-only, no inbound ports; optional in-compose `cloudflared`).
+- [x] Finalize volumes and backups (`scripts/backup.sh` pg_dump + media volume tar + retention; `scripts/restore.sh`; offsite R2/rclone note).
+- [x] Finalize the operational run-book (start/stop, logs, health, psql, MinIO console, triage) in `DEPLOYMENT.md`.
+- [x] Document the upgrade + rollback procedure (worker auto-migrates; forward-only migration caution + pg-backup restore fallback).
+- [x] **Summary + pause for approval.**
 
 ---
 
