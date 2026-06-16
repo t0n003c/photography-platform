@@ -80,11 +80,12 @@ Each section presents 2-3 realistic options, then a clearly marked **Recommendat
 
 | Option | Pros | Cons |
 |---|---|---|
-| **MinIO (S3-compatible, self-hosted) (default)** | S3 API locally = immediate cloud-S3 parity and a drop-in path to cloud later; presigned URLs; clean separation of app and blobs; maximum portability from day one. | Another service to run, secure, and back up; slightly more operational surface than raw disk. |
+| **SeaweedFS (S3-compatible, self-hosted) (default)** | **Apache-2.0 and actively maintained**; S3 API locally = immediate cloud-S3 parity and a drop-in path to cloud later; presigned URLs; clean separation of app and blobs; efficient at small files (our ~7-objects-per-photo workload); maximum portability from day one. | Another service to run, secure, and back up; slightly more operational surface than raw disk. |
+| **MinIO (S3-compatible, self-hosted)** | Mature, widely deployed S3-compatible store. | Moved to **AGPL v3**, **stripped its Community-Edition admin console** (Feb 2025), and entered **maintenance mode** (late 2025) — a poor bet for a long-lived product. |
 | **Filesystem volume on NAS (alternate driver)** | Simplest possible; the NAS *is* a storage appliance; zero extra service; trivial backup/snapshot; fast local reads; no API overhead. | Not S3-API portable on its own; you manage paths/permissions; scaling beyond one box needs a move. |
 | **Cloud S3 / Cloudflare R2** | Durable, offloads storage; R2 has no egress fees. | Recurring cost; data leaves owned hardware; egress/latency for an image-heavy site; against the self-host ethos for the *default* path. |
 
-**Recommendation: MinIO (S3-compatible) from day one, behind a `StorageProvider` abstraction (filesystem as the alternate driver)** — because running MinIO as a **core service from the start** buys maximum portability and immediate cloud-S3 parity: presigned URLs, an S3 API identical to R2/AWS, and a clean app/blob separation, so a later move to off-site cloud is purely operational. The **`StorageProvider` interface** is unchanged and non-negotiable: app code never touches `fs` or S3 directly. The **filesystem driver still exists as a selectable alternate** (config swap, one driver) for operators who prefer raw disk on the NAS, but MinIO is the default. *(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)*
+**Recommendation: SeaweedFS (S3-compatible) from day one, behind a `StorageProvider` abstraction (filesystem as the alternate driver)** — because running an S3-compatible store as a **core service from the start** buys maximum portability and immediate cloud-S3 parity: presigned URLs, an S3 API identical to R2/AWS, and a clean app/blob separation, so a later move to off-site cloud is purely operational. We pick **SeaweedFS** specifically because it is **Apache-2.0 and actively maintained** (MinIO went AGPL, gutted its Community console, and entered maintenance mode — see **ADR-0024**), is a drop-in for the same S3 `StorageProvider` driver, and is efficient at small files. The **`StorageProvider` interface** is unchanged and non-negotiable: app code never touches `fs` or S3 directly. The **filesystem driver still exists as a selectable alternate** (config swap, one driver) for operators who prefer raw disk on the NAS, but SeaweedFS is the default.
 
 ---
 
@@ -169,7 +170,7 @@ Each section presents 2-3 realistic options, then a clearly marked **Recommendat
 | Database | **PostgreSQL 16** | Genuinely relational data + concurrent web/worker writes + headroom for future invoicing. |
 | ORM | **Drizzle** | Light runtime and plain reviewable SQL migrations — right for constrained, long-lived self-hosting. |
 | Auth | **Better Auth** | Passkeys + TOTP 2FA + rate-limit/lockout as core, in our own Postgres, no per-MAU fee. |
-| Media storage | **MinIO (S3) behind `StorageProvider`; filesystem alternate** | MinIO core from day one for portability + cloud-S3 parity; abstraction makes filesystem/cloud a config swap, not a rewrite. |
+| Media storage | **SeaweedFS (S3) behind `StorageProvider`; filesystem alternate** | Apache-2.0, maintained S3 store core from day one for portability + cloud-S3 parity; abstraction makes filesystem/cloud a config swap, not a rewrite (ADR-0024). |
 | Cache / sessions / rate-limit | **Valkey (Redis-protocol)** | One store for sessions, rate-limits, cache, and BullMQ; open BSD license for longevity. |
 | Image processing | **sharp (libvips), async in worker** | Lowest CPU/RAM on NAS; AVIF/WebP + LQIP off the request path; strips EXIF, preserves originals. |
 | Job queue | **BullMQ** | Robust retries/backoff/concurrency for heavy image jobs, kept off the primary DB and request path. |

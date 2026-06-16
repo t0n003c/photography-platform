@@ -25,10 +25,11 @@ RUN if [ "$INSTALL_REMOTION_DEPS" = "true" ]; then \
     fi
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json tsconfig.json ./
+COPY package.json tsconfig.json drizzle.config.ts ./
 COPY src ./src
 COPY worker ./worker
 COPY remotion ./remotion
+COPY scripts ./scripts
 
 # Pre-download the Remotion headless browser when the feature is enabled.
 RUN if [ "$INSTALL_REMOTION_DEPS" = "true" ]; then \

@@ -35,36 +35,45 @@ services:
       retries: 5
     networks: [internal]
 
-  minio:
-    image: minio/minio:latest
+  # S3-compatible object storage (Apache-2.0). All-in-one node: master +
+  # volume + filer + S3 gateway in one process. S3 API on :8333, file browser
+  # (filer) on :8888, master UI on :9333. Identities/creds in seaweedfs/s3.json.
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
     restart: unless-stopped
-    command: ["server", "/data", "--console-address", ":9001"]
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: "server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json -s3.port=8333 -ip=seaweedfs -master.volumeSizeLimitMB=2048 -volume.max=0"
     volumes:
-      - miniodata:/data
+      - seaweeddata:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # console
+      - "8333:8333" # S3 API
+      - "8888:8888" # filer / file browser
+      - "9333:9333" # master UI
     healthcheck:
-      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      # Probe the master (returns 200, no auth). -ip=seaweedfs binds to the
+      # service interface, so use the hostname not localhost. The S3 gateway
+      # comes up shortly after; the bucket-init below waits for it explicitly.
+      test: ["CMD-SHELL", "wget -q -O - http://seaweedfs:9333/cluster/status || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
+      start_period: 10s
     networks: [internal]
 
   # One-shot: ensure the media bucket exists, then exit.
-  minio-init:
+  seaweedfs-init:
     image: minio/mc:latest
     depends_on:
-      minio:
+      seaweedfs:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
-      mc mb --ignore-existing local/${S3_BUCKET:-photography-media} &&
-      echo 'bucket ready';
+      i=0;
+      until mc alias set sw http://seaweedfs:8333 ${S3_ACCESS_KEY_ID:-minioadmin} ${S3_SECRET_ACCESS_KEY:-minioadmin} 2>/dev/null; do
+        i=$$((i+1)); [ $$i -ge 30 ] && { echo 's3 gateway not reachable'; exit 1; };
+        echo 'waiting for s3 gateway...'; sleep 2;
+      done;
+      mc mb --ignore-existing sw/${S3_BUCKET:-photography-media} && echo 'bucket ready';
       "
     networks: [internal]
 
@@ -79,8 +88,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
+      seaweedfs:
         condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
     ports:
       - "${WEB_PORT:-3000}:3000"
     healthcheck:
@@ -102,8 +113,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
+      seaweedfs:
         condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:9091/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
@@ -115,7 +128,7 @@ services:
 volumes:
   pgdata:
   redisdata:
-  miniodata:
+  seaweeddata:
 
 networks:
   internal:

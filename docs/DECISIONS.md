@@ -79,7 +79,7 @@ This is the running decision log for the self-hosted photography platform.
 
 ## ADR-0005: Media storage — MinIO (S3-compatible) from day one behind a StorageProvider abstraction
 
-- **Status:** Accepted
+- **Status:** Accepted — **Superseded by ADR-0024** for the storage-engine choice (SeaweedFS replaces MinIO; the `StorageProvider` abstraction and filesystem-alternate decision stand).
 - **Date:** 2026-06-14
 - **Context:** The platform is image-heavy; originals must be preserved and many derivatives served. We deploy on a NAS, which is itself a storage appliance. We want maximum portability and immediate cloud-S3 parity (presigned URLs, an identical S3 API to AWS/R2) so a potential move to off-site cloud is purely operational, while still preserving a raw-disk option.
 - **Decision:** Define a **`StorageProvider` interface** (unchanged). The **default driver is MinIO (S3-compatible)**, run as a **core (non-optional, non-profile-gated) service** in Docker Compose from day one. Provide the **NAS filesystem volume** driver as a **selectable alternate**. App code never touches `fs` or S3 directly — only the interface (put/get/delete/presign). *(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)*
@@ -310,3 +310,14 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** Implement it **off by default and opt-in**: a `video-render` BullMQ queue + worker (Remotion **dynamically imported** so the default lean worker never loads it), a `remotion/` composition (crossfading Ken-Burns slideshow) rendered by `src/video/render.ts`, an MP4 stored via `StorageProvider`, and a gallery-editor "Slideshow video" card. The admin endpoint returns **501** unless `VIDEO_RENDER_ENABLED=true`; the Chromium is baked only when the worker is built with `INSTALL_REMOTION_DEPS=true` (wired in `compose.prod.yaml`). `remotion/` is excluded from the app `tsc` (it compiles under Remotion's own bundler); Next's build-time type pass is disabled in favour of `tsc` as the gate.
 - **Consequences:** Studios can offer slideshow videos without bloating the default deployment. Enabling means a bigger worker image (+Chromium) and higher RAM/CPU. Rendering is verified at build/typecheck level here; a live render requires the Chromium-enabled image.
 - **Alternatives considered:** Client-side WebCodecs render (limited, browser-bound); a separate render microservice (cleaner isolation, more ops); not building it (owner wanted it).
+
+---
+
+## ADR-0024: Object storage — SeaweedFS, replacing MinIO (supersedes ADR-0005's MinIO choice)
+
+- **Status:** Accepted
+- **Date:** 2026-06-15
+- **Context:** ADR-0005 chose MinIO as the default S3 backend. Since then MinIO moved to **AGPL v3**, **stripped the admin console from the Community Edition** (Feb 2025), and put the community edition into **maintenance mode** (late 2025, security-only). The AGPL doesn't endanger our app code (we run stock MinIO behind a network/S3 boundary), but depending on a maintenance-mode component for a long-lived product is a real risk.
+- **Decision:** Swap the default object store to **SeaweedFS** (Apache-2.0, actively developed). It's a drop-in: our `StorageProvider` "minio" driver is just an S3 client pointed at SeaweedFS's S3 gateway (`:8333`); the app, media pipeline, downloads, and Remotion renders are unchanged. Run as a single all-in-one node (`weed server -s3`) with identities in `docker/seaweedfs/s3.json`. SeaweedFS's small-file efficiency suits our ~7-objects-per-photo workload. The `filesystem` driver remains the no-object-store alternate.
+- **Consequences:** Apache-2.0 (no licensing concern); actively maintained; same S3 abstraction (portability + cloud tiering available). The admin "console" is now SeaweedFS's filer file-browser (`:8888`). Verified end-to-end (upload→WebP→serve→zip→video render) on SeaweedFS. The S3 access key/secret must match between `.env` and `s3.json`. ADR-0005 is **superseded** by this for the storage-engine choice.
+- **Alternatives considered:** **filesystem driver** (simplest, zero object store — best if S3 semantics aren't wanted); **Garage** (S3, AGPL); **stay on MinIO** (works, AGPL is fine for our use, but maintenance-mode risk + gutted console); cloud R2/S3 (offsite, recurring cost).

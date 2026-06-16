@@ -24,7 +24,7 @@ The system is intentionally **two long-lived processes that share one codebase**
 
 Both processes are **stateless**; all durable state lives in **PostgreSQL 16**
 (relational data), **Redis/Valkey** (sessions, rate-limit counters, cache, the job
-queue), and the **object store** (originals + derivatives, **MinIO S3 by default** with a
+queue), and the **object store** (originals + derivatives, **SeaweedFS (S3) by default** with a
 filesystem volume driver as a selectable alternate).
 
 The deployment is a **Docker Compose** stack on the NAS. Inbound traffic arrives via a
@@ -42,7 +42,7 @@ edge CDN for cacheable HTML/ISR pages and image bytes.
 | Auth | Better Auth — password + TOTP 2FA + WebAuthn/passkeys, built-in rate limit + lockout |
 | Cache/queue | Redis/Valkey (sessions, rate limit, cache) + BullMQ jobs |
 | Image pipeline | `sharp` → AVIF/WebP derivatives + LQIP, EXIF normalize, preserve originals |
-| Storage | `StorageProvider` abstraction; **MinIO (S3) core/default**, filesystem driver alternate |
+| Storage | `StorageProvider` abstraction; **SeaweedFS (S3) core/default**, filesystem driver alternate (ADR-0024) |
 | PWA | Serwist (offline shell, manifest, thumbnail caching) |
 | Email | `EmailProvider` interface — SMTP + Resend drivers |
 | Payments | `PaymentProvider` **stub only** (Stripe likely driver); build seams, not the feature |
@@ -74,7 +74,7 @@ flowchart TB
         RD[("Redis / Valkey<br/>sessions · rate limit · cache · queue")]
 
         subgraph store["Media storage"]
-            MINIO["MinIO S3<br/>(core, default driver)"]
+            MINIO["SeaweedFS S3<br/>(core, default driver)"]
             FS["Filesystem volume<br/>(alternate driver)"]
         end
     end
@@ -184,7 +184,7 @@ sequenceDiagram
     autonumber
     participant A as Admin (browser)
     participant W as web (API route)
-    participant S as Storage (MinIO / FS)
+    participant S as Storage (SeaweedFS / FS)
     participant DB as PostgreSQL
     participant Q as Redis (BullMQ)
     participant K as worker
@@ -238,7 +238,7 @@ they are logically separated:
 **Shared modules** (imported by both web and worker — see FOLDER-STRUCTURE.md):
 
 - `db/` — Drizzle schema + query helpers + migrations (single source of truth).
-- `storage/` — `StorageProvider` (MinIO default + filesystem alternate drivers).
+- `storage/` — `StorageProvider` (SeaweedFS/S3 default + filesystem alternate drivers).
 - `image/` — sharp pipeline (derivatives, LQIP, EXIF) used by the worker, metadata
   validation used by the API.
 - `queue/` — BullMQ queue definitions + job contracts (typed payloads shared so
@@ -250,7 +250,7 @@ they are logically separated:
 - `layout-config/` — config-driven gallery/portfolio layout definitions.
 
 The boundary rule: **UI never imports drivers directly; it goes through the domain
-module interface.** Swapping MinIO→filesystem or SMTP→Resend touches only a driver, never a
+module interface.** Swapping SeaweedFS→filesystem or SMTP→Resend touches only a driver, never a
 call site.
 
 ## 6. Trust Boundaries & Caching (brief)
@@ -261,7 +261,7 @@ Trust boundaries, from least to most trusted:
 2. **Cloudflare Tunnel → NAS** — the only inbound path; **no ports exposed** on the
    NAS. Everything behind the tunnel is private network.
 3. **NPM → web** — reverse proxy; only `web` is reachable from NPM. `worker`, `db`,
-   `redis`, `minio` are **not** internet-reachable.
+   `redis`, `seaweedfs` are **not** internet-reachable.
 4. **web/worker → db/redis/storage** — internal Compose network only.
 5. **Authenticated boundary** — admin (strong MFA) vs. scoped gallery guest sessions
    vs. anonymous public. Enforced server-side, every request.
@@ -274,7 +274,7 @@ the auth/session/trust detail lives in **SECURITY.md**.
 ## 7. Scalability Notes
 
 - **Stateless `web`** — no local session/file state, so it scales horizontally behind
-  NPM; sessions resolve from Redis, media from MinIO (or the shared volume on the
+  NPM; sessions resolve from Redis, media from SeaweedFS (or the shared volume on the
   filesystem driver).
 - **Horizontally scalable `worker`** — BullMQ supports N concurrent consumers; add
   worker replicas to absorb upload bursts. Jobs are idempotent and keyed by entity, so
@@ -284,7 +284,7 @@ the auth/session/trust detail lives in **SECURITY.md**.
 - **CDN offload** — Cloudflare absorbs the bulk of read traffic (HTML + immutable
   image bytes), keeping the NAS load proportional to mutations and cache misses, not
   total visitors.
-- **Storage portability** — MinIO (S3) is the default from day one, giving cloud-S3
+- **Storage portability** — SeaweedFS (S3) is the default from day one, giving cloud-S3
   parity and a clean migration path to off-site cloud (R2/AWS) with no app changes; the
   filesystem driver remains a selectable alternate for raw-disk simplicity.
 - **Database** — Postgres is the scaling floor; read replicas are a future option if

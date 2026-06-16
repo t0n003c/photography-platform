@@ -26,15 +26,16 @@ photography platform.
    relationships, metadata, variant lists, and readiness state live in PostgreSQL. The
    object/key layout is never queried directly by the app.
 5. **Provider-agnostic.** All reads/writes go through a `StorageProvider` interface.
-   The **default implementation is MinIO (S3-compatible)**, run as a core service from day
-   one; a **filesystem volume on the NAS is the selectable alternate driver**.
+   The **default implementation is SeaweedFS (S3-compatible)**, run as a core service from day
+   one; a **filesystem volume on the NAS is the selectable alternate driver**. (SeaweedFS
+   replaced MinIO as the S3 backend — see ADR-0024; the abstraction is unchanged.)
 
 ---
 
 ## 2. StorageProvider abstraction
 
 The application never touches `fs` or an S3 SDK directly. It depends on a narrow
-interface so the MinIO/S3 default and the filesystem alternate implementation are
+interface so the SeaweedFS/S3 default and the filesystem alternate implementation are
 interchangeable.
 
 ```ts
@@ -55,7 +56,7 @@ interface PutOpts {
 }
 ```
 
-- **S3/MinIO provider (default):** maps `key` → object key within the configured bucket;
+- **S3/SeaweedFS provider (default):** maps `key` → object key within the configured bucket;
   `signedUrl` uses native S3 pre-signed URLs. This is the day-one backend.
 - **Filesystem provider (alternate):** maps the same `key` → a path under the storage
   root, writes atomically (write to `*.tmp` then `rename`), and serves private objects
@@ -63,14 +64,14 @@ interface PutOpts {
   signature check.
 
 Because keys are opaque and the layout below is just a key-naming convention, switching
-providers requires no key migration — the **same keys are object keys in MinIO/S3 and
+providers requires no key migration — the **same keys are object keys in SeaweedFS/S3 and
 path segments on the filesystem**.
 
 ---
 
 ## 3. Storage layout
 
-The layout is described primarily as **S3/MinIO object keys** (the default backend). The
+The layout is described primarily as **S3/SeaweedFS object keys** (the default backend). The
 **filesystem alternate driver maps the identical keys onto directory paths** under a
 storage root — every key below is both an object key and a path, with `/` separators
 already aligning to both models.
@@ -119,7 +120,7 @@ derivatives/<aa>/<bb>/<photoId>/<storageSalt>/lqip.txt   (optional; LQIP also li
 - `<size>` ∈ `{thumb, small, medium, large, xlarge}`; `<format>` ∈ `{webp, jpg}`
   (WebP at every size; **one** JPEG fallback at the `large` bucket — ADR-0019).
 
-### 3.3 Example key set (shown as a tree; on MinIO/S3 these are object keys, on the filesystem driver these are paths under the storage root)
+### 3.3 Example key set (shown as a tree; on SeaweedFS/S3 these are object keys, on the filesystem driver these are paths under the storage root)
 
 ```
 (bucket or storage root)/
@@ -399,7 +400,7 @@ they are protected hardest.
 
 - Every original's `contentHash` (SHA-256) is stored at upload. A periodic **scrub** job
   re-hashes a rolling sample of originals and compares, detecting bit-rot or corruption.
-- The default MinIO/S3 backend provides its own object integrity (ETag/checksums) as a
+- The default SeaweedFS/S3 backend provides its own object integrity (ETag/checksums) as a
   first line; the filesystem alternate driver relies on the underlying CoW filesystem's
   checksums (ZFS/Btrfs). The app-level hash check is provider-independent and applies to
   both.

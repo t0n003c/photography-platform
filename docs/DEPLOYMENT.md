@@ -2,7 +2,7 @@
 
 > **Final deployment guide + run-book** for the self-hosted photography platform. This reflects the implemented Compose stack under `docker/`, the real env set in `.env.example`, and the operational scripts in `scripts/`. All commands are run from the repo root.
 
-The application is a single **Next.js 15 (App Router, TypeScript)** process (`web`, `:3000`, standalone output) plus a **separate BullMQ worker** (`worker`) sharing the same codebase. Backing services are **PostgreSQL 16**, **Redis 7**, and **MinIO** (S3-compatible object store — the default media backend). Everything runs on a **NAS** under Docker. **Nginx Proxy Manager (NPM)** and **Cloudflare Tunnel (`cloudflared`)** front the stack; the tunnel is **egress-only**, so the NAS opens **no public inbound ports**.
+The application is a single **Next.js 15 (App Router, TypeScript)** process (`web`, `:3000`, standalone output) plus a **separate BullMQ worker** (`worker`) sharing the same codebase. Backing services are **PostgreSQL 16**, **Redis 7**, and **SeaweedFS** (S3-compatible object store — the default media backend; replaced MinIO per ADR-0024). Everything runs on a **NAS** under Docker. **Nginx Proxy Manager (NPM)** and **Cloudflare Tunnel (`cloudflared`)** front the stack; the tunnel is **egress-only**, so the NAS opens **no public inbound ports**.
 
 ---
 
@@ -26,7 +26,7 @@ flowchart TD
             Worker[worker<br/>BullMQ + sharp<br/>runs DB migrations on boot]
             DB[(db<br/>Postgres 16)]
             Redis[(redis<br/>Redis 7 appendonly)]
-            MinIO[(minio<br/>S3 object store<br/>originals + derivatives)]
+            MinIO[(seaweedfs<br/>SeaweedFS S3 object store<br/>originals + derivatives)]
         end
     end
 
@@ -48,7 +48,7 @@ flowchart TD
 
 - Cloudflare terminates TLS and provides WAF/CDN. `cloudflared` makes an **outbound-only** connection to Cloudflare — nothing on the NAS listens on a public port; no router port-forwarding.
 - **NPM is external infrastructure** (it runs outside this Compose project, or `cloudflared` can point straight at `web`). The tunnel's public hostname maps to either NPM or directly to `http://web:3000`.
-- **Only `web` is proxied to.** `db`, `redis`, `minio`, and `worker` are reachable on the internal bridge network only.
+- **Only `web` is proxied to.** `db`, `redis`, `seaweedfs`, and `worker` are reachable on the internal bridge network only.
 
 ---
 
@@ -62,13 +62,15 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 | `worker` | build `docker/Dockerfile.worker` (tsx, node:22) | BullMQ image + email queues; **runs DB migrations on boot** | none (internal `:9091` health only) | none (stateless) | `GET :9091/health` | `unless-stopped` |
 | `db` | `postgres:16-alpine` | System of record (users, galleries, grants, media metadata) | internal only | `pgdata` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
 | `redis` | `redis:7-alpine` (`--appendonly yes`) | BullMQ broker + sessions + rate limiting | internal only | `redisdata` | `redis-cli ping` | `unless-stopped` |
-| `minio` | `minio/minio:latest` | Default S3 media store (originals + derivatives) | `9000:9000` (S3 API), `9001:9001` (console) | `miniodata` | `mc ready local` | `unless-stopped` |
-| `minio-init` | `minio/mc:latest` | **One-shot**: creates the `${S3_BUCKET}` bucket, then exits | — | none | — | runs once |
+| `seaweedfs` | `chrislusf/seaweedfs:latest` | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | `8333:8333` (S3 API), `8888:8888` (filer / file browser), `9333:9333` (master UI) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
+| `seaweedfs-init` | `minio/mc:latest` | **One-shot**: retries until the S3 gateway is up, then creates the `${S3_BUCKET}` bucket and exits | — | none | — | runs once |
 | `cloudflared` | `cloudflare/cloudflared:latest` | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile) | none (egress-only) | none | — | `unless-stopped` |
 
 **Notes:**
 
-- `web` and `worker` both `depends_on` `db`, `redis`, and `minio` with `condition: service_healthy`, so they only start once backing services report healthy (avoids migration/connection races).
+- `web` and `worker` both `depends_on` `db`, `redis`, and `seaweedfs` with `condition: service_healthy` (plus `seaweedfs-init` with `condition: service_completed_successfully`), so they only start once backing services report healthy and the bucket exists (avoids migration/connection races).
+- SeaweedFS reads its S3 identities/credentials from `docker/seaweedfs/s3.json` (mounted read-only), **not** from env vars — there are no `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD`. The keys in that file **must match** `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` in `.env`.
+- The `worker` Docker image now copies `scripts/`, so first-deploy seeding via `docker compose run --rm worker npm run db:seed` works.
 - `worker` runs **two BullMQ workers** (image pipeline + email), each at **concurrency 4** (`worker/index.ts`).
 - On boot the worker applies Drizzle migrations from `src/db/migrations` (gated by `RUN_MIGRATIONS`, default `true`), so `docker compose up` is self-contained.
 - The prod overlay adds JSON-file log rotation (10 MB × 3) and resource limits: `web` 1.5 CPU / 1 GB, `worker` 2 CPU / 2 GB.
@@ -81,11 +83,11 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 | Volume | Backs | NAS mapping (example) | Tier |
 | --- | --- | --- | --- |
 | `pgdata` | Postgres 16 data directory | `/volume1/docker/photo/pg` | **Critical** — system of record |
-| `miniodata` | MinIO objects — **originals + derivatives** | `/volume1/photos/minio` | **Critical (originals)**; derivatives regenerable |
+| `seaweeddata` | SeaweedFS objects — **originals + derivatives** | `/volume1/photos/seaweedfs` | **Critical (originals)**; derivatives regenerable |
 | `redisdata` | Redis appendonly (AOF) file | `/volume1/docker/photo/redis` | Important — protects in-flight queue jobs |
 
 - **`pgdata`** — must persist; never a tmpfs/throwaway volume.
-- **`miniodata`** — the irreplaceable asset. Holds source **originals** (cannot be recreated) and **derivatives** (thumbnails/resized/LQIP, regenerable by re-running the sharp pipeline). Map this to durable NAS storage.
+- **`seaweeddata`** — the irreplaceable asset. Holds source **originals** (cannot be recreated) and **derivatives** (thumbnails/resized/LQIP, regenerable by re-running the sharp pipeline). Map this to durable NAS storage.
 - **`redisdata`** — `redis` runs with `--appendonly yes` so queued media-processing/email jobs survive a restart. Cache misses after restart are harmless.
 
 To map a named volume to a NAS path, override it with a bind mount or a `local`-driver volume in your overlay; the defaults are Docker-managed named volumes.
@@ -106,7 +108,7 @@ cp .env.example .env
 - **Database** — `DATABASE_URL`, and the values the `db` container itself uses: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`.
 - **Redis** — `REDIS_URL`.
 - **Auth (Better Auth)** — `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
-- **Storage (S3 / MinIO)** — `STORAGE_DRIVER` (`minio` default, `filesystem` alternate), `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE`, the MinIO server creds `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, and `STORAGE_FS_PATH` (filesystem driver only).
+- **Storage (S3 / SeaweedFS)** — `STORAGE_DRIVER` (`minio` default — the generic S3 driver name, now pointed at SeaweedFS; `filesystem` alternate), `S3_ENDPOINT` (`http://seaweedfs:8333`), `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE=true`, and `STORAGE_FS_PATH` (filesystem driver only). **There are no `MINIO_ROOT_*` vars** — SeaweedFS reads its identities from `docker/seaweedfs/s3.json`, and `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` **must match** the keys in that file.
 - **Email** — `EMAIL_DRIVER` (`log` default, `smtp`, `resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`, `RESEND_API_KEY`.
 - **Payments** — `PAYMENTS_DRIVER` (`stub`, deferred), `STRIPE_SECRET_KEY`.
 - **Worker** — `WORKER_HEALTH_PORT` (default `9091`), `RUN_MIGRATIONS` (default `true`; set `false` to run migrations out-of-band).
@@ -119,7 +121,7 @@ cp .env.example .env
 > openssl rand -base64 48
 > ```
 >
-> Apply the same to `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD` / `S3_SECRET_ACCESS_KEY`, and `SEED_OWNER_PASSWORD`. Real secrets live only in `.env`, never in git.
+> Apply the same to `POSTGRES_PASSWORD`, the S3 credentials (`S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` — keep these in sync with `docker/seaweedfs/s3.json`), and `SEED_OWNER_PASSWORD`. Real secrets live only in `.env`, never in git.
 
 ---
 
@@ -130,16 +132,20 @@ cp .env.example .env
 git clone <repo-url> photography-platform && cd photography-platform
 
 # 2. Create and edit the env file. Set NODE_ENV=production, real DATABASE_URL,
-#    a strong BETTER_AUTH_SECRET (openssl rand -base64 48), MinIO/S3 creds,
+#    a strong BETTER_AUTH_SECRET (openssl rand -base64 48), S3 creds (and keep
+#    them in sync with docker/seaweedfs/s3.json),
 #    APP_BASE_URL / BETTER_AUTH_URL = your public Cloudflare hostname.
 cp .env.example .env
 $EDITOR .env
+# 2b. Edit docker/seaweedfs/s3.json so its accessKey/secretKey match
+#     S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in .env.
+$EDITOR docker/seaweedfs/s3.json
 
 # 3. Build + start the production stack (base + prod overlay).
 docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
 ```
 
-On startup: `minio-init` creates the `${S3_BUCKET}` bucket; the **worker applies all DB migrations automatically** (`RUN_MIGRATIONS=true`); `web` comes up once `db`/`redis`/`minio` are healthy.
+On startup: `seaweedfs-init` waits for the S3 gateway and creates the `${S3_BUCKET}` bucket; the **worker applies all DB migrations automatically** (`RUN_MIGRATIONS=true`); `web` comes up once `db`/`redis`/`seaweedfs` are healthy.
 
 ```bash
 # 4. Seed the owner account + starter taxonomy (layouts, categories, locations,
@@ -148,7 +154,7 @@ docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .en
   run --rm worker npm run db:seed
 ```
 
-This creates the owner from `SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` (change the password immediately after first login).
+This creates the owner from `SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` (change the password immediately after first login). The `worker` image bundles `scripts/`, so this `run --rm worker npm run db:seed` works on a fresh deploy.
 
 ### 5.1 NPM proxy host
 
@@ -179,7 +185,7 @@ Verify: `https://photos.example.com/api/health` returns `{"status":"ok","service
 
 ## 6. Networking
 
-- **Internal bridge network (`internal`):** `db`, `redis`, `minio`, `minio-init`, `worker`, `web`, and `cloudflared` communicate by service name. Only `web` (port `${WEB_PORT:-3000}`) is published for NPM; `minio` publishes `9000`/`9001` on the host for the console/S3 API (firewall these off from the public internet — they are not behind the tunnel).
+- **Internal bridge network (`internal`):** `db`, `redis`, `seaweedfs`, `seaweedfs-init`, `worker`, `web`, and `cloudflared` communicate by service name. Only `web` (port `${WEB_PORT:-3000}`) is published for NPM; `seaweedfs` publishes `8333` (S3 API), `8888` (filer / built-in file browser, the SeaweedFS replacement for the old MinIO console), and `9333` (master UI) on the host (firewall these off from the public internet — they are not behind the tunnel).
 - **TLS** is terminated at **Cloudflare's edge**; the Cloudflare → origin hop rides inside the tunnel.
 - **Trusted client IP:** `src/lib/request.ts` reads `cf-connecting-ip` (set by Cloudflare). It only falls back to `x-forwarded-for` **outside production** — in production, raw XFF is ignored so a client cannot forge the rate-limit / lockout / audit identity. Better Auth is configured with `ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"]` (`src/auth/index.ts`).
 - **Cache headers** (`middleware.ts`): all private surfaces (`/admin`, `/login`, `/g/` client galleries, `/api/v1/admin`, `/api/v1/g`, `/api/auth`) are sent `Cache-Control: private, no-store`. Public read APIs (`GET /api/v1/*`, excluding `/api/v1/media`) are edge-cacheable with `public, s-maxage=60, stale-while-revalidate=300`. The middleware also sets HSTS (prod only), a nonce-based CSP (Report-Only for now), and the standard security headers.
@@ -191,18 +197,18 @@ Verify: `https://photos.example.com/api/health` returns `{"status":"ok","service
 Run from the repo root with the stack up.
 
 ```bash
-# Postgres logical dump (gzip) + miniodata volume tar → ./backups
+# Postgres logical dump (gzip) + seaweeddata volume tar → ./backups
 ./scripts/backup.sh
 ```
 
-`scripts/backup.sh` runs `pg_dump` (`--no-owner --clean --if-exists`) against the `db` service and tars the `photography-platform_miniodata` volume. Retention is the last `BACKUP_RETENTION` (default 14) of each artifact; output dir is `BACKUP_DIR` (default `./backups`).
+`scripts/backup.sh` runs `pg_dump` (`--no-owner --clean --if-exists`) against the `db` service and tars the `photography-platform_seaweeddata` volume. Retention is the last `BACKUP_RETENTION` (default 14) of each artifact; output dir is `BACKUP_DIR` (default `./backups`).
 
 ```bash
 # Restore (DESTRUCTIVE — stop traffic first). Prompts for confirmation.
 ./scripts/restore.sh backups/pg-YYYYMMDD-HHMMSS.sql.gz backups/media-YYYYMMDD-HHMMSS.tar.gz
 ```
 
-`scripts/restore.sh` pipes the dump into `psql`, stops `minio`, replaces the `miniodata` volume contents from the tar, and restarts `minio`. Verify the app, then resume traffic.
+`scripts/restore.sh` pipes the dump into `psql`, stops `seaweedfs`, replaces the `seaweeddata` volume contents from the tar, and restarts `seaweedfs`. Verify the app, then resume traffic.
 
 **Recommendations:**
 
@@ -267,14 +273,14 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
 | Seed owner + taxonomy | `dc run --rm worker npm run db:seed` (idempotent) |
 | psql shell | `dc exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
 | Inspect queues | `dc exec redis redis-cli` (BullMQ keys) |
-| MinIO console | browse `http://<nas-ip>:9001` (login = `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`) |
+| SeaweedFS file browser | browse `http://<nas-ip>:8888` (filer UI; master UI at `:9333`). Credentials live in `docker/seaweedfs/s3.json` |
 | Backup | `./scripts/backup.sh` |
 | Restore | `./scripts/restore.sh <pg.sql.gz> <media.tar.gz>` |
 
-**Where data lives:** `pgdata` (Postgres), `redisdata` (Redis AOF), `miniodata` (MinIO objects — originals + derivatives). Config in `.env`. NPM proxy host + Cloudflare Tunnel hostname are external.
+**Where data lives:** `pgdata` (Postgres), `redisdata` (Redis AOF), `seaweeddata` (SeaweedFS objects — originals + derivatives). Config in `.env`. NPM proxy host + Cloudflare Tunnel hostname are external.
 
 **Troubleshooting:**
 
-- **`web` unhealthy / won't boot in prod** — most common cause is a weak/default `BETTER_AUTH_SECRET` (`instrumentation.ts` refuses to start). Check `dc logs web`; regenerate with `openssl rand -base64 48` and `dc up -d`. Also confirm `db`/`redis`/`minio` are healthy (`dc ps`).
+- **`web` unhealthy / won't boot in prod** — most common cause is a weak/default `BETTER_AUTH_SECRET` (`instrumentation.ts` refuses to start). Check `dc logs web`; regenerate with `openssl rand -base64 48` and `dc up -d`. Also confirm `db`/`redis`/`seaweedfs` are healthy (`dc ps`).
 - **`worker` stuck / jobs not processing** — check `dc logs -f worker` for `listening on queue` and migration output. Confirm `redis` is healthy and reachable (`dc exec redis redis-cli ping`). Restart with `dc restart worker`; in-flight jobs survive via the Redis AOF.
-- **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), and check `miniodata` growth (`docker system df -v`). Move `miniodata`/`pgdata` to a larger NAS share if needed and copy backups offsite.
+- **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), and check `seaweeddata` growth (`docker system df -v`). Move `seaweeddata`/`pgdata` to a larger NAS share if needed and copy backups offsite.

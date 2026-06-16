@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Back up Postgres (logical dump) + MinIO media (volume tar) to ./backups.
+# Back up Postgres (logical dump) + SeaweedFS media (volume tar) to ./backups.
 # Run from the repo root with the stack up:  ./scripts/backup.sh
 # Originals are the irreplaceable asset; derivatives are regenerable but are
 # included here for fast restore. See docs/DEPLOYMENT.md.
@@ -19,9 +19,9 @@ echo "[backup] postgres → $OUT/pg-$STAMP.sql.gz"
 $COMPOSE exec -T db pg_dump -U "$PG_USER" -d "$PG_DB" --no-owner --clean --if-exists \
   | gzip > "$OUT/pg-$STAMP.sql.gz"
 
-echo "[backup] minio media volume → $OUT/media-$STAMP.tar.gz"
+echo "[backup] media volume → $OUT/media-$STAMP.tar.gz"
 docker run --rm \
-  -v "${PROJECT}_miniodata:/data:ro" \
+  -v "${PROJECT}_seaweeddata:/data:ro" \
   -v "$(cd "$OUT" && pwd):/backup" \
   alpine sh -c "tar czf /backup/media-$STAMP.tar.gz -C /data ."
 

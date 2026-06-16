@@ -5,14 +5,14 @@ replacing a WordPress/WooCommerce site. Built to run on a NAS behind Nginx Proxy
 Manager + a Cloudflare Tunnel.
 
 > **Status:** Phase 1 — Scaffold. The app boots, dark mode works, and the full
-> service topology (web · worker · postgres · redis · minio) comes up under Docker
+> service topology (web · worker · postgres · redis · seaweedfs) comes up under Docker
 > Compose. Core data, auth, the media pipeline, and the public site arrive in
 > later phases. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Stack
 
 Next.js 15 (App Router) · TypeScript · Tailwind + shadcn/ui · PostgreSQL 16 +
-Drizzle · Better Auth · Redis + BullMQ worker · sharp · MinIO (S3) storage ·
+Drizzle · Better Auth · Redis + BullMQ worker · sharp · SeaweedFS (S3) storage ·
 Serwist PWA. Full rationale in [`docs/TECH-STACK.md`](docs/TECH-STACK.md).
 
 ## Local development
@@ -23,10 +23,10 @@ npm install
 npm run dev                # http://localhost:3000
 ```
 
-Supporting services for local dev (Postgres / Redis / MinIO):
+Supporting services for local dev (Postgres / Redis / SeaweedFS):
 
 ```bash
-docker compose -f docker/compose.yaml --env-file .env up -d db redis minio minio-init
+docker compose -f docker/compose.yaml --env-file .env up -d db redis seaweedfs seaweedfs-init
 ```
 
 ## Run the full stack in Docker
@@ -37,7 +37,7 @@ docker compose -f docker/compose.yaml --env-file .env up --build
 ```
 
 - Web: http://localhost:3000  ·  health: http://localhost:3000/api/health
-- MinIO console: http://localhost:9001
+- SeaweedFS filer / file browser: http://localhost:8888
 
 ## Scripts
 

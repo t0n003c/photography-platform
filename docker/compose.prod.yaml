@@ -40,7 +40,7 @@ services:
   redis:
     <<: *logging
 
-  minio:
+  seaweedfs:
     <<: *logging
 
   # Optional: Cloudflare Tunnel (egress-only; no inbound ports on the NAS).
