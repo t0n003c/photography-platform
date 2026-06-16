@@ -21,7 +21,9 @@ export function middleware(request: NextRequest) {
     "connect-src 'self'",
     "worker-src 'self'",
     "manifest-src 'self'",
-    "frame-ancestors 'none'",
+    // 'self' (not 'none') so the admin Design editor can embed public pages in
+    // its live-preview iframe. Still blocks cross-origin clickjacking.
+    "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
@@ -34,6 +36,11 @@ export function middleware(request: NextRequest) {
   // Setting the CSP on the REQUEST lets Next.js read the nonce and apply it to
   // its own injected <script> tags (required for enforced, nonce-based CSP).
   requestHeaders.set("content-security-policy", csp);
+  // Live-design preview: force a theme when the editor passes ?__theme=.
+  const previewTheme = request.nextUrl.searchParams.get("__theme");
+  if (previewTheme === "light" || previewTheme === "dark") {
+    requestHeaders.set("x-preview-theme", previewTheme);
+  }
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 
@@ -65,7 +72,7 @@ export function middleware(request: NextRequest) {
   // Enforced (nonce-based) CSP. Violations are still reported to /api/csp-report.
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
-  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Frame-Options", "SAMEORIGIN");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set(
     "Permissions-Policy",

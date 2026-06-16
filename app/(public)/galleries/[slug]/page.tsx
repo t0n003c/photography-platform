@@ -5,8 +5,8 @@ import { JsonLd } from "@/components/seo/json-ld";
 import {
   getPublicGalleryBySlug,
   getGalleryPhotos,
-  resolvePageConfig,
 } from "@/src/db/queries/public";
+import { resolveRenderConfig } from "@/src/lib/render-config";
 import { buildMetadata, imageGalleryJsonLd } from "@/src/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -28,25 +28,19 @@ export async function generateMetadata({
 
 export default async function GalleryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
   const g = await getPublicGalleryBySlug(slug);
   if (!g) notFound();
 
-  const [{ photos, nextCursor }, cfg] = await Promise.all([
+  const [{ photos, nextCursor }, layout] = await Promise.all([
     getGalleryPhotos(g.id),
-    resolvePageConfig("gallery", g.pageConfigId),
+    resolveRenderConfig("gallery", g.pageConfigId, await searchParams, "justified"),
   ]);
-
-  const layout = {
-    gridType: (cfg?.gridType ?? "justified") as
-      | "masonry"
-      | "justified"
-      | "uniform",
-    spacing: cfg?.spacing ?? "normal",
-  };
 
   return (
     <Container className="py-12">
