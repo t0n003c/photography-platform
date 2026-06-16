@@ -11,6 +11,7 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
@@ -286,6 +287,51 @@ export const galleryPhoto = pgTable(
     primaryKey({ columns: [t.galleryId, t.photoId] }),
     index("gallery_photo_order_idx").on(t.galleryId, t.sortOrder),
     index("gallery_photo_photo_idx").on(t.photoId),
+  ],
+);
+
+// ── Folders / Collections (admin-only nestable catalogs) ─────────────────────
+// A private organizational tree. Folders can be published as a public gallery
+// or category. Self-referential parent for nesting.
+export const folder = pgTable(
+  "folder",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    parentId: text("parent_id").references((): AnyPgColumn => folder.id, {
+      onDelete: "cascade",
+    }),
+    coverPhotoId: text("cover_photo_id").references(() => photo.id, {
+      onDelete: "set null",
+    }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("folder_parent_idx").on(t.parentId)],
+);
+
+export const folderPhoto = pgTable(
+  "folder_photo",
+  {
+    folderId: text("folder_id")
+      .notNull()
+      .references(() => folder.id, { onDelete: "cascade" }),
+    photoId: text("photo_id")
+      .notNull()
+      .references(() => photo.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    addedAt: timestamp("added_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.folderId, t.photoId] }),
+    index("folder_photo_order_idx").on(t.folderId, t.sortOrder),
+    index("folder_photo_photo_idx").on(t.photoId),
   ],
 );
 
