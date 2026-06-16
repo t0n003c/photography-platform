@@ -45,10 +45,20 @@ services:
     volumes:
       - seaweeddata:/data
       - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
-    ports:
-      - "8333:8333" # S3 API
-      - "8888:8888" # filer / file browser
-      - "9333:9333" # master UI
+    # No host ports published by default — the app and worker reach SeaweedFS
+    # over the internal Docker network (hostname `seaweedfs`), so it stays
+    # invisible from the host. Storage usage is visible in the admin dashboard
+    # instead (Settings → Dashboard "Storage" card).
+    #
+    # ── DEBUG: expose the SeaweedFS UIs on the host ──────────────────────────
+    # Uncomment the block below (and `docker compose up -d seaweedfs`) to reach:
+    #   http://localhost:8333  S3 API        http://localhost:8888  file browser
+    #   http://localhost:9333  master/cluster status UI
+    # Re-comment when done so nothing is exposed on the NAS host.
+    # ports:
+    #   - "8333:8333" # S3 API
+    #   - "8888:8888" # filer / file browser
+    #   - "9333:9333" # master UI
     healthcheck:
       # Probe the master (returns 200, no auth). -ip=seaweedfs binds to the
       # service interface, so use the hostname not localhost. The S3 gateway

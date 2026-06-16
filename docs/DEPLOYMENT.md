@@ -62,7 +62,7 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 | `worker` | build `docker/Dockerfile.worker` (tsx, node:22) | BullMQ image + email queues; **runs DB migrations on boot** | none (internal `:9091` health only) | none (stateless) | `GET :9091/health` | `unless-stopped` |
 | `db` | `postgres:16-alpine` | System of record (users, galleries, grants, media metadata) | internal only | `pgdata` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
 | `redis` | `redis:7-alpine` (`--appendonly yes`) | BullMQ broker + sessions + rate limiting | internal only | `redisdata` | `redis-cli ping` | `unless-stopped` |
-| `seaweedfs` | `chrislusf/seaweedfs:latest` | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | `8333:8333` (S3 API), `8888:8888` (filer / file browser), `9333:9333` (master UI) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
+| `seaweedfs` | `chrislusf/seaweedfs:latest` | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | **none published** (internal network only; debug ports commented out in `docker/compose.yaml`) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
 | `seaweedfs-init` | `minio/mc:latest` | **One-shot**: retries until the S3 gateway is up, then creates the `${S3_BUCKET}` bucket and exits | — | none | — | runs once |
 | `cloudflared` | `cloudflare/cloudflared:latest` | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile) | none (egress-only) | none | — | `unless-stopped` |
 
@@ -185,7 +185,7 @@ Verify: `https://photos.example.com/api/health` returns `{"status":"ok","service
 
 ## 6. Networking
 
-- **Internal bridge network (`internal`):** `db`, `redis`, `seaweedfs`, `seaweedfs-init`, `worker`, `web`, and `cloudflared` communicate by service name. Only `web` (port `${WEB_PORT:-3000}`) is published for NPM; `seaweedfs` publishes `8333` (S3 API), `8888` (filer / built-in file browser, the SeaweedFS replacement for the old MinIO console), and `9333` (master UI) on the host (firewall these off from the public internet — they are not behind the tunnel).
+- **Internal bridge network (`internal`):** `db`, `redis`, `seaweedfs`, `seaweedfs-init`, `worker`, `web`, and `cloudflared` communicate by service name. Only `web` (port `${WEB_PORT:-3000}`) is published for NPM. `seaweedfs` publishes **no host ports by default** — the app and worker reach it over the internal network, so it stays invisible from the host. Storage usage is surfaced on the admin **Dashboard → Storage** card (no need to open SeaweedFS). To debug the SeaweedFS UIs directly, uncomment the `ports:` block on the `seaweedfs` service in `docker/compose.yaml` (S3 API `8333`, filer/file browser `8888`, master UI `9333`), `docker compose up -d seaweedfs`, then re-comment when done. Firewall those ports off from the public internet — they are never behind the tunnel.
 - **TLS** is terminated at **Cloudflare's edge**; the Cloudflare → origin hop rides inside the tunnel.
 - **Trusted client IP:** `src/lib/request.ts` reads `cf-connecting-ip` (set by Cloudflare). It only falls back to `x-forwarded-for` **outside production** — in production, raw XFF is ignored so a client cannot forge the rate-limit / lockout / audit identity. Better Auth is configured with `ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"]` (`src/auth/index.ts`).
 - **Cache headers** (`middleware.ts`): all private surfaces (`/admin`, `/login`, `/g/` client galleries, `/api/v1/admin`, `/api/v1/g`, `/api/auth`) are sent `Cache-Control: private, no-store`. Public read APIs (`GET /api/v1/*`, excluding `/api/v1/media`) are edge-cacheable with `public, s-maxage=60, stale-while-revalidate=300`. The middleware also sets HSTS (prod only), a nonce-based CSP (Report-Only for now), and the standard security headers.
@@ -273,7 +273,8 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
 | Seed owner + taxonomy | `dc run --rm worker npm run db:seed` (idempotent) |
 | psql shell | `dc exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
 | Inspect queues | `dc exec redis redis-cli` (BullMQ keys) |
-| SeaweedFS file browser | browse `http://<nas-ip>:8888` (filer UI; master UI at `:9333`). Credentials live in `docker/seaweedfs/s3.json` |
+| Storage usage | Admin **Dashboard → Storage** card (derived from the DB; no SeaweedFS access needed) |
+| SeaweedFS file browser (debug) | uncomment the `ports:` block on the `seaweedfs` service in `docker/compose.yaml`, `dc up -d seaweedfs`, then browse `http://<nas-ip>:8888` (filer UI; master UI at `:9333`). Credentials live in `docker/seaweedfs/s3.json`. Re-comment when done |
 | Backup | `./scripts/backup.sh` |
 | Restore | `./scripts/restore.sh <pg.sql.gz> <media.tar.gz>` |
 

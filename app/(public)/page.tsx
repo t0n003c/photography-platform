@@ -12,6 +12,7 @@ import {
   getCategoryPhotos,
 } from "@/src/db/queries/public";
 import { getInstagramProvider } from "@/src/instagram";
+import { resolveRenderConfig } from "@/src/lib/render-config";
 import { buildMetadata, SITE, imageGalleryJsonLd } from "@/src/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -20,16 +21,23 @@ export const metadata = buildMetadata({ path: "/" });
 const GRID_SIZES =
   "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw";
 
-export default async function HomePage() {
-  const [featured, categories, locations, instagram] = await Promise.all([
-    getFeaturedPhotos(13),
-    getPublishedCategories(),
-    getPublishedLocations(),
-    getInstagramProvider().getFeed(6),
-  ]);
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [featured, categories, locations, instagram, config] =
+    await Promise.all([
+      getFeaturedPhotos(13),
+      getPublishedCategories(),
+      getPublishedLocations(),
+      getInstagramProvider().getFeed(6),
+      resolveRenderConfig("home", null, await searchParams, "justified"),
+    ]);
 
   const hero = featured[0];
   const rest = featured.slice(1);
+  const headline = config.hero?.headline?.trim() || SITE.name;
 
   return (
     <>
@@ -41,7 +49,7 @@ export default async function HomePage() {
             <div className="absolute inset-0 flex items-end">
               <Container className="pb-12">
                 <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-6xl">
-                  {SITE.name}
+                  {headline}
                 </h1>
                 <p className="mt-3 max-w-xl text-base text-white/85">
                   {SITE.description}
@@ -66,7 +74,7 @@ export default async function HomePage() {
         ) : (
           <Container className="py-24">
             <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
-              {SITE.name}
+              {headline}
             </h1>
             <p className="mt-4 max-w-xl text-[hsl(var(--muted-foreground))]">
               {SITE.description}
@@ -88,7 +96,10 @@ export default async function HomePage() {
         <Container className="py-16">
           <SectionHeading title="Featured work" href="/categories" cta="All work" />
           <div className="mt-6">
-            <Gallery photos={rest} layout={{ gridType: "justified", spacing: "normal" }} />
+            <Gallery
+              photos={rest}
+              layout={{ gridType: config.gridType, spacing: config.spacing }}
+            />
           </div>
           <JsonLd
             data={imageGalleryJsonLd({

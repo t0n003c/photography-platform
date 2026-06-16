@@ -10,6 +10,7 @@ import {
   Palette,
   Upload,
   Users,
+  HardDrive,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
@@ -22,6 +23,25 @@ interface QuickAction {
   label: string;
   description: string;
   icon: typeof Upload;
+}
+
+interface StorageStats {
+  originalBytes: number;
+  variantBytes: number;
+  totalBytes: number;
+  photoCount: number;
+  variantCount: number;
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 const ACTIONS: QuickAction[] = [
@@ -67,6 +87,7 @@ export default function DashboardPage() {
   const [recent, setRecent] = useState<PhotoDTO[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
   const [newCount, setNewCount] = useState<string | null>(null);
+  const [storage, setStorage] = useState<StorageStats | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -105,6 +126,21 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    api
+      .get<{ data: StorageStats }>("/api/v1/admin/storage")
+      .then((res) => {
+        if (active) setStorage(res.data);
+      })
+      .catch(() => {
+        /* resilient: hide the card on error */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -113,6 +149,34 @@ export default function DashboardPage() {
           Welcome back. Here&apos;s a quick way into everything.
         </p>
       </div>
+
+      {storage && (
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <span className="rounded-lg border p-2">
+              <HardDrive className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Storage used
+              </p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {formatBytes(storage.totalBytes)}
+              </p>
+            </div>
+            <div className="text-sm text-[hsl(var(--muted-foreground))]">
+              <p>
+                {formatBytes(storage.originalBytes)} originals ·{" "}
+                {storage.photoCount.toLocaleString()} photos
+              </p>
+              <p>
+                {formatBytes(storage.variantBytes)} optimized ·{" "}
+                {storage.variantCount.toLocaleString()} variants
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ACTIONS.map((action) => {
