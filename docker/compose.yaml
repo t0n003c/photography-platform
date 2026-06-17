@@ -70,21 +70,30 @@ services:
       start_period: 10s
     networks: [internal]
 
-  # One-shot: ensure the media bucket exists, then exit.
+  # Ensures the media bucket exists, then idles as a healthy sidecar (so it shows
+  # "running" in stack UIs like Dockge rather than exited). web/worker wait on its
+  # health, not its exit — same guarantee, no exited container.
   seaweedfs-init:
     image: minio/mc:latest
+    restart: unless-stopped
     depends_on:
       seaweedfs:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      i=0;
       until mc alias set sw http://seaweedfs:8333 ${S3_ACCESS_KEY_ID:-minioadmin} ${S3_SECRET_ACCESS_KEY:-minioadmin} 2>/dev/null; do
-        i=$$((i+1)); [ $$i -ge 30 ] && { echo 's3 gateway not reachable'; exit 1; };
         echo 'waiting for s3 gateway...'; sleep 2;
       done;
       mc mb --ignore-existing sw/${S3_BUCKET:-photography-media} && echo 'bucket ready';
+      touch /tmp/ready;
+      tail -f /dev/null
       "
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
     networks: [internal]
 
   web:
@@ -103,7 +112,7 @@ services:
       seaweedfs:
         condition: service_healthy
       seaweedfs-init:
-        condition: service_completed_successfully
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-3000}:3000"
     healthcheck:
@@ -130,7 +139,7 @@ services:
       seaweedfs:
         condition: service_healthy
       seaweedfs-init:
-        condition: service_completed_successfully
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:9091/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
