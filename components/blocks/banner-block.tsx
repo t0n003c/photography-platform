@@ -133,7 +133,15 @@ function BannerImage({
   className?: string;
 }) {
   if (block.effect === "webgl-distortion") {
-    return <HeroMedia photo={photo} className={className} variant="distort" />;
+    return (
+      <HeroMedia
+        photo={photo}
+        className={className}
+        variant="distort"
+        focalX={(block.focalX ?? 50) / 100}
+        focalY={(block.focalY ?? 50) / 100}
+      />
+    );
   }
   const fx =
     block.effect === "ken-burns"

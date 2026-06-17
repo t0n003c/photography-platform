@@ -24,16 +24,20 @@ const fragmentShader = /* glsl */ `
   uniform float uStrength;   // pointer velocity magnitude (0..1)
   uniform float uTexAspect;
   uniform float uViewAspect;
+  uniform vec2 uFocal;       // focal point 0..1 (object-position)
   varying vec2 vUv;
 
-  vec2 coverUv(vec2 uv, float texA, float viewA) {
+  // object-cover with a focal point: the visible window (size s) slides within
+  // the cropped axis toward uFocal instead of always centering at 0.5.
+  vec2 coverUv(vec2 uv, float texA, float viewA, vec2 focal) {
     vec2 s = vec2(1.0);
     if (viewA > texA) { s.y = texA / viewA; } else { s.x = viewA / texA; }
-    return (uv - 0.5) * s + 0.5;
+    vec2 c = mix(s * 0.5, 1.0 - s * 0.5, focal);
+    return (uv - 0.5) * s + c;
   }
 
   void main() {
-    vec2 uv = coverUv(vUv, uTexAspect, uViewAspect);
+    vec2 uv = coverUv(vUv, uTexAspect, uViewAspect, uFocal);
 
     // Ripple emanating from the pointer; amplitude scales with velocity.
     vec2 focal = vec2(0.5) + uMouse * 0.5;
@@ -56,7 +60,17 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-function DistortPlane({ src, onReady }: { src: string; onReady?: () => void }) {
+function DistortPlane({
+  src,
+  onReady,
+  focalX,
+  focalY,
+}: {
+  src: string;
+  onReady?: () => void;
+  focalX: number;
+  focalY: number;
+}) {
   const texture = useLoader(THREE.TextureLoader, src);
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const { viewport, size } = useThree();
@@ -103,7 +117,10 @@ function DistortPlane({ src, onReady }: { src: string; onReady?: () => void }) {
       uStrength: { value: 0 },
       uTexAspect: { value: texAspect },
       uViewAspect: { value: 1 },
+      uFocal: { value: new THREE.Vector2(focalX, focalY) },
     }),
+    // focal updates are pushed every frame below; don't rebuild uniforms on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [texture, texAspect],
   );
 
@@ -116,6 +133,7 @@ function DistortPlane({ src, onReady }: { src: string; onReady?: () => void }) {
       u.uMouse.value.copy(pointer.current);
       u.uStrength.value = velocity.current;
       u.uViewAspect.value = size.width / Math.max(1, size.height);
+      u.uFocal.value.set(focalX, focalY);
     }
     if (!announced.current) {
       announced.current = true;
@@ -139,9 +157,13 @@ function DistortPlane({ src, onReady }: { src: string; onReady?: () => void }) {
 export default function DistortionCanvas({
   src,
   onReady,
+  focalX = 0.5,
+  focalY = 0.5,
 }: {
   src: string;
   onReady?: () => void;
+  focalX?: number;
+  focalY?: number;
 }) {
   return (
     <Canvas
@@ -152,7 +174,7 @@ export default function DistortionCanvas({
       style={{ position: "absolute", inset: 0 }}
     >
       <Suspense fallback={null}>
-        <DistortPlane src={src} onReady={onReady} />
+        <DistortPlane src={src} onReady={onReady} focalX={focalX} focalY={focalY} />
       </Suspense>
     </Canvas>
   );
