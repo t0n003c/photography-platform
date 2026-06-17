@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2, Home as HomeIcon, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ function slugify(s: string): string {
 
 export default function PagesListPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -44,16 +46,33 @@ export default function PagesListPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [type, setType] = useState<PageType>("standard");
 
-  const load = () =>
-    api
-      .get<{ data: PageRow[] }>("/api/v1/admin/pages")
-      .then((res) => setPages(res.data))
-      .catch((err) => toast(errMsg(err), "error"));
+  const load = useCallback(
+    () =>
+      api
+        .get<{ data: PageRow[] }>("/api/v1/admin/pages")
+        .then((res) => setPages(res.data))
+        .catch((err) => toast(errMsg(err), "error")),
+    [toast],
+  );
 
   useEffect(() => {
     load().finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
+
+  // Refetch when the tab/window regains focus so a page created in the editor
+  // (or elsewhere) shows up without a manual refresh.
+  useEffect(() => {
+    const onFocus = () => void load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load]);
 
   const create = async () => {
     if (!title.trim()) return toast("Title is required", "error");
@@ -65,7 +84,8 @@ export default function PagesListPage() {
         type,
       });
       toast("Page created", "success");
-      window.location.href = `/admin/pages/${res.data.id}`;
+      await load(); // keep the list fresh for when the user returns
+      router.push(`/admin/pages/${res.data.id}`);
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {

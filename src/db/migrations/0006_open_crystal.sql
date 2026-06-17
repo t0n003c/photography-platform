@@ -1,0 +1,1 @@
+ALTER TABLE "site_settings" ADD COLUMN "ig_access_token_enc" text;

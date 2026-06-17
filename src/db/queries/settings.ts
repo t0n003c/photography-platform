@@ -113,6 +113,13 @@ export async function getEmailConfig(): Promise<ResolvedEmailConfig | null> {
   };
 }
 
+// Instagram Graph API token (decrypted), or null. Read directly (not cached)
+// so the plaintext never touches Redis.
+export async function getInstagramToken(): Promise<string | null> {
+  const row = await getSiteSettingsRow();
+  return decryptSecret(row?.igAccessTokenEnc);
+}
+
 export async function invalidateSiteSettings(): Promise<void> {
   await invalidate(CACHE_KEY);
 }

@@ -471,6 +471,8 @@ export const siteSettings = pgTable("site_settings", {
   smtpUser: text("smtp_user"),
   smtpPasswordEnc: text("smtp_password_enc"), // AES-256-GCM ciphertext
   resendApiKeyEnc: text("resend_api_key_enc"), // AES-256-GCM ciphertext
+  // Integrations
+  igAccessTokenEnc: text("ig_access_token_enc"), // Instagram Graph API token (AES-256-GCM)
   updatedAt: updatedAt(),
 });
 

@@ -27,6 +27,7 @@ interface SettingsDTO {
   smtpUser: string;
   smtpPasswordSet: boolean;
   resendApiKeySet: boolean;
+  igAccessTokenSet: boolean;
 }
 
 function errMsg(err: unknown): string {
@@ -64,6 +65,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [smtpPassword, setSmtpPassword] = useState("");
   const [resendApiKey, setResendApiKey] = useState("");
+  const [igAccessToken, setIgAccessToken] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [testing, setTesting] = useState(false);
   const [iconBust, setIconBust] = useState(0);
@@ -113,16 +115,19 @@ export default function SettingsPage() {
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
       if (resendApiKey) payload.resendApiKey = resendApiKey;
+      if (igAccessToken) payload.igAccessToken = igAccessToken;
 
       await api.patch("/api/v1/admin/settings", payload);
       setSmtpPassword("");
       setResendApiKey("");
+      setIgAccessToken("");
       setS((prev) =>
         prev
           ? {
               ...prev,
               smtpPasswordSet: prev.smtpPasswordSet || Boolean(smtpPassword),
               resendApiKeySet: prev.resendApiKeySet || Boolean(resendApiKey),
+              igAccessTokenSet: prev.igAccessTokenSet || Boolean(igAccessToken),
             }
           : prev,
       );
@@ -424,6 +429,42 @@ export default function SettingsPage() {
               Save first — the test uses your saved settings.
             </span>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Integrations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Integrations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Field label="Instagram access token">
+            <Input
+              type="password"
+              value={igAccessToken}
+              onChange={(e) => setIgAccessToken(e.target.value)}
+              autoComplete="off"
+              placeholder={
+                s.igAccessTokenSet
+                  ? "•••••••• (connected — leave blank to keep)"
+                  : "Paste an Instagram Graph API token"
+              }
+            />
+          </Field>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Powers the <strong>Instagram feed</strong> page block. Create a
+            long-lived token in the{" "}
+            <a
+              href="https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline underline-offset-2"
+            >
+              Meta / Instagram developer console
+            </a>
+            . Until connected, the Instagram block shows your most recent library
+            photos instead. The token is stored encrypted.
+          </p>
         </CardContent>
       </Card>
 

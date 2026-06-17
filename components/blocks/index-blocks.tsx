@@ -7,7 +7,7 @@ import {
   getPublishedLocations,
   getCategoryPhotos,
 } from "@/src/db/queries/public";
-import { getInstagramProvider } from "@/src/instagram";
+import { resolveInstagramProvider, type InstagramProvider } from "@/src/instagram";
 import type { LeafBlock } from "@/src/lib/blocks";
 
 const GRID_SIZES = "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw";
@@ -96,9 +96,10 @@ export async function InstagramBlock({
 }: {
   block: Extract<LeafBlock, { type: "instagram" }>;
 }) {
-  let feed: Awaited<ReturnType<ReturnType<typeof getInstagramProvider>["getFeed"]>> = [];
+  let feed: Awaited<ReturnType<InstagramProvider["getFeed"]>> = [];
   try {
-    feed = await getInstagramProvider().getFeed(block.count);
+    const provider = await resolveInstagramProvider();
+    feed = await provider.getFeed(block.count);
   } catch {
     feed = [];
   }
