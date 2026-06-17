@@ -80,14 +80,15 @@ export default function PagesListPage() {
     if (!title.trim()) return toast("Title is required", "error");
     setCreating(true);
     try {
-      const res = await api.post<{ data: { id: string } }>("/api/v1/admin/pages", {
+      // Mutations return the bare object ({ id }), not a { data } envelope.
+      const res = await api.post<{ id: string }>("/api/v1/admin/pages", {
         title: title.trim(),
         slug: slug || slugify(title),
         type,
       });
       toast("Page created", "success");
       await load(); // keep the list fresh for when the user returns
-      router.push(`/admin/pages/${res.data.id}`);
+      router.push(`/admin/pages/${res.id}`);
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {

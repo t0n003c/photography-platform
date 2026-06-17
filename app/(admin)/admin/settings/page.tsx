@@ -170,11 +170,12 @@ export default function SettingsPage() {
   const sendTest = async () => {
     setTesting(true);
     try {
-      const res = await api.post<{ data: { to: string } }>(
+      // Mutations return the bare object ({ sent, to }), not a { data } envelope.
+      const res = await api.post<{ sent: boolean; to: string }>(
         "/api/v1/admin/settings/test-email",
         {},
       );
-      toast(`Test email sent to ${res.data.to}`, "success");
+      toast(`Test email sent to ${res.to}`, "success");
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {
