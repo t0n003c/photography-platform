@@ -230,7 +230,13 @@ they are logically separated:
 - **`app/(public)`** — SSG/ISR portfolio + client galleries. No privileged data
   access; reads go through the same domain modules with public-scoped queries.
 - **`app/(admin)`** — auth-gated management UI. Server Components/Actions call domain
-  modules with role checks.
+  modules with role checks. Beyond media/galleries it includes the CMS surfaces:
+  **Settings** (`site_settings`: branding, locale/time, encrypted SMTP), **Menus**
+  (`menu`/`menu_item`: data-driven, nestable header/footer nav), and **Pages**
+  (`page`: a curated block-builder — blocks validated by `src/lib/blocks.ts`,
+  rendered by `components/blocks/*`, previewed via an admin-gated
+  `/preview/page/[id]`). Public builder pages render through an `app/(public)/[...slug]`
+  catch-all; opt-in GSAP/WebGL effects degrade to the static grid/image.
 - **`app/api`** — route handlers: auth (Better Auth), uploads, gallery/share
   resolution, contact form, payment seams. The single ingress for mutations.
 - **`worker/`** — separate process, **no HTTP**, consumes BullMQ jobs.
