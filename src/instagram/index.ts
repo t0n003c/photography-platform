@@ -17,3 +17,17 @@ export function getInstagramProvider(): InstagramProvider {
     : new FallbackInstagramProvider();
   return provider;
 }
+
+// DB-aware resolver: prefers the Instagram token saved in Settings → Integrations
+// (decrypted), falling back to IG_ACCESS_TOKEN, then the recent-photos fallback.
+// Constructed per call so admin changes take effect without a restart.
+export async function resolveInstagramProvider(): Promise<InstagramProvider> {
+  try {
+    const { getInstagramToken } = await import("@/src/db/queries/settings");
+    const token = await getInstagramToken();
+    if (token) return new GraphInstagramProvider(token);
+  } catch {
+    // fall through to env/fallback
+  }
+  return getInstagramProvider();
+}

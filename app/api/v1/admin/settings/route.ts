@@ -40,6 +40,7 @@ export async function GET() {
       smtpUser: row?.smtpUser ?? "",
       smtpPasswordSet: Boolean(row?.smtpPasswordEnc),
       resendApiKeySet: Boolean(row?.resendApiKeyEnc),
+      igAccessTokenSet: Boolean(row?.igAccessTokenEnc),
     },
   });
 }
@@ -61,6 +62,7 @@ const PatchSchema = z.object({
   // Secrets: a non-empty string sets/replaces; null clears; undefined leaves.
   smtpPassword: z.string().nullable().optional(),
   resendApiKey: z.string().nullable().optional(),
+  igAccessToken: z.string().nullable().optional(),
 });
 
 // PATCH — upsert the singleton settings row. Secrets are encrypted at rest.
@@ -107,6 +109,11 @@ export async function PATCH(req: Request) {
   if (body.resendApiKey !== undefined) {
     updates.resendApiKeyEnc = body.resendApiKey
       ? encryptSecret(body.resendApiKey)
+      : null;
+  }
+  if (body.igAccessToken !== undefined) {
+    updates.igAccessTokenEnc = body.igAccessToken
+      ? encryptSecret(body.igAccessToken)
       : null;
   }
 

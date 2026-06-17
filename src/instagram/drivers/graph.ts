@@ -23,8 +23,8 @@ interface GraphMediaResponse {
 export class GraphInstagramProvider implements InstagramProvider {
   private token: string;
 
-  constructor() {
-    this.token = getEnv().IG_ACCESS_TOKEN ?? "";
+  constructor(token?: string) {
+    this.token = token ?? getEnv().IG_ACCESS_TOKEN ?? "";
   }
 
   async getFeed(limit: number): Promise<InstagramItem[]> {

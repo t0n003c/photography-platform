@@ -11,7 +11,7 @@ import {
   getPublishedLocations,
   getCategoryPhotos,
 } from "@/src/db/queries/public";
-import { getInstagramProvider } from "@/src/instagram";
+import { resolveInstagramProvider } from "@/src/instagram";
 import { resolveRenderConfig } from "@/src/lib/render-config";
 import { buildMetadata, SITE, imageGalleryJsonLd } from "@/src/lib/seo";
 import { getHomePage } from "@/src/db/queries/pages";
@@ -45,7 +45,7 @@ export default async function HomePage({
       getFeaturedPhotos(13),
       getPublishedCategories(),
       getPublishedLocations(),
-      getInstagramProvider().getFeed(6),
+      resolveInstagramProvider().then((p) => p.getFeed(6)),
       resolveRenderConfig("home", null, await searchParams, "justified"),
     ]);
 

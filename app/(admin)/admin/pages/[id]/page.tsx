@@ -616,9 +616,16 @@ function LeafEditor({
       return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
     case "instagram":
       return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-          <Field label="Count"><Input type="number" value={block.count} onChange={(e) => set({ count: Number(e.target.value) })} /></Field>
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Count"><Input type="number" value={block.count} onChange={(e) => set({ count: Number(e.target.value) })} /></Field>
+          </div>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Shows your Instagram feed once connected in{" "}
+            <a href="/admin/settings" className="underline underline-offset-2">Settings → Integrations</a>.
+            Until then it falls back to your most recent library photos.
+          </p>
         </div>
       );
     case "divider":
