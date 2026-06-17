@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { uploadFile } from "@/src/upload/client";
-import { ApiError } from "@/src/lib/api-client";
+import { api } from "@/src/lib/api-client";
 
-type ItemStatus = "queued" | "uploading" | "done" | "error";
+type ItemStatus = "queued" | "uploading" | "processing" | "done" | "error";
 
 interface QueueItem {
   id: number;
@@ -24,9 +24,10 @@ interface QueueItem {
 
 const CONCURRENCY = 2;
 
-const STATUS_TONE: Record<ItemStatus, "neutral" | "blue" | "green" | "red"> = {
+const STATUS_TONE: Record<ItemStatus, "neutral" | "blue" | "amber" | "green" | "red"> = {
   queued: "neutral",
   uploading: "blue",
+  processing: "amber",
   done: "green",
   error: "red",
 };
@@ -34,9 +35,12 @@ const STATUS_TONE: Record<ItemStatus, "neutral" | "blue" | "green" | "red"> = {
 const STATUS_LABEL: Record<ItemStatus, string> = {
   queued: "Queued",
   uploading: "Uploading",
-  done: "Uploaded — processing in background",
+  processing: "Processing…",
+  done: "Ready",
   error: "Error",
 };
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 let nextId = 0;
 
@@ -59,6 +63,7 @@ export default function UploadPage() {
     runningRef.current = true;
 
     const summary = { done: 0, error: 0 };
+    const polls: Promise<void>[] = [];
 
     // Drain the queue: repeatedly grab the next "queued" item until none remain.
     const grabNext = (): QueueItem | undefined => {
@@ -74,6 +79,39 @@ export default function UploadPage() {
       return picked;
     };
 
+    // After the bytes land, the worker generates WebP/AVIF variants. Poll until
+    // it's ready (or failed) so the row reflects real end-to-end progress.
+    const pollProcessing = async (photoId: string, itemId: number) => {
+      const deadline = Date.now() + 90_000;
+      while (Date.now() < deadline) {
+        await sleep(1500);
+        try {
+          const res = await api.get<{
+            photo: { processingStatus: string; processingError?: string | null };
+          }>(`/api/v1/admin/photos/${photoId}`);
+          const st = res.photo.processingStatus;
+          if (st === "ready") {
+            update(itemId, { status: "done", progress: 1 });
+            summary.done += 1;
+            return;
+          }
+          if (st === "failed") {
+            update(itemId, {
+              status: "error",
+              error: res.photo.processingError ?? "Processing failed",
+            });
+            summary.error += 1;
+            return;
+          }
+        } catch {
+          // transient — keep polling until the deadline
+        }
+      }
+      // Timed out waiting on the worker; the bytes are uploaded regardless.
+      update(itemId, { status: "done", progress: 1 });
+      summary.done += 1;
+    };
+
     const worker = async () => {
       for (;;) {
         const item = grabNext();
@@ -82,8 +120,8 @@ export default function UploadPage() {
           const { photoId } = await uploadFile(item.file, (frac) =>
             update(item.id, { progress: frac }),
           );
-          update(item.id, { status: "done", progress: 1, photoId });
-          summary.done += 1;
+          update(item.id, { status: "processing", progress: 1, photoId });
+          polls.push(pollProcessing(photoId, item.id));
         } catch (err) {
           update(item.id, {
             status: "error",
@@ -94,13 +132,14 @@ export default function UploadPage() {
       }
     };
 
-    await Promise.all(
-      Array.from({ length: CONCURRENCY }, () => worker()),
-    );
-
+    await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+    // Uploads done — allow new drops to start immediately while we wait on
+    // processing for this batch.
     runningRef.current = false;
+    await Promise.all(polls);
+
     if (summary.done || summary.error) {
-      const parts = [`${summary.done} uploaded`];
+      const parts = [`${summary.done} ready`];
       if (summary.error) parts.push(`${summary.error} failed`);
       toast(parts.join(", "), summary.error ? "error" : "success");
     }
@@ -218,18 +257,29 @@ export default function UploadPage() {
                         {STATUS_LABEL[it.status]}
                       </Badge>
                     </div>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--muted))]">
-                      <div
-                        className={
-                          "h-full rounded-full transition-[width] " +
-                          (it.status === "error"
-                            ? "bg-red-500"
-                            : it.status === "done"
-                              ? "bg-green-500"
-                              : "bg-[hsl(var(--primary))]")
-                        }
-                        style={{ width: `${it.progress * 100}%` }}
-                      />
+                    <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--muted))]">
+                      {it.status === "processing" ? (
+                        // The slow phase (sharp → WebP/AVIF variants): animated.
+                        <div className="progress-indeterminate bg-amber-500" />
+                      ) : (
+                        <div
+                          className={
+                            "h-full rounded-full transition-[width] duration-300 " +
+                            (it.status === "error"
+                              ? "bg-red-500"
+                              : it.status === "done"
+                                ? "bg-green-500"
+                                : "bg-[hsl(var(--primary))]")
+                          }
+                          style={{
+                            width: `${
+                              (it.status === "done" || it.status === "error"
+                                ? 1
+                                : it.progress) * 100
+                            }%`,
+                          }}
+                        />
+                      )}
                     </div>
                     {it.error && (
                       <p className="mt-1 text-xs text-red-600">{it.error}</p>
