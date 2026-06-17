@@ -474,6 +474,47 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: updatedAt(),
 });
 
+// ── §12c Navigation menus ────────────────────────────────────────────────────
+// Data-driven nav. `menu` keys are stable ("primary", "footer"); `menu_item`
+// rows nest via parentId (subpages → dropdowns). Items link to a page,
+// category/location/gallery (slug resolved at render), an internal/external URL,
+// or the home route.
+export const menu = pgTable("menu", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const menuItem = pgTable(
+  "menu_item",
+  {
+    id: text("id").primaryKey(),
+    menuId: text("menu_id")
+      .notNull()
+      .references(() => menu.id, { onDelete: "cascade" }),
+    parentId: text("parent_id").references((): AnyPgColumn => menuItem.id, {
+      onDelete: "cascade",
+    }),
+    label: text("label").notNull(),
+    linkType: text("link_type", {
+      enum: ["page", "category", "location", "gallery", "url", "home"],
+    }).notNull(),
+    targetId: text("target_id"), // page/category/location/gallery id
+    url: text("url"), // for linkType "url"
+    sortOrder: integer("sort_order").notNull().default(0),
+    openInNewTab: boolean("open_in_new_tab").notNull().default(false),
+    isVisible: boolean("is_visible").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("menu_item_menu_idx").on(t.menuId),
+    index("menu_item_parent_idx").on(t.parentId),
+  ],
+);
+
 // ── §13 Store (DEFERRED stub tables) ─────────────────────────────────────────
 export const product = pgTable("product", {
   id: text("id").primaryKey(),
