@@ -586,61 +586,63 @@ function LeafEditor({
           </Field>
         </div>
       );
-    case "banner":
-      return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Field label="Image source">
-              <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
-                <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
-              </Select>
-            </Field>
-            <Field label="Darken image">
-              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
-                <option value="auto">Auto (only behind text)</option>
-                <option value="none">None</option>
-                <option value="dark">Always darken</option>
-              </Select>
-            </Field>
-            <Field label="Layout">
-              <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
-                <option value="bottom-left">Bottom left</option>
-                <option value="bottom-right">Bottom right</option>
-                <option value="center">Centered</option>
-                <option value="split-left">Split · image left</option>
-                <option value="split-right">Split · image right</option>
-              </Select>
-            </Field>
-            <Field label="Image position">
-              <FocalPointPicker
-                x={block.focalX ?? 50}
-                y={block.focalY ?? 50}
-                thumbUrl={photos.find((p) => p.id === block.photoId)?.thumbUrl ?? null}
-                onChange={(fx, fy) => set({ focalX: fx, focalY: fy })}
-              />
-            </Field>
-            <Field label="Zoom">
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={1}
-                  max={3}
-                  step={0.05}
-                  value={block.zoom ?? 1}
-                  onChange={(e) => set({ zoom: Number(e.target.value) })}
-                  className="w-full accent-[hsl(var(--primary))]"
-                />
-                <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
-                  {Math.round((block.zoom ?? 1) * 100)}%
-                </span>
-              </div>
-            </Field>
+    case "banner": {
+      // Source / darken / layout trio (top-left in both source modes).
+      const cfg = (
+        <>
+          <Field label="Image source">
+            <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
+              <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
+            </Select>
+          </Field>
+          <Field label="Darken image">
+            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+              <option value="auto">Auto (only behind text)</option>
+              <option value="none">None</option>
+              <option value="dark">Always darken</option>
+            </Select>
+          </Field>
+          <Field label="Layout">
+            <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-right">Bottom right</option>
+              <option value="center">Centered</option>
+              <option value="split-left">Split · image left</option>
+              <option value="split-right">Split · image right</option>
+            </Select>
+          </Field>
+        </>
+      );
+      const focalField = (
+        <Field label="Image position">
+          <FocalPointPicker
+            x={block.focalX ?? 50}
+            y={block.focalY ?? 50}
+            thumbUrl={photos.find((p) => p.id === block.photoId)?.thumbUrl ?? null}
+            onChange={(fx, fy) => set({ focalX: fx, focalY: fy })}
+          />
+        </Field>
+      );
+      const zoomField = (
+        <Field label="Zoom">
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={block.zoom ?? 1}
+              onChange={(e) => set({ zoom: Number(e.target.value) })}
+              className="w-full accent-[hsl(var(--primary))]"
+            />
+            <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+              {Math.round((block.zoom ?? 1) * 100)}%
+            </span>
           </div>
-          {block.source === "photo" && (
-            <Field label="Photo">
-              <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
-            </Field>
-          )}
+        </Field>
+      );
+      const rest = (
+        <>
           <Field label="Headline"><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
           <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
           <Field label="Headline font">
@@ -683,8 +685,39 @@ function LeafEditor({
               <option value="webgl-distortion">WebGL distortion</option>
             </Select>
           </Field>
+        </>
+      );
+      // Featured: no photo picker, so put the (tall) Image position beside the
+      // source/darken/layout trio, then flow zoom + text below.
+      if (block.source === "featured") {
+        return (
+          <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-2">{cfg}</div>
+              {focalField}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {zoomField}
+              {rest}
+            </div>
+          </div>
+        );
+      }
+      // Specific photo: focal + zoom stay under the trio, photo picker on the right.
+      return (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="space-y-2">
+            {cfg}
+            {focalField}
+            {zoomField}
+          </div>
+          <Field label="Photo">
+            <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
+          </Field>
+          {rest}
         </div>
       );
+    }
     case "spacer":
       return (
         <Field label="Size">
