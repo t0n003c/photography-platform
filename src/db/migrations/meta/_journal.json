@@ -29,6 +29,13 @@
       "when": 1781667801730,
       "tag": "0003_tiny_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781669202802,
+      "tag": "0004_eager_omega_red",
+      "breakpoints": true
     }
   ]
 }
