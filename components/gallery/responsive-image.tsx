@@ -12,6 +12,8 @@ interface ResponsiveImageProps {
   className?: string;
   /** CSS object-position for the <img> (focal point), e.g. "50% 25%". */
   objectPosition?: string;
+  /** Extra inline style merged onto the <img> (e.g. a zoom transform). */
+  style?: React.CSSProperties;
 }
 
 /** Filter to one format, sorted ascending by width. */
@@ -37,6 +39,7 @@ export function ResponsiveImage({
   priority = false,
   className,
   objectPosition,
+  style,
 }: ResponsiveImageProps) {
   const avif = variantsForFormat(photo.variants, "avif");
   const webp = variantsForFormat(photo.variants, "webp");
@@ -87,7 +90,9 @@ export function ResponsiveImage({
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         className="block h-full w-full object-cover"
-        style={objectPosition ? { objectPosition } : undefined}
+        style={
+          objectPosition || style ? { objectPosition, ...style } : undefined
+        }
       />
     </picture>
   );

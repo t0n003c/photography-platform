@@ -22,13 +22,13 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
   switch (type) {
     case "portfolio":
       return [
-        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
         { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", limit: 12, effect: "none" },
         { id: gen(), type: "cta", headline: "Like what you see?", buttonLabel: "Get in touch", buttonHref: "/contact" },
       ];
     case "landing":
       return [
-        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
         {
           id: gen(),
           type: "columns",
@@ -75,7 +75,7 @@ export function homePresetBlocks(
   opts: { headline: string; subhead: string },
 ): Block[] {
   return [
-    { id: gen(), type: "banner", source: "featured", photoId: null, headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+    { id: gen(), type: "banner", source: "featured", photoId: null, headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
     { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" },
     { id: gen(), type: "categoryIndex", title: "By category" },
     { id: gen(), type: "locationIndex", title: "By location" },

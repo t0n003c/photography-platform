@@ -87,6 +87,9 @@ const BannerBlock = z.object({
   // object-cover crops. Responds on whichever axis the crop has slack.
   focalX: z.number().min(0).max(100).default(50),
   focalY: z.number().min(0).max(100).default(50),
+  // Zoom/scale the photo past cover (1 = fit, up to 3x). Creates overflow on
+  // both axes so the focal point can pan freely regardless of photo shape.
+  zoom: z.number().min(1).max(3).default(1),
   // Headline typography.
   headlineFont: z.enum(["sans", "serif"]).default("sans"),
   headlineSize: z.enum(["sm", "md", "lg", "xl"]).default("lg"),

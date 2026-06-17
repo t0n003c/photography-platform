@@ -132,14 +132,18 @@ function BannerImage({
   block: BannerData;
   className?: string;
 }) {
+  const fx2 = block.focalX ?? 50;
+  const fy2 = block.focalY ?? 50;
+  const zoom = block.zoom ?? 1;
   if (block.effect === "webgl-distortion") {
     return (
       <HeroMedia
         photo={photo}
         className={className}
         variant="distort"
-        focalX={(block.focalX ?? 50) / 100}
-        focalY={(block.focalY ?? 50) / 100}
+        focalX={fx2 / 100}
+        focalY={fy2 / 100}
+        zoom={zoom}
       />
     );
   }
@@ -151,13 +155,20 @@ function BannerImage({
         : "";
   return (
     <div className={cn("relative overflow-hidden", className)}>
+      {/* fx wrapper carries the effect animation; zoom is a transform on the
+          image itself (scaled around the focal point) so they compose. */}
       <div className={cn("absolute inset-0", fx)}>
         <ResponsiveImage
           photo={photo}
           sizes="100vw"
           priority
           className="h-full w-full object-cover"
-          objectPosition={`${block.focalX ?? 50}% ${block.focalY ?? 50}%`}
+          objectPosition={`${fx2}% ${fy2}%`}
+          style={
+            zoom !== 1
+              ? { transform: `scale(${zoom})`, transformOrigin: `${fx2}% ${fy2}%` }
+              : undefined
+          }
         />
       </div>
     </div>

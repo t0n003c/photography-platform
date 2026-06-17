@@ -68,7 +68,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
     case "spacer": return { id, type, size: "md" };
@@ -618,6 +618,22 @@ function LeafEditor({
                 thumbUrl={photos.find((p) => p.id === block.photoId)?.thumbUrl ?? null}
                 onChange={(fx, fy) => set({ focalX: fx, focalY: fy })}
               />
+            </Field>
+            <Field label="Zoom">
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={block.zoom ?? 1}
+                  onChange={(e) => set({ zoom: Number(e.target.value) })}
+                  className="w-full accent-[hsl(var(--primary))]"
+                />
+                <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                  {Math.round((block.zoom ?? 1) * 100)}%
+                </span>
+              </div>
             </Field>
           </div>
           {block.source === "photo" && (

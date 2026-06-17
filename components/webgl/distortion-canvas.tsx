@@ -25,19 +25,21 @@ const fragmentShader = /* glsl */ `
   uniform float uTexAspect;
   uniform float uViewAspect;
   uniform vec2 uFocal;       // focal point 0..1 (object-position)
+  uniform float uZoom;       // scale past cover (1 = fit)
   varying vec2 vUv;
 
-  // object-cover with a focal point: the visible window (size s) slides within
-  // the cropped axis toward uFocal instead of always centering at 0.5.
-  vec2 coverUv(vec2 uv, float texA, float viewA, vec2 focal) {
+  // object-cover with a focal point + zoom: the visible window (size s) shrinks
+  // with zoom and slides within the cropped axes toward uFocal.
+  vec2 coverUv(vec2 uv, float texA, float viewA, vec2 focal, float zoom) {
     vec2 s = vec2(1.0);
     if (viewA > texA) { s.y = texA / viewA; } else { s.x = viewA / texA; }
+    s /= max(zoom, 1.0);
     vec2 c = mix(s * 0.5, 1.0 - s * 0.5, focal);
     return (uv - 0.5) * s + c;
   }
 
   void main() {
-    vec2 uv = coverUv(vUv, uTexAspect, uViewAspect, uFocal);
+    vec2 uv = coverUv(vUv, uTexAspect, uViewAspect, uFocal, uZoom);
 
     // Ripple emanating from the pointer; amplitude scales with velocity.
     vec2 focal = vec2(0.5) + uMouse * 0.5;
@@ -65,11 +67,13 @@ function DistortPlane({
   onReady,
   focalX,
   focalY,
+  zoom,
 }: {
   src: string;
   onReady?: () => void;
   focalX: number;
   focalY: number;
+  zoom: number;
 }) {
   const texture = useLoader(THREE.TextureLoader, src);
   const matRef = useRef<THREE.ShaderMaterial>(null);
@@ -121,6 +125,7 @@ function DistortPlane({
       // the texture's V axis vs CSS object-position — so feed 1 - focalY here to
       // match the static <img>'s vertical focal. X is unaffected by the flip.
       uFocal: { value: new THREE.Vector2(focalX, 1 - focalY) },
+      uZoom: { value: zoom },
     }),
     // focal updates are pushed every frame below; don't rebuild uniforms on it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +142,7 @@ function DistortPlane({
       u.uStrength.value = velocity.current;
       u.uViewAspect.value = size.width / Math.max(1, size.height);
       u.uFocal.value.set(focalX, 1 - focalY); // flipY: invert V to match CSS
+      u.uZoom.value = zoom;
     }
     if (!announced.current) {
       announced.current = true;
@@ -162,11 +168,13 @@ export default function DistortionCanvas({
   onReady,
   focalX = 0.5,
   focalY = 0.5,
+  zoom = 1,
 }: {
   src: string;
   onReady?: () => void;
   focalX?: number;
   focalY?: number;
+  zoom?: number;
 }) {
   return (
     <Canvas
@@ -177,7 +185,7 @@ export default function DistortionCanvas({
       style={{ position: "absolute", inset: 0 }}
     >
       <Suspense fallback={null}>
-        <DistortPlane src={src} onReady={onReady} focalX={focalX} focalY={focalY} />
+        <DistortPlane src={src} onReady={onReady} focalX={focalX} focalY={focalY} zoom={zoom} />
       </Suspense>
     </Canvas>
   );

@@ -39,6 +39,7 @@ export function HeroMedia({
   variant = "parallax",
   focalX = 0.5,
   focalY = 0.5,
+  zoom = 1,
 }: {
   photo: PhotoDTO;
   className?: string;
@@ -49,6 +50,8 @@ export function HeroMedia({
   // Focal point 0..1 (object-position) so the WebGL crop matches the static img.
   focalX?: number;
   focalY?: number;
+  // Zoom/scale past cover (1 = fit).
+  zoom?: number;
 }) {
   const enabled = useWebGLEnhancement();
   const ref = useRef<HTMLDivElement>(null);
@@ -77,6 +80,14 @@ export function HeroMedia({
         priority
         className="absolute inset-0 h-full w-full object-cover"
         objectPosition={`${focalX * 100}% ${focalY * 100}%`}
+        style={
+          zoom !== 1
+            ? {
+                transform: `scale(${zoom})`,
+                transformOrigin: `${focalX * 100}% ${focalY * 100}%`,
+              }
+            : undefined
+        }
       />
       {showCanvas && (
         <div
@@ -92,6 +103,7 @@ export function HeroMedia({
               onReady={() => setReady(true)}
               focalX={focalX}
               focalY={focalY}
+              zoom={zoom}
             />
           ) : (
             <HeroCanvas src={src} onReady={() => setReady(true)} />
