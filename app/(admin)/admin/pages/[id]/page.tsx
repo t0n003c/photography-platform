@@ -67,7 +67,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
     case "spacer": return { id, type, size: "md" };
@@ -601,6 +601,15 @@ function LeafEditor({
                 <option value="dark">Always darken</option>
               </Select>
             </Field>
+            <Field label="Layout">
+              <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
+                <option value="bottom-left">Bottom left</option>
+                <option value="bottom-right">Bottom right</option>
+                <option value="center">Centered</option>
+                <option value="split-left">Split · image left</option>
+                <option value="split-right">Split · image right</option>
+              </Select>
+            </Field>
           </div>
           {block.source === "photo" && (
             <Field label="Photo">
@@ -609,8 +618,33 @@ function LeafEditor({
           )}
           <Field label="Headline"><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
           <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
+          <Field label="Headline font">
+            <Select value={block.headlineFont ?? "sans"} onChange={(e) => set({ headlineFont: e.target.value as typeof block.headlineFont })}>
+              <option value="sans">Sans</option><option value="serif">Serif</option>
+            </Select>
+          </Field>
+          <Field label="Headline size">
+            <Select value={block.headlineSize ?? "lg"} onChange={(e) => set({ headlineSize: e.target.value as typeof block.headlineSize })}>
+              <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="xl">Extra large</option>
+            </Select>
+          </Field>
+          <Field label="Letter spacing">
+            <Select value={block.headlineTracking ?? "normal"} onChange={(e) => set({ headlineTracking: e.target.value as typeof block.headlineTracking })}>
+              <option value="normal">Normal</option><option value="wide">Wide</option><option value="widest">Widest</option>
+            </Select>
+          </Field>
+          <Field label="Headline case">
+            <Select value={block.headlineCase ?? "normal"} onChange={(e) => set({ headlineCase: e.target.value as typeof block.headlineCase })}>
+              <option value="normal">As typed</option><option value="upper">UPPERCASE</option>
+            </Select>
+          </Field>
           <Field label="Button label"><Input value={block.ctaLabel ?? ""} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
           <Field label="Button link"><Input value={block.ctaHref ?? ""} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
+          <Field label="Button style">
+            <Select value={block.buttonStyle ?? "solid"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
+              <option value="solid">Solid</option><option value="pill">Pill</option><option value="outline">Outline</option><option value="link">Text link</option>
+            </Select>
+          </Field>
           <Field label="Height">
             <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
               <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
@@ -619,6 +653,8 @@ function LeafEditor({
           <Field label="Effect">
             <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
               <option value="none">None</option>
+              <option value="ken-burns">Ken Burns (slow zoom)</option>
+              <option value="reveal">Load reveal</option>
               <option value="webgl-distortion">WebGL distortion</option>
             </Select>
           </Field>

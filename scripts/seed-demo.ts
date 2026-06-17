@@ -56,7 +56,7 @@ async function main() {
       title: "Showcase",
       type: "landing",
       blocks: [
-        { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Showcase", subhead: "Everything the page builder can do", ctaLabel: "See the blocks", ctaHref: "/design-samples", height: "tall", overlay: "auto", effect: "webgl-distortion" },
+        { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Showcase", subhead: "Everything the page builder can do", ctaLabel: "See the blocks", ctaHref: "/design-samples", height: "tall", overlay: "auto", layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "webgl-distortion" },
         { id: id(), type: "heading", text: "Featured work", level: 2, align: "center" },
         { id: id(), type: "subheading", text: "A masonry wall pulled from your featured photos", align: "center" },
         { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "airy", limit: 12, effect: "none" },
@@ -85,7 +85,7 @@ async function main() {
       title: "Cinematic",
       type: "portfolio",
       blocks: [
-        { id: id(), type: "banner", source: "featured", photoId: null, headline: "Cinematic Scroll", subhead: "Scroll to fly through the frames in 3D", height: "full", overlay: "auto", effect: "none" },
+        { id: id(), type: "banner", source: "featured", photoId: null, headline: "Cinematic Scroll", subhead: "Scroll to fly through the frames in 3D", height: "full", overlay: "auto", layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
         { id: id(), type: "heading", text: "Keep scrolling ↓", level: 2, align: "center" },
         { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "cinematic-3d-scroll" },
         { id: id(), type: "spacer", size: "lg" },
@@ -134,7 +134,7 @@ async function main() {
       title: "The Studio",
       type: "about",
       blocks: [
-        { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Studio", subhead: "Portraits, places, and the light in between", height: "short", overlay: "auto", effect: "none" },
+        { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Studio", subhead: "Portraits, places, and the light in between", height: "short", overlay: "auto", layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
         { id: id(), type: "columns", gap: "airy", columns: [
           [
             { id: id(), type: "heading", text: "Our approach", level: 2, align: "left" },

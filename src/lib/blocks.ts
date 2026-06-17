@@ -50,6 +50,21 @@ const GalleryBlock = z.object({
   limit: z.number().int().min(1).max(48).default(12),
   effect: EffectEnum.default("none"),
 });
+// Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
+// WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.
+export const BannerEffectEnum = z.enum([
+  "none",
+  "ken-burns",
+  "reveal",
+  "webgl-distortion",
+]);
+export const BannerLayoutEnum = z.enum([
+  "bottom-left",
+  "bottom-right",
+  "center",
+  "split-left",
+  "split-right",
+]);
 const BannerBlock = z.object({
   id,
   type: z.literal("banner"),
@@ -65,7 +80,16 @@ const BannerBlock = z.object({
   // when the banner has text; "none" never darkens; "dark" always applies a
   // stronger scrim.
   overlay: z.enum(["auto", "none", "dark"]).default("auto"),
-  effect: EffectEnum.default("none"),
+  // Composition: where text sits, or a split image/text-panel layout.
+  layout: BannerLayoutEnum.default("bottom-left"),
+  // Headline typography.
+  headlineFont: z.enum(["sans", "serif"]).default("sans"),
+  headlineSize: z.enum(["sm", "md", "lg", "xl"]).default("lg"),
+  headlineTracking: z.enum(["normal", "wide", "widest"]).default("normal"),
+  headlineCase: z.enum(["normal", "upper"]).default("normal"),
+  // Call-to-action button styling.
+  buttonStyle: z.enum(["solid", "outline", "link", "pill"]).default("solid"),
+  effect: BannerEffectEnum.default("none"),
 });
 const QuoteBlock = z.object({
   id,

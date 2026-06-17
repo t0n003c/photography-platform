@@ -60,3 +60,42 @@
     opacity: 0.6;
   }
 }
+
+/* ── Banner effects (CSS, SSR-safe, all gated by reduced-motion) ───────────── */
+
+/* Ken Burns: slow, continuous zoom + pan drift over the photo. */
+@keyframes banner-kenburns {
+  0%   { transform: scale(1.06) translate(0, 0); }
+  100% { transform: scale(1.18) translate(-2%, -1.5%); }
+}
+.banner-kenburns {
+  animation: banner-kenburns 22s ease-in-out infinite alternate;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* Load reveal: image clips in, then text rises in a stagger (one-shot). */
+@keyframes banner-image-reveal {
+  0%   { clip-path: inset(0 0 100% 0); transform: scale(1.08); }
+  100% { clip-path: inset(0 0 0 0); transform: scale(1); }
+}
+.banner-image-reveal {
+  animation: banner-image-reveal 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes banner-rise {
+  0%   { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.banner-reveal > * {
+  opacity: 0;
+  animation: banner-rise 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.banner-reveal > *:nth-child(1) { animation-delay: 250ms; }
+.banner-reveal > *:nth-child(2) { animation-delay: 400ms; }
+.banner-reveal > *:nth-child(3) { animation-delay: 550ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-kenburns,
+  .banner-image-reveal { animation: none; transform: none; clip-path: none; }
+  .banner-reveal > * { opacity: 1; animation: none; transform: none; }
+}
