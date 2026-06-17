@@ -6,6 +6,15 @@ import { NextResponse, type NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isProd = process.env.NODE_ENV === "production";
+  // Effective scheme: honor a reverse proxy's X-Forwarded-Proto, else the
+  // request's own protocol. `upgrade-insecure-requests`/HSTS only make sense
+  // (and only work) over HTTPS — sending them on a plain-HTTP deployment (e.g. a
+  // NAS at http://ip:port) makes the browser try to load every asset over HTTPS
+  // and fail with ERR_SSL_PROTOCOL_ERROR.
+  const proto =
+    request.headers.get("x-forwarded-proto") ??
+    request.nextUrl.protocol.replace(":", "");
+  const isHttps = proto === "https";
 
   const csp = [
     "default-src 'self'",
@@ -27,7 +36,8 @@ export function middleware(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    "upgrade-insecure-requests",
+    // Only force HTTPS upgrades when actually served over HTTPS.
+    ...(isHttps ? ["upgrade-insecure-requests"] : []),
     "report-uri /api/csp-report",
   ].join("; ");
 
@@ -78,8 +88,13 @@ export function middleware(request: NextRequest) {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   );
-  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  if (isProd) {
+  // COOP only applies in a secure context; skip it over plain HTTP to avoid the
+  // "origin untrustworthy" console noise.
+  if (isHttps) {
+    res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  }
+  // HSTS is only honored (and only sensible) over HTTPS.
+  if (isProd && isHttps) {
     res.headers.set(
       "Strict-Transport-Security",
       "max-age=63072000; includeSubDomains; preload",
