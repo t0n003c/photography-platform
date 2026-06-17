@@ -60,6 +60,9 @@ function Dropdown({ item }: { item: ResolvedMenuItem }) {
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false);
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
     >
       <button
         type="button"

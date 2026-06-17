@@ -321,3 +321,47 @@ This is the running decision log for the self-hosted photography platform.
 - **Decision:** Swap the default object store to **SeaweedFS** (Apache-2.0, actively developed). It's a drop-in: our `StorageProvider` "minio" driver is just an S3 client pointed at SeaweedFS's S3 gateway (`:8333`); the app, media pipeline, downloads, and Remotion renders are unchanged. Run as a single all-in-one node (`weed server -s3`) with identities in `docker/seaweedfs/s3.json`. SeaweedFS's small-file efficiency suits our ~7-objects-per-photo workload. The `filesystem` driver remains the no-object-store alternate.
 - **Consequences:** Apache-2.0 (no licensing concern); actively maintained; same S3 abstraction (portability + cloud tiering available). SeaweedFS runs headless — no host ports are published by default, so day-to-day it's invisible; storage usage is surfaced on the admin **Dashboard → Storage** card (summed from the DB). Its filer file-browser (`:8888`) / master UI (`:9333`) stay available for debugging by uncommenting the `ports:` block in `docker/compose.yaml`. Verified end-to-end (upload→WebP→serve→zip→video render) on SeaweedFS. The S3 access key/secret must match between `.env` and `s3.json`. ADR-0005 is **superseded** by this for the storage-engine choice.
 - **Alternatives considered:** **filesystem driver** (simplest, zero object store — best if S3 semantics aren't wanted); **Garage** (S3, AGPL); **stay on MinIO** (works, AGPL is fine for our use, but maintenance-mode risk + gutted console); cloud R2/S3 (offsite, recurring cost).
+
+---
+
+## ADR-0025: Site settings store with DB-encrypted SMTP secret
+
+- **Status:** Accepted
+- **Date:** 2026-06-16
+- **Context:** Site title, branding, locale/timezone, and SMTP were hardcoded (`src/lib/seo.ts`) or env-only. The owner wanted a **Settings** admin tab to edit these at runtime — including the SMTP password, which is a secret.
+- **Decision:** Add a singleton `site_settings` table. Non-secret fields drive SEO/manifest/`<html lang>` (cached, sanitized read) and the email transport (`resolveEmailProvider` reads DB config, env fallback). Secrets (SMTP password, Resend key) are **AES-256-GCM encrypted at rest** (`src/lib/secrets.ts`) using `SETTINGS_ENCRYPTION_KEY` (32-byte hex), which is **derived from `BETTER_AUTH_SECRET` when unset** so dev/local boots with no extra config. The API is **write-only** for secrets (never returned; UI shows "•••• set"), and the sanitized cache never holds plaintext. Reads are resilient to a down DB so `next build` falls back to defaults.
+- **Consequences:** Runtime-editable branding + email without redeploys; no plaintext secret in code or Redis. Operators **should** set a dedicated `SETTINGS_ENCRYPTION_KEY` in production (rotating it invalidates stored secrets, which must be re-entered). Site icon is uploaded to object storage and served via `/api/v1/media/site-icon`.
+- **Alternatives considered:** Keep SMTP env-only (no UI editing — rejected, owner wanted it); store secrets in plaintext (rejected); a dedicated secrets manager/Vault (overkill for a single-node NAS deployment).
+
+---
+
+## ADR-0026: Data-driven navigation menus
+
+- **Status:** Accepted
+- **Date:** 2026-06-16
+- **Context:** Header/footer nav was hardcoded in two components. The owner wanted to organize pages/subpages and edit navigation from the admin.
+- **Decision:** Add `menu` (keys `primary`/`footer`) + `menu_item` (self-ref `parentId`, cascade) tables and an admin tree editor (reuses the Folders reorder/cycle-guard pattern). Items link to home, a category/location/gallery (slug resolved at render), an internal/external URL, or a builder page. The public header/footer **server-fetch** their menu (cached) and render nested items as dropdowns (desktop) / indented (mobile). A **default fallback** (the original links) renders until a menu is customized, so the site never breaks; the two menus auto-seed from the original nav on first admin visit.
+- **Consequences:** Fully editable navigation incl. subpages; one cached query per menu. The fallback + lazy seed mean zero migration risk. Cache invalidates on any item change.
+- **Alternatives considered:** Keep nav in code (rejected — not editable); a single flat list without nesting (insufficient for subpages); storing nav in `site_settings` JSON (less queryable, no per-item rows).
+
+---
+
+## ADR-0027: Curated block-based page builder (not freeform)
+
+- **Status:** Accepted
+- **Date:** 2026-06-17
+- **Context:** The site had **no generic page concept** — every route mapped 1:1 to `collection`/`location`/`gallery`. The owner wanted to design multiple page types (portfolio, landing, about, journal…) with sections, columns, headings, galleries, grids, banners, and footers.
+- **Decision:** A **curated block system**, not a freeform drag-drop builder. A `page` table stores an ordered `blocks` jsonb array validated by `src/lib/blocks.ts` (zod; invalid blocks are dropped, never throw). A server-side `BlockRenderer` maps each block to a component, **reusing** the existing gallery grids, `ResponsiveImage`, and `HeroMedia`. Public pages render via a `[...slug]` catch-all (fixed routes keep precedence; reserved-slug guard). The admin editor (`/admin/pages`) provides a block palette, per-type forms, a columns editor, and a **live-preview iframe** (draft blocks stashed in Redis, rendered by an admin-gated `/preview/page/[id]`). Home + About are migrated into the builder (Home via a seeded draft the owner previews and publishes; bespoke home is the fallback until then).
+- **Consequences:** 90% of a page builder's value (sections/columns/galleries/banners) with predictable, accessible, server-rendered output and no mini-CMS to maintain. Page "types" are starter presets over the same block model. Slugs may contain `/` for subpages. A full freeform canvas remains possible later but is intentionally avoided.
+- **Alternatives considered:** **Freeform drag-drop builder** (Elementor/Gutenberg-style — far larger build, heavier runtime, ongoing maintenance); a headless CMS (extra service, against the boring-tech/self-hosted goal); MDX pages (developer-only, not admin-editable).
+
+---
+
+## ADR-0028: GSAP + opt-in cinematic effects
+
+- **Status:** Accepted
+- **Date:** 2026-06-17
+- **Context:** The owner wanted three signature effects (HTML→WebGL distortion, cinematic 3D scroll, page transitions). The codebase had three.js + react-three-fiber + Lenis but **no animation library**.
+- **Decision:** Add **GSAP** (free license) as the one new runtime dependency — flagged per the "ask before new dependency categories" rule and approved. All three effects are **opt-in and feature-gated** through the existing `components/webgl/feature.ts` (reduced-motion/data, WebGL support, idle): page transitions (`template.tsx` + GSAP enter tween, skipped under reduced-motion), banner WebGL distortion (`distortion-canvas`, r3f, via a `HeroMedia` `variant`), and gallery cinematic 3D scroll (`cinematic-scene`, r3f + sticky scroll container). The static image / responsive grid is always the complete, accessible fallback; effects are chosen per block in the page editor.
+- **Consequences:** Cinematic polish without compromising the no-JS / reduced-motion / no-WebGL baseline. GSAP loads on public routes (page transitions); the heavy WebGL scenes are dynamic-imported and mount only when gated on. Effects never replace semantic DOM, so screen readers/SEO are unaffected.
+- **Alternatives considered:** **CSS / View Transitions API only** (lighter, but couldn't match the reference demos and 3D scroll); **Framer Motion** (React-coupled, heavier for this use); building bespoke tweening (reinventing GSAP).
