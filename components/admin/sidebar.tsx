@@ -13,6 +13,7 @@ import {
   Palette,
   Inbox,
   UserCog,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
@@ -26,6 +27,7 @@ const NAV = [
   { href: "/admin/taxonomy", label: "Categories & Locations", icon: Tags },
   { href: "/admin/design", label: "Design", icon: Palette },
   { href: "/admin/contact", label: "Inbox", icon: Inbox },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/account", label: "Account", icon: UserCog },
 ];
 

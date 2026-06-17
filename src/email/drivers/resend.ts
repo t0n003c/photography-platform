@@ -7,10 +7,15 @@ export class ResendEmailProvider implements EmailProvider {
   private apiKey: string;
   private from: string;
 
-  constructor() {
-    const env = getEnv();
-    this.apiKey = env.RESEND_API_KEY ?? "";
-    this.from = env.EMAIL_FROM;
+  constructor(config?: { apiKey: string; from: string }) {
+    if (config) {
+      this.apiKey = config.apiKey;
+      this.from = config.from;
+    } else {
+      const env = getEnv();
+      this.apiKey = env.RESEND_API_KEY ?? "";
+      this.from = env.EMAIL_FROM;
+    }
   }
 
   async send(message: EmailMessage): Promise<void> {

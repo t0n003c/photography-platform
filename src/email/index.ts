@@ -8,8 +8,9 @@ export type { EmailProvider, EmailMessage } from "@/src/email/provider";
 
 let provider: EmailProvider | null = null;
 
-// Driver selection with safe fallback: if the configured driver lacks its
-// credentials, fall back to the log driver rather than silently failing sends.
+// Env-only driver selection (used as the fallback when no DB settings exist).
+// Safe fallback: if the configured driver lacks its credentials, use the log
+// driver rather than silently failing sends.
 export function getEmailProvider(): EmailProvider {
   if (provider) return provider;
   const env = getEnv();
@@ -26,4 +27,31 @@ export function getEmailProvider(): EmailProvider {
     provider = new LogEmailProvider();
   }
   return provider;
+}
+
+// DB-aware resolver: prefers the SMTP/Resend config saved via the Settings UI
+// (site_settings), falling back to env-based selection. Constructed per call so
+// admin changes take effect without a restart. Import of the settings query is
+// dynamic to keep this module usable in contexts without a DB (and avoid an
+// import cycle).
+export async function resolveEmailProvider(): Promise<EmailProvider> {
+  try {
+    const { getEmailConfig } = await import("@/src/db/queries/settings");
+    const cfg = await getEmailConfig();
+    if (cfg) {
+      if (cfg.driver === "smtp" && cfg.smtp?.host) {
+        return new SmtpEmailProvider({ ...cfg.smtp, from: cfg.from });
+      }
+      if (cfg.driver === "resend" && cfg.resendApiKey) {
+        return new ResendEmailProvider({
+          apiKey: cfg.resendApiKey,
+          from: cfg.from,
+        });
+      }
+      if (cfg.driver === "log") return new LogEmailProvider();
+    }
+  } catch (err) {
+    console.warn("[email] could not load DB settings, using env", err);
+  }
+  return getEmailProvider();
 }

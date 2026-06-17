@@ -17,6 +17,12 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().default("dev-insecure-secret-change-me"),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
 
+  // Encrypts editable secrets stored in the DB (e.g. the SMTP password set via
+  // the Settings UI). 64 hex chars (32 bytes). Optional: when unset, a key is
+  // derived from BETTER_AUTH_SECRET so dev boots, but set a dedicated value in
+  // production. See src/lib/secrets.ts.
+  SETTINGS_ENCRYPTION_KEY: z.string().optional(),
+
   STORAGE_DRIVER: z.enum(["minio", "filesystem"]).default("minio"),
   S3_ENDPOINT: z.string().default("http://localhost:9000"),
   S3_REGION: z.string().default("us-east-1"),

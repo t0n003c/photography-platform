@@ -1,0 +1,21 @@
+CREATE TABLE "site_settings" (
+	"id" text PRIMARY KEY NOT NULL,
+	"site_title" text DEFAULT 'Photography Platform' NOT NULL,
+	"tagline" text,
+	"description" text,
+	"locale" text DEFAULT 'en' NOT NULL,
+	"timezone" text DEFAULT 'UTC' NOT NULL,
+	"date_format" text DEFAULT 'medium' NOT NULL,
+	"week_starts_on" integer DEFAULT 0 NOT NULL,
+	"icon_storage_key" text,
+	"logo_storage_key" text,
+	"email_driver" text DEFAULT 'log' NOT NULL,
+	"email_from" text,
+	"smtp_host" text,
+	"smtp_port" integer DEFAULT 587 NOT NULL,
+	"smtp_secure" boolean DEFAULT false NOT NULL,
+	"smtp_user" text,
+	"smtp_password_enc" text,
+	"resend_api_key_enc" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
