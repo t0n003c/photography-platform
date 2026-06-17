@@ -17,10 +17,13 @@ export function PhotoPicker({
   photos,
   value,
   onChange,
+  containerClassName = "max-h-56",
 }: {
   photos: PhotoOption[];
   value: string | null;
   onChange: (id: string | null) => void;
+  /** Height/sizing for the scroll container (default capped at max-h-56). */
+  containerClassName?: string;
 }) {
   if (photos.length === 0) {
     return (
@@ -30,7 +33,12 @@ export function PhotoPicker({
     );
   }
   return (
-    <div className="max-h-56 overflow-y-auto rounded-md border p-2">
+    <div
+      className={cn(
+        "overflow-y-auto rounded-md border p-2",
+        containerClassName,
+      )}
+    >
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
         {photos.map((p) => {
           const selected = p.id === value;

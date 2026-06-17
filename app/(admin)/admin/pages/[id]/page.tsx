@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
@@ -703,18 +703,29 @@ function LeafEditor({
           </div>
         );
       }
-      // Specific photo: focal + zoom stay under the trio, photo picker on the right.
+      // Specific photo: trio + Image position on the left; the Photo picker fills
+      // the right column so its bottom lines up with the Image position bottom.
       return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="space-y-2">
-            {cfg}
-            {focalField}
-            {zoomField}
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-2">
+              {cfg}
+              {focalField}
+            </div>
+            <div className="flex h-full flex-col gap-1.5">
+              <Label>Photo</Label>
+              <PhotoPicker
+                photos={photos}
+                value={block.photoId ?? null}
+                onChange={(pid) => set({ photoId: pid })}
+                containerClassName="min-h-0 flex-1"
+              />
+            </div>
           </div>
-          <Field label="Photo">
-            <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
-          </Field>
-          {rest}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {zoomField}
+            {rest}
+          </div>
         </div>
       );
     }
