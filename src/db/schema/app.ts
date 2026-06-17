@@ -515,6 +515,41 @@ export const menuItem = pgTable(
   ],
 );
 
+// ── §12d Builder pages ───────────────────────────────────────────────────────
+// Curated block-based pages. `blocks` is an ordered jsonb array validated by
+// src/lib/blocks.ts. One row may be flagged isHome to render at "/".
+export const page = pgTable(
+  "page",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    type: text("type", {
+      enum: ["standard", "portfolio", "landing", "about", "journal", "contact"],
+    })
+      .notNull()
+      .default("standard"),
+    status: text("status", { enum: ["draft", "published"] })
+      .notNull()
+      .default("draft"),
+    isHome: boolean("is_home").notNull().default(false),
+    blocks: jsonb("blocks").notNull().default(sql`'[]'::jsonb`),
+    theme: text("theme", { enum: ["light", "dark", "auto"] }),
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    ogImageKey: text("og_image_key"),
+    transition: jsonb("transition"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("page_status_idx").on(t.status),
+    uniqueIndex("page_home_uniq").on(t.isHome).where(sql`${t.isHome}`),
+  ],
+);
+
 // ── §13 Store (DEFERRED stub tables) ─────────────────────────────────────────
 export const product = pgTable("product", {
   id: text("id").primaryKey(),
