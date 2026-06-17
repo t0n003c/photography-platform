@@ -593,6 +593,13 @@ function LeafEditor({
               <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
             </Select>
           </Field>
+          <Field label="Darken image">
+            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+              <option value="auto">Auto (only behind text)</option>
+              <option value="none">None</option>
+              <option value="dark">Always darken</option>
+            </Select>
+          </Field>
           {block.source === "photo" && (
             <Field label="Photo">
               <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
@@ -605,13 +612,6 @@ function LeafEditor({
           <Field label="Height">
             <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
               <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
-            </Select>
-          </Field>
-          <Field label="Darken image">
-            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
-              <option value="auto">Auto (only behind text)</option>
-              <option value="none">None</option>
-              <option value="dark">Always darken</option>
             </Select>
           </Field>
           <Field label="Effect">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
+import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -84,15 +85,26 @@ export async function BannerBlock({
       </section>
     );
   }
+  // The WebGL distortion effect mounts a canvas; "none" renders a clean static
+  // image so it isn't darkened by a canvas vignette the user didn't ask for.
+  if (block.effect === "webgl-distortion") {
+    return (
+      <section className="relative">
+        <HeroMedia photo={resolved} className={`${h} w-full`} variant="distort">
+          <Overlay block={block} />
+        </HeroMedia>
+      </section>
+    );
+  }
   return (
-    <section className="relative">
-      <HeroMedia
+    <section className={`relative ${h} w-full overflow-hidden`}>
+      <ResponsiveImage
         photo={resolved}
-        className={`${h} w-full`}
-        variant={block.effect === "webgl-distortion" ? "distort" : "parallax"}
-      >
-        <Overlay block={block} />
-      </HeroMedia>
+        sizes="100vw"
+        priority
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <Overlay block={block} />
     </section>
   );
 }

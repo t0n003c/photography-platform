@@ -49,8 +49,9 @@ const fragmentShader = /* glsl */ `
     float b = texture2D(uTexture, clamp(uv + disp - vec2(ca, 0.0), 0.0, 1.0)).b;
 
     vec3 col = vec3(r, g, b);
+    // Very light edge vignette only — keep the photo close to true brightness.
     float vig = smoothstep(1.2, 0.35, distance(vUv, vec2(0.5)));
-    col *= mix(0.9, 1.0, vig);
+    col *= mix(0.97, 1.0, vig);
     gl_FragColor = vec4(col, 1.0);
   }
 `;
