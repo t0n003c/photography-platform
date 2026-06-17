@@ -149,6 +149,29 @@ docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .en
 
 On startup: `seaweedfs-init` waits for the S3 gateway and creates the `${S3_BUCKET}` bucket; the **worker applies all DB migrations automatically** (`RUN_MIGRATIONS=true`); `web` comes up once `db`/`redis`/`seaweedfs` are healthy.
 
+### 3a. (Recommended for NAS) Pull pre-built images instead of building
+
+Building the `web`/`worker` images on NAS hardware is slow and memory-heavy. CI
+(`.github/workflows/publish-images.yml`) builds and pushes them to **GHCR** on
+every push to `main` (and on `vX.Y.Z` tags) as
+`ghcr.io/<owner>/photography-platform-web` and `-worker`. Add the GHCR overlay so
+the NAS **pulls** instead of building:
+
+```bash
+# One-time: make the two GHCR packages Public (GitHub → your profile → Packages →
+# each package → Package settings → Change visibility → Public). Then no login is
+# needed. For private images, run `docker login ghcr.io` with a read:packages PAT.
+
+export IMAGE_TAG=latest   # or pin to a short commit SHA / vX.Y.Z
+DC="docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.ghcr.yaml --env-file .env"
+$DC pull        # fetch the pre-built web + worker images
+$DC up -d       # start — no build on the NAS
+```
+
+To update later: `$DC pull && $DC up -d`. The GHCR worker image is the **lean**
+build (no Chromium); for Remotion slideshow video, build the worker locally with
+`--build-arg INSTALL_REMOTION_DEPS=true` instead of pulling.
+
 ```bash
 # 4. Seed the owner account + starter taxonomy (layouts, categories, locations,
 #    default page configs). Idempotent — safe to re-run.

@@ -1,0 +1,25 @@
+# Use pre-built images from GHCR instead of building locally — ideal for the NAS
+# (no heavy Next.js/sharp build on weak hardware). Pulled images are published by
+# .github/workflows/publish-images.yml on push to main / version tags.
+#
+# NAS usage (compose the base + prod + this overlay):
+#   export IMAGE_TAG=latest   # or a specific short SHA / vX.Y.Z for pinning
+#   docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.ghcr.yaml --env-file .env pull
+#   docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.ghcr.yaml --env-file .env up -d
+#
+# The package must be Public (one-time, in GHCR package settings) for an
+# unauthenticated pull; otherwise `docker login ghcr.io` first.
+#
+# `pull_policy: always` makes Compose use the registry image (never the inherited
+# build:), so this stays compatible with older Compose on NAS (no `!reset` needed).
+#
+# NOTE: the GHCR worker image is the lean build (no Chromium). For Remotion
+# slideshow video, build the worker locally with INSTALL_REMOTION_DEPS=true.
+services:
+  web:
+    image: ghcr.io/t0n003c/photography-platform-web:${IMAGE_TAG:-latest}
+    pull_policy: always
+
+  worker:
+    image: ghcr.io/t0n003c/photography-platform-worker:${IMAGE_TAG:-latest}
+    pull_policy: always
