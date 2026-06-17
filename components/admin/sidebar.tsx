@@ -26,7 +26,7 @@ const NAV = [
   { href: "/admin/galleries", label: "Galleries", icon: FolderOpen },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/taxonomy", label: "Categories & Locations", icon: Tags },
-  { href: "/admin/design", label: "Design", icon: Palette },
+  { href: "/admin/pages", label: "Pages", icon: Palette },
   { href: "/admin/menus", label: "Menus", icon: MenuIcon },
   { href: "/admin/contact", label: "Inbox", icon: Inbox },
   { href: "/admin/settings", label: "Settings", icon: Settings },

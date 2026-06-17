@@ -3,6 +3,11 @@ import { Container } from "@/components/ui/container";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { GalleryBlock } from "@/components/blocks/gallery-block";
 import { BannerBlock } from "@/components/blocks/banner-block";
+import {
+  CategoryIndexBlock,
+  LocationIndexBlock,
+  InstagramBlock,
+} from "@/components/blocks/index-blocks";
 import { collectPhotoIds, type Block, type LeafBlock } from "@/src/lib/blocks";
 import { getPhotosByIds } from "@/src/db/queries/pages";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -122,15 +127,28 @@ function LeafView({ block, photoMap }: { block: LeafBlock; photoMap: PhotoMap })
       return <BannerBlock block={block} photo={block.photoId ? photoMap.get(block.photoId) : undefined} />;
     case "gallery":
       return <GalleryBlock block={block} />;
+    case "categoryIndex":
+      return <CategoryIndexBlock block={block} />;
+    case "locationIndex":
+      return <LocationIndexBlock block={block} />;
+    case "instagram":
+      return <InstagramBlock block={block} />;
     default:
       return null;
   }
 }
 
-// Full-bleed blocks render edge-to-edge; the rest are wrapped in a centered
-// container with vertical rhythm.
+// Full-bleed blocks render edge-to-edge (they manage their own Container); the
+// rest are wrapped in a centered container with vertical rhythm.
+const FULL_BLEED = new Set([
+  "banner",
+  "gallery",
+  "categoryIndex",
+  "locationIndex",
+  "instagram",
+]);
 function isFullBleed(block: Block): boolean {
-  return block.type === "banner" || block.type === "gallery";
+  return FULL_BLEED.has(block.type);
 }
 
 function BlockView({ block, photoMap }: { block: Block; photoMap: PhotoMap }) {

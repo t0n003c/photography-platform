@@ -53,6 +53,8 @@ const GalleryBlock = z.object({
 const BannerBlock = z.object({
   id,
   type: z.literal("banner"),
+  // "photo" uses photoId; "featured" pulls the latest featured photo.
+  source: z.enum(["photo", "featured"]).default("photo"),
   photoId: z.string().nullable().default(null),
   headline: z.string().default(""),
   subhead: z.string().default(""),
@@ -81,6 +83,23 @@ const SpacerBlock = z.object({
   size: z.enum(["sm", "md", "lg"]).default("md"),
 });
 const DividerBlock = z.object({ id, type: z.literal("divider") });
+// Home-style index sections (cover grids of published categories/locations).
+const CategoryIndexBlock = z.object({
+  id,
+  type: z.literal("categoryIndex"),
+  title: z.string().default("By category"),
+});
+const LocationIndexBlock = z.object({
+  id,
+  type: z.literal("locationIndex"),
+  title: z.string().default("By location"),
+});
+const InstagramBlock = z.object({
+  id,
+  type: z.literal("instagram"),
+  title: z.string().default("From the field"),
+  count: z.number().int().min(1).max(12).default(6),
+});
 
 export const LeafBlock = z.discriminatedUnion("type", [
   HeadingBlock,
@@ -93,6 +112,9 @@ export const LeafBlock = z.discriminatedUnion("type", [
   CtaBlock,
   SpacerBlock,
   DividerBlock,
+  CategoryIndexBlock,
+  LocationIndexBlock,
+  InstagramBlock,
 ]);
 export type LeafBlock = z.infer<typeof LeafBlock>;
 
@@ -145,4 +167,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   spacer: "Spacer",
   divider: "Divider",
   columns: "Columns",
+  categoryIndex: "Category index",
+  locationIndex: "Location index",
+  instagram: "Instagram feed",
 };
