@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
 import { BLOCK_LABELS, type Block, type BlockType, type LeafBlock } from "@/src/lib/blocks";
 import { PhotoPicker, type PhotoOption } from "@/components/admin/photo-picker";
+import { FocalPointPicker } from "@/components/admin/focal-point-picker";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 
 interface PageRow {
@@ -67,7 +68,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", imagePosition: "center", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
     case "spacer": return { id, type, size: "md" };
@@ -611,13 +612,12 @@ function LeafEditor({
               </Select>
             </Field>
             <Field label="Image position">
-              <Select value={block.imagePosition ?? "center"} onChange={(e) => set({ imagePosition: e.target.value as typeof block.imagePosition })}>
-                <option value="top">Top</option>
-                <option value="upper">Upper</option>
-                <option value="center">Center</option>
-                <option value="lower">Lower</option>
-                <option value="bottom">Bottom</option>
-              </Select>
+              <FocalPointPicker
+                x={block.focalX ?? 50}
+                y={block.focalY ?? 50}
+                thumbUrl={photos.find((p) => p.id === block.photoId)?.thumbUrl ?? null}
+                onChange={(fx, fy) => set({ focalX: fx, focalY: fy })}
+              />
             </Field>
           </div>
           {block.source === "photo" && (
