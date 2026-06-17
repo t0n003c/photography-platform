@@ -37,6 +37,15 @@ const TRACKING: Record<BannerData["headlineTracking"], string> = {
   wide: "tracking-wide",
   widest: "tracking-[0.2em]",
 };
+// Vertical focal point → object-position Y. Crops the photo from top/bottom
+// instead of always centering it (handy for split halves).
+const POSITION_Y: Record<BannerData["imagePosition"], string> = {
+  top: "0%",
+  upper: "25%",
+  center: "50%",
+  lower: "75%",
+  bottom: "100%",
+};
 
 // Button styling, tone-aware: "light" sits over a photo (white-based), "dark"
 // sits on a solid split panel (theme foreground).
@@ -149,6 +158,7 @@ function BannerImage({
           sizes="100vw"
           priority
           className="h-full w-full object-cover"
+          objectPosition={`50% ${POSITION_Y[block.imagePosition ?? "center"]}`}
         />
       </div>
     </div>

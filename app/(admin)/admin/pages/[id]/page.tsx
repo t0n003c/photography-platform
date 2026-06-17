@@ -67,7 +67,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", imagePosition: "center", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
     case "spacer": return { id, type, size: "md" };
@@ -608,6 +608,15 @@ function LeafEditor({
                 <option value="center">Centered</option>
                 <option value="split-left">Split · image left</option>
                 <option value="split-right">Split · image right</option>
+              </Select>
+            </Field>
+            <Field label="Image position">
+              <Select value={block.imagePosition ?? "center"} onChange={(e) => set({ imagePosition: e.target.value as typeof block.imagePosition })}>
+                <option value="top">Top</option>
+                <option value="upper">Upper</option>
+                <option value="center">Center</option>
+                <option value="lower">Lower</option>
+                <option value="bottom">Bottom</option>
               </Select>
             </Field>
           </div>

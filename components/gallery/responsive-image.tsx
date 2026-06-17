@@ -10,6 +10,8 @@ interface ResponsiveImageProps {
   sizes: string;
   priority?: boolean;
   className?: string;
+  /** CSS object-position for the <img> (focal point), e.g. "50% 25%". */
+  objectPosition?: string;
 }
 
 /** Filter to one format, sorted ascending by width. */
@@ -34,6 +36,7 @@ export function ResponsiveImage({
   sizes,
   priority = false,
   className,
+  objectPosition,
 }: ResponsiveImageProps) {
   const avif = variantsForFormat(photo.variants, "avif");
   const webp = variantsForFormat(photo.variants, "webp");
@@ -84,6 +87,7 @@ export function ResponsiveImage({
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         className="block h-full w-full object-cover"
+        style={objectPosition ? { objectPosition } : undefined}
       />
     </picture>
   );

@@ -82,6 +82,11 @@ const BannerBlock = z.object({
   overlay: z.enum(["auto", "none", "dark"]).default("auto"),
   // Composition: where text sits, or a split image/text-panel layout.
   layout: BannerLayoutEnum.default("bottom-left"),
+  // Vertical focal point of the photo within its frame (object-position Y).
+  // Lets a photo be cropped from the top/bottom instead of always centered.
+  imagePosition: z
+    .enum(["top", "upper", "center", "lower", "bottom"])
+    .default("center"),
   // Headline typography.
   headlineFont: z.enum(["sans", "serif"]).default("sans"),
   headlineSize: z.enum(["sm", "md", "lg", "xl"]).default("lg"),
