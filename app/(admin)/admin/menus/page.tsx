@@ -54,10 +54,13 @@ function errMsg(err: unknown): string {
 const LINK_TYPES: { value: LinkType; label: string }[] = [
   { value: "home", label: "Home" },
   { value: "url", label: "URL / link" },
+  { value: "page", label: "Page" },
   { value: "category", label: "Category" },
   { value: "location", label: "Location" },
   { value: "gallery", label: "Gallery" },
 ];
+
+const TARGET_TYPES = ["page", "category", "location", "gallery"];
 
 interface DraftItem {
   label: string;
@@ -82,10 +85,10 @@ export default function MenusPage() {
   const [activeKey, setActiveKey] = useState("primary");
   const [busy, setBusy] = useState(false);
   const [targets, setTargets] = useState<Record<string, TargetOption[]>>({
+    page: [],
     category: [],
     location: [],
     gallery: [],
-    page: [],
   });
   const [draft, setDraft] = useState<DraftItem>(EMPTY_DRAFT);
 
@@ -107,15 +110,18 @@ export default function MenusPage() {
       api
         .get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries")
         .catch(() => ({ data: [] })),
+      api
+        .get<{ data: { id: string; title: string }[] }>("/api/v1/admin/pages")
+        .catch(() => ({ data: [] })),
     ])
-      .then(([m, cats, locs, gals]) => {
+      .then(([m, cats, locs, gals, pgs]) => {
         if (!active) return;
         setMenus(m.data);
         setTargets({
+          page: pgs.data.map((p) => ({ id: p.id, label: p.title })),
           category: cats.data.map((c) => ({ id: c.id, label: c.name })),
           location: locs.data.map((l) => ({ id: l.id, label: l.name })),
           gallery: gals.data.map((g) => ({ id: g.id, label: g.title })),
-          page: [],
         });
       })
       .catch((err) => active && toast(errMsg(err), "error"))
@@ -370,7 +376,7 @@ export default function MenusPage() {
                     />
                   </Field>
                 )}
-                {["category", "location", "gallery"].includes(draft.linkType) && (
+                {TARGET_TYPES.includes(draft.linkType) && (
                   <Field label="Target">
                     <Select
                       value={draft.targetId}

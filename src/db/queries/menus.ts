@@ -1,6 +1,6 @@
 import { eq, inArray, asc } from "drizzle-orm";
 import { db } from "@/src/db/client";
-import { menu, menuItem, collection, location, gallery } from "@/src/db/schema";
+import { menu, menuItem, collection, location, gallery, page } from "@/src/db/schema";
 import { newId } from "@/src/lib/id";
 import { cached, invalidate } from "@/src/lib/cache";
 
@@ -35,8 +35,9 @@ async function resolveSlugMaps(items: ItemRow[]) {
   const catIds = byType("category");
   const locIds = byType("location");
   const galIds = byType("gallery");
+  const pageIds = byType("page");
 
-  const [cats, locs, gals] = await Promise.all([
+  const [cats, locs, gals, pages] = await Promise.all([
     catIds.length
       ? db.select({ id: collection.id, slug: collection.slug }).from(collection).where(inArray(collection.id, catIds))
       : Promise.resolve([] as { id: string; slug: string }[]),
@@ -46,12 +47,16 @@ async function resolveSlugMaps(items: ItemRow[]) {
     galIds.length
       ? db.select({ id: gallery.id, slug: gallery.slug }).from(gallery).where(inArray(gallery.id, galIds))
       : Promise.resolve([] as { id: string; slug: string }[]),
+    pageIds.length
+      ? db.select({ id: page.id, slug: page.slug }).from(page).where(inArray(page.id, pageIds))
+      : Promise.resolve([] as { id: string; slug: string }[]),
   ]);
 
   return {
     category: new Map(cats.map((c) => [c.id, c.slug])),
     location: new Map(locs.map((l) => [l.id, l.slug])),
     gallery: new Map(gals.map((g) => [g.id, g.slug])),
+    page: new Map(pages.map((p) => [p.id, p.slug])),
   };
 }
 
@@ -76,9 +81,10 @@ function hrefFor(
       const s = item.targetId && maps.gallery.get(item.targetId);
       return s ? `/galleries/${s}` : "#";
     }
-    case "page":
-      // Builder pages arrive in Phase C; until then unresolved.
-      return "#";
+    case "page": {
+      const s = item.targetId && maps.page.get(item.targetId);
+      return s ? `/${s}` : "#";
+    }
     default:
       return "#";
   }
