@@ -4,6 +4,7 @@ import { photo, photoVariant } from "@/src/db/schema";
 import { getStorage } from "@/src/storage";
 import { isPhotoPublic, grantAuthorizesPhoto } from "@/src/db/queries/photos";
 import { resolveGrant } from "@/src/auth/grant";
+import { getSession } from "@/src/auth/session";
 import { notFound } from "@/src/lib/http";
 
 export const dynamic = "force-dynamic";
@@ -34,11 +35,20 @@ export async function GET(
 
   let cacheControl = "public, max-age=31536000, immutable";
   if (!(await isPhotoPublic(p.id))) {
-    const token = new URL(req.url).searchParams.get("t") ?? "";
-    const grant = token ? await resolveGrant(token) : null;
-    const authorized = grant ? await grantAuthorizesPhoto(grant, p.id) : false;
-    if (!authorized) return notFound(); // do not reveal private existence
-    cacheControl = "private, no-store";
+    // Authenticated admin-panel users (Library, page builder, editors) may view
+    // any photo's bytes — including freshly uploaded ones not yet in a published
+    // gallery. Without this, every Library thumbnail 404s and only the LQIP shows.
+    const session = await getSession();
+    if (session) {
+      cacheControl = "private, no-store";
+    } else {
+      // Otherwise require a client-gallery grant token (?t=).
+      const token = new URL(req.url).searchParams.get("t") ?? "";
+      const grant = token ? await resolveGrant(token) : null;
+      const authorized = grant ? await grantAuthorizesPhoto(grant, p.id) : false;
+      if (!authorized) return notFound(); // do not reveal private existence
+      cacheControl = "private, no-store";
+    }
   }
 
   const bytes = await getStorage().get(variant.storageKey);
