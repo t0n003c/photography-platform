@@ -1,5 +1,3 @@
-import { defaultCache } from "@serwist/next/worker";
-import { Serwist, NetworkOnly } from "serwist";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 
 declare global {
@@ -10,26 +8,42 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
-  clientsClaim: true,
-  navigationPreload: true,
-  runtimeCaching: [
-    // The admin app and the API must NEVER be served from the cache — they're
-    // private (no-store) and operators must always get the latest. Without this,
-    // a stale cached admin bundle can break dynamic flows like uploads.
-    {
-      matcher: ({ url, sameOrigin }) =>
-        sameOrigin &&
-        (url.pathname.startsWith("/admin") ||
-          url.pathname.startsWith("/api") ||
-          url.pathname.startsWith("/preview") ||
-          url.pathname.startsWith("/g/")),
-      handler: new NetworkOnly(),
-    },
-    ...defaultCache,
-  ],
+// Self-destruct service worker. A previous Serwist PWA worker was caching the
+// admin app and serving stale code (uploads/edits never reflecting deploys).
+// This worker takes over, deletes all caches, unregisters itself, and reloads
+// open windows so every client recovers to fresh, SW-free code. The app no
+// longer registers a SW (next.config register:false), so this won't re-install.
+
+// Reference the injected manifest so Serwist's build step is satisfied (unused).
+void self.__SW_MANIFEST;
+
+self.addEventListener("install", () => {
+  void self.skipWaiting();
 });
 
-serwist.addEventListeners();
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch {
+        /* ignore */
+      }
+      try {
+        await self.registration.unregister();
+      } catch {
+        /* ignore */
+      }
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const client of clients) {
+        const wc = client as WindowClient;
+        try {
+          await wc.navigate(wc.url);
+        } catch {
+          /* ignore */
+        }
+      }
+    })(),
+  );
+});
