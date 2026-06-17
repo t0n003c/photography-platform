@@ -67,7 +67,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
     case "spacer": return { id, type, size: "md" };
@@ -605,6 +605,13 @@ function LeafEditor({
           <Field label="Height">
             <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
               <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+            </Select>
+          </Field>
+          <Field label="Darken image">
+            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+              <option value="auto">Auto (only behind text)</option>
+              <option value="none">None</option>
+              <option value="dark">Always darken</option>
             </Select>
           </Field>
           <Field label="Effect">

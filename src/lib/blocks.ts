@@ -61,6 +61,10 @@ const BannerBlock = z.object({
   ctaLabel: z.string().optional(),
   ctaHref: z.string().optional(),
   height: z.enum(["short", "tall", "full"]).default("tall"),
+  // Image darkening for text legibility. "auto" only darkens (bottom gradient)
+  // when the banner has text; "none" never darkens; "dark" always applies a
+  // stronger scrim.
+  overlay: z.enum(["auto", "none", "dark"]).default("auto"),
   effect: EffectEnum.default("none"),
 });
 const QuoteBlock = z.object({
