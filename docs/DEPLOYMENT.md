@@ -172,6 +172,14 @@ To update later: `$DC pull && $DC up -d`. The GHCR worker image is the **lean**
 build (no Chromium); for Remotion slideshow video, build the worker locally with
 `--build-arg INSTALL_REMOTION_DEPS=true` instead of pulling.
 
+**Synology Container Manager (single-file):** the Projects UI takes one compose
+file, not `-f` overlays. Use the pre-merged **`docker/compose.nas.yaml`** (= base
++ prod + ghcr, pull-based). In the project folder place `compose.nas.yaml`, your
+filled **`.env`**, and **`seaweedfs/s3.json`** (copied from `docker/seaweedfs/`,
+keys matching `.env`). Create the Project pointing at that folder (or paste the
+file's contents into the editor), and it pulls + starts — no build. Seed the
+owner once: `docker compose -f compose.nas.yaml run --rm worker npm run db:seed`.
+
 ```bash
 # 4. Seed the owner account + starter taxonomy (layouts, categories, locations,
 #    default page configs). Idempotent — safe to re-run.
