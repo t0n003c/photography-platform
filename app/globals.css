@@ -37,3 +37,26 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* Indeterminate progress bar (upload over loopback is instant; the visible work
+   is the server-side processing phase). A segment slides across the track. */
+@keyframes indeterminate-bar {
+  0% { left: -40%; width: 40%; }
+  50% { left: 30%; width: 55%; }
+  100% { left: 100%; width: 40%; }
+}
+.progress-indeterminate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  animation: indeterminate-bar 1.1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate {
+    animation: none;
+    left: 0;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
