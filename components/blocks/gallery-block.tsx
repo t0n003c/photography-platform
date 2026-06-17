@@ -1,5 +1,6 @@
 import { Container } from "@/components/ui/container";
 import { Gallery } from "@/components/gallery/gallery";
+import { CinematicGallery } from "@/components/webgl/cinematic-gallery";
 import {
   getFeaturedPhotos,
   getCategoryPhotos,
@@ -42,12 +43,16 @@ async function loadPhotos(block: GalleryBlockData): Promise<PhotoDTO[]> {
 export async function GalleryBlock({ block }: { block: GalleryBlockData }) {
   const photos = await loadPhotos(block);
   if (photos.length === 0) return null;
+  const layout = { gridType: block.gridType, spacing: block.spacing };
+
+  // Opt-in cinematic 3D scroll renders full-bleed (it manages its own height);
+  // it degrades to the standard grid when WebGL is gated off.
+  if (block.effect === "cinematic-3d-scroll") {
+    return <CinematicGallery photos={photos} layout={layout} />;
+  }
   return (
     <Container className="py-8">
-      <Gallery
-        photos={photos}
-        layout={{ gridType: block.gridType, spacing: block.spacing }}
-      />
+      <Gallery photos={photos} layout={layout} />
     </Container>
   );
 }

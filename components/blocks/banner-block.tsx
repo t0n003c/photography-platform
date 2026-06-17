@@ -73,7 +73,11 @@ export async function BannerBlock({
   }
   return (
     <section className="relative">
-      <HeroMedia photo={resolved} className={`${h} w-full`}>
+      <HeroMedia
+        photo={resolved}
+        className={`${h} w-full`}
+        variant={block.effect === "webgl-distortion" ? "distort" : "parallax"}
+      >
         <Overlay block={block} />
       </HeroMedia>
     </section>

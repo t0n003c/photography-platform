@@ -562,6 +562,12 @@ function LeafEditor({
           <Field label="Max photos">
             <Input type="number" value={block.limit} onChange={(e) => set({ limit: Number(e.target.value) })} />
           </Field>
+          <Field label="Effect">
+            <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
+              <option value="none">None</option>
+              <option value="cinematic-3d-scroll">Cinematic 3D scroll</option>
+            </Select>
+          </Field>
         </div>
       );
     case "banner":
@@ -587,6 +593,12 @@ function LeafEditor({
           <Field label="Height">
             <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
               <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+            </Select>
+          </Field>
+          <Field label="Effect">
+            <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
+              <option value="none">None</option>
+              <option value="webgl-distortion">WebGL distortion</option>
             </Select>
           </Field>
         </div>
