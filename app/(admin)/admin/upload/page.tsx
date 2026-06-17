@@ -51,12 +51,26 @@ export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   // Track in-flight processing so we don't start the queue twice.
   const runningRef = useRef(false);
+  // Synchronous source of truth for the queue. React's setState updater runs
+  // asynchronously, so we can't read claimed items back from it synchronously
+  // (that's what silently broke uploads). The ref is mirrored to state for UI.
+  const itemsRef = useRef<QueueItem[]>([]);
 
-  const update = useCallback((id: number, patch: Partial<QueueItem>) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, ...patch } : it)),
-    );
+  const commit = useCallback((next: QueueItem[]) => {
+    itemsRef.current = next;
+    setItems(next);
   }, []);
+
+  const update = useCallback(
+    (id: number, patch: Partial<QueueItem>) => {
+      commit(
+        itemsRef.current.map((it) =>
+          it.id === id ? { ...it, ...patch } : it,
+        ),
+      );
+    },
+    [commit],
+  );
 
   const runQueue = useCallback(async () => {
     if (runningRef.current) return;
@@ -65,18 +79,18 @@ export default function UploadPage() {
     const summary = { done: 0, error: 0 };
     const polls: Promise<void>[] = [];
 
-    // Drain the queue: repeatedly grab the next "queued" item until none remain.
+    // Drain the queue: grab the next "queued" item from the ref (synchronous),
+    // claim it (mark uploading), and return it. Reading from the ref — not a
+    // setState updater — is what makes this actually return the item.
     const grabNext = (): QueueItem | undefined => {
-      let picked: QueueItem | undefined;
-      setItems((prev) => {
-        const found = prev.find((it) => it.status === "queued");
-        if (!found) return prev;
-        picked = found;
-        return prev.map((it) =>
+      const found = itemsRef.current.find((it) => it.status === "queued");
+      if (!found) return undefined;
+      commit(
+        itemsRef.current.map((it) =>
           it.id === found.id ? { ...it, status: "uploading", progress: 0 } : it,
-        );
-      });
-      return picked;
+        ),
+      );
+      return found;
     };
 
     // After the bytes land, the worker generates WebP/AVIF variants. Poll until
@@ -143,7 +157,7 @@ export default function UploadPage() {
       if (summary.error) parts.push(`${summary.error} failed`);
       toast(parts.join(", "), summary.error ? "error" : "success");
     }
-  }, [toast, update]);
+  }, [toast, update, commit]);
 
   const addFiles = useCallback(
     (fileList: FileList | null) => {
@@ -161,10 +175,10 @@ export default function UploadPage() {
         status: "queued",
         progress: 0,
       }));
-      setItems((prev) => [...prev, ...newItems]);
+      commit([...itemsRef.current, ...newItems]);
       void runQueue();
     },
-    [runQueue, toast],
+    [commit, runQueue, toast],
   );
 
   return (
