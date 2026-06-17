@@ -92,6 +92,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.web
     restart: unless-stopped
+    # All app config comes from ../.env (DB, Redis, S3, auth, email, and
+    # SETTINGS_ENCRYPTION_KEY for the admin Settings tab). See .env.example.
     env_file: ../.env
     depends_on:
       db:
@@ -117,6 +119,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.worker
     restart: unless-stopped
+    # Same env as web — the worker also needs SETTINGS_ENCRYPTION_KEY to decrypt
+    # the SMTP password when sending queued email.
     env_file: ../.env
     depends_on:
       db:

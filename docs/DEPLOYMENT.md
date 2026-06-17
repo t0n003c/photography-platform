@@ -133,7 +133,8 @@ cp .env.example .env
 git clone <repo-url> photography-platform && cd photography-platform
 
 # 2. Create and edit the env file. Set NODE_ENV=production, real DATABASE_URL,
-#    a strong BETTER_AUTH_SECRET (openssl rand -base64 48), S3 creds (and keep
+#    a strong BETTER_AUTH_SECRET (openssl rand -base64 48), a dedicated
+#    SETTINGS_ENCRYPTION_KEY (openssl rand -hex 32), S3 creds (and keep
 #    them in sync with docker/seaweedfs/s3.json),
 #    APP_BASE_URL / BETTER_AUTH_URL = your public Cloudflare hostname.
 cp .env.example .env
