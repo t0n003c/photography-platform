@@ -2,10 +2,13 @@ name: Publish images
 
 # Builds the web + worker images and pushes them to GitHub Container Registry
 # (GHCR) so the NAS can pull pre-built images instead of compiling them.
-# Runs on push to main, on version tags (vX.Y.Z), and manually.
+# ON-DEMAND ONLY to conserve Actions minutes — does NOT run on push to main.
+# Trigger it when you actually want to deploy to the NAS:
+#   • GitHub UI: Actions → "Publish images" → Run workflow (branch: main)
+#   • CLI:       gh workflow run "Publish images" --ref main
+#   • or push a version tag (vX.Y.Z)
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -45,7 +48,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/photography-platform-${{ matrix.name }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
             type=sha,format=short
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
