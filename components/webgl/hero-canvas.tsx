@@ -72,7 +72,10 @@ function CoverPlane({ src, onReady }: { src: string; onReady?: () => void }) {
   const announced = useRef(false);
 
   useEffect(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
+    // LinearSRGBColorSpace (not SRGB): keeps the upload as RGBA8 so the GPU does
+    // NOT decode sRGB->linear on sample. This custom shader has no output
+    // re-encode, so an SRGB8 texture would render darker than the static <img>.
+    texture.colorSpace = THREE.LinearSRGBColorSpace;
     texture.minFilter = THREE.LinearFilter;
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
   }, [texture]);

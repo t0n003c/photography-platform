@@ -588,18 +588,20 @@ function LeafEditor({
     case "banner":
       return (
         <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Image source">
-            <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
-              <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
-            </Select>
-          </Field>
-          <Field label="Darken image">
-            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
-              <option value="auto">Auto (only behind text)</option>
-              <option value="none">None</option>
-              <option value="dark">Always darken</option>
-            </Select>
-          </Field>
+          <div className="space-y-2">
+            <Field label="Image source">
+              <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
+                <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
+              </Select>
+            </Field>
+            <Field label="Darken image">
+              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+                <option value="auto">Auto (only behind text)</option>
+                <option value="none">None</option>
+                <option value="dark">Always darken</option>
+              </Select>
+            </Field>
+          </div>
           {block.source === "photo" && (
             <Field label="Photo">
               <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />

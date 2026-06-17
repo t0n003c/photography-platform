@@ -67,7 +67,12 @@ function DistortPlane({ src, onReady }: { src: string; onReady?: () => void }) {
   const announced = useRef(false);
 
   useEffect(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
+    // LinearSRGBColorSpace (not SRGB) so three uploads the photo as RGBA8, NOT
+    // SRGB8_ALPHA8. With SRGB8 the GPU decodes sRGB->linear on every sample, and
+    // this custom shader has no colorspace_fragment to re-encode, so the linear
+    // (darker) values reach the screen — the banner looked darkened. Tagging it
+    // linear passes the stored sRGB bytes straight through to match the <img>.
+    texture.colorSpace = THREE.LinearSRGBColorSpace;
     texture.minFilter = THREE.LinearFilter;
     texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
   }, [texture]);
