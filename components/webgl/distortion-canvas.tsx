@@ -117,7 +117,10 @@ function DistortPlane({
       uStrength: { value: 0 },
       uTexAspect: { value: texAspect },
       uViewAspect: { value: 1 },
-      uFocal: { value: new THREE.Vector2(focalX, focalY) },
+      // Textures load with flipY=true (so the photo is upright), which inverts
+      // the texture's V axis vs CSS object-position — so feed 1 - focalY here to
+      // match the static <img>'s vertical focal. X is unaffected by the flip.
+      uFocal: { value: new THREE.Vector2(focalX, 1 - focalY) },
     }),
     // focal updates are pushed every frame below; don't rebuild uniforms on it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +136,7 @@ function DistortPlane({
       u.uMouse.value.copy(pointer.current);
       u.uStrength.value = velocity.current;
       u.uViewAspect.value = size.width / Math.max(1, size.height);
-      u.uFocal.value.set(focalX, focalY);
+      u.uFocal.value.set(focalX, 1 - focalY); // flipY: invert V to match CSS
     }
     if (!announced.current) {
       announced.current = true;
