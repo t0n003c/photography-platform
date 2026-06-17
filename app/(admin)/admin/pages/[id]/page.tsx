@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Loader2,
@@ -623,7 +624,7 @@ function LeafEditor({
           </div>
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             Shows your Instagram feed once connected in{" "}
-            <a href="/admin/settings" className="underline underline-offset-2">Settings → Integrations</a>.
+            <Link href="/admin/settings" className="underline underline-offset-2">Settings → Integrations</Link>.
             Until then it falls back to your most recent library photos.
           </p>
         </div>
