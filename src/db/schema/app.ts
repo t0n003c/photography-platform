@@ -440,6 +440,40 @@ export const pageConfig = pgTable(
   ],
 );
 
+// ── §12b Site settings (singleton) ───────────────────────────────────────────
+// One row, id = "site". Holds runtime-editable site config (branding, locale,
+// SMTP). Secret values (SMTP password, Resend key) are AES-256-GCM ciphertext
+// produced by src/lib/secrets.ts — never stored or returned in plaintext.
+export const siteSettings = pgTable("site_settings", {
+  id: text("id").primaryKey(), // always "site"
+  siteTitle: text("site_title").notNull().default("Photography Platform"),
+  tagline: text("tagline"),
+  description: text("description"),
+  locale: text("locale").notNull().default("en"),
+  timezone: text("timezone").notNull().default("UTC"),
+  // Intl.DateTimeFormat dateStyle preset (no extra date dependency needed).
+  dateFormat: text("date_format", {
+    enum: ["short", "medium", "long", "full"],
+  })
+    .notNull()
+    .default("medium"),
+  weekStartsOn: integer("week_starts_on").notNull().default(0), // 0=Sun … 6=Sat
+  iconStorageKey: text("icon_storage_key"),
+  logoStorageKey: text("logo_storage_key"),
+  // Email / SMTP
+  emailDriver: text("email_driver", { enum: ["log", "smtp", "resend"] })
+    .notNull()
+    .default("log"),
+  emailFrom: text("email_from"),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port").notNull().default(587),
+  smtpSecure: boolean("smtp_secure").notNull().default(false),
+  smtpUser: text("smtp_user"),
+  smtpPasswordEnc: text("smtp_password_enc"), // AES-256-GCM ciphertext
+  resendApiKeyEnc: text("resend_api_key_enc"), // AES-256-GCM ciphertext
+  updatedAt: updatedAt(),
+});
+
 // ── §13 Store (DEFERRED stub tables) ─────────────────────────────────────────
 export const product = pgTable("product", {
   id: text("id").primaryKey(),

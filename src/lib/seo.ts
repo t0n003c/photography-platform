@@ -64,16 +64,21 @@ export function buildMetadata(opts: BuildMetadataOptions = {}): Metadata {
 // ── JSON-LD builders ─────────────────────────────────────────────────────────
 
 /** Organization / LocalBusiness style structured data for the studio. */
-export function orgJsonLd() {
+export function orgJsonLd(override?: {
+  name?: string;
+  description?: string;
+  logo?: string;
+}) {
   const url = absoluteUrl("/");
+  const logo = absoluteUrl(override?.logo ?? "/icon.svg");
   return {
     "@context": "https://schema.org",
     "@type": ["Organization", "LocalBusiness", "ProfessionalService"],
-    name: SITE.name,
-    description: SITE.description,
+    name: override?.name ?? SITE.name,
+    description: override?.description ?? SITE.description,
     url,
-    logo: absoluteUrl("/icon.svg"),
-    image: absoluteUrl("/icon.svg"),
+    logo,
+    image: logo,
   };
 }
 

@@ -10,7 +10,7 @@ import { ZIP_QUEUE, type BuildZipJob } from "@/src/queue/jobs/zip";
 import { VIDEO_QUEUE, type RenderVideoJob } from "@/src/queue/jobs/video";
 import { processImage } from "@/src/image/pipeline";
 import { buildZip } from "@/src/zip/build";
-import { getEmailProvider } from "@/src/email";
+import { resolveEmailProvider } from "@/src/email";
 
 // The worker runs the sharp → derivatives → LQIP → storage → DB pipeline and,
 // on boot, applies DB migrations so `docker compose up` is self-contained.
@@ -44,7 +44,8 @@ async function bootstrap() {
   const emailWorker = new Worker<SendEmailJob>(
     EMAIL_QUEUE,
     async (job) => {
-      await getEmailProvider().send(job.data.message);
+      const emailProvider = await resolveEmailProvider();
+      await emailProvider.send(job.data.message);
       return { ok: true };
     },
     { connection: getBullConnection(), concurrency: 4 },
