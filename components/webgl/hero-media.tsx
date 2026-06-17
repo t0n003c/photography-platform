@@ -7,8 +7,11 @@ import { cn } from "@/src/lib/utils";
 import { useWebGLEnhancement } from "./feature";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 
-// The WebGL canvas is its own chunk, client-only, never SSR'd.
+// The WebGL canvases are their own chunks, client-only, never SSR'd.
 const HeroCanvas = dynamic(() => import("./hero-canvas"), { ssr: false });
+const DistortionCanvas = dynamic(() => import("./distortion-canvas"), {
+  ssr: false,
+});
 
 // Pick a broadly-decodable texture (WebP/JPEG, large) for the WebGL sampler.
 function bestTextureUrl(photo: PhotoDTO): string | null {
@@ -33,10 +36,14 @@ export function HeroMedia({
   photo,
   className,
   children,
+  variant = "parallax",
 }: {
   photo: PhotoDTO;
   className?: string;
   children?: React.ReactNode;
+  // "parallax" = the default depth-of-field treatment; "distort" = the
+  // pointer-driven HTML→WebGL distortion (banner effect=webgl-distortion).
+  variant?: "parallax" | "distort";
 }) {
   const enabled = useWebGLEnhancement();
   const ref = useRef<HTMLDivElement>(null);
@@ -73,7 +80,11 @@ export function HeroMedia({
             ready ? "opacity-100" : "opacity-0",
           )}
         >
-          <HeroCanvas src={src} onReady={() => setReady(true)} />
+          {variant === "distort" ? (
+            <DistortionCanvas src={src} onReady={() => setReady(true)} />
+          ) : (
+            <HeroCanvas src={src} onReady={() => setReady(true)} />
+          )}
         </div>
       )}
       {children}
