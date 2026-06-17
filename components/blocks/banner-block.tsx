@@ -14,9 +14,17 @@ const HEIGHTS: Record<BannerData["height"], string> = {
 };
 
 function Overlay({ block }: { block: BannerData }) {
+  // Only darken the image when there's text to keep legible — and then only as a
+  // bottom-up gradient (text sits at the bottom), so the photo keeps its true
+  // colors up top instead of a flat veil over the whole thing.
+  const hasText = Boolean(
+    block.headline || block.subhead || (block.ctaLabel && block.ctaHref),
+  );
   return (
     <>
-      <div className="absolute inset-0 bg-black/35" />
+      {hasText && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+      )}
       <div className="absolute inset-0 flex items-end">
         <Container className="pb-12">
           {block.headline && (

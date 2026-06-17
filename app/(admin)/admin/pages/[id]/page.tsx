@@ -22,6 +22,8 @@ import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
 import { BLOCK_LABELS, type Block, type BlockType, type LeafBlock } from "@/src/lib/blocks";
+import { PhotoPicker, type PhotoOption } from "@/components/admin/photo-picker";
+import type { PhotoDTO } from "@/src/db/queries/photos";
 
 interface PageRow {
   id: string;
@@ -85,14 +87,14 @@ export default function PageEditor() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [photos, setPhotos] = useState<Opt[]>([]);
+  const [photos, setPhotos] = useState<PhotoOption[]>([]);
   const [targets, setTargets] = useState<Record<string, Opt[]>>({ category: [], location: [], gallery: [] });
 
   useEffect(() => {
     let active = true;
     Promise.all([
       api.get<{ data: PageRow }>(`/api/v1/admin/pages/${id}`),
-      api.get<{ data: { id: string; filename: string }[] }>("/api/v1/admin/photos?limit=80").catch(() => ({ data: [] })),
+      api.get<{ data: PhotoDTO[] }>("/api/v1/admin/photos?limit=80").catch(() => ({ data: [] as PhotoDTO[] })),
       api.get<{ data: { id: string; name: string }[] }>("/api/v1/admin/categories").catch(() => ({ data: [] })),
       api.get<{ data: { id: string; name: string }[] }>("/api/v1/admin/locations").catch(() => ({ data: [] })),
       api.get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries").catch(() => ({ data: [] })),
@@ -101,7 +103,22 @@ export default function PageEditor() {
         if (!active) return;
         setPage(p.data);
         setBlocks(Array.isArray(p.data.blocks) ? (p.data.blocks as Block[]) : []);
-        setPhotos(ph.data.map((x) => ({ id: x.id, label: x.filename })));
+        setPhotos(
+          ph.data.map((p) => {
+            const webp = p.variants
+              .filter((v) => v.format === "webp")
+              .sort((a, b) => a.width - b.width);
+            const thumb =
+              webp.find((v) => v.sizeBucket === "thumb") ??
+              webp[0] ??
+              p.variants[0];
+            return {
+              id: p.id,
+              label: p.altText || "Untitled photo",
+              thumbUrl: thumb?.url ?? null,
+            };
+          }),
+        );
         setTargets({
           category: cats.data.map((c) => ({ id: c.id, label: c.name })),
           location: locs.data.map((l) => ({ id: l.id, label: l.name })),
@@ -302,7 +319,7 @@ function BlockCard({
   onRemove,
 }: {
   block: Block;
-  photos: Opt[];
+  photos: PhotoOption[];
   targets: Record<string, Opt[]>;
   onChange: (b: Block) => void;
   onUp: () => void;
@@ -373,7 +390,7 @@ function ColumnsEditor({
   onChange,
 }: {
   block: Extract<Block, { type: "columns" }>;
-  photos: Opt[];
+  photos: PhotoOption[];
   targets: Record<string, Opt[]>;
   onChange: (b: Block) => void;
 }) {
@@ -466,7 +483,7 @@ function LeafEditor({
   onChange,
 }: {
   block: LeafBlock;
-  photos: Opt[];
+  photos: PhotoOption[];
   targets: Record<string, Opt[]>;
   onChange: (b: LeafBlock) => void;
 }) {
@@ -520,10 +537,7 @@ function LeafEditor({
       return (
         <div className="grid gap-2 sm:grid-cols-2">
           <Field label="Photo">
-            <Select value={block.photoId ?? ""} onChange={(e) => set({ photoId: e.target.value || null })}>
-              <option value="">Select photo…</option>
-              {photos.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </Select>
+            <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
           </Field>
           <Field label="Width">
             <Select value={block.width} onChange={(e) => set({ width: e.target.value as typeof block.width })}>
@@ -581,10 +595,7 @@ function LeafEditor({
           </Field>
           {block.source === "photo" && (
             <Field label="Photo">
-              <Select value={block.photoId ?? ""} onChange={(e) => set({ photoId: e.target.value || null })}>
-                <option value="">Select photo…</option>
-                {photos.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </Select>
+              <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
             </Field>
           )}
           <Field label="Headline"><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
