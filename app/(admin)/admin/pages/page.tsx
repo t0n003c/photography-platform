@@ -10,6 +10,7 @@ import { Field, Input, Select } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
+import { useStepUp } from "@/components/admin/step-up";
 import { api, ApiError } from "@/src/lib/api-client";
 import { PAGE_TYPES, type PageType } from "@/src/lib/page-presets";
 
@@ -36,6 +37,7 @@ function slugify(s: string): string {
 
 export default function PagesListPage() {
   const { toast } = useToast();
+  const { runWithStepUp } = useStepUp();
   const router = useRouter();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,9 @@ export default function PagesListPage() {
 
   const remove = (p: PageRow) =>
     runBusy(p.id, async () => {
-      await api.del(`/api/v1/admin/pages/${p.id}`);
+      // Deleting a page is a destructive action → step-up: the re-auth modal
+      // appears if the session isn't fresh, then the delete retries.
+      await runWithStepUp(() => api.del(`/api/v1/admin/pages/${p.id}`));
       await load();
     });
 
