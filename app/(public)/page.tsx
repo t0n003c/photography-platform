@@ -14,6 +14,9 @@ import {
 import { getInstagramProvider } from "@/src/instagram";
 import { resolveRenderConfig } from "@/src/lib/render-config";
 import { buildMetadata, SITE, imageGalleryJsonLd } from "@/src/lib/seo";
+import { getHomePage } from "@/src/db/queries/pages";
+import { parseBlocks } from "@/src/lib/blocks";
+import { BlockRenderer } from "@/components/blocks/block-renderer";
 
 export const dynamic = "force-dynamic";
 export const metadata = buildMetadata({ path: "/" });
@@ -26,6 +29,17 @@ export default async function HomePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Once a Home builder page is published, it drives the homepage. Until then
+  // the original hand-built home below renders.
+  const homePage = await getHomePage();
+  if (homePage) {
+    return (
+      <div className="py-4">
+        <BlockRenderer blocks={parseBlocks(homePage.blocks)} />
+      </div>
+    );
+  }
+
   const [featured, categories, locations, instagram, config] =
     await Promise.all([
       getFeaturedPhotos(13),

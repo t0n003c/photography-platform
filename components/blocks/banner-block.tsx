@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
+import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
 
@@ -47,7 +48,7 @@ function Overlay({ block }: { block: BannerData }) {
 // Full-bleed banner. WebGL distortion (effect=webgl-distortion) lands in Phase
 // D; here it renders the standard graceful HeroMedia (static image + optional
 // canvas enhancement) or a solid band when no photo is set.
-export function BannerBlock({
+export async function BannerBlock({
   block,
   photo,
 }: {
@@ -55,7 +56,15 @@ export function BannerBlock({
   photo: PhotoDTO | undefined;
 }) {
   const h = HEIGHTS[block.height];
-  if (!photo) {
+  let resolved = photo;
+  if (block.source === "featured" && !resolved) {
+    try {
+      resolved = (await getFeaturedPhotos(1))[0];
+    } catch {
+      resolved = undefined;
+    }
+  }
+  if (!resolved) {
     return (
       <section className={`relative ${h} w-full bg-[hsl(var(--muted))]`}>
         <Overlay block={block} />
@@ -64,7 +73,7 @@ export function BannerBlock({
   }
   return (
     <section className="relative">
-      <HeroMedia photo={photo} className={`${h} w-full`}>
+      <HeroMedia photo={resolved} className={`${h} w-full`}>
         <Overlay block={block} />
       </HeroMedia>
     </section>
