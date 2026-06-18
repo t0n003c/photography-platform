@@ -69,7 +69,15 @@ function Paragraphs({ text, className }: { text: string; className?: string }) {
   );
 }
 
-function LeafView({ block, photoMap }: { block: LeafBlock; photoMap: PhotoMap }) {
+function LeafView({
+  block,
+  photoMap,
+  preview,
+}: {
+  block: LeafBlock;
+  photoMap: PhotoMap;
+  preview?: boolean;
+}) {
   switch (block.type) {
     case "heading": {
       const cls = `font-semibold tracking-tight ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]} ${
@@ -123,7 +131,16 @@ function LeafView({ block, photoMap }: { block: LeafBlock; photoMap: PhotoMap })
       );
     case "image": {
       const photo = block.photoId ? photoMap.get(block.photoId) : undefined;
-      if (!photo) return null;
+      if (!photo) {
+        // On the live site an unset image renders nothing; in the editor preview
+        // show a placeholder so the block is visible and obviously needs a photo.
+        if (!preview) return null;
+        return (
+          <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg border border-dashed text-sm text-[hsl(var(--muted-foreground))]">
+            Image — choose a photo
+          </div>
+        );
+      }
       return (
         <figure className={`mx-auto ${IMG_WIDTH[block.width]}`}>
           <ResponsiveImage
@@ -171,7 +188,7 @@ function isFullBleed(block: Block): boolean {
   return FULL_BLEED.has(block.type);
 }
 
-function BlockView({ block, photoMap }: { block: Block; photoMap: PhotoMap }) {
+function BlockView({ block, photoMap, preview }: { block: Block; photoMap: PhotoMap; preview?: boolean }) {
   if (block.type === "columns") {
     const cols = block.columns.length;
     const colClass =
@@ -182,7 +199,7 @@ function BlockView({ block, photoMap }: { block: Block; photoMap: PhotoMap }) {
           {block.columns.map((col, i) => (
             <div key={i} className="space-y-6">
               {col.map((leaf) => (
-                <LeafView key={leaf.id} block={leaf} photoMap={photoMap} />
+                <LeafView key={leaf.id} block={leaf} photoMap={photoMap} preview={preview} />
               ))}
             </div>
           ))}
@@ -192,19 +209,25 @@ function BlockView({ block, photoMap }: { block: Block; photoMap: PhotoMap }) {
   }
 
   if (isFullBleed(block)) {
-    return <LeafView block={block} photoMap={photoMap} />;
+    return <LeafView block={block} photoMap={photoMap} preview={preview} />;
   }
   return (
     <Container className={blockPy(block)}>
       <div className="mx-auto max-w-2xl">
-        <LeafView block={block} photoMap={photoMap} />
+        <LeafView block={block} photoMap={photoMap} preview={preview} />
       </div>
     </Container>
   );
 }
 
 // Server component: pre-fetches referenced photos once, then renders the tree.
-export async function BlockRenderer({ blocks }: { blocks: Block[] }) {
+export async function BlockRenderer({
+  blocks,
+  preview = false,
+}: {
+  blocks: Block[];
+  preview?: boolean;
+}) {
   const photoMap = await getPhotosByIds(collectPhotoIds(blocks));
   return (
     <>
@@ -212,7 +235,7 @@ export async function BlockRenderer({ blocks }: { blocks: Block[] }) {
         // data-block-id lets the editor's "locate" button scroll to + highlight
         // this block in the live-preview iframe.
         <div key={block.id} data-block-id={block.id}>
-          <BlockView block={block} photoMap={photoMap} />
+          <BlockView block={block} photoMap={photoMap} preview={preview} />
         </div>
       ))}
     </>

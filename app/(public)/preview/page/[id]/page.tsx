@@ -29,7 +29,7 @@ export default async function PagePreview({
 
   return (
     <div className="py-4">
-      <BlockRenderer blocks={blocks} />
+      <BlockRenderer blocks={blocks} preview />
     </div>
   );
 }

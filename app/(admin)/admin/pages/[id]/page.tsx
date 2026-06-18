@@ -413,6 +413,18 @@ function ColumnsEditor({
   onChange: (b: Block) => void;
 }) {
   const setColumns = (columns: LeafBlock[][]) => onChange({ ...block, columns });
+  // Reorder a block within its column (dir -1 = up, +1 = down).
+  const moveLeaf = (ci: number, li: number, dir: -1 | 1) =>
+    setColumns(
+      block.columns.map((c, idx) => {
+        if (idx !== ci) return c;
+        const j = li + dir;
+        if (j < 0 || j >= c.length) return c;
+        const next = [...c];
+        [next[li], next[j]] = [next[j], next[li]];
+        return next;
+      }),
+    );
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -450,15 +462,36 @@ function ColumnsEditor({
               <div key={leaf.id} className="rounded border p-2">
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs">{BLOCK_LABELS[leaf.type]}</span>
-                  <button
-                    type="button"
-                    aria-label="Remove"
-                    onClick={() =>
-                      setColumns(block.columns.map((c, idx) => (idx === ci ? c.filter((_, k) => k !== li) : c)))
-                    }
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                    <button
+                      type="button"
+                      aria-label="Move up"
+                      disabled={li === 0}
+                      onClick={() => moveLeaf(ci, li, -1)}
+                      className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Move down"
+                      disabled={li === col.length - 1}
+                      onClick={() => moveLeaf(ci, li, 1)}
+                      className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Remove"
+                      onClick={() =>
+                        setColumns(block.columns.map((c, idx) => (idx === ci ? c.filter((_, k) => k !== li) : c)))
+                      }
+                      className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
                 <LeafEditor
                   block={leaf}
