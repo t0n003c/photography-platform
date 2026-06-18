@@ -14,6 +14,7 @@ import {
   ExternalLink,
   RefreshCw,
   Crosshair,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +80,7 @@ function makeBlock(type: BlockType): Block {
   switch (type) {
     case "heading": return { id, type, text: "Heading", level: 2, align: "left", font: "sans", spacing: "normal" };
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
-    case "richtext": return { id, type, text: "", align: "left" };
+    case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none", effectSpeed: 1 };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
@@ -90,7 +91,7 @@ function makeBlock(type: BlockType): Block {
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
     case "instagram": return { id, type, title: "From the field", count: 6 };
-    case "columns": return { id, type, gap: "normal", columns: [[], []] };
+    case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"] };
     default: return { id, type: "divider" };
   }
 }
@@ -425,6 +426,16 @@ function ColumnsEditor({
         return next;
       }),
     );
+  // Per-column vertical alignment (parallel to columns; missing = "top").
+  const colAlign = block.colAlign ?? [];
+  const alignOf = (ci: number): "top" | "center" | "bottom" => colAlign[ci] ?? "top";
+  const setAlign = (ci: number, v: "top" | "center" | "bottom") => {
+    const next = [...colAlign];
+    while (next.length < block.columns.length) next.push("top");
+    next[ci] = v;
+    onChange({ ...block, colAlign: next });
+  };
+  const [alignCol, setAlignCol] = useState<number | null>(null);
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -438,7 +449,7 @@ function ColumnsEditor({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setColumns([...block.columns, []])}
+          onClick={() => onChange({ ...block, columns: [...block.columns, []], colAlign: [...colAlign, "top"] })}
           disabled={block.columns.length >= 4}
         >
           <Plus className="h-4 w-4" /> Column
@@ -449,15 +460,38 @@ function ColumnsEditor({
           <div key={ci} className="space-y-2 rounded border p-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium">Column {ci + 1}</span>
-              <button
-                type="button"
-                aria-label="Remove column"
-                onClick={() => setColumns(block.columns.filter((_, idx) => idx !== ci))}
-                className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex items-center gap-1 text-[hsl(var(--muted-foreground))]">
+                <button
+                  type="button"
+                  aria-label="Column alignment"
+                  title="Vertical alignment"
+                  onClick={() => setAlignCol(alignCol === ci ? null : ci)}
+                  className="hover:text-[hsl(var(--foreground))]"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Remove column"
+                  onClick={() =>
+                    onChange({ ...block, columns: block.columns.filter((_, idx) => idx !== ci), colAlign: colAlign.filter((_, idx) => idx !== ci) })
+                  }
+                  className="hover:text-[hsl(var(--foreground))]"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
+            {alignCol === ci && (
+              <div className="flex items-center gap-1.5 rounded border bg-[hsl(var(--muted))] p-1.5 text-xs">
+                <span className="text-[hsl(var(--muted-foreground))]">Align</span>
+                <Select className="h-7" value={alignOf(ci)} onChange={(e) => setAlign(ci, e.target.value as "top" | "center" | "bottom")}>
+                  <option value="top">Top</option>
+                  <option value="center">Center</option>
+                  <option value="bottom">Bottom</option>
+                </Select>
+              </div>
+            )}
             {col.map((leaf, li) => (
               <div key={leaf.id} className="rounded border p-2">
                 <div className="mb-1 flex items-center justify-between">
@@ -545,8 +579,9 @@ function LeafEditor({
         <div className="grid gap-2 sm:grid-cols-2">
           <Field label="Text"><Input value={block.text} onChange={(e) => set({ text: e.target.value })} /></Field>
           <Field label="Level">
-            <Select value={String(block.level)} onChange={(e) => set({ level: Number(e.target.value) as 1 | 2 | 3 })}>
+            <Select value={String(block.level)} onChange={(e) => set({ level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 })}>
               <option value="1">H1</option><option value="2">H2</option><option value="3">H3</option>
+              <option value="4">H4</option><option value="5">H5</option><option value="6">H6</option>
             </Select>
           </Field>
           <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
@@ -569,7 +604,18 @@ function LeafEditor({
           <Field label="Text (blank line = new paragraph)">
             <Textarea rows={4} value={block.text} onChange={(e) => set({ text: e.target.value })} />
           </Field>
-          <AlignField value={block.align} onChange={(align) => set({ align })} />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+            <Field label="Size">
+              <Select value={block.size ?? "base"} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
+                <option value="sm">Small</option>
+                <option value="base">Normal</option>
+                <option value="lg">Large</option>
+                <option value="xl">Extra large</option>
+              </Select>
+            </Field>
+            <AlignField value={block.align} onChange={(align) => set({ align })} />
+          </div>
         </div>
       );
     case "quote":

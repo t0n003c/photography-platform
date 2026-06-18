@@ -27,7 +27,16 @@ const HeadingBlock = z.object({
   id,
   type: z.literal("heading"),
   text: z.string().default(""),
-  level: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
+  level: z
+    .union([
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+      z.literal(5),
+      z.literal(6),
+    ])
+    .default(2),
   align: AlignEnum.default("left"),
   font: FontEnum.default("sans"),
   // Vertical space around the block (overrides the default block rhythm) — lets
@@ -42,12 +51,15 @@ const SubheadingBlock = z.object({
   font: FontEnum.default("sans"),
   spacing: SpacingEnum.default("normal"),
 });
+export const TextSizeEnum = z.enum(["sm", "base", "lg", "xl"]);
 const RichTextBlock = z.object({
   id,
   type: z.literal("richtext"),
   // Plain text; blank lines split paragraphs. Rendered as text (no raw HTML).
   text: z.string().default(""),
   align: AlignEnum.default("left"),
+  font: FontEnum.default("sans"),
+  size: TextSizeEnum.default("base"),
 });
 const ImageBlock = z.object({
   id,
@@ -175,11 +187,15 @@ export const LeafBlock = z.discriminatedUnion("type", [
 export type LeafBlock = z.infer<typeof LeafBlock>;
 
 // ── Columns (one level of nesting; holds leaf blocks) ────────────────────────
+export const ColAlignEnum = z.enum(["top", "center", "bottom"]);
 const ColumnsBlock = z.object({
   id,
   type: z.literal("columns"),
   gap: SpacingEnum.default("normal"),
   columns: z.array(z.array(LeafBlock)).min(1).max(4).default([[], []]),
+  // Vertical alignment of each column's content, parallel to `columns`
+  // (index i ↔ column i; missing entries default to "top").
+  colAlign: z.array(ColAlignEnum).default([]),
 });
 
 export const Block = z.union([LeafBlock, ColumnsBlock]);

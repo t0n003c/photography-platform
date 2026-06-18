@@ -60,10 +60,10 @@ async function main() {
         { id: id(), type: "heading", text: "Featured work", level: 2, align: "center", font: "sans", spacing: "normal" },
         { id: id(), type: "subheading", text: "A masonry wall pulled from your featured photos", align: "center", font: "sans", spacing: "normal" },
         { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "airy", limit: 12, effect: "none", effectSpeed: 1 },
-        { id: id(), type: "columns", gap: "airy", columns: [
+        { id: id(), type: "columns", gap: "airy", colAlign: [], columns: [
           [
             { id: id(), type: "heading", text: "Crafted with care", level: 3, align: "left", font: "sans", spacing: "normal" },
-            { id: id(), type: "richtext", text: "Two-column sections mix words and images.\n\nEach column can hold headings, text, images or quotes — arrange them however the story needs.", align: "left" },
+            { id: id(), type: "richtext", text: "Two-column sections mix words and images.\n\nEach column can hold headings, text, images or quotes — arrange them however the story needs.", align: "left", font: "sans", size: "base" },
           ],
           [ { id: id(), type: "image", photoId: pick(2), width: "full", rounded: true, caption: "An image block" } ],
         ] },
@@ -104,10 +104,10 @@ async function main() {
       blocks: [
         { id: id(), type: "heading", text: "Design samples", level: 1, align: "left", font: "sans", spacing: "normal" },
         { id: id(), type: "subheading", text: "Every block type on one page", align: "left", font: "sans", spacing: "normal" },
-        { id: id(), type: "richtext", text: "This page exists to show the building blocks. Headings, text, quotes, columns, images, dividers and three gallery layouts all live below.\n\nMix and match them to compose any page.", align: "left" },
+        { id: id(), type: "richtext", text: "This page exists to show the building blocks. Headings, text, quotes, columns, images, dividers and three gallery layouts all live below.\n\nMix and match them to compose any page.", align: "left", font: "sans", size: "base" },
         { id: id(), type: "divider" },
         { id: id(), type: "heading", text: "Three columns", level: 2, align: "left", font: "sans", spacing: "normal" },
-        { id: id(), type: "columns", gap: "normal", columns: [
+        { id: id(), type: "columns", gap: "normal", colAlign: [], columns: [
           [ { id: id(), type: "heading", text: "One", level: 3, align: "left", font: "sans", spacing: "normal" }, { id: id(), type: "richtext", text: "First column copy.", align: "left" } ],
           [ { id: id(), type: "heading", text: "Two", level: 3, align: "left", font: "sans", spacing: "normal" }, { id: id(), type: "richtext", text: "Second column copy.", align: "left" } ],
           [ { id: id(), type: "heading", text: "Three", level: 3, align: "left", font: "sans", spacing: "normal" }, { id: id(), type: "richtext", text: "Third column copy.", align: "left" } ],
@@ -135,10 +135,10 @@ async function main() {
       type: "about",
       blocks: [
         { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Studio", subhead: "Portraits, places, and the light in between", height: "short", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
-        { id: id(), type: "columns", gap: "airy", columns: [
+        { id: id(), type: "columns", gap: "airy", colAlign: [], columns: [
           [
             { id: id(), type: "heading", text: "Our approach", level: 2, align: "left", font: "sans", spacing: "normal" },
-            { id: id(), type: "richtext", text: "We make unhurried, considered images and deliver them with care.\n\nEvery commission is organised by category and by the places it was made.", align: "left" },
+            { id: id(), type: "richtext", text: "We make unhurried, considered images and deliver them with care.\n\nEvery commission is organised by category and by the places it was made.", align: "left", font: "sans", size: "base" },
           ],
           [ { id: id(), type: "image", photoId: pick(7), width: "full", rounded: true } ],
         ] },

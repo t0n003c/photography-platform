@@ -48,6 +48,25 @@ function blockPy(block: Block): string {
   }
   return "py-8";
 }
+const HEADING_SIZE: Record<number, string> = {
+  1: "text-4xl sm:text-5xl",
+  2: "text-3xl",
+  3: "text-2xl",
+  4: "text-xl",
+  5: "text-lg",
+  6: "text-base",
+};
+const TEXT_SIZE: Record<string, string> = {
+  sm: "text-sm",
+  base: "text-base",
+  lg: "text-lg",
+  xl: "text-xl",
+};
+const COL_ALIGN: Record<string, string> = {
+  top: "justify-start",
+  center: "justify-center",
+  bottom: "justify-end",
+};
 
 type PhotoMap = Map<string, PhotoDTO>;
 
@@ -80,12 +99,9 @@ function LeafView({
 }) {
   switch (block.type) {
     case "heading": {
-      const cls = `font-semibold tracking-tight ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]} ${
-        block.level === 1 ? "text-4xl sm:text-5xl" : block.level === 2 ? "text-3xl" : "text-2xl"
-      }`;
-      if (block.level === 1) return <h1 className={cls}>{block.text}</h1>;
-      if (block.level === 2) return <h2 className={cls}>{block.text}</h2>;
-      return <h3 className={cls}>{block.text}</h3>;
+      const cls = `font-semibold tracking-tight ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]} ${HEADING_SIZE[block.level] ?? "text-2xl"}`;
+      const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+      return <Tag className={cls}>{block.text}</Tag>;
     }
     case "subheading":
       return (
@@ -95,7 +111,7 @@ function LeafView({
       );
     case "richtext":
       return (
-        <div className={`space-y-4 text-[hsl(var(--muted-foreground))] ${ALIGN[block.align]}`}>
+        <div className={`space-y-4 text-[hsl(var(--muted-foreground))] ${FONT[block.font] ?? "font-sans"} ${TEXT_SIZE[block.size] ?? "text-base"} ${ALIGN[block.align]}`}>
           <Paragraphs text={block.text} />
         </div>
       );
@@ -197,7 +213,10 @@ function BlockView({ block, photoMap, preview }: { block: Block; photoMap: Photo
       <Container className="py-8">
         <div className={`grid grid-cols-1 ${colClass} ${GAP[block.gap]}`}>
           {block.columns.map((col, i) => (
-            <div key={i} className="space-y-6">
+            <div
+              key={i}
+              className={`flex flex-col gap-6 ${COL_ALIGN[block.colAlign?.[i] ?? "top"] ?? "justify-start"}`}
+            >
               {col.map((leaf) => (
                 <LeafView key={leaf.id} block={leaf} photoMap={photoMap} preview={preview} />
               ))}

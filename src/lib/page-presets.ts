@@ -33,10 +33,11 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
           id: gen(),
           type: "columns",
           gap: "normal",
+          colAlign: ["top", "top"],
           columns: [
             [
               { id: gen(), type: "heading", text: "A short intro", level: 2, align: "left", font: "sans", spacing: "normal" },
-              { id: gen(), type: "richtext", text: "Tell visitors who you are and what you do.", align: "left" },
+              { id: gen(), type: "richtext", text: "Tell visitors who you are and what you do.", align: "left", font: "sans", size: "base" },
             ],
             [{ id: gen(), type: "image", photoId: null, width: "normal", rounded: true }],
           ],
@@ -47,24 +48,24 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
     case "about":
       return [
         { id: gen(), type: "heading", text: "About the studio", level: 1, align: "left", font: "sans", spacing: "normal" },
-        { id: gen(), type: "richtext", text: "Introduce yourself and your work here.", align: "left" },
+        { id: gen(), type: "richtext", text: "Introduce yourself and your work here.", align: "left", font: "sans", size: "base" },
         { id: gen(), type: "cta", headline: "", buttonLabel: "Start a conversation", buttonHref: "/contact" },
       ];
     case "journal":
       return [
         { id: gen(), type: "heading", text: "Journal", level: 1, align: "left", font: "sans", spacing: "normal" },
-        { id: gen(), type: "richtext", text: "Write your first entry…", align: "left" },
+        { id: gen(), type: "richtext", text: "Write your first entry…", align: "left", font: "sans", size: "base" },
       ];
     case "contact":
       return [
         { id: gen(), type: "heading", text: "Get in touch", level: 1, align: "left", font: "sans", spacing: "normal" },
-        { id: gen(), type: "richtext", text: "Tell visitors how to reach you.", align: "left" },
+        { id: gen(), type: "richtext", text: "Tell visitors how to reach you.", align: "left", font: "sans", size: "base" },
       ];
     case "standard":
     default:
       return [
         { id: gen(), type: "heading", text: "New page", level: 1, align: "left", font: "sans", spacing: "normal" },
-        { id: gen(), type: "richtext", text: "Start writing…", align: "left" },
+        { id: gen(), type: "richtext", text: "Start writing…", align: "left", font: "sans", size: "base" },
       ];
   }
 }

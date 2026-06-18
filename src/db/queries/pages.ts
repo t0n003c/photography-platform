@@ -101,6 +101,8 @@ const ABOUT_BLOCKS: Block[] = [
     id: "p1",
     type: "richtext",
     align: "left",
+    font: "sans",
+    size: "base",
     text:
       "This studio is a self-hosted home for a working photographer's portfolio, private client galleries, and fine-art prints. Portraits, events, and the wild places in between — captured and delivered with care.\n\nEvery shoot is organised by category and by the places it was made. Clients receive their own private, access-controlled gallery to view, favourite, and download their images, and to order prints.",
   },
