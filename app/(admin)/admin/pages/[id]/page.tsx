@@ -483,13 +483,14 @@ function ColumnsEditor({
               </div>
             </div>
             {alignCol === ci && (
-              <div className="flex items-center gap-1.5 rounded border bg-[hsl(var(--muted))] p-1.5 text-xs">
-                <span className="text-[hsl(var(--muted-foreground))]">Align</span>
-                <Select className="h-7" value={alignOf(ci)} onChange={(e) => setAlign(ci, e.target.value as "top" | "center" | "bottom")}>
-                  <option value="top">Top</option>
-                  <option value="center">Center</option>
-                  <option value="bottom">Bottom</option>
-                </Select>
+              <div className="rounded border bg-[hsl(var(--muted))] p-2">
+                <Field label="Vertical align">
+                  <Select value={alignOf(ci)} onChange={(e) => setAlign(ci, e.target.value as "top" | "center" | "bottom")}>
+                    <option value="top">Top</option>
+                    <option value="center">Center</option>
+                    <option value="bottom">Bottom</option>
+                  </Select>
+                </Field>
               </div>
             )}
             {col.map((leaf, li) => (
@@ -689,9 +690,9 @@ function LeafEditor({
               <div className="flex items-center gap-2">
                 <input
                   type="range"
-                  min={0.5}
+                  min={0.2}
                   max={2}
-                  step={0.1}
+                  step={0.05}
                   value={block.effectSpeed ?? 1}
                   onChange={(e) => set({ effectSpeed: Number(e.target.value) })}
                   className="w-full accent-[hsl(var(--primary))]"

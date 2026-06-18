@@ -80,7 +80,7 @@ const GalleryBlock = z.object({
   effect: EffectEnum.default("none"),
   // For the cinematic-3d-scroll effect: scroll-speed multiplier. Higher = the
   // fly-through happens over less scrolling (faster); lower = more scroll (slower).
-  effectSpeed: z.number().min(0.5).max(2).default(1),
+  effectSpeed: z.number().min(0.2).max(2).default(1),
 });
 // Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
 // WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.

@@ -108,7 +108,7 @@ export default function CinematicScene({
   if (items.length === 0) return null;
   // More scroll distance = slower fly-through; divide by speed so higher speed
   // covers the same planes in less scrolling. Clamped to keep some scroll room.
-  const heightVh = (110 + items.length * 32) / Math.min(2, Math.max(0.5, speed));
+  const heightVh = (110 + items.length * 32) / Math.min(2, Math.max(0.2, speed));
 
   return (
     <div ref={outerRef} style={{ height: `${heightVh}vh` }} className="relative">
