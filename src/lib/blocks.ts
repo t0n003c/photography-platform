@@ -178,6 +178,24 @@ const InstagramBlock = z.object({
   title: z.string().default("From the field"),
   count: z.number().int().min(1).max(12).default(6),
 });
+export const FaqStyleEnum = z.enum([
+  "accordion",
+  "list",
+  "cards",
+  "bordered",
+]);
+const FaqItem = z.object({
+  q: z.string().default(""),
+  a: z.string().default(""),
+});
+const FaqBlock = z.object({
+  id,
+  type: z.literal("faq"),
+  title: z.string().optional(),
+  style: FaqStyleEnum.default("accordion"),
+  align: AlignEnum.default("left"),
+  items: z.array(FaqItem).default([]),
+});
 
 export const LeafBlock = z.discriminatedUnion("type", [
   HeadingBlock,
@@ -193,6 +211,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   CategoryIndexBlock,
   LocationIndexBlock,
   InstagramBlock,
+  FaqBlock,
 ]);
 export type LeafBlock = z.infer<typeof LeafBlock>;
 
@@ -252,4 +271,5 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   categoryIndex: "Category index",
   locationIndex: "Location index",
   instagram: "Instagram feed",
+  faq: "FAQ",
 };

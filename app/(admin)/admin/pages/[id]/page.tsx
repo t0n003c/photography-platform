@@ -50,6 +50,13 @@ function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
 
+function swapAt<T>(arr: T[], i: number, j: number): T[] {
+  if (j < 0 || j >= arr.length) return arr;
+  const next = [...arr];
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
+
 // Scroll the live-preview iframe to a block and briefly highlight it. The iframe
 // is same-origin, so we can reach into its document by the block's data-id.
 function locateInPreview(blockId: string) {
@@ -71,7 +78,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "cta", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "cta", "faq", "spacer", "divider", "categoryIndex", "locationIndex",
   "instagram", "columns",
 ];
 
@@ -91,6 +98,7 @@ function makeBlock(type: BlockType): Block {
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
     case "instagram": return { id, type, title: "From the field", count: 6 };
+    case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"] };
     default: return { id, type: "divider" };
   }
@@ -397,6 +405,8 @@ function blockSummary(block: Block): string {
       return block.headline || block.buttonLabel;
     case "columns":
       return `${block.columns.length} columns`;
+    case "faq":
+      return `${block.style} · ${block.items.length} questions`;
     default:
       return "";
   }
@@ -882,6 +892,42 @@ function LeafEditor({
             <Link href="/admin/settings" className="underline underline-offset-2">Settings → Integrations</Link>.
             Until then it falls back to your most recent library photos.
           </p>
+        </div>
+      );
+    case "faq":
+      return (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Title (optional)"><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Style">
+              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                <option value="accordion">Accordion</option>
+                <option value="list">List</option>
+                <option value="cards">Cards</option>
+                <option value="bordered">Bordered</option>
+              </Select>
+            </Field>
+            <AlignField value={block.align} onChange={(align) => set({ align })} />
+          </div>
+          <div className="space-y-2">
+            {block.items.map((it, i) => (
+              <div key={i} className="space-y-1.5 rounded border p-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium">Q{i + 1}</span>
+                  <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                    <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ items: swapAt(block.items, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                    <button type="button" aria-label="Move down" disabled={i === block.items.length - 1} onClick={() => set({ items: swapAt(block.items, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                    <button type="button" aria-label="Remove" onClick={() => set({ items: block.items.filter((_, k) => k !== i) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                  </div>
+                </div>
+                <Input placeholder="Question" value={it.q} onChange={(e) => set({ items: block.items.map((x, k) => (k === i ? { ...x, q: e.target.value } : x)) })} />
+                <Textarea rows={2} placeholder="Answer" value={it.a} onChange={(e) => set({ items: block.items.map((x, k) => (k === i ? { ...x, a: e.target.value } : x)) })} />
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={() => set({ items: [...block.items, { q: "", a: "" }] })}>
+              <Plus className="h-4 w-4" /> Question
+            </Button>
+          </div>
         </div>
       );
     case "divider":

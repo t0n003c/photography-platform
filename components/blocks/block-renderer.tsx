@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { GalleryBlock } from "@/components/blocks/gallery-block";
@@ -194,6 +195,76 @@ function LeafView({
       return <LocationIndexBlock block={block} />;
     case "instagram":
       return <InstagramBlock block={block} />;
+    case "faq": {
+      const items = block.items ?? [];
+      const heading = block.title ? (
+        <h2 className="mb-5 text-2xl font-semibold tracking-tight">{block.title}</h2>
+      ) : null;
+      const answer = (a: string) => (
+        <p className="mt-1 whitespace-pre-line text-[hsl(var(--muted-foreground))]">{a}</p>
+      );
+      if (block.style === "accordion") {
+        return (
+          <div className={ALIGN[block.align]}>
+            {heading}
+            <div className="space-y-2 text-left">
+              {items.map((it, i) => (
+                <details key={i} className="group rounded-lg border px-4 py-3">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium">
+                    <span>{it.q}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))] transition-transform group-open:rotate-180" />
+                  </summary>
+                  {answer(it.a)}
+                </details>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      if (block.style === "cards") {
+        return (
+          <div className={ALIGN[block.align]}>
+            {heading}
+            <div className="space-y-3 text-left">
+              {items.map((it, i) => (
+                <div key={i} className="rounded-lg border p-4">
+                  <h3 className="font-medium">{it.q}</h3>
+                  {answer(it.a)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      if (block.style === "bordered") {
+        return (
+          <div className={ALIGN[block.align]}>
+            {heading}
+            <div className="divide-y border-y border-[hsl(var(--border))] text-left">
+              {items.map((it, i) => (
+                <div key={i} className="py-4">
+                  <h3 className="font-medium">{it.q}</h3>
+                  {answer(it.a)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className={ALIGN[block.align]}>
+          {heading}
+          <div className="space-y-6 text-left">
+            {items.map((it, i) => (
+              <div key={i}>
+                <h3 className="font-medium">{it.q}</h3>
+                {answer(it.a)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
     default:
       return null;
   }
@@ -219,7 +290,7 @@ function BlockView({ block, photoMap, preview }: { block: Block; photoMap: Photo
       cols === 1 ? "" : cols === 2 ? "md:grid-cols-2" : cols === 3 ? "md:grid-cols-3" : "md:grid-cols-4";
     return (
       <Container className="py-8">
-        <div className={`grid grid-cols-1 ${colClass} ${GAP[block.gap]}`}>
+        <div className={`mx-auto max-w-6xl grid grid-cols-1 ${colClass} ${GAP[block.gap]}`}>
           {block.columns.map((col, i) => (
             <div
               key={i}
