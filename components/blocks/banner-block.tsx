@@ -221,7 +221,15 @@ function OverlayBanner({
   );
 }
 
-// Image on one half, text panel on the other (split-left = image left).
+// Image band height for the vertical (top/bottom) splits.
+const SPLIT_VERT_IMG: Record<BannerData["height"], string> = {
+  short: "h-[35vh]",
+  tall: "h-[55vh]",
+  full: "h-[70vh]",
+};
+
+// Image on one side/band, text panel on the other. split-left/right = side by
+// side; split-top/bottom = stacked (image band + text panel).
 function SplitBanner({
   block,
   photo,
@@ -229,6 +237,40 @@ function SplitBanner({
   block: BannerData;
   photo: PhotoDTO | undefined;
 }) {
+  if (block.layout === "split-top" || block.layout === "split-bottom") {
+    const imageFirst = block.layout === "split-top";
+    const imageBand = (
+      <div className={`relative w-full overflow-hidden ${SPLIT_VERT_IMG[block.height]}`}>
+        {photo ? (
+          <BannerImage photo={photo} block={block} className="absolute inset-0 h-full w-full" />
+        ) : (
+          <div className="h-full w-full bg-[hsl(var(--muted))]" />
+        )}
+      </div>
+    );
+    const textBand = (
+      <div className="flex items-center bg-[hsl(var(--background))] px-6 py-10 sm:px-10">
+        <TextContent block={block} align="left" tone="dark" />
+      </div>
+    );
+    return (
+      <section className="relative w-full overflow-hidden">
+        <div className="flex flex-col">
+          {imageFirst ? (
+            <>
+              {imageBand}
+              {textBand}
+            </>
+          ) : (
+            <>
+              {textBand}
+              {imageBand}
+            </>
+          )}
+        </div>
+      </section>
+    );
+  }
   const imageFirst = block.layout === "split-left";
   const imageHalf = (
     <div className="relative h-56 w-full overflow-hidden md:h-full">
@@ -282,7 +324,7 @@ export async function BannerBlock({
     }
   }
 
-  if (block.layout === "split-left" || block.layout === "split-right") {
+  if (block.layout.startsWith("split-")) {
     return <SplitBanner block={block} photo={resolved} />;
   }
   return <OverlayBanner block={block} photo={resolved} h={h} />;

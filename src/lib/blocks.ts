@@ -96,6 +96,8 @@ export const BannerLayoutEnum = z.enum([
   "center",
   "split-left",
   "split-right",
+  "split-top",
+  "split-bottom",
 ]);
 const BannerBlock = z.object({
   id,

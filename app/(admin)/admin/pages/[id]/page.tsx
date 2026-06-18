@@ -728,6 +728,8 @@ function LeafEditor({
               <option value="center">Centered</option>
               <option value="split-left">Split · image left</option>
               <option value="split-right">Split · image right</option>
+              <option value="split-top">Split · image top</option>
+              <option value="split-bottom">Split · image bottom</option>
             </Select>
           </Field>
         </>
