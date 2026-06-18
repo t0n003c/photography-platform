@@ -70,16 +70,19 @@ const COL_ALIGN: Record<string, string> = {
 };
 const LOGO_H: Record<string, string> = { sm: "h-8", md: "h-12", lg: "h-16" };
 const LOGO_GAP_ROW: Record<string, string> = {
+  tighter: "gap-x-3 gap-y-2",
   tight: "gap-x-6 gap-y-4",
   normal: "gap-x-10 gap-y-6",
   airy: "gap-x-16 gap-y-10",
 };
 const LOGO_GAP_MARQUEE: Record<string, string> = {
+  tighter: "gap-4",
   tight: "gap-8",
   normal: "gap-12",
   airy: "gap-20",
 };
 const LOGO_PAD_GRID: Record<string, string> = {
+  tighter: "p-2",
   tight: "p-4",
   normal: "p-6",
   airy: "p-10",

@@ -952,7 +952,7 @@ function LeafEditor({
             </Field>
             <Field label="Spacing">
               <Select value={block.spacing ?? "normal"} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
-                <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+                <option value="tighter">Tighter</option><option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
               </Select>
             </Field>
             <Field label="Color">

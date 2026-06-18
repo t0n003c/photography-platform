@@ -197,6 +197,7 @@ const FaqBlock = z.object({
   items: z.array(FaqItem).default([]),
 });
 export const LogoStyleEnum = z.enum(["row", "grid", "marquee"]);
+export const LogoSpacingEnum = z.enum(["tighter", "tight", "normal", "airy"]);
 const LogoBlock = z.object({
   id,
   type: z.literal("logos"),
@@ -206,7 +207,7 @@ const LogoBlock = z.object({
   grayscale: z.boolean().default(true),
   size: z.enum(["sm", "md", "lg"]).default("md"),
   // Space between logos (gap for row/marquee, cell padding for grid).
-  spacing: SpacingEnum.default("normal"),
+  spacing: LogoSpacingEnum.default("normal"),
   photoIds: z.array(z.string()).default([]),
 });
 
