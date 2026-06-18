@@ -72,7 +72,7 @@ async function main() {
           { id: id(), type: "gallery", source: "category", targetId: cat(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none", effectSpeed: 1 } as Block,
         ] : []),
         { id: id(), type: "quote", text: "Photography is the story I fail to put into words.", cite: "Destin Sparks" },
-        { id: id(), type: "cta", headline: "Like what you see?", body: "These pages are fully editable in Admin → Pages.", buttonLabel: "Get in touch", buttonHref: "/contact" },
+        { id: id(), type: "cta", headline: "Like what you see?", body: "These pages are fully editable in Admin → Pages.", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" },
       ],
     });
   }
@@ -89,7 +89,7 @@ async function main() {
         { id: id(), type: "heading", text: "Keep scrolling ↓", level: 2, align: "center", font: "sans", spacing: "normal" },
         { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "cinematic-3d-scroll", effectSpeed: 1 },
         { id: id(), type: "spacer", size: "lg" },
-        { id: id(), type: "cta", headline: "That was the cinematic effect", body: "Turn it on for any gallery block under its Effect setting.", buttonLabel: "Back to the showcase", buttonHref: "/showcase" },
+        { id: id(), type: "cta", headline: "That was the cinematic effect", body: "Turn it on for any gallery block under its Effect setting.", buttonLabel: "Back to the showcase", buttonHref: "/showcase", buttonStyle: "pill" },
       ],
     });
   }
@@ -121,7 +121,7 @@ async function main() {
         { id: id(), type: "categoryIndex", title: "By category" },
         { id: id(), type: "locationIndex", title: "By location" },
         { id: id(), type: "instagram", title: "From the field", count: 6 },
-        { id: id(), type: "cta", headline: "Compose your own", buttonLabel: "Open the builder", buttonHref: "/showcase" },
+        { id: id(), type: "cta", headline: "Compose your own", buttonLabel: "Open the builder", buttonHref: "/showcase", buttonStyle: "pill" },
       ],
     });
   }
@@ -147,7 +147,7 @@ async function main() {
           { id: id(), type: "heading", text: `On location: ${loc(0).name}`, level: 2, align: "center", font: "sans", spacing: "normal" } as Block,
           { id: id(), type: "gallery", source: "location", targetId: loc(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none", effectSpeed: 1 } as Block,
         ] : []),
-        { id: id(), type: "cta", headline: "Start a conversation", buttonLabel: "Contact", buttonHref: "/contact" },
+        { id: id(), type: "cta", headline: "Start a conversation", buttonLabel: "Contact", buttonHref: "/contact", buttonStyle: "pill" },
       ],
     });
   }

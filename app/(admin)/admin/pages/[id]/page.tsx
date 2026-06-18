@@ -85,7 +85,7 @@ function makeBlock(type: BlockType): Block {
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none", effectSpeed: 1 };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
-    case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
+    case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "spacer": return { id, type, size: "md" };
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
@@ -633,6 +633,15 @@ function LeafEditor({
           <Field label="Body"><Input value={block.body ?? ""} onChange={(e) => set({ body: e.target.value })} /></Field>
           <Field label="Button label"><Input value={block.buttonLabel} onChange={(e) => set({ buttonLabel: e.target.value })} /></Field>
           <Field label="Button link"><Input value={block.buttonHref} onChange={(e) => set({ buttonHref: e.target.value })} /></Field>
+          <Field label="Button style">
+            <Select value={block.buttonStyle ?? "pill"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
+              <option value="solid">Solid</option>
+              <option value="pill">Pill</option>
+              <option value="outline">Outline</option>
+              <option value="soft">Soft</option>
+              <option value="link">Text link</option>
+            </Select>
+          </Field>
         </div>
       );
     case "image":

@@ -67,6 +67,14 @@ const COL_ALIGN: Record<string, string> = {
   center: "justify-center",
   bottom: "justify-end",
 };
+const CTA_BUTTON: Record<string, string> = {
+  solid: "rounded-md bg-primary px-6 py-2.5 text-primary-foreground hover:opacity-90",
+  pill: "rounded-full bg-primary px-6 py-2.5 text-primary-foreground hover:opacity-90",
+  outline:
+    "rounded-md border border-[hsl(var(--border))] px-6 py-2.5 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]",
+  soft: "rounded-md bg-[hsl(var(--muted))] px-6 py-2.5 text-[hsl(var(--foreground))] hover:opacity-80",
+  link: "text-[hsl(var(--foreground))] underline underline-offset-4 hover:opacity-70",
+};
 
 type PhotoMap = Map<string, PhotoDTO>;
 
@@ -139,7 +147,7 @@ function LeafView({
           )}
           <Link
             href={block.buttonHref}
-            className="mt-6 inline-block rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+            className={`mt-6 inline-flex items-center text-sm font-medium transition ${CTA_BUTTON[block.buttonStyle ?? "pill"] ?? CTA_BUTTON.pill}`}
           >
             {block.buttonLabel}
           </Link>

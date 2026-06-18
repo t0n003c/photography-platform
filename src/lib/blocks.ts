@@ -139,6 +139,13 @@ const QuoteBlock = z.object({
   text: z.string().default(""),
   cite: z.string().optional(),
 });
+export const CtaButtonStyleEnum = z.enum([
+  "solid",
+  "pill",
+  "outline",
+  "soft",
+  "link",
+]);
 const CtaBlock = z.object({
   id,
   type: z.literal("cta"),
@@ -146,6 +153,7 @@ const CtaBlock = z.object({
   body: z.string().optional(),
   buttonLabel: z.string().default("Get in touch"),
   buttonHref: z.string().default("/contact"),
+  buttonStyle: CtaButtonStyleEnum.default("pill"),
 });
 const SpacerBlock = z.object({
   id,

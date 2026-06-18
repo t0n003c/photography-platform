@@ -112,6 +112,7 @@ const ABOUT_BLOCKS: Block[] = [
     headline: "",
     buttonLabel: "Start a conversation",
     buttonHref: "/contact",
+    buttonStyle: "pill",
   },
 ];
 
