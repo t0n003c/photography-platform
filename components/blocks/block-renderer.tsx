@@ -68,6 +68,16 @@ const COL_ALIGN: Record<string, string> = {
   center: "justify-center",
   bottom: "justify-end",
 };
+const LOGO_H: Record<string, string> = { sm: "h-8", md: "h-12", lg: "h-16" };
+function logoUrl(photo: PhotoDTO): string | null {
+  const v = photo.variants;
+  const pick =
+    v.find((x) => x.format === "webp" && x.sizeBucket === "small") ??
+    v.find((x) => x.format === "webp" && x.sizeBucket === "medium") ??
+    v.find((x) => x.format === "webp") ??
+    v[0];
+  return pick?.url ?? null;
+}
 const CTA_BUTTON: Record<string, string> = {
   solid: "rounded-md bg-primary px-6 py-2.5 text-primary-foreground hover:opacity-90",
   pill: "rounded-full bg-primary px-6 py-2.5 text-primary-foreground hover:opacity-90",
@@ -183,6 +193,64 @@ function LeafView({
     }
     case "spacer":
       return <div className={SPACER[block.size]} aria-hidden />;
+    case "logos": {
+      const logos = (block.photoIds ?? [])
+        .map((pid) => photoMap.get(pid))
+        .filter((p): p is PhotoDTO => !!p);
+      if (logos.length === 0) {
+        if (!preview) return null;
+        return (
+          <Container className="py-12">
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
+              Logos — choose photos
+            </div>
+          </Container>
+        );
+      }
+      const imgCls = `${LOGO_H[block.size] ?? "h-12"} w-auto object-contain ${
+        block.grayscale
+          ? "opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0"
+          : ""
+      }`;
+      const logo = (p: PhotoDTO, key: string | number) => {
+        const url = logoUrl(p);
+        return url ? (
+          <img key={key} src={url} alt={p.altText ?? ""} loading="lazy" className={imgCls} />
+        ) : null;
+      };
+      const heading = block.title ? (
+        <p className="mb-8 text-center text-xs font-medium uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
+          {block.title}
+        </p>
+      ) : null;
+      return (
+        <Container className="py-12">
+          <div className="mx-auto max-w-5xl">
+            {heading}
+            {block.style === "grid" ? (
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--border))] sm:grid-cols-3 md:grid-cols-4">
+                {logos.map((p, i) => (
+                  <div key={i} className="flex items-center justify-center bg-[hsl(var(--background))] p-6">
+                    {logo(p, i)}
+                  </div>
+                ))}
+              </div>
+            ) : block.style === "marquee" ? (
+              <div className="overflow-hidden">
+                <div className="logo-marquee flex w-max items-center gap-12">
+                  {logos.map((p, i) => logo(p, `a${i}`))}
+                  {logos.map((p, i) => logo(p, `b${i}`))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+                {logos.map((p, i) => logo(p, i))}
+              </div>
+            )}
+          </div>
+        </Container>
+      );
+    }
     case "divider":
       return <hr className="border-[hsl(var(--border))]" />;
     case "banner":
@@ -278,6 +346,7 @@ const FULL_BLEED = new Set([
   "categoryIndex",
   "locationIndex",
   "instagram",
+  "logos",
 ]);
 function isFullBleed(block: Block): boolean {
   return FULL_BLEED.has(block.type);

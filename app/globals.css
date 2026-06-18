@@ -106,6 +106,16 @@
 .font-montserrat { font-family: var(--font-montserrat), system-ui, sans-serif; }
 .font-grotesk { font-family: var(--font-space-grotesk), system-ui, sans-serif; }
 
+/* Logo wall marquee (the row is rendered twice; translate -50% loops seamlessly). */
+@keyframes logo-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.logo-marquee { animation: logo-marquee 32s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .logo-marquee { animation: none; }
+}
+
 /* Editor "locate in preview" highlight (applied inside the preview iframe). */
 @keyframes preview-locate-pulse {
   0%, 100% { outline-color: hsl(var(--ring) / 0); }

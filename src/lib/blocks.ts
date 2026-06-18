@@ -196,6 +196,17 @@ const FaqBlock = z.object({
   align: AlignEnum.default("left"),
   items: z.array(FaqItem).default([]),
 });
+export const LogoStyleEnum = z.enum(["row", "grid", "marquee"]);
+const LogoBlock = z.object({
+  id,
+  type: z.literal("logos"),
+  title: z.string().optional(),
+  // row = centered strip; grid = bordered cells; marquee = scrolling row.
+  style: LogoStyleEnum.default("row"),
+  grayscale: z.boolean().default(true),
+  size: z.enum(["sm", "md", "lg"]).default("md"),
+  photoIds: z.array(z.string()).default([]),
+});
 
 export const LeafBlock = z.discriminatedUnion("type", [
   HeadingBlock,
@@ -212,6 +223,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   LocationIndexBlock,
   InstagramBlock,
   FaqBlock,
+  LogoBlock,
 ]);
 export type LeafBlock = z.infer<typeof LeafBlock>;
 
@@ -248,6 +260,7 @@ export function collectPhotoIds(blocks: Block[]): string[] {
   const visitLeaf = (b: LeafBlock) => {
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
+    if (b.type === "logos") ids.push(...b.photoIds);
   };
   for (const b of blocks) {
     if (b.type === "columns") b.columns.flat().forEach(visitLeaf);
@@ -272,4 +285,5 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   locationIndex: "Location index",
   instagram: "Instagram feed",
   faq: "FAQ",
+  logos: "Logos",
 };

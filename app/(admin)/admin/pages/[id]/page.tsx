@@ -78,7 +78,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "cta", "faq", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "cta", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "instagram", "columns",
 ];
 
@@ -99,6 +99,7 @@ function makeBlock(type: BlockType): Block {
     case "locationIndex": return { id, type, title: "By location" };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
+    case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", photoIds: [] };
     case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"] };
     default: return { id, type: "divider" };
   }
@@ -407,6 +408,8 @@ function blockSummary(block: Block): string {
       return `${block.columns.length} columns`;
     case "faq":
       return `${block.style} · ${block.items.length} questions`;
+    case "logos":
+      return `${block.style} · ${block.photoIds.length} logos`;
     default:
       return "";
   }
@@ -928,6 +931,39 @@ function LeafEditor({
               <Plus className="h-4 w-4" /> Question
             </Button>
           </div>
+        </div>
+      );
+    case "logos":
+      return (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Title (optional)"><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Style">
+              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                <option value="row">Row</option>
+                <option value="grid">Grid</option>
+                <option value="marquee">Marquee (scrolling)</option>
+              </Select>
+            </Field>
+            <Field label="Size">
+              <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
+                <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+              </Select>
+            </Field>
+            <Field label="Color">
+              <Select value={block.grayscale ? "mono" : "color"} onChange={(e) => set({ grayscale: e.target.value === "mono" })}>
+                <option value="mono">Grayscale (color on hover)</option>
+                <option value="color">Full color</option>
+              </Select>
+            </Field>
+          </div>
+          <Field label="Logos — click to add/remove (from your library)">
+            <PhotoPicker
+              photos={photos}
+              selectedIds={block.photoIds}
+              onToggle={(pid) => set({ photoIds: block.photoIds.includes(pid) ? block.photoIds.filter((x) => x !== pid) : [...block.photoIds, pid] })}
+            />
+          </Field>
         </div>
       );
     case "divider":

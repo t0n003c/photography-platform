@@ -18,13 +18,19 @@ export function PhotoPicker({
   value,
   onChange,
   containerClassName = "max-h-56",
+  selectedIds,
+  onToggle,
 }: {
   photos: PhotoOption[];
-  value: string | null;
-  onChange: (id: string | null) => void;
+  value?: string | null;
+  onChange?: (id: string | null) => void;
   /** Height/sizing for the scroll container (default capped at max-h-56). */
   containerClassName?: string;
+  /** Multi-select mode: provide selectedIds + onToggle (e.g. logo wall). */
+  selectedIds?: string[];
+  onToggle?: (id: string) => void;
 }) {
+  const multi = !!selectedIds;
   if (photos.length === 0) {
     return (
       <p className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -41,14 +47,16 @@ export function PhotoPicker({
     >
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
         {photos.map((p) => {
-          const selected = p.id === value;
+          const selected = multi ? selectedIds!.includes(p.id) : p.id === value;
           return (
             <button
               key={p.id}
               type="button"
               title={p.label}
               aria-pressed={selected}
-              onClick={() => onChange(selected ? null : p.id)}
+              onClick={() =>
+                multi ? onToggle?.(p.id) : onChange?.(selected ? null : p.id)
+              }
               className={cn(
                 "relative aspect-square overflow-hidden rounded-md border bg-[hsl(var(--muted))] transition",
                 selected
