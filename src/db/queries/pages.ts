@@ -96,7 +96,7 @@ export async function getPhotosByIds(
 // The original /about copy, expressed as builder blocks. Seeded once so the
 // page becomes editable while rendering identically.
 const ABOUT_BLOCKS: Block[] = [
-  { id: "h", type: "heading", text: "About the studio", level: 1, align: "left" },
+  { id: "h", type: "heading", text: "About the studio", level: 1, align: "left", font: "sans", spacing: "normal" },
   {
     id: "p1",
     type: "richtext",

@@ -13,6 +13,7 @@ import {
   Smartphone,
   ExternalLink,
   RefreshCw,
+  Crosshair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,19 @@ function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
 
+// Scroll the live-preview iframe to a block and briefly highlight it. The iframe
+// is same-origin, so we can reach into its document by the block's data-id.
+function locateInPreview(blockId: string) {
+  const iframe = document.getElementById("page-preview-iframe") as HTMLIFrameElement | null;
+  const el = iframe?.contentDocument?.querySelector<HTMLElement>(
+    `[data-block-id="${blockId}"]`,
+  );
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.add("preview-locate");
+  window.setTimeout(() => el.classList.remove("preview-locate"), 1600);
+}
+
 const newBlockId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
@@ -63,8 +77,8 @@ const LEAF_TYPES: BlockType[] = [
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
-    case "heading": return { id, type, text: "Heading", level: 2, align: "left" };
-    case "subheading": return { id, type, text: "Subheading", align: "left" };
+    case "heading": return { id, type, text: "Heading", level: 2, align: "left", font: "sans", spacing: "normal" };
+    case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
@@ -341,6 +355,9 @@ function BlockCard({
             {blockSummary(block)}
           </span>
         </button>
+        <button type="button" aria-label="Locate in preview" title="Locate in preview" onClick={() => locateInPreview(block.id)} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+          <Crosshair className="h-4 w-4" />
+        </button>
         <button type="button" aria-label="Move up" onClick={onUp} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -499,6 +516,8 @@ function LeafEditor({
               <option value="1">H1</option><option value="2">H2</option><option value="3">H3</option>
             </Select>
           </Field>
+          <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+          <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
           <AlignField value={block.align} onChange={(align) => set({ align })} />
         </div>
       );
@@ -506,6 +525,8 @@ function LeafEditor({
       return (
         <div className="grid gap-2 sm:grid-cols-2">
           <Field label="Text"><Input value={block.text} onChange={(e) => set({ text: e.target.value })} /></Field>
+          <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+          <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
           <AlignField value={block.align} onChange={(align) => set({ align })} />
         </div>
       );
@@ -771,6 +792,33 @@ function AlignField({ value, onChange }: { value: "left" | "center" | "right"; o
   );
 }
 
+type FontValue = "sans" | "serif" | "playfair" | "cormorant" | "montserrat" | "grotesk";
+function FontField({ value, onChange }: { value: FontValue; onChange: (v: FontValue) => void }) {
+  return (
+    <Field label="Font">
+      <Select value={value} onChange={(e) => onChange(e.target.value as FontValue)}>
+        <option value="sans">Sans</option>
+        <option value="serif">Serif</option>
+        <option value="playfair">Playfair Display</option>
+        <option value="cormorant">Cormorant</option>
+        <option value="montserrat">Montserrat</option>
+        <option value="grotesk">Space Grotesk</option>
+      </Select>
+    </Field>
+  );
+}
+
+type SpaceValue = "tight" | "normal" | "airy";
+function SpacingField({ value, onChange }: { value: SpaceValue; onChange: (v: SpaceValue) => void }) {
+  return (
+    <Field label="Spacing">
+      <Select value={value} onChange={(e) => onChange(e.target.value as SpaceValue)}>
+        <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+      </Select>
+    </Field>
+  );
+}
+
 function PreviewPane({
   id,
   blocks,
@@ -832,7 +880,7 @@ function PreviewPane({
       </div>
       <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
         <div className="mx-auto bg-[hsl(var(--background))] transition-[max-width] duration-200" style={{ maxWidth: device === "mobile" ? 390 : "100%" }}>
-          <iframe key={device} src={src} title="Page preview" className="h-[720px] w-full border-0" sandbox="allow-same-origin allow-scripts allow-popups" />
+          <iframe id="page-preview-iframe" key={device} src={src} title="Page preview" className="h-[720px] w-full border-0" sandbox="allow-same-origin allow-scripts allow-popups" />
         </div>
       </div>
     </div>

@@ -99,3 +99,21 @@
   .banner-image-reveal { animation: none; transform: none; clip-path: none; }
   .banner-reveal > * { opacity: 1; animation: none; transform: none; }
 }
+
+/* ── Page-builder heading/subheading font choices ─────────────────────────── */
+.font-playfair { font-family: var(--font-playfair), Georgia, "Times New Roman", serif; }
+.font-cormorant { font-family: var(--font-cormorant), Georgia, "Times New Roman", serif; }
+.font-montserrat { font-family: var(--font-montserrat), system-ui, sans-serif; }
+.font-grotesk { font-family: var(--font-space-grotesk), system-ui, sans-serif; }
+
+/* Editor "locate in preview" highlight (applied inside the preview iframe). */
+@keyframes preview-locate-pulse {
+  0%, 100% { outline-color: hsl(var(--ring) / 0); }
+  20%, 60% { outline-color: hsl(var(--ring)); }
+}
+.preview-locate {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
+  animation: preview-locate-pulse 1.5s ease-in-out;
+}

@@ -8,6 +8,17 @@ export const GridEnum = z.enum(["masonry", "justified", "uniform"]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
 export const EffectEnum = z.enum(["none", "webgl-distortion", "cinematic-3d-scroll"]);
+// Font choices for heading/subheading text. "sans"/"serif" are the system
+// stacks; the rest are self-hosted Google fonts loaded via next/font (layout.tsx)
+// and exposed as CSS classes (globals.css).
+export const FontEnum = z.enum([
+  "sans",
+  "serif",
+  "playfair",
+  "cormorant",
+  "montserrat",
+  "grotesk",
+]);
 
 const id = z.string().min(1);
 
@@ -18,12 +29,18 @@ const HeadingBlock = z.object({
   text: z.string().default(""),
   level: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
   align: AlignEnum.default("left"),
+  font: FontEnum.default("sans"),
+  // Vertical space around the block (overrides the default block rhythm) — lets
+  // a heading sit tight against a following subheading.
+  spacing: SpacingEnum.default("normal"),
 });
 const SubheadingBlock = z.object({
   id,
   type: z.literal("subheading"),
   text: z.string().default(""),
   align: AlignEnum.default("left"),
+  font: FontEnum.default("sans"),
+  spacing: SpacingEnum.default("normal"),
 });
 const RichTextBlock = z.object({
   id,

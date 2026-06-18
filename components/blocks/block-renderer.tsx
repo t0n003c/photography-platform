@@ -28,6 +28,26 @@ const IMG_WIDTH: Record<string, string> = {
   wide: "max-w-4xl",
   full: "max-w-none",
 };
+const FONT: Record<string, string> = {
+  sans: "font-sans",
+  serif: "font-serif",
+  playfair: "font-playfair",
+  cormorant: "font-cormorant",
+  montserrat: "font-montserrat",
+  grotesk: "font-grotesk",
+};
+// Per-block vertical rhythm (default py-8). Lets a heading hug its subheading.
+const SPACE_Y: Record<string, string> = {
+  tight: "py-2",
+  normal: "py-8",
+  airy: "py-16",
+};
+function blockPy(block: Block): string {
+  if (block.type === "heading" || block.type === "subheading") {
+    return SPACE_Y[block.spacing] ?? "py-8";
+  }
+  return "py-8";
+}
 
 type PhotoMap = Map<string, PhotoDTO>;
 
@@ -52,7 +72,7 @@ function Paragraphs({ text, className }: { text: string; className?: string }) {
 function LeafView({ block, photoMap }: { block: LeafBlock; photoMap: PhotoMap }) {
   switch (block.type) {
     case "heading": {
-      const cls = `font-semibold tracking-tight ${ALIGN[block.align]} ${
+      const cls = `font-semibold tracking-tight ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]} ${
         block.level === 1 ? "text-4xl sm:text-5xl" : block.level === 2 ? "text-3xl" : "text-2xl"
       }`;
       if (block.level === 1) return <h1 className={cls}>{block.text}</h1>;
@@ -61,7 +81,7 @@ function LeafView({ block, photoMap }: { block: LeafBlock; photoMap: PhotoMap })
     }
     case "subheading":
       return (
-        <p className={`text-lg text-[hsl(var(--muted-foreground))] ${ALIGN[block.align]}`}>
+        <p className={`text-lg text-[hsl(var(--muted-foreground))] ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]}`}>
           {block.text}
         </p>
       );
@@ -175,7 +195,7 @@ function BlockView({ block, photoMap }: { block: Block; photoMap: PhotoMap }) {
     return <LeafView block={block} photoMap={photoMap} />;
   }
   return (
-    <Container className="py-8">
+    <Container className={blockPy(block)}>
       <div className="mx-auto max-w-2xl">
         <LeafView block={block} photoMap={photoMap} />
       </div>
@@ -189,7 +209,11 @@ export async function BlockRenderer({ blocks }: { blocks: Block[] }) {
   return (
     <>
       {blocks.map((block) => (
-        <BlockView key={block.id} block={block} photoMap={photoMap} />
+        // data-block-id lets the editor's "locate" button scroll to + highlight
+        // this block in the live-preview iframe.
+        <div key={block.id} data-block-id={block.id}>
+          <BlockView block={block} photoMap={photoMap} />
+        </div>
       ))}
     </>
   );

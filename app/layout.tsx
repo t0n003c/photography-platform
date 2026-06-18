@@ -1,11 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import {
+  Playfair_Display,
+  Cormorant_Garamond,
+  Montserrat,
+  Space_Grotesk,
+} from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { JsonLd } from "@/components/seo/json-ld";
 import { orgJsonLd } from "@/src/lib/seo";
 import { getEnv } from "@/src/lib/env";
 import { getSiteSettings } from "@/src/db/queries/settings";
 import "./globals.css";
+
+// Self-hosted display fonts for the page builder's heading/subheading blocks.
+// Loaded once here; selectable per block via CSS classes in globals.css.
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
+const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-cormorant", display: "swap" });
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
+const fontVars = `${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${spaceGrotesk.variable}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
@@ -41,7 +55,7 @@ export default async function RootLayout({
   const settings = await getSiteSettings();
   const orgLogo = settings.iconStorageKey ? "/api/v1/media/site-icon" : undefined;
   return (
-    <html lang={settings.locale} suppressHydrationWarning>
+    <html lang={settings.locale} className={fontVars} suppressHydrationWarning>
       <body>
         <JsonLd
           data={orgJsonLd({
