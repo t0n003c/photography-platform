@@ -19,11 +19,13 @@ interface Layout {
 export function CinematicGallery({
   photos,
   layout,
+  speed = 1,
 }: {
   photos: PhotoDTO[];
   layout: Layout;
+  speed?: number;
 }) {
   const enabled = useWebGLEnhancement();
   if (!enabled) return <Gallery photos={photos} layout={layout} />;
-  return <CinematicScene photos={photos} />;
+  return <CinematicScene photos={photos} speed={speed} />;
 }

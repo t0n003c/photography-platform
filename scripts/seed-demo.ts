@@ -59,7 +59,7 @@ async function main() {
         { id: id(), type: "banner", source: "featured", photoId: null, headline: "The Showcase", subhead: "Everything the page builder can do", ctaLabel: "See the blocks", ctaHref: "/design-samples", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "webgl-distortion" },
         { id: id(), type: "heading", text: "Featured work", level: 2, align: "center", font: "sans", spacing: "normal" },
         { id: id(), type: "subheading", text: "A masonry wall pulled from your featured photos", align: "center", font: "sans", spacing: "normal" },
-        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "airy", limit: 12, effect: "none" },
+        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "airy", limit: 12, effect: "none", effectSpeed: 1 },
         { id: id(), type: "columns", gap: "airy", columns: [
           [
             { id: id(), type: "heading", text: "Crafted with care", level: 3, align: "left", font: "sans", spacing: "normal" },
@@ -69,7 +69,7 @@ async function main() {
         ] },
         ...(cats.length ? [
           { id: id(), type: "heading", text: cat(0).name, level: 2, align: "center", font: "sans", spacing: "normal" } as Block,
-          { id: id(), type: "gallery", source: "category", targetId: cat(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none" } as Block,
+          { id: id(), type: "gallery", source: "category", targetId: cat(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none", effectSpeed: 1 } as Block,
         ] : []),
         { id: id(), type: "quote", text: "Photography is the story I fail to put into words.", cite: "Destin Sparks" },
         { id: id(), type: "cta", headline: "Like what you see?", body: "These pages are fully editable in Admin → Pages.", buttonLabel: "Get in touch", buttonHref: "/contact" },
@@ -87,7 +87,7 @@ async function main() {
       blocks: [
         { id: id(), type: "banner", source: "featured", photoId: null, headline: "Cinematic Scroll", subhead: "Scroll to fly through the frames in 3D", height: "full", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
         { id: id(), type: "heading", text: "Keep scrolling ↓", level: 2, align: "center", font: "sans", spacing: "normal" },
-        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "cinematic-3d-scroll" },
+        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "cinematic-3d-scroll", effectSpeed: 1 },
         { id: id(), type: "spacer", size: "lg" },
         { id: id(), type: "cta", headline: "That was the cinematic effect", body: "Turn it on for any gallery block under its Effect setting.", buttonLabel: "Back to the showcase", buttonHref: "/showcase" },
       ],
@@ -115,9 +115,9 @@ async function main() {
         { id: id(), type: "quote", text: "A quote block adds a moment of pause.", cite: "The Studio" },
         { id: id(), type: "image", photoId: pick(5), width: "wide", rounded: true, caption: "A wide image block" },
         { id: id(), type: "heading", text: "Uniform grid", level: 2, align: "center", font: "sans", spacing: "normal" },
-        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "uniform", spacing: "tight", limit: 8, effect: "none" },
+        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "uniform", spacing: "tight", limit: 8, effect: "none", effectSpeed: 1 },
         { id: id(), type: "heading", text: "Justified grid", level: 2, align: "center", font: "sans", spacing: "normal" },
-        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 8, effect: "none" },
+        { id: id(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 8, effect: "none", effectSpeed: 1 },
         { id: id(), type: "categoryIndex", title: "By category" },
         { id: id(), type: "locationIndex", title: "By location" },
         { id: id(), type: "instagram", title: "From the field", count: 6 },
@@ -145,7 +145,7 @@ async function main() {
         { id: id(), type: "quote", text: "We don't take photographs, we make them.", cite: "Ansel Adams" },
         ...(locs.length ? [
           { id: id(), type: "heading", text: `On location: ${loc(0).name}`, level: 2, align: "center", font: "sans", spacing: "normal" } as Block,
-          { id: id(), type: "gallery", source: "location", targetId: loc(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none" } as Block,
+          { id: id(), type: "gallery", source: "location", targetId: loc(0).id, gridType: "justified", spacing: "normal", limit: 9, effect: "none", effectSpeed: 1 } as Block,
         ] : []),
         { id: id(), type: "cta", headline: "Start a conversation", buttonLabel: "Contact", buttonHref: "/contact" },
       ],

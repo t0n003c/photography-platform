@@ -81,7 +81,7 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none", effectSpeed: 1 };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact" };
@@ -638,6 +638,24 @@ function LeafEditor({
               <option value="cinematic-3d-scroll">Cinematic 3D scroll</option>
             </Select>
           </Field>
+          {block.effect === "cinematic-3d-scroll" && (
+            <Field label="Scroll speed">
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.1}
+                  value={block.effectSpeed ?? 1}
+                  onChange={(e) => set({ effectSpeed: Number(e.target.value) })}
+                  className="w-full accent-[hsl(var(--primary))]"
+                />
+                <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                  {(block.effectSpeed ?? 1).toFixed(1)}×
+                </span>
+              </div>
+            </Field>
+          )}
         </div>
       );
     case "banner": {
@@ -883,6 +901,21 @@ function PreviewPane({
     win.addEventListener("scroll", onPreviewScroll, { passive: true });
   }, [onPreviewScroll]);
 
+  // Measure the available pane width so the desktop preview can render at a real
+  // desktop width (so md: breakpoints apply — columns sit side by side) and be
+  // scaled to fit, instead of rendering narrow (where everything stacks).
+  const paneRef = useRef<HTMLDivElement>(null);
+  const [paneWidth, setPaneWidth] = useState(0);
+  useEffect(() => {
+    const el = paneRef.current;
+    if (!el) return;
+    const update = () => setPaneWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const pushDraft = useCallback(async () => {
     try {
       await api.post(`/api/v1/admin/pages/${id}/preview`, { blocks, theme });
@@ -927,10 +960,32 @@ function PreviewPane({
           </a>
         </div>
       </div>
-      <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
-        <div className="mx-auto bg-[hsl(var(--background))] transition-[max-width] duration-200" style={{ maxWidth: device === "mobile" ? 390 : "100%" }}>
-          <iframe ref={iframeRef} onLoad={handlePreviewLoad} id="page-preview-iframe" key={device} src={src} title="Page preview" className="h-[720px] w-full border-0" sandbox="allow-same-origin allow-scripts allow-popups" />
-        </div>
+      <div ref={paneRef} className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
+        {(() => {
+          const baseW = device === "mobile" ? 390 : 1280;
+          const visH = 640;
+          const scale = paneWidth > 0 ? Math.min(1, paneWidth / baseW) : 1;
+          return (
+            <div className="mx-auto" style={{ width: baseW * scale, height: visH }}>
+              <iframe
+                ref={iframeRef}
+                onLoad={handlePreviewLoad}
+                id="page-preview-iframe"
+                key={device}
+                src={src}
+                title="Page preview"
+                className="border-0 bg-[hsl(var(--background))]"
+                style={{
+                  width: baseW,
+                  height: visH / scale,
+                  transform: `scale(${scale})`,
+                  transformOrigin: "top left",
+                }}
+                sandbox="allow-same-origin allow-scripts allow-popups"
+              />
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

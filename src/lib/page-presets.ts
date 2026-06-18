@@ -23,7 +23,7 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
     case "portfolio":
       return [
         { id: gen(), type: "banner", source: "featured", photoId: null, headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
-        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", limit: 12, effect: "none" },
+        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", limit: 12, effect: "none", effectSpeed: 1 },
         { id: gen(), type: "cta", headline: "Like what you see?", buttonLabel: "Get in touch", buttonHref: "/contact" },
       ];
     case "landing":
@@ -41,7 +41,7 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
             [{ id: gen(), type: "image", photoId: null, width: "normal", rounded: true }],
           ],
         },
-        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 9, effect: "none" },
+        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 9, effect: "none", effectSpeed: 1 },
         { id: gen(), type: "cta", headline: "Book a session", buttonLabel: "Contact", buttonHref: "/contact" },
       ];
     case "about":
@@ -76,7 +76,7 @@ export function homePresetBlocks(
 ): Block[] {
   return [
     { id: gen(), type: "banner", source: "featured", photoId: null, headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
-    { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none" },
+    { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", limit: 12, effect: "none", effectSpeed: 1 },
     { id: gen(), type: "categoryIndex", title: "By category" },
     { id: gen(), type: "locationIndex", title: "By location" },
     { id: gen(), type: "instagram", title: "From the field", count: 6 },

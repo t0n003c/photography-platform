@@ -48,7 +48,7 @@ export async function GalleryBlock({ block }: { block: GalleryBlockData }) {
   // Opt-in cinematic 3D scroll renders full-bleed (it manages its own height);
   // it degrades to the standard grid when WebGL is gated off.
   if (block.effect === "cinematic-3d-scroll") {
-    return <CinematicGallery photos={photos} layout={layout} />;
+    return <CinematicGallery photos={photos} layout={layout} speed={block.effectSpeed ?? 1} />;
   }
   return (
     <Container className="py-8">

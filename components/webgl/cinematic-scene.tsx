@@ -70,7 +70,13 @@ function Rig({
   return null;
 }
 
-export default function CinematicScene({ photos }: { photos: PhotoDTO[] }) {
+export default function CinematicScene({
+  photos,
+  speed = 1,
+}: {
+  photos: PhotoDTO[];
+  speed?: number;
+}) {
   const items = useMemo(
     () =>
       photos
@@ -100,7 +106,9 @@ export default function CinematicScene({ photos }: { photos: PhotoDTO[] }) {
   }, []);
 
   if (items.length === 0) return null;
-  const heightVh = 110 + items.length * 32;
+  // More scroll distance = slower fly-through; divide by speed so higher speed
+  // covers the same planes in less scrolling. Clamped to keep some scroll room.
+  const heightVh = (110 + items.length * 32) / Math.min(2, Math.max(0.5, speed));
 
   return (
     <div ref={outerRef} style={{ height: `${heightVh}vh` }} className="relative">
