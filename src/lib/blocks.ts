@@ -205,6 +205,8 @@ const LogoBlock = z.object({
   style: LogoStyleEnum.default("row"),
   grayscale: z.boolean().default(true),
   size: z.enum(["sm", "md", "lg"]).default("md"),
+  // Space between logos (gap for row/marquee, cell padding for grid).
+  spacing: SpacingEnum.default("normal"),
   photoIds: z.array(z.string()).default([]),
 });
 

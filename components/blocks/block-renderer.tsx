@@ -69,6 +69,21 @@ const COL_ALIGN: Record<string, string> = {
   bottom: "justify-end",
 };
 const LOGO_H: Record<string, string> = { sm: "h-8", md: "h-12", lg: "h-16" };
+const LOGO_GAP_ROW: Record<string, string> = {
+  tight: "gap-x-6 gap-y-4",
+  normal: "gap-x-10 gap-y-6",
+  airy: "gap-x-16 gap-y-10",
+};
+const LOGO_GAP_MARQUEE: Record<string, string> = {
+  tight: "gap-8",
+  normal: "gap-12",
+  airy: "gap-20",
+};
+const LOGO_PAD_GRID: Record<string, string> = {
+  tight: "p-4",
+  normal: "p-6",
+  airy: "p-10",
+};
 function logoUrl(photo: PhotoDTO): string | null {
   const v = photo.variants;
   const pick =
@@ -230,20 +245,20 @@ function LeafView({
             {block.style === "grid" ? (
               <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--border))] sm:grid-cols-3 md:grid-cols-4">
                 {logos.map((p, i) => (
-                  <div key={i} className="flex items-center justify-center bg-[hsl(var(--background))] p-6">
+                  <div key={i} className={`flex items-center justify-center bg-[hsl(var(--background))] ${LOGO_PAD_GRID[block.spacing] ?? "p-6"}`}>
                     {logo(p, i)}
                   </div>
                 ))}
               </div>
             ) : block.style === "marquee" ? (
               <div className="overflow-hidden">
-                <div className="logo-marquee flex w-max items-center gap-12">
+                <div className={`logo-marquee flex w-max items-center ${LOGO_GAP_MARQUEE[block.spacing] ?? "gap-12"}`}>
                   {logos.map((p, i) => logo(p, `a${i}`))}
                   {logos.map((p, i) => logo(p, `b${i}`))}
                 </div>
               </div>
             ) : (
-              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+              <div className={`flex flex-wrap items-center justify-center ${LOGO_GAP_ROW[block.spacing] ?? "gap-x-10 gap-y-6"}`}>
                 {logos.map((p, i) => logo(p, i))}
               </div>
             )}

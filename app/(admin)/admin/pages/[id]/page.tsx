@@ -99,7 +99,7 @@ function makeBlock(type: BlockType): Block {
     case "locationIndex": return { id, type, title: "By location" };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
-    case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", photoIds: [] };
+    case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
     case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"] };
     default: return { id, type: "divider" };
   }
@@ -948,6 +948,11 @@ function LeafEditor({
             <Field label="Size">
               <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
                 <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+              </Select>
+            </Field>
+            <Field label="Spacing">
+              <Select value={block.spacing ?? "normal"} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
+                <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
               </Select>
             </Field>
             <Field label="Color">
