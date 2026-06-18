@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -867,6 +867,22 @@ function PreviewPane({
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [bust, setBust] = useState(0);
 
+  // Preserve the preview's scroll position across reloads (each draft push busts
+  // the iframe src). Track scroll into a ref; restore it once the new doc loads.
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const scrollRef = useRef(0);
+  const onPreviewScroll = useCallback(() => {
+    const win = iframeRef.current?.contentWindow;
+    if (win) scrollRef.current = win.scrollY;
+  }, []);
+  const handlePreviewLoad = useCallback(() => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    win.scrollTo(0, scrollRef.current);
+    win.removeEventListener("scroll", onPreviewScroll);
+    win.addEventListener("scroll", onPreviewScroll, { passive: true });
+  }, [onPreviewScroll]);
+
   const pushDraft = useCallback(async () => {
     try {
       await api.post(`/api/v1/admin/pages/${id}/preview`, { blocks, theme });
@@ -913,7 +929,7 @@ function PreviewPane({
       </div>
       <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
         <div className="mx-auto bg-[hsl(var(--background))] transition-[max-width] duration-200" style={{ maxWidth: device === "mobile" ? 390 : "100%" }}>
-          <iframe id="page-preview-iframe" key={device} src={src} title="Page preview" className="h-[720px] w-full border-0" sandbox="allow-same-origin allow-scripts allow-popups" />
+          <iframe ref={iframeRef} onLoad={handlePreviewLoad} id="page-preview-iframe" key={device} src={src} title="Page preview" className="h-[720px] w-full border-0" sandbox="allow-same-origin allow-scripts allow-popups" />
         </div>
       </div>
     </div>

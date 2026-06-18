@@ -7,6 +7,8 @@ export interface GridProps {
   photos: PhotoDTO[];
   /** Tailwind gap class(es), e.g. "gap-2 md:gap-3". */
   spacingClass: string;
+  /** Masonry only: per-item margin-bottom to match the horizontal column-gap. */
+  itemSpacingClass?: string;
   onOpen: (index: number) => void;
 }
 
@@ -20,7 +22,7 @@ function tileLabel(photo: PhotoDTO): string {
 }
 
 /** Masonry via CSS columns; items avoid breaking across columns. */
-export function MasonryGrid({ photos, spacingClass, onOpen }: GridProps) {
+export function MasonryGrid({ photos, spacingClass, itemSpacingClass = "mb-2 md:mb-3", onOpen }: GridProps) {
   return (
     <div className={cn("columns-2 md:columns-3 xl:columns-4", spacingClass)}>
       {photos.map((photo, i) => (
@@ -29,7 +31,10 @@ export function MasonryGrid({ photos, spacingClass, onOpen }: GridProps) {
           type="button"
           onClick={() => onOpen(i)}
           aria-label={tileLabel(photo)}
-          className="mb-2 block w-full break-inside-avoid overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background md:mb-3"
+          className={cn(
+            "block w-full break-inside-avoid overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            itemSpacingClass,
+          )}
         >
           <ResponsiveImage
             photo={photo}

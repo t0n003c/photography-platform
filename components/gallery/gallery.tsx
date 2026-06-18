@@ -27,10 +27,22 @@ const SPACING_CLASSES: Record<string, string> = {
   normal: "gap-2 md:gap-3",
   airy: "gap-4 md:gap-6",
 };
+// Masonry uses CSS columns, where `gap` only sets the horizontal column-gap;
+// the vertical gap between stacked items is an item margin-bottom. This map
+// keeps that vertical margin in sync with the chosen spacing so both axes match.
+const MASONRY_ITEM_SPACING: Record<string, string> = {
+  tight: "mb-1",
+  normal: "mb-2 md:mb-3",
+  airy: "mb-4 md:mb-6",
+};
 
 function spacingToClass(spacing: GalleryLayout["spacing"]): string {
   if (spacing && SPACING_CLASSES[spacing]) return SPACING_CLASSES[spacing];
   return SPACING_CLASSES.normal;
+}
+function masonryItemClass(spacing: GalleryLayout["spacing"]): string {
+  if (spacing && MASONRY_ITEM_SPACING[spacing]) return MASONRY_ITEM_SPACING[spacing];
+  return MASONRY_ITEM_SPACING.normal;
 }
 
 export function Gallery({
@@ -91,7 +103,9 @@ export function Gallery({
 
   return (
     <div>
-      {layout.gridType === "masonry" && <MasonryGrid {...gridProps} />}
+      {layout.gridType === "masonry" && (
+        <MasonryGrid {...gridProps} itemSpacingClass={masonryItemClass(layout.spacing)} />
+      )}
       {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
       {layout.gridType === "justified" && <JustifiedGrid {...gridProps} />}
 
