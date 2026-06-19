@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import { twoFactor, admin } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
@@ -71,6 +72,30 @@ export const auth = betterAuth({
       "/two-factor/verify-totp": { window: 300, max: 5 },
       "/forget-password": { window: 3600, max: 3 },
     },
+  },
+
+  // Bot protection: when the admin enables it in Settings (and Turnstile keys
+  // are configured), require a valid Turnstile token on the login endpoint.
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/email") return;
+      const { getSiteSettingsRow } = await import("@/src/db/queries/settings");
+      const row = await getSiteSettingsRow();
+      if (!row?.captchaEnabled) return;
+      const { verifyTurnstile } = await import("@/src/lib/turnstile");
+      const token = ctx.headers?.get("x-captcha-response") ?? undefined;
+      const ip =
+        ctx.headers?.get("cf-connecting-ip") ??
+        ctx.headers?.get("x-forwarded-for") ??
+        undefined;
+      const ok = await verifyTurnstile(token, ip ?? undefined);
+      if (!ok) {
+        throw new APIError("FORBIDDEN", {
+          message: "Human verification failed. Please try again.",
+          code: "CAPTCHA_FAILED",
+        });
+      }
+    }),
   },
 
   advanced: {

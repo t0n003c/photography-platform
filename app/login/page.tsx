@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,27 @@ import { signIn, twoFactor, useSession } from "@/src/auth/client";
 import { SITE } from "@/src/lib/seo";
 
 type Step = "credentials" | "totp";
+
+interface TurnstileApi {
+  render: (
+    el: HTMLElement,
+    opts: {
+      sitekey: string;
+      callback: (token: string) => void;
+      "expired-callback"?: () => void;
+      "error-callback"?: () => void;
+    },
+  ) => string;
+  reset: (id?: string) => void;
+}
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
+const TURNSTILE_SRC =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 // Best-effort extraction of a human-readable message from a Better Auth error
 // object (shape: { message?: string } | null).
@@ -33,10 +54,72 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  // Bot protection (Cloudflare Turnstile). Config comes from /auth-config so the
+  // same image works with different keys per environment.
+  const [captcha, setCaptcha] = useState<{ enabled: boolean; siteKey: string | null }>({
+    enabled: false,
+    siteKey: null,
+  });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
+
   // Already authenticated — bounce into the admin shell.
   useEffect(() => {
     if (session.data) router.replace("/admin");
   }, [session.data, router]);
+
+  // Fetch whether the login captcha is on + its site key.
+  useEffect(() => {
+    fetch("/api/v1/auth-config")
+      .then((r) => r.json())
+      .then((d) => setCaptcha(d.captcha ?? { enabled: false, siteKey: null }))
+      .catch(() => {});
+  }, []);
+
+  // Load the Turnstile script + render the widget when enabled.
+  useEffect(() => {
+    if (!captcha.enabled || !captcha.siteKey || step !== "credentials") return;
+    let cancelled = false;
+    const renderWidget = () => {
+      if (cancelled || !widgetRef.current || !window.turnstile) return;
+      if (widgetIdRef.current) return; // already rendered
+      widgetIdRef.current = window.turnstile.render(widgetRef.current, {
+        sitekey: captcha.siteKey!,
+        callback: (t) => setCaptchaToken(t),
+        "expired-callback": () => setCaptchaToken(null),
+        "error-callback": () => setCaptchaToken(null),
+      });
+    };
+    if (window.turnstile) {
+      renderWidget();
+    } else if (!document.querySelector(`script[src="${TURNSTILE_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = TURNSTILE_SRC;
+      s.async = true;
+      s.defer = true;
+      s.onload = renderWidget;
+      document.head.appendChild(s);
+    } else {
+      const t = window.setInterval(() => {
+        if (window.turnstile) {
+          window.clearInterval(t);
+          renderWidget();
+        }
+      }, 200);
+      return () => window.clearInterval(t);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [captcha.enabled, captcha.siteKey, step]);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    if (widgetIdRef.current && window.turnstile) {
+      window.turnstile.reset(widgetIdRef.current);
+    }
+  }
 
   async function finishLogin() {
     router.push("/admin");
@@ -46,11 +129,21 @@ export default function LoginPage() {
   async function onCredentialsSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (captcha.enabled && !captchaToken) {
+      setError("Please complete the human verification.");
+      return;
+    }
     setPending(true);
     try {
-      const res = await signIn.email({ email, password });
+      const res = await signIn.email(
+        { email, password },
+        captcha.enabled && captchaToken
+          ? { headers: { "x-captcha-response": captchaToken } }
+          : undefined,
+      );
       if (res.error) {
         setError(errorMessage(res.error));
+        resetCaptcha();
         return;
       }
       if ((res.data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
@@ -60,6 +153,7 @@ export default function LoginPage() {
       await finishLogin();
     } catch (err) {
       setError(errorMessage(err));
+      resetCaptcha();
     } finally {
       setPending(false);
     }
@@ -145,6 +239,9 @@ export default function LoginPage() {
                   disabled={pending}
                 />
               </Field>
+              {captcha.enabled && (
+                <div ref={widgetRef} className="flex justify-center" />
+              )}
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending && <Loader2 className="h-4 w-4 animate-spin" />}
                 Sign in

@@ -60,6 +60,12 @@ const EnvSchema = z.object({
     .transform((v) => v === "true"),
 
   WORKER_HEALTH_PORT: z.coerce.number().default(9091),
+
+  // Cloudflare Turnstile (bot protection at login). Optional; when both are set
+  // and the admin enables it in Settings, the login form requires a Turnstile
+  // token. Use Cloudflare's always-pass TEST keys on localhost.
+  TURNSTILE_SITE_KEY: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

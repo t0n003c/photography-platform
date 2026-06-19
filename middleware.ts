@@ -16,10 +16,14 @@ export function middleware(request: NextRequest) {
     request.nextUrl.protocol.replace(":", "");
   const isHttps = proto === "https";
 
+  // Cloudflare Turnstile (login bot-protection widget) loads a script + iframe
+  // from this origin and posts to it; allow it in the relevant directives.
+  const turnstile = "https://challenges.cloudflare.com";
   const csp = [
     "default-src 'self'",
-    // Next dev needs eval; prod is nonce-only.
-    `script-src 'self' 'nonce-${nonce}'${isProd ? "" : " 'unsafe-eval'"}`,
+    // Next dev needs eval; prod is nonce-only. Turnstile's api.js is allowed by
+    // host (nonce + host allowlist both apply without 'strict-dynamic').
+    `script-src 'self' 'nonce-${nonce}' ${turnstile}${isProd ? "" : " 'unsafe-eval'"}`,
     // Styles use 'unsafe-inline' (NOT a nonce): a nonce would make the browser
     // ignore 'unsafe-inline' and block React/Tailwind inline styles. Style-based
     // XSS is low-risk; scripts remain strict nonce-only.
@@ -27,7 +31,8 @@ export function middleware(request: NextRequest) {
     "img-src 'self' data: blob:",
     "media-src 'self' blob:",
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self' ${turnstile}`,
+    `frame-src 'self' ${turnstile}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     // 'self' (not 'none') so the admin Design editor can embed public pages in

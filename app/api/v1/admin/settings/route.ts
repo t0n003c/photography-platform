@@ -6,6 +6,7 @@ import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { siteSettings } from "@/src/db/schema";
 import { encryptSecret } from "@/src/lib/secrets";
+import { captchaConfigured } from "@/src/lib/turnstile";
 import {
   SITE_SETTINGS_ID,
   SETTINGS_DEFAULTS,
@@ -41,6 +42,8 @@ export async function GET() {
       smtpPasswordSet: Boolean(row?.smtpPasswordEnc),
       resendApiKeySet: Boolean(row?.resendApiKeyEnc),
       igAccessTokenSet: Boolean(row?.igAccessTokenEnc),
+      captchaEnabled: row?.captchaEnabled ?? false,
+      captchaConfigured: captchaConfigured(),
     },
   });
 }
@@ -63,6 +66,7 @@ const PatchSchema = z.object({
   smtpPassword: z.string().nullable().optional(),
   resendApiKey: z.string().nullable().optional(),
   igAccessToken: z.string().nullable().optional(),
+  captchaEnabled: z.boolean().optional(),
 });
 
 // PATCH — upsert the singleton settings row. Secrets are encrypted at rest.
@@ -99,6 +103,7 @@ export async function PATCH(req: Request) {
   setIf("smtpHost", "smtpHost");
   if (body.smtpPort !== undefined) updates.smtpPort = body.smtpPort;
   if (body.smtpSecure !== undefined) updates.smtpSecure = body.smtpSecure;
+  if (body.captchaEnabled !== undefined) updates.captchaEnabled = body.captchaEnabled;
   setIf("smtpUser", "smtpUser");
 
   if (body.smtpPassword !== undefined) {

@@ -473,6 +473,8 @@ export const siteSettings = pgTable("site_settings", {
   resendApiKeyEnc: text("resend_api_key_enc"), // AES-256-GCM ciphertext
   // Integrations
   igAccessTokenEnc: text("ig_access_token_enc"), // Instagram Graph API token (AES-256-GCM)
+  // Bot protection: require Cloudflare Turnstile at login (keys live in env).
+  captchaEnabled: boolean("captcha_enabled").notNull().default(false),
   updatedAt: updatedAt(),
 });
 

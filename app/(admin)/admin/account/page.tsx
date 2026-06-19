@@ -10,6 +10,7 @@ import { Field, Input } from "@/components/ui/form";
 import { Modal } from "@/components/ui/dialog";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
+import { api } from "@/src/lib/api-client";
 import {
   authClient,
   passkey,
@@ -229,6 +230,9 @@ export default function AccountPage() {
         enabled={!!user?.twoFactorEnabled}
         onChanged={() => session.refetch?.()}
       />
+
+      {/* Bot protection */}
+      <BotProtectionCard />
 
       {/* Passkeys */}
       <Card>
@@ -619,6 +623,77 @@ function TwoFactorCard({
           </form>
         )}
       </Modal>
+    </Card>
+  );
+}
+
+// ---- Bot protection (Cloudflare Turnstile at login) -----------------------
+
+function BotProtectionCard() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<{ data: { captchaEnabled: boolean; captchaConfigured: boolean } }>(
+        "/api/v1/admin/settings",
+      )
+      .then((res) => {
+        setEnabled(res.data.captchaEnabled);
+        setConfigured(res.data.captchaConfigured);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function toggle() {
+    const next = !enabled;
+    setSaving(true);
+    try {
+      await api.patch("/api/v1/admin/settings", { captchaEnabled: next });
+      setEnabled(next);
+      toast(
+        next ? "Bot protection enabled." : "Bot protection disabled.",
+        "success",
+      );
+    } catch (err) {
+      toast(errorMessage(err), "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Bot protection</CardTitle>
+        <Button
+          size="sm"
+          variant={enabled ? "default" : "outline"}
+          onClick={toggle}
+          disabled={loading || saving || !configured}
+        >
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {enabled ? "On" : "Off"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          Require a “verify you’re human” check (Cloudflare Turnstile) on the
+          sign-in form to block automated login attempts.
+        </p>
+        {!loading && !configured && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            Turnstile keys aren’t set for this server yet. Add{" "}
+            <code>TURNSTILE_SITE_KEY</code> and{" "}
+            <code>TURNSTILE_SECRET_KEY</code> to the environment, then this can
+            be turned on.
+          </p>
+        )}
+      </CardContent>
     </Card>
   );
 }
