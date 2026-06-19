@@ -15,6 +15,18 @@ import { getEnv } from "@/src/lib/env";
 const env = getEnv();
 const rpHost = new URL(env.BETTER_AUTH_URL).hostname;
 
+// In local dev, treat localhost and 127.0.0.1 (same port) as the same origin so
+// either URL works for password login. (Empty in production.) Biometric/passkey
+// still needs the canonical host, since rpID is the BETTER_AUTH_URL hostname.
+const localAliases: string[] = (() => {
+  const u = new URL(env.APP_BASE_URL);
+  if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+    const other = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
+    return [`${u.protocol}//${other}${u.port ? `:${u.port}` : ""}`];
+  }
+  return [];
+})();
+
 // Role access control (SECURITY.md §2.5 / DATA-MODEL §3.1). owner + admin get
 // full admin-plugin capabilities; staff is a non-admin content role.
 const ac = createAccessControl(defaultStatements);
@@ -32,7 +44,7 @@ export const auth = betterAuth({
   appName: "Photography Platform",
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
-  trustedOrigins: [env.APP_BASE_URL],
+  trustedOrigins: [env.APP_BASE_URL, ...localAliases],
 
   database: drizzleAdapter(db, { provider: "pg", schema }),
 
