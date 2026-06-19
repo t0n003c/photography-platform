@@ -8,7 +8,13 @@ import type { PhotoDTO } from "@/src/db/queries/photos";
 const CinematicScene = dynamic(() => import("./cinematic-scene"), { ssr: false });
 
 interface Layout {
-  gridType: "masonry" | "justified" | "uniform";
+  gridType:
+    | "masonry"
+    | "justified"
+    | "uniform"
+    | "carousel"
+    | "filmstrip"
+    | "mosaic";
   spacing?: string;
 }
 

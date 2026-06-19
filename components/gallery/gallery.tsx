@@ -2,11 +2,24 @@
 
 import * as React from "react";
 import type { PhotoDTO } from "@/src/db/queries/photos";
-import { JustifiedGrid, MasonryGrid, UniformGrid } from "./grids";
+import {
+  CarouselGrid,
+  FilmstripGrid,
+  JustifiedGrid,
+  MasonryGrid,
+  MosaicGrid,
+  UniformGrid,
+} from "./grids";
 import { Lightbox } from "./lightbox";
 
 interface GalleryLayout {
-  gridType: "masonry" | "justified" | "uniform";
+  gridType:
+    | "masonry"
+    | "justified"
+    | "uniform"
+    | "carousel"
+    | "filmstrip"
+    | "mosaic";
   spacing?: "tight" | "normal" | "airy" | string | null;
 }
 
@@ -108,6 +121,9 @@ export function Gallery({
       )}
       {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
       {layout.gridType === "justified" && <JustifiedGrid {...gridProps} />}
+      {layout.gridType === "carousel" && <CarouselGrid {...gridProps} />}
+      {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
+      {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
 
       {canLoadMore && (
         <div className="mt-8 flex justify-center">

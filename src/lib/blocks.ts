@@ -4,7 +4,14 @@ import { z } from "zod";
 // of these shapes. Validation is defensive: unknown/garbled blocks are dropped
 // rather than throwing, so a bad block never takes down a page.
 
-export const GridEnum = z.enum(["masonry", "justified", "uniform"]);
+export const GridEnum = z.enum([
+  "masonry",
+  "justified",
+  "uniform",
+  "carousel",
+  "filmstrip",
+  "mosaic",
+]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
 export const EffectEnum = z.enum(["none", "webgl-distortion", "cinematic-3d-scroll"]);

@@ -690,7 +690,7 @@ function LeafEditor({
           )}
           <Field label="Grid">
             <Select value={block.gridType} onChange={(e) => set({ gridType: e.target.value as typeof block.gridType })}>
-              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option>
+              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option>
             </Select>
           </Field>
           <Field label="Spacing">
