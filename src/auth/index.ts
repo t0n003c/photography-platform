@@ -83,10 +83,12 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24, // absolute cap: 24h (SECURITY.md §4.3)
     updateAge: 60 * 60, // sliding refresh window: 1h
-    // Step-up freshness window. Sensitive actions (passkey registration,
-    // destructive deletes) require auth within this window. 15m was too
-    // aggressive for a solo studio — 4h covers a normal work session.
-    freshAge: 60 * 60 * 4,
+    // 0 disables Better Auth's "fresh session" gate. It was blocking account
+    // management (notably registering a passkey) with "session is not fresh"
+    // for any session older than the window — too aggressive for a solo studio,
+    // and a 2FA user with no passkey yet couldn't satisfy the re-auth prompt.
+    // Destructive deletes keep their own lighter step-up (requireFreshAuth).
+    freshAge: 0,
   },
 
   // Per-IP / per-account rate limiting + lockout backoff (SECURITY.md §3).
