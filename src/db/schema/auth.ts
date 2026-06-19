@@ -80,6 +80,8 @@ export const twoFactor = pgTable("twoFactor", {
   userId: text("userId")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  // Better Auth 1.6+ tracks whether the TOTP secret was confirmed.
+  verified: boolean("verified").default(true),
 });
 
 // passkey / WebAuthn plugin
