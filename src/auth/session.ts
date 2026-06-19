@@ -53,7 +53,7 @@ export function isFresh(
  */
 export async function requireFreshAuth(
   min: Role,
-  maxAgeSec = 900,
+  maxAgeSec = 60 * 60 * 4, // match better-auth session.freshAge (4h)
 ): Promise<Guard> {
   const res = await requireRole(min);
   if (res.error) return res;

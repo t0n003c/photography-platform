@@ -115,7 +115,13 @@ export default function AccountPage() {
     try {
       const res = await passkey.addPasskey({ name: "Admin device" });
       if (res?.error) {
-        toast(errorMessage(res.error), "error");
+        const code = (res.error as { code?: string })?.code;
+        toast(
+          code === "SESSION_NOT_FRESH"
+            ? "Your session is too old to add a passkey. Sign out and back in, then try again."
+            : errorMessage(res.error),
+          "error",
+        );
         return;
       }
       toast("Passkey added.", "success");

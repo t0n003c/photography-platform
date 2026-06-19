@@ -83,7 +83,10 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24, // absolute cap: 24h (SECURITY.md §4.3)
     updateAge: 60 * 60, // sliding refresh window: 1h
-    freshAge: 60 * 15, // step-up freshness: 15m (SECURITY.md §2.4)
+    // Step-up freshness window. Sensitive actions (passkey registration,
+    // destructive deletes) require auth within this window. 15m was too
+    // aggressive for a solo studio — 4h covers a normal work session.
+    freshAge: 60 * 60 * 4,
   },
 
   // Per-IP / per-account rate limiting + lockout backoff (SECURITY.md §3).
