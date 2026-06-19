@@ -64,8 +64,28 @@ export default function AccountPage() {
         email?: string;
         role?: string;
         twoFactorEnabled?: boolean;
+        requireBiometric?: boolean;
       }
     | undefined;
+
+  const [savingBio, setSavingBio] = useState(false);
+  async function toggleBiometric(next: boolean) {
+    setSavingBio(true);
+    try {
+      await api.post("/api/v1/admin/account/biometric", { enabled: next });
+      toast(
+        next
+          ? "Biometric sign-in required."
+          : "Biometric sign-in requirement removed.",
+        "success",
+      );
+      session.refetch?.();
+    } catch (err) {
+      toast(errorMessage(err), "error");
+    } finally {
+      setSavingBio(false);
+    }
+  }
 
   // ---- passkeys ----------------------------------------------------------
   const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
@@ -286,6 +306,45 @@ export default function AccountPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Biometric second factor */}
+      {(() => {
+        const hasPasskey = passkeys.length > 0;
+        const has2fa = !!user?.twoFactorEnabled;
+        const eligible = hasPasskey && has2fa;
+        const on = !!user?.requireBiometric;
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Biometric sign-in</CardTitle>
+              <Button
+                size="sm"
+                variant={on ? "default" : "outline"}
+                disabled={savingBio || (!on && !eligible)}
+                onClick={() => toggleBiometric(!on)}
+              >
+                {savingBio && <Loader2 className="h-4 w-4 animate-spin" />}
+                {on ? "On" : "Off"}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Require your biometric (passkey / Face ID / Touch ID / Windows
+                Hello) as a second step after your password. If biometric
+                fails, you can fall back to your authenticator code.
+              </p>
+              {!on && !eligible && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  First {!hasPasskey && "add a passkey"}
+                  {!hasPasskey && !has2fa && " and "}
+                  {!has2fa && "enable two-factor (authenticator)"} — then you can
+                  turn this on.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Active sessions */}
       <Card>

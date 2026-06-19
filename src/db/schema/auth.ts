@@ -21,6 +21,9 @@ export const user = pgTable("user", {
   image: text("image"),
   // two-factor plugin
   twoFactorEnabled: boolean("twoFactorEnabled"),
+  // Require a biometric (passkey) second factor at sign-in (TOTP is the
+  // fallback). Set via the account page once a passkey + 2FA are configured.
+  requireBiometric: boolean("requireBiometric").default(false),
   // admin plugin
   role: text("role").default("staff"),
   banned: boolean("banned").default(false),

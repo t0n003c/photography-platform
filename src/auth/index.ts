@@ -6,6 +6,7 @@ import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 import { passkey } from "@better-auth/passkey";
 import { nextCookies } from "better-auth/next-js";
+import { passkeyTwoFactor } from "./passkey-two-factor";
 import { db } from "@/src/db/client";
 import * as schema from "@/src/db/schema";
 import { getRedis } from "@/src/redis/client";
@@ -53,6 +54,18 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     requireEmailVerification: false, // single-studio; admins are seeded/invited
     autoSignIn: false,
+  },
+
+  user: {
+    additionalFields: {
+      // Drives the biometric-first second-factor login (see passkeyTwoFactor).
+      requireBiometric: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false, // set server-side via the account endpoint, not signup
+      },
+    },
   },
 
   session: {
@@ -113,6 +126,9 @@ export const auth = betterAuth({
       rpName: "Photography Platform",
       origin: env.APP_BASE_URL,
     }),
+    // Biometric (passkey) as a strict second factor after password; falls back
+    // to TOTP. Relies on the two-factor plugin's pending-login state above.
+    passkeyTwoFactor({ rpID: rpHost, origin: env.APP_BASE_URL }),
     admin({
       ac,
       roles,

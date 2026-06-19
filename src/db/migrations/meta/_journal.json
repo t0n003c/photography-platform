@@ -64,6 +64,13 @@
       "when": 1781861348329,
       "tag": "0008_captcha_enabled",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781862918506,
+      "tag": "0009_require_biometric",
+      "breakpoints": true
     }
   ]
 }

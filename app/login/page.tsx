@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Loader2 } from "lucide-react";
+import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
+import { startAuthentication } from "@simplewebauthn/browser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
@@ -121,6 +122,63 @@ export default function LoginPage() {
     }
   }
 
+  // Biometric second factor. When we reach the 2FA step, ask the server whether
+  // this pending user has biometric required + a passkey; if so, offer it first
+  // with TOTP as the fallback.
+  const [bioOptions, setBioOptions] = useState<unknown | null>(null);
+  const [bioChecked, setBioChecked] = useState(false);
+  const [useCode, setUseCode] = useState(false);
+
+  useEffect(() => {
+    if (step !== "totp") return;
+    setBioChecked(false);
+    fetch("/api/auth/two-factor/passkey/options", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    })
+      .then((r) => (r.ok ? r.json() : { available: false }))
+      .then((d) => {
+        if (d?.available && d.options) {
+          setBioOptions(d.options);
+        } else {
+          setUseCode(true); // no biometric → straight to the code form
+        }
+      })
+      .catch(() => setUseCode(true))
+      .finally(() => setBioChecked(true));
+  }, [step]);
+
+  async function onBiometric() {
+    if (!bioOptions) return;
+    setError(null);
+    setPending(true);
+    try {
+      const assertion = await startAuthentication({
+        optionsJSON: bioOptions as Parameters<
+          typeof startAuthentication
+        >[0]["optionsJSON"],
+      });
+      const res = await fetch("/api/auth/two-factor/passkey/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ response: assertion }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(errorMessage(data) ?? "Biometric verification failed.");
+        return;
+      }
+      await finishLogin();
+    } catch {
+      // User cancelled / no biometric — let them use the code instead.
+      setError("Couldn't verify with biometric. Use your authenticator code.");
+      setUseCode(true);
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function finishLogin() {
     router.push("/admin");
     router.refresh();
@@ -194,6 +252,15 @@ export default function LoginPage() {
     }
   }
 
+  function backToCredentials() {
+    setStep("credentials");
+    setCode("");
+    setError(null);
+    setBioOptions(null);
+    setUseCode(false);
+    setBioChecked(false);
+  }
+
   return (
     <main className="mx-auto mt-24 w-full max-w-sm px-4">
       <Card>
@@ -247,6 +314,50 @@ export default function LoginPage() {
                 Sign in
               </Button>
             </form>
+          ) : bioOptions && !useCode ? (
+            <div className="space-y-4">
+              <p className="text-center text-sm text-[hsl(var(--muted-foreground))]">
+                Confirm it’s you with your biometric.
+              </p>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={pending}
+                onClick={onBiometric}
+              >
+                {pending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Fingerprint className="h-4 w-4" />
+                )}
+                Verify with biometric
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                disabled={pending}
+                onClick={() => {
+                  setUseCode(true);
+                  setError(null);
+                }}
+              >
+                Use authenticator code instead
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                disabled={pending}
+                onClick={backToCredentials}
+              >
+                Back
+              </Button>
+            </div>
+          ) : !bioChecked && !useCode ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--muted-foreground))]" />
+            </div>
           ) : (
             <form onSubmit={onTotpSubmit} className="space-y-4">
               <Field
@@ -277,11 +388,7 @@ export default function LoginPage() {
                 variant="ghost"
                 className="w-full"
                 disabled={pending}
-                onClick={() => {
-                  setStep("credentials");
-                  setCode("");
-                  setError(null);
-                }}
+                onClick={backToCredentials}
               >
                 Back
               </Button>
