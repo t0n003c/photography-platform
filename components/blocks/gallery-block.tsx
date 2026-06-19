@@ -40,9 +40,30 @@ async function loadPhotos(block: GalleryBlockData): Promise<PhotoDTO[]> {
 
 // Renders a gallery from a chosen source. The `effect` (cinematic-3d-scroll)
 // is wired in Phase D; for now it renders the standard responsive grid.
-export async function GalleryBlock({ block }: { block: GalleryBlockData }) {
+export async function GalleryBlock({
+  block,
+  preview,
+}: {
+  block: GalleryBlockData;
+  preview?: boolean;
+}) {
   const photos = await loadPhotos(block);
-  if (photos.length === 0) return null;
+  if (photos.length === 0) {
+    // On the live site an empty gallery renders nothing; in the editor preview
+    // show why so it's not just a blank spot.
+    if (!preview) return null;
+    const hint =
+      block.source === "featured"
+        ? "No featured photos yet — assign photos to a published category."
+        : `No photos in the selected ${block.source}${block.targetId ? "" : " (pick a target)"}.`;
+    return (
+      <Container className="py-8">
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
+          Gallery · {hint}
+        </div>
+      </Container>
+    );
+  }
   const layout = { gridType: block.gridType, spacing: block.spacing };
 
   // Opt-in cinematic 3D scroll renders full-bleed (it manages its own height);

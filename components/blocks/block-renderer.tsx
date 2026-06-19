@@ -274,7 +274,7 @@ function LeafView({
     case "banner":
       return <BannerBlock block={block} photo={block.photoId ? photoMap.get(block.photoId) : undefined} />;
     case "gallery":
-      return <GalleryBlock block={block} />;
+      return <GalleryBlock block={block} preview={preview} />;
     case "categoryIndex":
       return <CategoryIndexBlock block={block} />;
     case "locationIndex":
