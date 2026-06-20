@@ -449,8 +449,6 @@ function HorizontalLenisDetail({
   const title = photo.headline || photo.altText || "";
   const subhead = photo.subhead || "";
   const caption = photo.caption || "";
-  // Alt text shown on the right (editorial) only when it isn't already the title.
-  const altRight = photo.headline && photo.altText ? photo.altText : "";
   const reveal = "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
   const chrome = cn("transition-opacity duration-500", bgIn ? "opacity-100" : "opacity-0");
 
@@ -535,7 +533,7 @@ function HorizontalLenisDetail({
             >
               <span className="block overflow-hidden">
                 <span
-                  className={`block text-[clamp(2.5rem,7.5vw,9rem)] font-bold uppercase leading-[0.82] tracking-tight text-white ${reveal} delay-200 ${
+                  className={`block whitespace-nowrap text-[clamp(2.25rem,7vw,8.5rem)] font-bold uppercase leading-[0.82] tracking-tight text-white ${reveal} delay-200 ${
                     shown ? "translate-y-0" : "translate-y-full"
                   }`}
                 >
@@ -554,7 +552,7 @@ function HorizontalLenisDetail({
             >
               <span className="block overflow-hidden">
                 <span
-                  className={`block text-[clamp(2.5rem,7.5vw,9rem)] font-bold uppercase leading-[0.82] tracking-tight text-white ${reveal} delay-300 ${
+                  className={`block whitespace-nowrap text-[clamp(1.75rem,4.6vw,5.5rem)] font-bold uppercase leading-[0.85] tracking-tight text-white ${reveal} delay-300 ${
                     shown ? "translate-y-0" : "translate-y-full"
                   }`}
                 >
@@ -581,7 +579,7 @@ function HorizontalLenisDetail({
             </span>
             {date && (
               <span
-                className={`absolute bottom-0 right-2 origin-bottom-right rotate-180 whitespace-nowrap text-[0.7rem] uppercase tracking-[0.3em] text-white/55 [writing-mode:vertical-rl] ${reveal} delay-300 ${
+                className={`absolute bottom-[8%] right-2 rotate-180 whitespace-nowrap text-[0.7rem] uppercase tracking-[0.3em] text-white/55 [writing-mode:vertical-rl] ${reveal} delay-300 ${
                   shown ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -589,33 +587,22 @@ function HorizontalLenisDetail({
               </span>
             )}
           </div>
-          {/* Right side: alt text at the top, caption pinned to the bottom. */}
-          {(altRight || caption) && (
+          {/* Right side: caption at the top. */}
+          {caption && (
             <div
               className={cn(
-                "absolute top-0 z-20 hidden h-full w-[15vw] flex-col pl-5 text-white/75 md:flex",
+                "absolute top-0 z-20 hidden h-full w-[15vw] pl-5 text-white/75 md:block",
                 chrome,
               )}
               style={{ left: "100%" }}
             >
-              {altRight && (
-                <p
-                  className={`pt-[2vw] text-sm leading-snug ${reveal} delay-200 ${
-                    shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
-                  }`}
-                >
-                  {altRight}
-                </p>
-              )}
-              {caption && (
-                <p
-                  className={`mt-auto pb-[2vw] text-sm leading-relaxed text-white/65 ${reveal} delay-300 ${
-                    shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
-                  }`}
-                >
-                  {caption}
-                </p>
-              )}
+              <p
+                className={`pt-[2vw] text-sm leading-relaxed ${reveal} delay-200 ${
+                  shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
+                }`}
+              >
+                {caption}
+              </p>
             </div>
           )}
         </figure>
