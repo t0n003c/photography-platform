@@ -10,6 +10,7 @@ import {
   MosaicGrid,
   UniformGrid,
 } from "./grids";
+import { Carousel3D } from "./carousel-3d";
 import { Lightbox } from "./lightbox";
 
 interface GalleryLayout {
@@ -19,7 +20,8 @@ interface GalleryLayout {
     | "uniform"
     | "carousel"
     | "filmstrip"
-    | "mosaic";
+    | "mosaic"
+    | "carousel3d";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
@@ -128,6 +130,9 @@ export function Gallery({
       )}
       {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
       {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
+      {layout.gridType === "carousel3d" && (
+        <Carousel3D photos={photos} onOpen={openAt} />
+      )}
 
       {canLoadMore && (
         <div className="mt-8 flex justify-center">
