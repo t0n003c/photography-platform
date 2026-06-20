@@ -751,9 +751,9 @@ function LeafEditor({
               <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="cinematic">Cinematic 3D scroll</option>
             </Select>
           </Field>
-          {/* The 3D infinite carousel manages its own spacing, so the
-              tight/normal/airy control doesn't apply to it. */}
-          {block.gridType !== "carousel3d" && (
+          {/* The 3D infinite carousel and cinematic 3D scroll manage their own
+              layout, so the tight/normal/airy spacing control doesn't apply. */}
+          {block.gridType !== "carousel3d" && block.gridType !== "cinematic" && (
             <Field label="Spacing">
               <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
                 <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>

@@ -236,8 +236,12 @@ function TaxonomyCard<T extends Category | Location>({
               region: form.region,
               isPublished: form.isPublished,
             };
-      const res = await api.post<{ data: T }>(`/api/v1/admin/${path}`, body);
-      setItems((prev) => [...prev, res.data]);
+      // The create endpoint returns only { id, slug }, so build the list item
+      // from the submitted fields + returned id (don't read a non-existent
+      // res.data, which previously appended `undefined` and crashed the list).
+      const res = await api.post<{ id: string }>(`/api/v1/admin/${path}`, body);
+      const item = { ...body, id: res.id, sortOrder: 0 } as unknown as T;
+      setItems((prev) => [...prev, item]);
       toast("Created", "success");
     } catch (err) {
       toast(errMsg(err), "error");
@@ -261,11 +265,12 @@ function TaxonomyCard<T extends Category | Location>({
               region: form.region,
               isPublished: form.isPublished,
             };
-      const res = await api.patch<{ data: T }>(
-        `/api/v1/admin/${path}/${id}`,
-        body,
+      // The update endpoint returns only { id }, so merge the submitted fields
+      // into the existing item rather than reading a non-existent res.data.
+      await api.patch(`/api/v1/admin/${path}/${id}`, body);
+      setItems((prev) =>
+        prev.map((c) => (c.id === id ? ({ ...c, ...body } as T) : c)),
       );
-      setItems((prev) => prev.map((c) => (c.id === id ? res.data : c)));
       toast("Saved", "success");
     } catch (err) {
       toast(errMsg(err), "error");
@@ -313,7 +318,9 @@ function TaxonomyCard<T extends Category | Location>({
           />
         ) : (
           <ul className="divide-y">
-            {items.map((item, i) => (
+            {/* Guard against any stray nullish entry so the whole admin page
+                can never crash while rendering the list. */}
+            {items.filter(Boolean).map((item, i) => (
               <li
                 key={item.id}
                 className="flex items-center justify-between gap-3 py-3"
