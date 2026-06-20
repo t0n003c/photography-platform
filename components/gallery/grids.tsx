@@ -14,6 +14,8 @@ export interface GridProps {
   itemSpacingClass?: string;
   /** Carousel only: auto-advance through slides (pauses on hover). */
   autoplay?: boolean;
+  /** Horizontal-scroll only: detail-view text-overlay style. */
+  overlay?: "minimal" | "editorial" | "centered";
   onOpen: (index: number) => void;
 }
 
@@ -170,7 +172,7 @@ export function CarouselGrid({ photos, spacingClass, autoplay, onOpen }: GridPro
  * horizontal scroll under prefers-reduced-motion (no Lenis). Inspired by the
  * Moussa Mamadou "flip horizontal scroll" reference.
  */
-export function HorizontalLenisGrid({ photos }: GridProps) {
+export function HorizontalLenisGrid({ photos, overlay = "minimal" }: GridProps) {
   const wrapperRef = React.useRef<HTMLDivElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -284,6 +286,7 @@ export function HorizontalLenisGrid({ photos }: GridProps) {
           index={activeIndex}
           startRect={startRect}
           open={open}
+          overlay={overlay}
           onClose={() => {
             setOpen(false);
             window.setTimeout(() => setActiveIndex(null), reduce ? 0 : 950);
@@ -308,6 +311,7 @@ function HorizontalLenisDetail({
   index,
   startRect,
   open,
+  overlay = "minimal",
   onClose,
   onNav,
 }: {
@@ -315,6 +319,7 @@ function HorizontalLenisDetail({
   index: number;
   startRect: DOMRect | null;
   open: boolean;
+  overlay?: "minimal" | "editorial" | "centered";
   onClose: () => void;
   onNav: (dir: -1 | 1) => void;
 }) {
@@ -332,8 +337,11 @@ function HorizontalLenisDetail({
   // (This overlay only ever renders client-side, so `window` is safe here.)
   const display = React.useMemo(() => {
     if (typeof window === "undefined") return { w: 0, h: 0 };
-    const maxH = window.innerHeight * 0.72;
-    const maxW = window.innerWidth * 0.92;
+    // "editorial" leaves side room for the flanking titles + side text.
+    const widthFactor = overlay === "editorial" ? 0.54 : overlay === "centered" ? 0.82 : 0.92;
+    const heightFactor = overlay === "editorial" ? 0.62 : 0.72;
+    const maxH = window.innerHeight * heightFactor;
+    const maxW = window.innerWidth * widthFactor;
     const ar = (photo.width || 1) / (photo.height || 1);
     let h = maxH;
     let w = h * ar;
@@ -342,7 +350,7 @@ function HorizontalLenisDetail({
       h = w / ar;
     }
     return { w: Math.round(w), h: Math.round(h) };
-  }, [photo.width, photo.height]);
+  }, [photo.width, photo.height, overlay]);
 
   // Fade the backdrop + chrome with `open` (in on open, out on close).
   React.useEffect(() => {
@@ -444,6 +452,20 @@ function HorizontalLenisDetail({
   const reveal = "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
   const chrome = cn("transition-opacity duration-500", bgIn ? "opacity-100" : "opacity-0");
 
+  // The morphing image — reused by whichever overlay layout renders.
+  const imageEl = (
+    <div
+      ref={imgWrapRef}
+      className="absolute inset-0 overflow-hidden rounded-sm shadow-2xl will-change-transform"
+    >
+      <ResponsiveImage
+        photo={photo}
+        sizes="(min-width:768px) 70vw, 100vw"
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-10"
@@ -492,58 +514,124 @@ function HorizontalLenisDetail({
         </>
       )}
 
-      <figure
-        className="relative z-[1] flex max-h-full flex-col items-center gap-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Image with overlaid text zones (counter/date top, title/subhead
-            bottom over a scrim). The text overlay is a sibling of the morphing
-            image, so it doesn't scale during the FLIP. */}
-        <div className="relative" style={{ width: display.w, height: display.h }}>
-          <div
-            ref={imgWrapRef}
-            className="absolute inset-0 overflow-hidden rounded-sm shadow-2xl will-change-transform"
-          >
-            <ResponsiveImage
-              photo={photo}
-              sizes="(min-width:768px) 70vw, 100vw"
-              className="h-full w-full object-cover"
-            />
-          </div>
-
-          <div
-            className={cn(
-              "pointer-events-none absolute inset-0 z-10 flex flex-col justify-between rounded-sm p-4 sm:p-6",
-              chrome,
-            )}
-          >
-            {/* gradient scrim for the bottom text */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 rounded-b-sm bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-
-            <div className="relative flex items-start justify-between gap-4 text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
-              <span
-                className={`font-mono text-xs tracking-widest text-white/85 ${reveal} delay-100 ${
-                  shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
-                }`}
-              >
-                {counter}
-              </span>
-              {date && (
+      {overlay === "editorial" ? (
+        // Reference look: the photo flanked by huge titles straddling its top
+        // and bottom edges (mix-blend so they always contrast), with side text.
+        <figure
+          className="relative z-[1]"
+          style={{ width: display.w, height: display.h }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {imageEl}
+          {title && (
+            <div
+              className={cn(
+                "pointer-events-none absolute left-0 z-20 w-[120%] mix-blend-difference",
+                chrome,
+              )}
+              style={{ bottom: "calc(100% - 2vw)" }}
+            >
+              <span className="block overflow-hidden">
                 <span
-                  className={`text-xs uppercase tracking-wide text-white/85 ${reveal} delay-150 ${
-                    shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                  className={`block text-[clamp(2.5rem,7.5vw,9rem)] font-bold uppercase leading-[0.82] tracking-tight text-white ${reveal} delay-200 ${
+                    shown ? "translate-y-0" : "translate-y-full"
                   }`}
                 >
-                  {date}
+                  {title}
                 </span>
-              )}
+              </span>
             </div>
-
-            <div className="relative text-white">
+          )}
+          {subhead && (
+            <div
+              className={cn(
+                "pointer-events-none absolute right-0 z-20 w-[120%] text-right mix-blend-difference",
+                chrome,
+              )}
+              style={{ top: "calc(100% - 2.25vw)" }}
+            >
+              <span className="block overflow-hidden">
+                <span
+                  className={`block text-[clamp(2.5rem,7.5vw,9rem)] font-bold uppercase leading-[0.82] tracking-tight text-white ${reveal} delay-300 ${
+                    shown ? "translate-y-0" : "translate-y-full"
+                  }`}
+                >
+                  {subhead}
+                </span>
+              </span>
+            </div>
+          )}
+          {/* Left side: meta. */}
+          <div
+            className={cn(
+              "absolute top-0 z-20 hidden h-full w-[15vw] flex-col justify-center gap-1 pr-5 text-right text-white/80 md:flex",
+              chrome,
+            )}
+            style={{ right: "100%" }}
+          >
+            <span
+              className={`font-mono text-xs tracking-widest ${reveal} delay-200 ${
+                shown ? "translate-x-0 opacity-100" : "translate-x-3 opacity-0"
+              }`}
+            >
+              {counter}
+            </span>
+            {date && (
+              <span
+                className={`text-xs uppercase tracking-wide text-white/60 ${reveal} delay-300 ${
+                  shown ? "translate-x-0 opacity-100" : "translate-x-3 opacity-0"
+                }`}
+              >
+                {date}
+              </span>
+            )}
+          </div>
+          {/* Right side: caption. */}
+          {caption && (
+            <div
+              className={cn(
+                "absolute top-0 z-20 hidden h-full w-[15vw] flex-col justify-center pl-5 text-white/75 md:flex",
+                chrome,
+              )}
+              style={{ left: "100%" }}
+            >
+              <p
+                className={`text-sm leading-relaxed ${reveal} delay-300 ${
+                  shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
+                }`}
+              >
+                {caption}
+              </p>
+            </div>
+          )}
+        </figure>
+      ) : overlay === "centered" ? (
+        // Title centered over the photo on a soft scrim; caption below.
+        <figure
+          className="relative z-[1] flex flex-col items-center gap-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative" style={{ width: display.w, height: display.h }}>
+            {imageEl}
+            <div className="pointer-events-none absolute inset-0 z-10 rounded-sm bg-gradient-to-t from-black/55 via-black/25 to-black/40" />
+            <div
+              className={cn(
+                "pointer-events-none absolute left-4 top-4 z-20 font-mono text-xs tracking-widest text-white/85",
+                chrome,
+              )}
+            >
+              {counter}
+            </div>
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 p-6 text-center text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.55)]",
+                chrome,
+              )}
+            >
               {title && (
                 <span className="block overflow-hidden">
                   <span
-                    className={`block text-2xl font-semibold leading-tight tracking-tight sm:text-3xl ${reveal} delay-200 ${
+                    className={`block text-3xl font-semibold leading-tight tracking-tight sm:text-5xl ${reveal} delay-200 ${
                       shown ? "translate-y-0" : "translate-y-full"
                     }`}
                   >
@@ -553,7 +641,7 @@ function HorizontalLenisDetail({
               )}
               {subhead && (
                 <span
-                  className={`mt-1 block text-sm uppercase tracking-wide text-white/80 ${reveal} delay-300 ${
+                  className={`text-sm uppercase tracking-[0.2em] text-white/85 ${reveal} delay-300 ${
                     shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
                   }`}
                 >
@@ -562,23 +650,93 @@ function HorizontalLenisDetail({
               )}
             </div>
           </div>
-        </div>
-
-        {/* Caption paragraph below the image. */}
-        {caption && (
-          <p
-            className={cn(
-              `max-w-2xl px-1 text-center text-sm leading-relaxed text-white/70 ${reveal} delay-300 ${
-                shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-              }`,
-              chrome,
-            )}
-            style={{ maxWidth: display.w || undefined }}
-          >
-            {caption}
-          </p>
-        )}
-      </figure>
+          {caption && (
+            <p
+              className={cn(
+                `max-w-2xl px-1 text-center text-sm leading-relaxed text-white/70 ${reveal} delay-300 ${
+                  shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                }`,
+                chrome,
+              )}
+              style={{ maxWidth: display.w || undefined }}
+            >
+              {caption}
+            </p>
+          )}
+        </figure>
+      ) : (
+        // Minimal (default): counter/date top, title + subhead bottom-left over
+        // a scrim, caption below.
+        <figure
+          className="relative z-[1] flex max-h-full flex-col items-center gap-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative" style={{ width: display.w, height: display.h }}>
+            {imageEl}
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 z-10 flex flex-col justify-between rounded-sm p-4 sm:p-6",
+                chrome,
+              )}
+            >
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 rounded-b-sm bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+              <div className="relative flex items-start justify-between gap-4 text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+                <span
+                  className={`font-mono text-xs tracking-widest text-white/85 ${reveal} delay-100 ${
+                    shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                  }`}
+                >
+                  {counter}
+                </span>
+                {date && (
+                  <span
+                    className={`text-xs uppercase tracking-wide text-white/85 ${reveal} delay-150 ${
+                      shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                    }`}
+                  >
+                    {date}
+                  </span>
+                )}
+              </div>
+              <div className="relative text-white">
+                {title && (
+                  <span className="block overflow-hidden">
+                    <span
+                      className={`block text-2xl font-semibold leading-tight tracking-tight sm:text-3xl ${reveal} delay-200 ${
+                        shown ? "translate-y-0" : "translate-y-full"
+                      }`}
+                    >
+                      {title}
+                    </span>
+                  </span>
+                )}
+                {subhead && (
+                  <span
+                    className={`mt-1 block text-sm uppercase tracking-wide text-white/80 ${reveal} delay-300 ${
+                      shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                    }`}
+                  >
+                    {subhead}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          {caption && (
+            <p
+              className={cn(
+                `max-w-2xl px-1 text-center text-sm leading-relaxed text-white/70 ${reveal} delay-300 ${
+                  shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                }`,
+                chrome,
+              )}
+              style={{ maxWidth: display.w || undefined }}
+            >
+              {caption}
+            </p>
+          )}
+        </figure>
+      )}
     </div>
   );
 }

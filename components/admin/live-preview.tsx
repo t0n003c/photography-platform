@@ -8,11 +8,14 @@ export type PreviewGrid = "masonry" | "justified" | "uniform" | "horizontal-leni
 export type PreviewSpacing = "tight" | "normal" | "airy";
 export type PreviewTheme = "light" | "dark" | "auto";
 
+export type PreviewOverlay = "minimal" | "editorial" | "centered";
+
 export interface PreviewDraft {
   gridType: PreviewGrid;
   spacing: PreviewSpacing;
   theme: PreviewTheme;
   hero?: Record<string, unknown>;
+  overlay?: PreviewOverlay;
 }
 
 // Browser-safe encoder matching src/lib/preview.ts decodePreview (base64url of

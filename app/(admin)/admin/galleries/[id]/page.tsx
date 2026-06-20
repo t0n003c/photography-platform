@@ -28,6 +28,7 @@ import {
   type PreviewGrid,
   type PreviewSpacing,
   type PreviewTheme,
+  type PreviewOverlay,
 } from "@/components/admin/live-preview";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
@@ -865,6 +866,8 @@ function LayoutCard({
   const [gridType, setGridType] = useState<PreviewGrid>("justified");
   const [spacing, setSpacing] = useState<PreviewSpacing>("normal");
   const [theme, setTheme] = useState<PreviewTheme>("auto");
+  const [overlay, setOverlay] = useState<PreviewOverlay>("minimal");
+  const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     let active = true;
@@ -873,9 +876,12 @@ function LayoutCard({
       return;
     }
     api
-      .get<{ gridType: string | null; spacing: string | null; theme: string | null }>(
-        `/api/v1/admin/page-configs/${gallery.pageConfigId}`,
-      )
+      .get<{
+        gridType: string | null;
+        spacing: string | null;
+        theme: string | null;
+        config: Record<string, unknown> | null;
+      }>(`/api/v1/admin/page-configs/${gallery.pageConfigId}`)
       .then((cfg) => {
         if (!active) return;
         if (
@@ -889,6 +895,10 @@ function LayoutCard({
           setSpacing(cfg.spacing);
         if (cfg.theme === "light" || cfg.theme === "dark" || cfg.theme === "auto")
           setTheme(cfg.theme);
+        const c = (cfg.config ?? {}) as Record<string, unknown>;
+        setBaseConfig(c);
+        const o = c.hlOverlay;
+        if (o === "minimal" || o === "editorial" || o === "centered") setOverlay(o);
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -900,6 +910,7 @@ function LayoutCard({
   const save = async () => {
     setSaving(true);
     try {
+      const config = { ...baseConfig, hlOverlay: overlay };
       let id = gallery.pageConfigId;
       if (!id) {
         const res = await api.post<{ data: { id: string } }>("/api/v1/admin/page-configs", {
@@ -908,14 +919,15 @@ function LayoutCard({
           spacing,
           theme,
           hero: { enabled: false },
-          config: {},
+          config,
         });
         id = res.data.id;
         await api.patch(`/api/v1/admin/galleries/${gallery.id}`, { pageConfigId: id });
         onSaved({ ...gallery, pageConfigId: id });
       } else {
-        await api.patch(`/api/v1/admin/page-configs/${id}`, { gridType, spacing, theme });
+        await api.patch(`/api/v1/admin/page-configs/${id}`, { gridType, spacing, theme, config });
       }
+      setBaseConfig(config);
       toast("Layout saved", "success");
     } catch (err) {
       toast(errMsg(err), "error");
@@ -962,6 +974,15 @@ function LayoutCard({
                   <option value="dark">Dark</option>
                 </Select>
               </Field>
+              {gridType === "horizontal-lenis" && (
+                <Field label="Text overlay">
+                  <Select value={overlay} onChange={(e) => setOverlay(e.target.value as PreviewOverlay)}>
+                    <option value="minimal">Minimal — caption over a corner scrim</option>
+                    <option value="editorial">Editorial — big titles framing the photo (reference)</option>
+                    <option value="centered">Centered — title centered over the photo</option>
+                  </Select>
+                </Field>
+              )}
               <div className="pt-1">
                 <Button onClick={save} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -975,7 +996,7 @@ function LayoutCard({
             </div>
             <LivePreview
               baseUrl={`/preview/gallery/${gallery.id}`}
-              draft={{ gridType, spacing, theme }}
+              draft={{ gridType, spacing, theme, overlay }}
               height={560}
             />
           </div>

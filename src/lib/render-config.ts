@@ -11,11 +11,15 @@ export type Scope =
   | "about"
   | "global";
 
+export type HlOverlay = "minimal" | "editorial" | "centered";
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
   theme: "light" | "dark" | "auto";
   hero: { enabled?: boolean; headline?: string } | null;
+  // Text-overlay style for the horizontal-scroll detail view.
+  overlay: HlOverlay;
 }
 
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
@@ -29,11 +33,13 @@ export async function resolveRenderConfig(
   defaultGrid: GridType,
 ): Promise<RenderConfig> {
   const base = await resolvePageConfig(scope, explicitId ?? undefined);
+  const cfgJson = (base?.config ?? {}) as { hlOverlay?: HlOverlay };
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
     spacing: base?.spacing ?? "normal",
     theme: (base?.theme as RenderConfig["theme"] | null) ?? "auto",
     hero: (base?.hero as RenderConfig["hero"]) ?? null,
+    overlay: cfgJson.hlOverlay ?? "minimal",
   };
 
   const rawParam = searchParams?.[PREVIEW_PARAM];
@@ -51,5 +57,6 @@ export async function resolveRenderConfig(
     spacing: draft.spacing ?? config.spacing,
     theme: draft.theme ?? config.theme,
     hero: draft.hero !== undefined ? draft.hero : config.hero,
+    overlay: draft.overlay ?? config.overlay,
   };
 }

@@ -30,6 +30,8 @@ interface GalleryLayout {
   autoplay?: boolean;
   /** 3D infinite carousel only: colored vs. neutral gradient backdrop. */
   backdrop?: "color" | "neutral";
+  /** Horizontal-scroll only: text-overlay style for the detail view. */
+  overlay?: "minimal" | "editorial" | "centered";
 }
 
 interface GalleryProps {
@@ -141,7 +143,7 @@ export function Gallery({
         <Carousel3D photos={photos} onOpen={openAt} backdrop={layout.backdrop} />
       )}
       {layout.gridType === "horizontal-lenis" && (
-        <HorizontalLenisGrid {...gridProps} />
+        <HorizontalLenisGrid {...gridProps} overlay={layout.overlay} />
       )}
 
       {canLoadMore && (

@@ -9,6 +9,7 @@ export interface PreviewConfig {
   spacing?: string;
   theme?: "light" | "dark" | "auto";
   hero?: { enabled?: boolean; headline?: string } | null;
+  overlay?: "minimal" | "editorial" | "centered";
 }
 
 export const PREVIEW_PARAM = "__pc";
