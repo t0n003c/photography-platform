@@ -12,6 +12,7 @@ export const GridEnum = z.enum([
   "filmstrip",
   "mosaic",
   "carousel3d",
+  "cinematic",
 ]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);

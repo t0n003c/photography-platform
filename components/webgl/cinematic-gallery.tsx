@@ -15,7 +15,8 @@ interface Layout {
     | "carousel"
     | "filmstrip"
     | "mosaic"
-    | "carousel3d";
+    | "carousel3d"
+    | "cinematic";
   spacing?: string;
 }
 

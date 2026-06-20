@@ -690,7 +690,7 @@ function LeafEditor({
           )}
           <Field label="Grid">
             <Select value={block.gridType} onChange={(e) => set({ gridType: e.target.value as typeof block.gridType })}>
-              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option>
+              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="cinematic">Cinematic 3D scroll</option>
             </Select>
           </Field>
           <Field label="Spacing">
@@ -713,13 +713,7 @@ function LeafEditor({
           <Field label="Max photos">
             <Input type="number" value={block.limit} onChange={(e) => set({ limit: Number(e.target.value) })} />
           </Field>
-          <Field label="Effect">
-            <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
-              <option value="none">None</option>
-              <option value="cinematic-3d-scroll">Cinematic 3D scroll</option>
-            </Select>
-          </Field>
-          {block.effect === "cinematic-3d-scroll" && (
+          {block.gridType === "cinematic" && (
             <Field label="Scroll speed">
               <div className="flex items-center gap-2">
                 <input

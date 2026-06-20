@@ -21,7 +21,8 @@ interface GalleryLayout {
     | "carousel"
     | "filmstrip"
     | "mosaic"
-    | "carousel3d";
+    | "carousel3d"
+    | "cinematic";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
@@ -124,7 +125,9 @@ export function Gallery({
         <MasonryGrid {...gridProps} itemSpacingClass={masonryItemClass(layout.spacing)} />
       )}
       {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
-      {layout.gridType === "justified" && <JustifiedGrid {...gridProps} />}
+      {(layout.gridType === "justified" || layout.gridType === "cinematic") && (
+        <JustifiedGrid {...gridProps} />
+      )}
       {layout.gridType === "carousel" && (
         <CarouselGrid {...gridProps} autoplay={layout.autoplay} />
       )}

@@ -66,9 +66,11 @@ export async function GalleryBlock({
   }
   const layout = { gridType: block.gridType, spacing: block.spacing, autoplay: block.autoplay };
 
-  // Opt-in cinematic 3D scroll renders full-bleed (it manages its own height);
-  // it degrades to the standard grid when WebGL is gated off.
-  if (block.effect === "cinematic-3d-scroll") {
+  // Cinematic 3D scroll is a layout choice (gridType) — it renders full-bleed
+  // and manages its own height, degrading to a standard grid when WebGL is
+  // gated off. `effect === "cinematic-3d-scroll"` is the legacy form, kept so
+  // pages saved before it moved to the grid picker still render.
+  if (block.gridType === "cinematic" || block.effect === "cinematic-3d-scroll") {
     return <CinematicGallery photos={photos} layout={layout} speed={block.effectSpeed ?? 1} />;
   }
   return (
