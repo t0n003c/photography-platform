@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   Plus,
@@ -8,6 +8,8 @@ import {
   Smartphone,
   ExternalLink,
   RefreshCw,
+  Instagram,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -468,12 +470,12 @@ export default function DesignPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <FooterDesignCard />
           {SCOPES.map((scope) => {
             const matching = configs.filter((c) => c.scope === scope);
             const previewUrl = previewUrlFor(scope, sampleFor(scope));
             return (
-              <Card key={scope}>
+              <Fragment key={scope}>
+              <Card>
                 <CardHeader className="flex items-center justify-between gap-2">
                   <CardTitle>{SCOPE_LABEL[scope]}</CardTitle>
                   {matching.length === 0 && (
@@ -512,6 +514,8 @@ export default function DesignPage() {
                   )}
                 </CardContent>
               </Card>
+              {scope === "about" && <FooterDesignCard />}
+              </Fragment>
             );
           })}
         </div>
@@ -538,6 +542,8 @@ function FooterDesignCard() {
   const [cfgId, setCfgId] = useState<string | null>(null);
   const [isDefault, setIsDefault] = useState(false);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
+  const [siteTitle, setSiteTitle] = useState("Your studio");
+  const [hasLogo, setHasLogo] = useState(false);
   const [s, setS] = useState<FooterSettings>({
     layout: "menu",
     text: "",
@@ -547,11 +553,19 @@ function FooterDesignCard() {
 
   useEffect(() => {
     let active = true;
-    api
-      .get<{ data: PageConfig[] }>("/api/v1/admin/page-configs?scope=global")
-      .then((res) => {
+    Promise.all([
+      api.get<{ data: PageConfig[] }>("/api/v1/admin/page-configs?scope=global"),
+      api
+        .get<{ data: { siteTitle: string; logoStorageKey: string | null } }>(
+          "/api/v1/admin/settings",
+        )
+        .catch(() => ({ data: { siteTitle: "Your studio", logoStorageKey: null } })),
+    ])
+      .then(([cfgRes, setRes]) => {
         if (!active) return;
-        const globals = res.data.filter((c) => c.scope === "global");
+        setSiteTitle(setRes.data.siteTitle || "Your studio");
+        setHasLogo(Boolean(setRes.data.logoStorageKey));
+        const globals = cfgRes.data.filter((c) => c.scope === "global");
         const pick = globals.find((c) => c.isDefault) ?? globals[0] ?? null;
         if (!pick) return;
         setCfgId(pick.id);
@@ -615,42 +629,42 @@ function FooterDesignCard() {
             <Spinner className="h-5 w-5" />
           </div>
         ) : (
-          <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-            <Field label="Layout">
-              <Select
-                value={s.layout}
-                onChange={(e) => setS({ ...s, layout: e.target.value as FooterLayout })}
-              >
-                <option value="menu">Menu links</option>
-                <option value="logo-text">Logo + text</option>
-                <option value="instagram">Instagram feed</option>
-                <option value="text">Plain text</option>
-              </Select>
-            </Field>
-            {s.layout === "instagram" && (
-              <Field label="Instagram photos">
-                <Input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={s.instagramLimit}
-                  onChange={(e) =>
-                    setS({ ...s, instagramLimit: Number(e.target.value) || 6 })
-                  }
-                />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-3">
+              <Field label="Layout">
+                <Select
+                  value={s.layout}
+                  onChange={(e) => setS({ ...s, layout: e.target.value as FooterLayout })}
+                >
+                  <option value="menu">Menu links</option>
+                  <option value="logo-text">Logo + text</option>
+                  <option value="instagram">Instagram feed</option>
+                  <option value="text">Plain text</option>
+                </Select>
               </Field>
-            )}
-            {(s.layout === "logo-text" || s.layout === "text") && (
-              <Field label={s.layout === "logo-text" ? "Tagline / text" : "Text"}>
-                <Textarea
-                  rows={3}
-                  value={s.text}
-                  onChange={(e) => setS({ ...s, text: e.target.value })}
-                  placeholder="A line about the studio…"
-                />
-              </Field>
-            )}
-            <div className="sm:col-span-2">
+              {s.layout === "instagram" && (
+                <Field label="Instagram photos">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={s.instagramLimit}
+                    onChange={(e) =>
+                      setS({ ...s, instagramLimit: Number(e.target.value) || 6 })
+                    }
+                  />
+                </Field>
+              )}
+              {(s.layout === "logo-text" || s.layout === "text") && (
+                <Field label={s.layout === "logo-text" ? "Tagline / text" : "Text"}>
+                  <Textarea
+                    rows={3}
+                    value={s.text}
+                    onChange={(e) => setS({ ...s, text: e.target.value })}
+                    placeholder="A line about the studio…"
+                  />
+                </Field>
+              )}
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -659,19 +673,110 @@ function FooterDesignCard() {
                 />
                 Show social icons
               </label>
-            </div>
-            <div className="sm:col-span-2 flex items-center gap-3">
-              <Button onClick={save} disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Save footer
-              </Button>
+              <div className="flex items-center gap-3 pt-1">
+                <Button onClick={save} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save footer
+                </Button>
+              </div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                 Footer menu links are edited in the Menus tab.
               </p>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                Live preview
+              </p>
+              <FooterPreview s={s} siteTitle={siteTitle} hasLogo={hasLogo} />
             </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
+}
+
+// Inline, instantly-updating mock of the public footer for the Design card.
+function FooterPreview({
+  s,
+  siteTitle,
+  hasLogo,
+}: {
+  s: FooterSettings;
+  siteTitle: string;
+  hasLogo: boolean;
+}) {
+  const year = new Date().getFullYear();
+  const social = s.showSocial ? (
+    <div className="flex items-center gap-3 text-[hsl(var(--muted-foreground))]">
+      <Instagram className="h-4 w-4" aria-hidden="true" />
+      <Mail className="h-4 w-4" aria-hidden="true" />
+    </div>
+  ) : null;
+  const copyright = (
+    <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+      © {year} {siteTitle}. All rights reserved.
+    </p>
+  );
+
+  let body: React.ReactNode;
+  if (s.layout === "menu") {
+    body = (
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-semibold">{siteTitle}</p>
+          {copyright}
+        </div>
+        <div className="flex flex-wrap gap-3 text-xs text-[hsl(var(--muted-foreground))]">
+          <span>Portfolio</span>
+          <span>About</span>
+          <span>Contact</span>
+        </div>
+        {social}
+      </div>
+    );
+  } else if (s.layout === "logo-text") {
+    body = (
+      <div className="flex flex-col items-center gap-2 text-center">
+        {hasLogo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/api/v1/media/site-logo" alt={siteTitle} className="h-7 w-auto" />
+        ) : (
+          <p className="text-sm font-semibold">{siteTitle}</p>
+        )}
+        {s.text && (
+          <p className="max-w-xs text-xs text-[hsl(var(--muted-foreground))]">{s.text}</p>
+        )}
+        {social}
+        {copyright}
+      </div>
+    );
+  } else if (s.layout === "instagram") {
+    body = (
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {Array.from({ length: Math.max(1, Math.min(12, s.instagramLimit || 6)) }).map(
+            (_, i) => (
+              <div key={i} className="h-10 w-10 rounded-sm bg-[hsl(var(--muted))]" />
+            ),
+          )}
+        </div>
+        {social}
+        {copyright}
+      </div>
+    );
+  } else {
+    body = (
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="max-w-md text-xs text-[hsl(var(--muted-foreground))]">
+          {s.text || "Your footer text…"}
+        </p>
+        {social}
+        {copyright}
+      </div>
+    );
+  }
+
+  return <div className="rounded-md border bg-[hsl(var(--background))] p-4">{body}</div>;
 }

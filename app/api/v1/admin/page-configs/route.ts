@@ -52,16 +52,19 @@ export async function POST(req: Request) {
   const body = parsed.data;
 
   const id = newId();
-  await db.insert(pageConfig).values({
-    id,
-    scope: body.scope,
-    layoutId: body.layoutId ?? null,
-    gridType: body.gridType ?? null,
-    spacing: body.spacing ?? null,
-    theme: body.theme ?? null,
-    hero: body.hero ?? null,
-    ...(body.config !== undefined ? { config: body.config } : {}),
-  });
+  const [row] = await db
+    .insert(pageConfig)
+    .values({
+      id,
+      scope: body.scope,
+      layoutId: body.layoutId ?? null,
+      gridType: body.gridType ?? null,
+      spacing: body.spacing ?? null,
+      theme: body.theme ?? null,
+      hero: body.hero ?? null,
+      ...(body.config !== undefined ? { config: body.config } : {}),
+    })
+    .returning();
 
   await writeAudit({
     actorId: a.session.user.id,
@@ -74,5 +77,5 @@ export async function POST(req: Request) {
   });
 
   await invalidate(CACHE_KEYS.pageConfig(body.scope));
-  return created({ id, scope: body.scope });
+  return created({ data: row });
 }
