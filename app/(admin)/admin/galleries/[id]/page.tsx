@@ -878,7 +878,12 @@ function LayoutCard({
       )
       .then((cfg) => {
         if (!active) return;
-        if (cfg.gridType === "masonry" || cfg.gridType === "justified" || cfg.gridType === "uniform")
+        if (
+          cfg.gridType === "masonry" ||
+          cfg.gridType === "justified" ||
+          cfg.gridType === "uniform" ||
+          cfg.gridType === "horizontal-lenis"
+        )
           setGridType(cfg.gridType);
         if (cfg.spacing === "tight" || cfg.spacing === "normal" || cfg.spacing === "airy")
           setSpacing(cfg.spacing);
@@ -937,6 +942,7 @@ function LayoutCard({
                   <option value="masonry">Masonry</option>
                   <option value="justified">Justified</option>
                   <option value="uniform">Uniform</option>
+                  <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
                 </Select>
               </Field>
               <Field label="Spacing">

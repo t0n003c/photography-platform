@@ -11,7 +11,7 @@ import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 export const dynamic = "force-dynamic";
 
 const PatchSchema = z.object({
-  gridType: z.enum(["masonry", "justified", "uniform"]).nullable().optional(),
+  gridType: z.enum(["masonry", "justified", "uniform", "horizontal-lenis"]).nullable().optional(),
   spacing: z.string().nullable().optional(),
   theme: z.enum(["light", "dark", "auto"]).nullable().optional(),
   hero: z.unknown().optional(),

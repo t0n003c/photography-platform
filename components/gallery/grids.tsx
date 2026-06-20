@@ -163,6 +163,86 @@ export function CarouselGrid({ photos, spacingClass, autoplay, onOpen }: GridPro
   );
 }
 
+/**
+ * Horizontal smooth-scroll gallery driven by Lenis: a single row of tall images
+ * with an alternating vertical offset (odd up / even down), scrolled
+ * horizontally by the wheel. Clicking opens the lightbox. Falls back to native
+ * horizontal scroll under prefers-reduced-motion (no Lenis). Inspired by the
+ * Moussa Mamadou "flip horizontal scroll" reference.
+ */
+export function HorizontalLenisGrid({ photos, onOpen }: GridProps) {
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const content = contentRef.current;
+    if (!wrapper || !content) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    )
+      return; // native horizontal scroll fallback
+
+    let raf = 0;
+    let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lenis: any = null;
+    import("lenis").then(({ default: Lenis }) => {
+      if (cancelled) return;
+      lenis = new Lenis({
+        wrapper,
+        content,
+        orientation: "horizontal",
+        lerp: 0.06,
+        smoothWheel: true,
+        wheelMultiplier: 0.9,
+      });
+      const loop = (t: number) => {
+        lenis.raf(t);
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+    });
+
+    return () => {
+      cancelled = true;
+      if (raf) cancelAnimationFrame(raf);
+      lenis?.destroy();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="relative w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      style={{ height: "72vh" }}
+    >
+      <div
+        ref={contentRef}
+        className="flex h-full w-max items-center gap-[7vw] px-[12vw]"
+      >
+        {photos.map((photo, i) => (
+          <button
+            key={photo.id}
+            type="button"
+            onClick={() => onOpen(i)}
+            aria-label={tileLabel(photo)}
+            style={{ transform: i % 2 === 0 ? "translateY(-13%)" : "translateY(13%)" }}
+            className="block aspect-[3/4] h-[48vh] shrink-0 overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+          >
+            <ResponsiveImage
+              photo={photo}
+              sizes="(min-width:768px) 36vw, 70vw"
+              className="h-full w-full object-cover transition-opacity hover:opacity-90"
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Perforation row: evenly spaced light "sprocket holes" on the dark film body.
 const FILM_PERF_STYLE: React.CSSProperties = {
   backgroundImage:

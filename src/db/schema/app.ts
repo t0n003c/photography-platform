@@ -422,7 +422,7 @@ export const pageConfig = pgTable(
       onDelete: "set null",
     }),
     gridType: text("grid_type", {
-      enum: ["masonry", "justified", "uniform"],
+      enum: ["masonry", "justified", "uniform", "horizontal-lenis"],
     }),
     spacing: text("spacing"),
     theme: text("theme", { enum: ["light", "dark", "auto"] }),

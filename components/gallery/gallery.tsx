@@ -5,6 +5,7 @@ import type { PhotoDTO } from "@/src/db/queries/photos";
 import {
   CarouselGrid,
   FilmstripGrid,
+  HorizontalLenisGrid,
   JustifiedGrid,
   MasonryGrid,
   MosaicGrid,
@@ -22,7 +23,8 @@ interface GalleryLayout {
     | "filmstrip"
     | "mosaic"
     | "carousel3d"
-    | "cinematic";
+    | "cinematic"
+    | "horizontal-lenis";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
@@ -137,6 +139,9 @@ export function Gallery({
       {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
       {layout.gridType === "carousel3d" && (
         <Carousel3D photos={photos} onOpen={openAt} backdrop={layout.backdrop} />
+      )}
+      {layout.gridType === "horizontal-lenis" && (
+        <HorizontalLenisGrid {...gridProps} />
       )}
 
       {canLoadMore && (

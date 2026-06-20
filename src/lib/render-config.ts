@@ -2,7 +2,7 @@ import { getSession } from "@/src/auth/session";
 import { resolvePageConfig } from "@/src/db/queries/public";
 import { decodePreview, PREVIEW_PARAM } from "@/src/lib/preview";
 
-export type GridType = "masonry" | "justified" | "uniform";
+export type GridType = "masonry" | "justified" | "uniform" | "horizontal-lenis";
 export type Scope =
   | "home"
   | "gallery"

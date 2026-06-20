@@ -16,7 +16,7 @@ const SCOPES = ["home", "gallery", "category", "location", "about", "global"] as
 const CreateSchema = z.object({
   scope: z.enum(SCOPES),
   layoutId: z.string().optional(),
-  gridType: z.enum(["masonry", "justified", "uniform"]).optional(),
+  gridType: z.enum(["masonry", "justified", "uniform", "horizontal-lenis"]).optional(),
   spacing: z.string().optional(),
   theme: z.enum(["light", "dark", "auto"]).optional(),
   hero: z.unknown().optional(),

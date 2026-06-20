@@ -5,7 +5,7 @@
 // → x-preview-theme header → root layout forcedTheme).
 
 export interface PreviewConfig {
-  gridType?: "masonry" | "justified" | "uniform";
+  gridType?: "masonry" | "justified" | "uniform" | "horizontal-lenis";
   spacing?: string;
   theme?: "light" | "dark" | "auto";
   hero?: { enabled?: boolean; headline?: string } | null;
