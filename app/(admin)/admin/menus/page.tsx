@@ -12,15 +12,26 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  Pencil,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
 
-type LinkType = "page" | "category" | "location" | "gallery" | "url" | "home";
+type Role = "primary" | "footer";
+type LinkType =
+  | "page"
+  | "category"
+  | "location"
+  | "gallery"
+  | "url"
+  | "home"
+  | "none";
 
 interface MenuItemRow {
   id: string;
@@ -38,6 +49,8 @@ interface MenuItemRow {
 interface AdminMenu {
   id: string;
   key: string;
+  role: Role;
+  isActive: boolean;
   name: string;
   items: MenuItemRow[];
 }
@@ -58,9 +71,14 @@ const LINK_TYPES: { value: LinkType; label: string }[] = [
   { value: "category", label: "Category" },
   { value: "location", label: "Location" },
   { value: "gallery", label: "Gallery" },
+  { value: "none", label: "No link (label only)" },
 ];
 
 const TARGET_TYPES = ["page", "category", "location", "gallery"];
+const ROLE_LABEL: Record<Role, string> = {
+  primary: "Primary navigation",
+  footer: "Footer menu",
+};
 
 interface DraftItem {
   label: string;
@@ -82,15 +100,21 @@ export default function MenusPage() {
   const { toast } = useToast();
   const [menus, setMenus] = useState<AdminMenu[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeKey, setActiveKey] = useState("primary");
   const [busy, setBusy] = useState(false);
+  const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<MenuItemRow | null>(null);
+  // { mode: "new", role } | { mode: "rename", menu } for the name modal.
+  const [nameModal, setNameModal] = useState<
+    | { mode: "new"; role: Role }
+    | { mode: "rename"; menu: AdminMenu }
+    | null
+  >(null);
   const [targets, setTargets] = useState<Record<string, TargetOption[]>>({
     page: [],
     category: [],
     location: [],
     gallery: [],
   });
-  const [draft, setDraft] = useState<DraftItem>(EMPTY_DRAFT);
 
   const reload = useCallback(async () => {
     const res = await api.get<{ data: AdminMenu[] }>("/api/v1/admin/menus");
@@ -117,6 +141,13 @@ export default function MenusPage() {
       .then(([m, cats, locs, gals, pgs]) => {
         if (!active) return;
         setMenus(m.data);
+        setEditingMenuId(
+          (prev) =>
+            prev ??
+            m.data.find((x) => x.role === "primary" && x.isActive)?.id ??
+            m.data[0]?.id ??
+            null,
+        );
         setTargets({
           page: pgs.data.map((p) => ({ id: p.id, label: p.title })),
           category: cats.data.map((c) => ({ id: c.id, label: c.name })),
@@ -131,13 +162,19 @@ export default function MenusPage() {
     };
   }, [toast]);
 
-  const activeMenu = menus.find((m) => m.key === activeKey) ?? menus[0];
+  const byRole = useMemo(() => {
+    const out: Record<Role, AdminMenu[]> = { primary: [], footer: [] };
+    for (const m of menus) (out[m.role] ?? out.primary).push(m);
+    return out;
+  }, [menus]);
 
-  // Build a depth-annotated, ordered flat list from the menu's items.
+  const editingMenu = menus.find((m) => m.id === editingMenuId) ?? null;
+
+  // Depth-annotated, ordered flat list from the edited preset's items.
   const ordered = useMemo(() => {
-    if (!activeMenu) return [] as (MenuItemRow & { depth: number })[];
+    if (!editingMenu) return [] as (MenuItemRow & { depth: number })[];
     const byParent = new Map<string, MenuItemRow[]>();
-    for (const it of activeMenu.items) {
+    for (const it of editingMenu.items) {
       const k = it.parentId ?? "root";
       const arr = byParent.get(k) ?? [];
       arr.push(it);
@@ -153,10 +190,10 @@ export default function MenusPage() {
     };
     walk("root", 0);
     return out;
-  }, [activeMenu]);
+  }, [editingMenu]);
 
   const siblingsOf = (item: MenuItemRow) =>
-    (activeMenu?.items ?? [])
+    (editingMenu?.items ?? [])
       .filter((i) => i.parentId === item.parentId)
       .sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -172,6 +209,28 @@ export default function MenusPage() {
     }
   };
 
+  // ── Preset operations ──────────────────────────────────────────────────────
+  const createPreset = (role: Role, name: string) =>
+    run(async () => {
+      const res = await api.post<{ id: string }>("/api/v1/admin/menus", { role, name });
+      setEditingMenuId(res.id);
+    });
+  const renamePreset = (id: string, name: string) =>
+    run(() => api.patch(`/api/v1/admin/menus/${id}`, { name }));
+  const activatePreset = (id: string) =>
+    run(() => api.patch(`/api/v1/admin/menus/${id}`, { isActive: true }));
+  const duplicatePreset = (id: string) =>
+    run(async () => {
+      const res = await api.post<{ id: string }>(`/api/v1/admin/menus/${id}/duplicate`);
+      setEditingMenuId(res.id);
+    });
+  const deletePreset = (m: AdminMenu) =>
+    run(async () => {
+      await api.del(`/api/v1/admin/menus/${m.id}`);
+      if (editingMenuId === m.id) setEditingMenuId(null);
+    });
+
+  // ── Item operations ────────────────────────────────────────────────────────
   const move = (item: MenuItemRow, dir: -1 | 1) =>
     run(async () => {
       const sibs = siblingsOf(item);
@@ -198,48 +257,55 @@ export default function MenusPage() {
 
   const outdent = (item: MenuItemRow) =>
     run(async () => {
-      const parent = activeMenu?.items.find((i) => i.id === item.parentId);
+      const parent = editingMenu?.items.find((i) => i.id === item.parentId);
       await api.patch(`/api/v1/admin/menus/items/${item.id}`, {
         parentId: parent?.parentId ?? null,
       });
     });
 
   const toggleVisible = (item: MenuItemRow) =>
+    run(() =>
+      api.patch(`/api/v1/admin/menus/items/${item.id}`, { isVisible: !item.isVisible }),
+    );
+
+  const removeItem = (item: MenuItemRow) =>
+    run(() => api.del(`/api/v1/admin/menus/items/${item.id}`));
+
+  // Convert a draft to the link-type-specific payload fields.
+  const linkPayload = (d: DraftItem) => ({
+    url: d.linkType === "url" ? d.url.trim() : null,
+    targetId: TARGET_TYPES.includes(d.linkType) ? d.targetId || null : null,
+  });
+
+  const addItem = (d: DraftItem) =>
     run(async () => {
-      await api.patch(`/api/v1/admin/menus/items/${item.id}`, {
-        isVisible: !item.isVisible,
+      if (!editingMenu) return;
+      await api.post("/api/v1/admin/menus/items", {
+        menuId: editingMenu.id,
+        label: d.label.trim(),
+        linkType: d.linkType,
+        openInNewTab: d.openInNewTab,
+        ...linkPayload(d),
       });
     });
 
-  const remove = (item: MenuItemRow) =>
+  const saveItem = (id: string, d: DraftItem) =>
     run(async () => {
-      await api.del(`/api/v1/admin/menus/items/${item.id}`);
-    });
-
-  const addItem = () =>
-    run(async () => {
-      if (!activeMenu) return;
-      if (!draft.label.trim()) {
-        toast("Label is required", "error");
-        return;
-      }
-      const payload: Record<string, unknown> = {
-        menuId: activeMenu.id,
-        label: draft.label.trim(),
-        linkType: draft.linkType,
-        openInNewTab: draft.openInNewTab,
-      };
-      if (draft.linkType === "url") payload.url = draft.url.trim();
-      if (["category", "location", "gallery", "page"].includes(draft.linkType))
-        payload.targetId = draft.targetId;
-      await api.post("/api/v1/admin/menus/items", payload);
-      setDraft(EMPTY_DRAFT);
+      await api.patch(`/api/v1/admin/menus/items/${id}`, {
+        label: d.label.trim(),
+        linkType: d.linkType,
+        openInNewTab: d.openInNewTab,
+        ...linkPayload(d),
+      });
+      setEditingItem(null);
     });
 
   function linkSummary(item: MenuItemRow): string {
     switch (item.linkType) {
       case "home":
         return "Home (/)";
+      case "none":
+        return "No link";
       case "url":
         return item.url ?? "—";
       default: {
@@ -262,28 +328,99 @@ export default function MenusPage() {
       <div>
         <h1 className="text-xl font-semibold">Menus</h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          Organize the site navigation. Nest items to create dropdowns and
-          subpages.
+          Save multiple navigation presets per slot and switch which one is live.
+          Nest items to create dropdowns and subpages. Footer composition (logo,
+          Instagram, text) is set in the Design tab.
         </p>
       </div>
 
-      <div className="flex gap-2">
-        {menus.map((m) => (
-          <Button
-            key={m.key}
-            variant={m.key === activeKey ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveKey(m.key)}
-          >
-            {m.name}
-          </Button>
-        ))}
-      </div>
+      {(["primary", "footer"] as Role[]).map((role) => (
+        <Card key={role}>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle>{ROLE_LABEL[role]}</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setNameModal({ mode: "new", role })}
+              disabled={busy}
+            >
+              <Plus className="h-4 w-4" /> New preset
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {byRole[role].map((m) => {
+              const isEditing = m.id === editingMenuId;
+              return (
+                <div
+                  key={m.id}
+                  className={`flex items-center gap-2 rounded-md border px-2.5 py-2 ${
+                    isEditing ? "border-[hsl(var(--ring))] bg-[hsl(var(--muted))]" : ""
+                  }`}
+                >
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`active-${role}`}
+                      checked={m.isActive}
+                      onChange={() => !m.isActive && activatePreset(m.id)}
+                      disabled={busy}
+                      title="Make this preset live"
+                    />
+                    <span className="truncate text-sm font-medium">{m.name}</span>
+                    {m.isActive && (
+                      <span className="rounded bg-[hsl(var(--primary))] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[hsl(var(--primary-foreground))]">
+                        Live
+                      </span>
+                    )}
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                      {m.items.length} item{m.items.length === 1 ? "" : "s"}
+                    </span>
+                  </label>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <Button
+                      size="sm"
+                      variant={isEditing ? "default" : "outline"}
+                      onClick={() => setEditingMenuId(m.id)}
+                      disabled={busy}
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <IconBtn title="Duplicate" onClick={() => duplicatePreset(m.id)} disabled={busy}>
+                      <Copy className="h-4 w-4" />
+                    </IconBtn>
+                    <IconBtn
+                      title="Rename"
+                      onClick={() => setNameModal({ mode: "rename", menu: m })}
+                      disabled={busy}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </IconBtn>
+                    <IconBtn
+                      title={m.isActive ? "Activate another preset first" : "Delete preset"}
+                      onClick={() => {
+                        if (window.confirm(`Delete preset "${m.name}"? This cannot be undone.`))
+                          deletePreset(m);
+                      }}
+                      disabled={busy || m.isActive || byRole[role].length <= 1}
+                    >
+                      <Trash2 className="h-4 w-4 text-[hsl(var(--destructive,0_70%_50%))]" />
+                    </IconBtn>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      ))}
 
-      {activeMenu && (
+      {/* Item editor for the selected preset */}
+      {editingMenu && (
         <Card>
           <CardHeader>
-            <CardTitle>{activeMenu.name}</CardTitle>
+            <CardTitle className="text-base">
+              Editing items · {ROLE_LABEL[editingMenu.role]} ·{" "}
+              <span className="text-[hsl(var(--muted-foreground))]">{editingMenu.name}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
             {ordered.length === 0 && (
@@ -311,6 +448,9 @@ export default function MenusPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
+                  <IconBtn title="Edit" onClick={() => setEditingItem(item)} disabled={busy}>
+                    <Pencil className="h-4 w-4" />
+                  </IconBtn>
                   <IconBtn title="Move up" onClick={() => move(item, -1)} disabled={busy}>
                     <ChevronUp className="h-4 w-4" />
                   </IconBtn>
@@ -330,85 +470,206 @@ export default function MenusPage() {
                   >
                     {item.isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </IconBtn>
-                  <IconBtn title="Delete" onClick={() => remove(item)} disabled={busy}>
+                  <IconBtn title="Delete" onClick={() => removeItem(item)} disabled={busy}>
                     <Trash2 className="h-4 w-4 text-[hsl(var(--destructive,0_70%_50%))]" />
                   </IconBtn>
                 </div>
               </div>
             ))}
 
-            {/* Add item */}
-            <div className="mt-4 space-y-3 rounded-md border border-dashed p-3">
-              <p className="text-sm font-medium">Add item</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Label">
-                  <Input
-                    value={draft.label}
-                    onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-                    placeholder="About"
-                  />
-                </Field>
-                <Field label="Links to">
-                  <Select
-                    value={draft.linkType}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        linkType: e.target.value as LinkType,
-                        targetId: "",
-                        url: "",
-                      })
-                    }
-                  >
-                    {LINK_TYPES.map((lt) => (
-                      <option key={lt.value} value={lt.value}>
-                        {lt.label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                {draft.linkType === "url" && (
-                  <Field label="URL">
-                    <Input
-                      value={draft.url}
-                      onChange={(e) => setDraft({ ...draft, url: e.target.value })}
-                      placeholder="/about or https://example.com"
-                    />
-                  </Field>
-                )}
-                {TARGET_TYPES.includes(draft.linkType) && (
-                  <Field label="Target">
-                    <Select
-                      value={draft.targetId}
-                      onChange={(e) => setDraft({ ...draft, targetId: e.target.value })}
-                    >
-                      <option value="">Select…</option>
-                      {(targets[draft.linkType] ?? []).map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                )}
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={draft.openInNewTab}
-                  onChange={(e) => setDraft({ ...draft, openInNewTab: e.target.checked })}
-                />
-                Open in new tab
-              </label>
-              <Button size="sm" onClick={addItem} disabled={busy}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add item
-              </Button>
+            <div className="mt-4 rounded-md border border-dashed p-3">
+              <p className="mb-3 text-sm font-medium">Add item</p>
+              <ItemForm
+                key={editingMenu.id}
+                initial={EMPTY_DRAFT}
+                targets={targets}
+                busy={busy}
+                submitLabel="Add item"
+                resetOnSubmit
+                onSubmit={addItem}
+              />
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Edit item modal */}
+      {editingItem && (
+        <Modal open onClose={() => setEditingItem(null)} title="Edit item">
+          <ItemForm
+            initial={{
+              label: editingItem.label,
+              linkType: editingItem.linkType,
+              targetId: editingItem.targetId ?? "",
+              url: editingItem.url ?? "",
+              openInNewTab: editingItem.openInNewTab,
+            }}
+            targets={targets}
+            busy={busy}
+            submitLabel="Save"
+            onSubmit={(d) => saveItem(editingItem.id, d)}
+          />
+        </Modal>
+      )}
+
+      {/* Name modal (new preset / rename) */}
+      {nameModal && (
+        <NameModal
+          title={nameModal.mode === "new" ? `New ${ROLE_LABEL[nameModal.role]} preset` : "Rename preset"}
+          initial={nameModal.mode === "rename" ? nameModal.menu.name : ""}
+          busy={busy}
+          onClose={() => setNameModal(null)}
+          onSubmit={async (name) => {
+            if (nameModal.mode === "new") await createPreset(nameModal.role, name);
+            else await renamePreset(nameModal.menu.id, name);
+            setNameModal(null);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// Shared add/edit form for a menu item.
+function ItemForm({
+  initial,
+  targets,
+  busy,
+  submitLabel,
+  resetOnSubmit,
+  onSubmit,
+}: {
+  initial: DraftItem;
+  targets: Record<string, TargetOption[]>;
+  busy: boolean;
+  submitLabel: string;
+  resetOnSubmit?: boolean;
+  onSubmit: (d: DraftItem) => void;
+}) {
+  const { toast } = useToast();
+  const [draft, setDraft] = useState<DraftItem>(initial);
+
+  const submit = () => {
+    if (!draft.label.trim()) {
+      toast("Label is required", "error");
+      return;
+    }
+    onSubmit(draft);
+    if (resetOnSubmit) setDraft(EMPTY_DRAFT);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Label">
+          <Input
+            value={draft.label}
+            onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+            placeholder="About"
+          />
+        </Field>
+        <Field label="Links to">
+          <Select
+            value={draft.linkType}
+            onChange={(e) =>
+              setDraft({ ...draft, linkType: e.target.value as LinkType, targetId: "", url: "" })
+            }
+          >
+            {LINK_TYPES.map((lt) => (
+              <option key={lt.value} value={lt.value}>
+                {lt.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {draft.linkType === "url" && (
+          <Field label="URL">
+            <Input
+              value={draft.url}
+              onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+              placeholder="/about or https://example.com"
+            />
+          </Field>
+        )}
+        {TARGET_TYPES.includes(draft.linkType) && (
+          <Field label="Target">
+            <Select
+              value={draft.targetId}
+              onChange={(e) => setDraft({ ...draft, targetId: e.target.value })}
+            >
+              <option value="">Select…</option>
+              {(targets[draft.linkType] ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={draft.openInNewTab}
+          onChange={(e) => setDraft({ ...draft, openInNewTab: e.target.checked })}
+          disabled={draft.linkType === "none"}
+        />
+        Open in new tab
+      </label>
+      <Button size="sm" onClick={submit} disabled={busy}>
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        {submitLabel}
+      </Button>
+    </div>
+  );
+}
+
+function NameModal({
+  title,
+  initial,
+  busy,
+  onClose,
+  onSubmit,
+}: {
+  title: string;
+  initial: string;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState(initial);
+  return (
+    <Modal open onClose={onClose} title={title}>
+      <div className="space-y-4">
+        <Field label="Preset name">
+          <Input
+            value={name}
+            autoFocus
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Holiday nav"
+          />
+        </Field>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              if (!name.trim()) {
+                toast("Name is required", "error");
+                return;
+              }
+              onSubmit(name.trim());
+            }}
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

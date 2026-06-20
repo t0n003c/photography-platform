@@ -46,6 +46,21 @@
   }
 }
 
+/* Click feedback for inert (no-link) menu labels: a brief opacity dip. */
+@keyframes menu-flash {
+  0% { opacity: 1; }
+  30% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+.menu-flash {
+  animation: menu-flash 0.34s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-flash {
+    animation: none;
+  }
+}
+
 /* Indeterminate progress bar (upload over loopback is instant; the visible work
    is the server-side processing phase). A segment slides across the track. */
 @keyframes indeterminate-bar {

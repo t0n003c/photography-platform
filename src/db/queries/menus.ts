@@ -1,4 +1,4 @@
-import { eq, inArray, asc } from "drizzle-orm";
+import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { menu, menuItem, collection, location, gallery, page } from "@/src/db/schema";
 import { newId } from "@/src/lib/id";
@@ -12,6 +12,9 @@ export interface ResolvedMenuItem {
   href: string;
   external: boolean;
   openInNewTab: boolean;
+  // True when the item has no real destination (linkType "none", or a target
+  // that couldn't be resolved). The public nav renders these as inert labels.
+  noLink: boolean;
   children: ResolvedMenuItem[];
 }
 
@@ -20,11 +23,11 @@ const CACHE_KEY = (key: string) => `pub:menu:${key}`;
 // Fallback nav used when a menu has no items yet (keeps the public site working
 // before the admin customizes it). Mirrors the original hardcoded links.
 const DEFAULT_ITEMS: ResolvedMenuItem[] = [
-  { id: "d-home", label: "Portfolio", href: "/", external: false, openInNewTab: false, children: [] },
-  { id: "d-cat", label: "Categories", href: "/categories", external: false, openInNewTab: false, children: [] },
-  { id: "d-loc", label: "Locations", href: "/locations", external: false, openInNewTab: false, children: [] },
-  { id: "d-about", label: "About", href: "/about", external: false, openInNewTab: false, children: [] },
-  { id: "d-contact", label: "Contact", href: "/contact", external: false, openInNewTab: false, children: [] },
+  { id: "d-home", label: "Portfolio", href: "/", external: false, openInNewTab: false, noLink: false, children: [] },
+  { id: "d-cat", label: "Categories", href: "/categories", external: false, openInNewTab: false, noLink: false, children: [] },
+  { id: "d-loc", label: "Locations", href: "/locations", external: false, openInNewTab: false, noLink: false, children: [] },
+  { id: "d-about", label: "About", href: "/about", external: false, openInNewTab: false, noLink: false, children: [] },
+  { id: "d-contact", label: "Contact", href: "/contact", external: false, openInNewTab: false, noLink: false, children: [] },
 ];
 
 type ItemRow = typeof menuItem.$inferSelect;
@@ -65,6 +68,8 @@ function hrefFor(
   maps: Awaited<ReturnType<typeof resolveSlugMaps>>,
 ): string {
   switch (item.linkType) {
+    case "none":
+      return "#";
     case "home":
       return "/";
     case "url":
@@ -103,6 +108,7 @@ function buildTree(
       href,
       external: /^https?:\/\//i.test(href),
       openInNewTab: it.openInNewTab,
+      noLink: href === "#",
       children: [],
     });
   }
@@ -118,12 +124,16 @@ function buildTree(
   return roots;
 }
 
-// Public: resolved, nested, visible-only menu tree (cached). Falls back to the
-// default links when the menu has no items.
-export async function getMenu(key: MenuKey): Promise<ResolvedMenuItem[]> {
-  return cached<ResolvedMenuItem[]>(CACHE_KEY(key), 120, async () => {
+// Public: resolved, nested, visible-only menu tree (cached) for a role's ACTIVE
+// preset. Falls back to the default links when no active menu / no items.
+export async function getMenu(role: MenuKey): Promise<ResolvedMenuItem[]> {
+  return cached<ResolvedMenuItem[]>(CACHE_KEY(role), 120, async () => {
     try {
-      const m = await db.select().from(menu).where(eq(menu.key, key)).limit(1);
+      const m = await db
+        .select()
+        .from(menu)
+        .where(and(eq(menu.role, role), eq(menu.isActive, true)))
+        .limit(1);
       if (!m[0]) return DEFAULT_ITEMS;
       const items = await db
         .select()
@@ -154,17 +164,20 @@ const SEED = [
   { label: "Contact", linkType: "url" as const, url: "/contact" },
 ];
 
-// Ensures the primary + footer menus exist, seeding them with the original nav
-// the first time so the admin starts from the current site. Idempotent.
+// Ensures one active primary + footer menu exists, seeding them with the
+// original nav the first time so the admin starts from the current site.
+// Idempotent (keyed by role).
 export async function ensureMenusSeeded(): Promise<void> {
-  for (const key of ["primary", "footer"] as const) {
-    const existing = await db.select({ id: menu.id }).from(menu).where(eq(menu.key, key)).limit(1);
+  for (const role of ["primary", "footer"] as const) {
+    const existing = await db.select({ id: menu.id }).from(menu).where(eq(menu.role, role)).limit(1);
     if (existing[0]) continue;
     const menuId = newId();
     await db.insert(menu).values({
       id: menuId,
-      key,
-      name: key === "primary" ? "Primary navigation" : "Footer",
+      key: role, // first preset keeps the legacy key === role
+      role,
+      isActive: true,
+      name: role === "primary" ? "Primary navigation" : "Footer",
     });
     await db.insert(menuItem).values(
       SEED.map((s, i) => ({
@@ -182,18 +195,105 @@ export async function ensureMenusSeeded(): Promise<void> {
 export interface AdminMenu {
   id: string;
   key: string;
+  role: MenuKey;
+  isActive: boolean;
   name: string;
   items: ItemRow[];
 }
 
 export async function listMenusForAdmin(): Promise<AdminMenu[]> {
   await ensureMenusSeeded();
-  const menus = await db.select().from(menu).orderBy(asc(menu.key));
+  const menus = await db.select().from(menu).orderBy(asc(menu.role), asc(menu.name));
   const items = await db.select().from(menuItem).orderBy(asc(menuItem.sortOrder));
   return menus.map((m) => ({
     id: m.id,
     key: m.key,
+    role: m.role as MenuKey,
+    isActive: m.isActive,
     name: m.name,
     items: items.filter((i) => i.menuId === m.id),
   }));
+}
+
+// ── Preset management ─────────────────────────────────────────────────────────
+
+// Create a new (empty, inactive) preset for a role. Returns the new menu id.
+export async function createMenuPreset(role: MenuKey, name: string): Promise<string> {
+  const id = newId();
+  await db.insert(menu).values({ id, key: newId(), role, isActive: false, name });
+  return id;
+}
+
+export async function renameMenu(id: string, name: string): Promise<void> {
+  await db.update(menu).set({ name }).where(eq(menu.id, id));
+}
+
+// Make `id` the active preset for its role (deactivates its siblings).
+export async function activateMenu(id: string): Promise<MenuKey | null> {
+  const rows = await db.select({ role: menu.role }).from(menu).where(eq(menu.id, id)).limit(1);
+  const role = rows[0]?.role as MenuKey | undefined;
+  if (!role) return null;
+  await db.transaction(async (tx) => {
+    await tx.update(menu).set({ isActive: false }).where(eq(menu.role, role));
+    await tx.update(menu).set({ isActive: true }).where(eq(menu.id, id));
+  });
+  return role;
+}
+
+// Delete a preset. Refuses the active preset, or the last one in a role.
+export async function deleteMenuPreset(
+  id: string,
+): Promise<{ ok: boolean; reason?: "NOT_FOUND" | "ACTIVE" | "ONLY"; role?: MenuKey }> {
+  const rows = await db
+    .select({ role: menu.role, isActive: menu.isActive })
+    .from(menu)
+    .where(eq(menu.id, id))
+    .limit(1);
+  const m = rows[0];
+  if (!m) return { ok: false, reason: "NOT_FOUND" };
+  if (m.isActive) return { ok: false, reason: "ACTIVE" };
+  const role = m.role as MenuKey;
+  const siblings = await db.select({ id: menu.id }).from(menu).where(eq(menu.role, role));
+  if (siblings.length <= 1) return { ok: false, reason: "ONLY" };
+  await db.delete(menu).where(eq(menu.id, id)); // items cascade
+  return { ok: true, role };
+}
+
+// Deep-copy a preset (items + hierarchy) into a new inactive preset.
+export async function duplicateMenu(id: string): Promise<{ id: string; role: MenuKey } | null> {
+  const src = await db.select().from(menu).where(eq(menu.id, id)).limit(1);
+  if (!src[0]) return null;
+  const items = await db
+    .select()
+    .from(menuItem)
+    .where(eq(menuItem.menuId, id))
+    .orderBy(asc(menuItem.sortOrder));
+  const newMenuId = newId();
+  const role = src[0].role as MenuKey;
+  await db.insert(menu).values({
+    id: newMenuId,
+    key: newId(),
+    role,
+    isActive: false,
+    name: `${src[0].name} copy`,
+  });
+  if (items.length) {
+    const idMap = new Map<string, string>();
+    for (const it of items) idMap.set(it.id, newId());
+    await db.insert(menuItem).values(
+      items.map((it) => ({
+        id: idMap.get(it.id)!,
+        menuId: newMenuId,
+        parentId: it.parentId ? idMap.get(it.parentId) ?? null : null,
+        label: it.label,
+        linkType: it.linkType,
+        targetId: it.targetId,
+        url: it.url,
+        sortOrder: it.sortOrder,
+        openInNewTab: it.openInNewTab,
+        isVisible: it.isVisible,
+      })),
+    );
+  }
+  return { id: newMenuId, role };
 }

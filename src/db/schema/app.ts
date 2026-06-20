@@ -485,7 +485,13 @@ export const siteSettings = pgTable("site_settings", {
 // or the home route.
 export const menu = pgTable("menu", {
   id: text("id").primaryKey(),
+  // Legacy unique identifier (kept for back-compat); new preset rows get a ULID.
   key: text("key").notNull().unique(),
+  // Which navigation slot this menu fills. Multiple named presets may share a
+  // role; exactly one per role is `isActive` (enforced in app logic) and is
+  // what the public site renders.
+  role: text("role", { enum: ["primary", "footer"] }).notNull().default("primary"),
+  isActive: boolean("is_active").notNull().default(false),
   name: text("name").notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -503,7 +509,7 @@ export const menuItem = pgTable(
     }),
     label: text("label").notNull(),
     linkType: text("link_type", {
-      enum: ["page", "category", "location", "gallery", "url", "home"],
+      enum: ["page", "category", "location", "gallery", "url", "home", "none"],
     }).notNull(),
     targetId: text("target_id"), // page/category/location/gallery id
     url: text("url"), // for linkType "url"

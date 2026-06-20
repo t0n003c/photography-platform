@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { ResolvedMenuItem } from "@/src/db/queries/menus";
+import { InertLabel } from "./inert-label";
 
 const linkCls =
   "text-sm text-foreground/70 transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]";
@@ -17,6 +18,9 @@ function ItemLink({
   className?: string;
   onClick?: () => void;
 }) {
+  if (item.noLink) {
+    return <InertLabel label={item.label} className={className} />;
+  }
   if (item.external || item.openInNewTab) {
     return (
       <a

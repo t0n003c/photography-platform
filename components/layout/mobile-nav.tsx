@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import type { ResolvedMenuItem } from "@/src/db/queries/menus";
+import { InertLabel } from "./inert-label";
 
 // Kept for backwards-compat with any importer; the menu is data-driven now.
 export interface NavLink {
@@ -28,7 +29,9 @@ function MobileItem({
   const style = { paddingLeft: `${0.5 + depth * 0.75}rem` };
   return (
     <>
-      {item.external || item.openInNewTab ? (
+      {item.noLink ? (
+        <InertLabel label={item.label} className={`text-left ${cls}`} />
+      ) : item.external || item.openInNewTab ? (
         <a
           href={item.href}
           target="_blank"

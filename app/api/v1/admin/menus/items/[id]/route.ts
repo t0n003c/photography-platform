@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const PatchSchema = z.object({
   label: z.string().min(1).max(120).optional(),
   linkType: z
-    .enum(["page", "category", "location", "gallery", "url", "home"])
+    .enum(["page", "category", "location", "gallery", "url", "home", "none"])
     .optional(),
   targetId: z.string().nullable().optional(),
   url: z.string().max(2000).nullable().optional(),

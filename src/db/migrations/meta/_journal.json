@@ -71,6 +71,13 @@
       "when": 1781862918506,
       "tag": "0009_require_biometric",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781958968994,
+      "tag": "0010_menu_role_active",
+      "breakpoints": true
     }
   ]
 }
