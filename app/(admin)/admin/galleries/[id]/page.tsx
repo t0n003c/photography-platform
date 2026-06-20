@@ -945,13 +945,16 @@ function LayoutCard({
                   <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
                 </Select>
               </Field>
-              <Field label="Spacing">
-                <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
-                  <option value="tight">Tight</option>
-                  <option value="normal">Normal</option>
-                  <option value="airy">Airy</option>
-                </Select>
-              </Field>
+              {/* The horizontal-scroll layout manages its own spacing. */}
+              {gridType !== "horizontal-lenis" && (
+                <Field label="Spacing">
+                  <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
+                    <option value="tight">Tight</option>
+                    <option value="normal">Normal</option>
+                    <option value="airy">Airy</option>
+                  </Select>
+                </Field>
+              )}
               <Field label="Theme">
                 <Select value={theme} onChange={(e) => setTheme(e.target.value as PreviewTheme)}>
                   <option value="auto">Auto</option>

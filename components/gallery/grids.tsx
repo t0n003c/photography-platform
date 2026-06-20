@@ -175,10 +175,16 @@ export function HorizontalLenisGrid({ photos }: GridProps) {
   const contentRef = React.useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lenisRef = React.useRef<any>(null);
-  const [expanded, setExpanded] = React.useState<number | null>(null);
+  // activeIndex stays set through the close animation; `open` flips first so the
+  // close transition (reverse morph + the row expanding back) can play.
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
+  const [open, setOpen] = React.useState(false);
   // The clicked thumbnail's on-screen rect, so the detail view can morph open
   // from it (FLIP) rather than just popping in.
   const [startRect, setStartRect] = React.useState<DOMRect | null>(null);
+  const reduce =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   React.useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -218,13 +224,25 @@ export function HorizontalLenisGrid({ photos }: GridProps) {
     };
   }, []);
 
-  // Freeze the horizontal scroll while the detail overlay is open.
+  // Freeze the horizontal scroll while the detail overlay is open (or closing).
   React.useEffect(() => {
     const l = lenisRef.current;
     if (!l) return;
-    if (expanded !== null) l.stop();
+    if (activeIndex !== null) l.stop();
     else l.start();
-  }, [expanded]);
+  }, [activeIndex]);
+
+  // Collapse the row's images (clip away) while the detail is open, and expand
+  // them back on close — mirroring the reference's open/close transition.
+  React.useEffect(() => {
+    const content = contentRef.current;
+    if (!content || reduce) return;
+    const items = content.querySelectorAll<HTMLElement>("[data-hl-item]");
+    items.forEach((el) => {
+      el.style.transition = "clip-path 0.7s cubic-bezier(0.76, 0, 0.24, 1)";
+      el.style.clipPath = open ? "inset(100% 0 0 0)" : "inset(0% 0 0 0)";
+    });
+  }, [open, reduce]);
 
   return (
     <>
@@ -241,9 +259,11 @@ export function HorizontalLenisGrid({ photos }: GridProps) {
             <button
               key={photo.id}
               type="button"
+              data-hl-item
               onClick={(e) => {
                 setStartRect(e.currentTarget.getBoundingClientRect());
-                setExpanded(i);
+                setActiveIndex(i);
+                setOpen(true);
               }}
               aria-label={tileLabel(photo)}
               style={{ transform: i % 2 === 0 ? "translateY(-13%)" : "translateY(13%)" }}
@@ -258,14 +278,18 @@ export function HorizontalLenisGrid({ photos }: GridProps) {
           ))}
         </div>
       </div>
-      {expanded !== null && (
+      {activeIndex !== null && (
         <HorizontalLenisDetail
           photos={photos}
-          index={expanded}
+          index={activeIndex}
           startRect={startRect}
-          onClose={() => setExpanded(null)}
+          open={open}
+          onClose={() => {
+            setOpen(false);
+            window.setTimeout(() => setActiveIndex(null), reduce ? 0 : 950);
+          }}
           onNav={(dir) =>
-            setExpanded((cur) =>
+            setActiveIndex((cur) =>
               cur === null ? cur : (cur + dir + photos.length) % photos.length,
             )
           }
@@ -283,12 +307,14 @@ function HorizontalLenisDetail({
   photos,
   index,
   startRect,
+  open,
   onClose,
   onNav,
 }: {
   photos: PhotoDTO[];
   index: number;
   startRect: DOMRect | null;
+  open: boolean;
   onClose: () => void;
   onNav: (dir: -1 | 1) => void;
 }) {
@@ -318,16 +344,19 @@ function HorizontalLenisDetail({
     return { w: Math.round(w), h: Math.round(h) };
   }, [photo.width, photo.height]);
 
-  // Fade the backdrop in on open.
+  // Fade the backdrop + chrome with `open` (in on open, out on close).
   React.useEffect(() => {
-    const r = requestAnimationFrame(() => setBgIn(true));
-    return () => cancelAnimationFrame(r);
-  }, []);
+    if (open) {
+      const r = requestAnimationFrame(() => setBgIn(true));
+      return () => cancelAnimationFrame(r);
+    }
+    setBgIn(false);
+  }, [open]);
 
-  // FLIP: start the photo at the clicked thumbnail's rect, then animate to its
-  // natural centered position. Runs once, on open. The image is hidden until the
-  // start transform is applied (pre-paint) so it never flashes at the final spot,
-  // and the rect is measured a frame later so layout is settled (non-zero).
+  // FLIP open: start the photo at the clicked thumbnail's rect, then animate
+  // (slowly) to its natural centered position. The image is hidden until the
+  // start transform is applied (pre-paint) so it never flashes at the final
+  // spot, and the rect is measured a frame later so layout is settled.
   React.useLayoutEffect(() => {
     const el = imgWrapRef.current;
     if (!el || !startRect || reduce) return;
@@ -351,24 +380,35 @@ function HorizontalLenisDetail({
       raf2 = requestAnimationFrame(() => {
         if (!imgWrapRef.current) return;
         imgWrapRef.current.style.transition =
-          "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+          "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1)";
         imgWrapRef.current.style.transform = "translate(0px, 0px) scale(1, 1)";
       });
     });
-    const t = window.setTimeout(() => {
-      if (imgWrapRef.current) {
-        imgWrapRef.current.style.transition = "";
-        imgWrapRef.current.style.transform = "";
-        imgWrapRef.current.style.opacity = "";
-      }
-    }, 800);
     return () => {
       cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
-      window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // FLIP close: reverse the morph back toward the thumbnail when `open` flips
+  // false (the grid keeps us mounted for the duration, then unmounts).
+  React.useEffect(() => {
+    if (open) return;
+    const el = imgWrapRef.current;
+    if (!el || !startRect || reduce) return;
+    const end = el.getBoundingClientRect();
+    if (!end.width || !end.height) return;
+    const dx = startRect.left - end.left;
+    const dy = startRect.top - end.top;
+    const sx = startRect.width / end.width;
+    const sy = startRect.height / end.height;
+    el.style.transformOrigin = "top left";
+    el.style.transition =
+      "transform 0.85s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.6s ease";
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+    el.style.opacity = "0.6";
+  }, [open, startRect, reduce]);
 
   // (Re)play the text reveal whenever the shown photo changes.
   React.useEffect(() => {
@@ -449,9 +489,36 @@ function HorizontalLenisDetail({
       )}
 
       <figure
-        className="relative z-[1] flex max-h-full max-w-5xl flex-col items-center"
+        className="relative z-[1] flex max-h-full flex-col items-center gap-4"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Top meta row — counter (left) and date (right). */}
+        <div
+          className={cn(
+            "flex w-full items-center justify-between gap-4 px-1 text-white/75",
+            chrome,
+          )}
+          style={{ maxWidth: display.w || undefined }}
+        >
+          <span
+            className={`font-mono text-xs tracking-widest ${reveal} delay-100 ${
+              shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+            }`}
+          >
+            {counter}
+          </span>
+          {date && (
+            <span
+              className={`text-xs uppercase tracking-wide ${reveal} delay-150 ${
+                shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+              }`}
+            >
+              {date}
+            </span>
+          )}
+        </div>
+
+        {/* Image */}
         <div
           ref={imgWrapRef}
           className="relative overflow-hidden rounded-sm shadow-2xl will-change-transform"
@@ -464,35 +531,23 @@ function HorizontalLenisDetail({
           />
         </div>
 
-        <figcaption className={cn("mt-5 w-full max-w-3xl text-center text-white", chrome)}>
-          <span
-            className={`mb-2 block font-mono text-xs tracking-widest text-white/55 ${reveal} delay-100 ${
-              shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-            }`}
+        {/* Bottom title. */}
+        {photo.altText && (
+          <div
+            className={cn("w-full px-1 text-center", chrome)}
+            style={{ maxWidth: display.w || undefined }}
           >
-            {counter}
-          </span>
-          {photo.altText && (
             <span className="block overflow-hidden">
               <span
-                className={`block text-2xl font-semibold tracking-tight sm:text-3xl ${reveal} delay-200 ${
+                className={`block text-2xl font-semibold tracking-tight text-white sm:text-3xl ${reveal} delay-200 ${
                   shown ? "translate-y-0" : "translate-y-full"
                 }`}
               >
                 {photo.altText}
               </span>
             </span>
-          )}
-          {date && (
-            <span
-              className={`mt-2 block text-sm text-white/65 ${reveal} delay-300 ${
-                shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-              }`}
-            >
-              {date}
-            </span>
-          )}
-        </figcaption>
+          </div>
+        )}
       </figure>
     </div>
   );
