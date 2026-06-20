@@ -101,7 +101,7 @@ function makeBlock(type: BlockType): Block {
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
-    case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"] };
+    case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"], justify: "fill" };
     default: return { id, type: "divider" };
   }
 }
@@ -476,6 +476,13 @@ function ColumnsEditor({
             <option value="tight">Tight</option>
             <option value="normal">Normal</option>
             <option value="airy">Airy</option>
+          </Select>
+        </Field>
+        <Field label="Distribute">
+          <Select value={block.justify ?? "fill"} onChange={(e) => onChange({ ...block, justify: e.target.value as typeof block.justify })}>
+            <option value="fill">Fill width</option>
+            <option value="center">Center</option>
+            <option value="spread">Spread</option>
           </Select>
         </Field>
         <Button

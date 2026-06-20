@@ -34,6 +34,7 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
           type: "columns",
           gap: "normal",
           colAlign: ["top", "top"],
+          justify: "fill",
           columns: [
             [
               { id: gen(), type: "heading", text: "A short intro", level: 2, align: "left", font: "sans", spacing: "normal" },

@@ -373,15 +373,24 @@ function isFullBleed(block: Block): boolean {
 function BlockView({ block, photoMap, preview }: { block: Block; photoMap: PhotoMap; preview?: boolean }) {
   if (block.type === "columns") {
     const cols = block.columns.length;
+    const flex = block.justify === "center" || block.justify === "spread";
     const colClass =
       cols === 1 ? "" : cols === 2 ? "md:grid-cols-2" : cols === 3 ? "md:grid-cols-3" : "md:grid-cols-4";
+    // "fill" stretches equal columns across the full width; "center"/"spread" let
+    // each column hug its content and either cluster centered or spread to the
+    // edges (balanced for short content instead of a wide empty last column).
+    const justifyClass = block.justify === "spread" ? "md:justify-between" : "md:justify-center";
+    const wrapClass = flex
+      ? `mx-auto flex max-w-6xl flex-col items-center ${GAP[block.gap]} md:flex-row md:flex-wrap md:items-start ${justifyClass}`
+      : `mx-auto max-w-6xl grid grid-cols-1 ${colClass} ${GAP[block.gap]}`;
+    const colSize = flex ? "w-full md:w-auto md:flex-initial md:max-w-sm" : "";
     return (
       <Container className="py-8">
-        <div className={`mx-auto max-w-6xl grid grid-cols-1 ${colClass} ${GAP[block.gap]}`}>
+        <div className={wrapClass}>
           {block.columns.map((col, i) => (
             <div
               key={i}
-              className={`flex flex-col gap-6 ${COL_ALIGN[block.colAlign?.[i] ?? "top"] ?? "justify-start"}`}
+              className={`flex flex-col gap-6 ${colSize} ${COL_ALIGN[block.colAlign?.[i] ?? "top"] ?? "justify-start"}`}
             >
               {col.map((leaf) => (
                 <LeafView key={leaf.id} block={leaf} photoMap={photoMap} preview={preview} />

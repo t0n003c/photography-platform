@@ -254,6 +254,11 @@ const ColumnsBlock = z.object({
   // Vertical alignment of each column's content, parallel to `columns`
   // (index i ↔ column i; missing entries default to "top").
   colAlign: z.array(ColAlignEnum).default([]),
+  // Horizontal distribution of the columns. "fill" = equal columns spanning the
+  // full width (default). "center"/"spread" let each column hug its content and
+  // either cluster centered or spread edge-to-edge, so short content stays
+  // visually balanced left/right instead of leaving a wide empty last column.
+  justify: z.enum(["fill", "center", "spread"]).default("fill"),
 });
 
 export const Block = z.union([LeafBlock, ColumnsBlock]);
