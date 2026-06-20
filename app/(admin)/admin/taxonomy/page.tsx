@@ -49,6 +49,14 @@ const EMPTY_FORM: FormState = {
   isPublished: true,
 };
 
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function EditorModal({
   kind,
   initial,
@@ -63,6 +71,9 @@ function EditorModal({
   const [form, setForm] = useState<FormState>(initial ?? EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const isEdit = initial !== null;
+  // Auto-fill the slug from the name for new items, until the slug is edited by
+  // hand (or always, when editing an existing item — keep its slug).
+  const [slugEdited, setSlugEdited] = useState(isEdit);
   const noun = kind === "category" ? "category" : "location";
 
   const submit = async (e: React.FormEvent) => {
@@ -87,7 +98,14 @@ function EditorModal({
           <Input
             id="tax-name"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({
+                ...f,
+                name,
+                slug: slugEdited ? f.slug : slugify(name),
+              }));
+            }}
             required
           />
         </Field>
@@ -95,7 +113,11 @@ function EditorModal({
           <Input
             id="tax-slug"
             value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, slug: e.target.value });
+              // Treat an emptied slug as "resume auto-fill from the name".
+              setSlugEdited(e.target.value.trim() !== "");
+            }}
             required
           />
         </Field>
