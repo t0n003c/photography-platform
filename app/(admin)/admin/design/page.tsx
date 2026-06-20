@@ -1,19 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import {
-  Loader2,
-  Plus,
-  Monitor,
-  Smartphone,
-  ExternalLink,
-  RefreshCw,
-  Instagram,
-  Mail,
-} from "lucide-react";
+import { Loader2, Plus, Instagram, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { LivePreview } from "@/components/admin/live-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
@@ -27,14 +19,9 @@ type Scope =
   | "about"
   | "global";
 
-const SCOPES: Scope[] = [
-  "home",
-  "gallery",
-  "category",
-  "location",
-  "about",
-  "global",
-];
+// Gallery layout is now per-gallery (set in the Galleries editor), so it is
+// intentionally omitted here.
+const SCOPES: Scope[] = ["home", "category", "location", "about", "global"];
 
 type GridType = "masonry" | "justified" | "uniform";
 type Spacing = "tight" | "normal" | "airy";
@@ -70,20 +57,6 @@ const SCOPE_LABEL: Record<Scope, string> = {
   global: "Global",
 };
 
-// Browser-safe encoder matching src/lib/preview.ts decodePreview (base64url of
-// the UTF-8 JSON). The public page reads `__pc` and applies it ONLY for an
-// authenticated admin, so visitors never see unsaved drafts.
-function encodePreviewClient(cfg: {
-  gridType: GridType;
-  spacing: Spacing;
-  theme: Theme;
-  hero: HeroConfig;
-}): string {
-  const json = JSON.stringify(cfg);
-  const b64 = btoa(unescape(encodeURIComponent(json)));
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
 // A representative public URL to preview each surface. Slug-based scopes need a
 // real sample; resolved at runtime from existing content (null when none yet).
 function previewUrlFor(scope: Scope, sampleSlug: string | null): string | null {
@@ -100,100 +73,6 @@ function previewUrlFor(scope: Scope, sampleSlug: string | null): string | null {
     case "gallery":
       return sampleSlug ? `/galleries/${sampleSlug}` : null;
   }
-}
-
-function LivePreview({
-  baseUrl,
-  draft,
-}: {
-  baseUrl: string;
-  draft: {
-    gridType: GridType;
-    spacing: Spacing;
-    theme: Theme;
-    hero: HeroConfig;
-  };
-}) {
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [nudge, setNudge] = useState(0);
-
-  // Debounce so we don't reload the iframe on every keystroke.
-  const [debounced, setDebounced] = useState(draft);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(draft), 350);
-    return () => clearTimeout(t);
-  }, [draft]);
-
-  const src = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("__pc", encodePreviewClient(debounced));
-    if (debounced.theme === "light" || debounced.theme === "dark") {
-      params.set("__theme", debounced.theme);
-    }
-    if (nudge) params.set("__r", String(nudge));
-    return `${baseUrl}?${params.toString()}`;
-  }, [baseUrl, debounced, nudge]);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-          Live preview
-        </span>
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant={device === "desktop" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDevice("desktop")}
-            aria-label="Desktop preview"
-          >
-            <Monitor className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={device === "mobile" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDevice("mobile")}
-            aria-label="Mobile preview"
-          >
-            <Smartphone className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setNudge((n) => n + 1)}
-            aria-label="Reload preview"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex h-8 items-center rounded-md border px-2 text-xs"
-          >
-            <ExternalLink className="mr-1 h-3.5 w-3.5" /> Open
-          </a>
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
-        <div
-          className="mx-auto bg-[hsl(var(--background))] transition-[max-width] duration-200"
-          style={{ maxWidth: device === "mobile" ? 390 : "100%" }}
-        >
-          <iframe
-            key={device}
-            src={src}
-            title="Page preview"
-            className="h-[640px] w-full border-0"
-            sandbox="allow-same-origin allow-scripts allow-popups"
-          />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function ConfigEditor({
