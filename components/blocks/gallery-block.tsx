@@ -64,7 +64,7 @@ export async function GalleryBlock({
       </Container>
     );
   }
-  const layout = { gridType: block.gridType, spacing: block.spacing };
+  const layout = { gridType: block.gridType, spacing: block.spacing, autoplay: block.autoplay };
 
   // Opt-in cinematic 3D scroll renders full-bleed (it manages its own height);
   // it degrades to the standard grid when WebGL is gated off.

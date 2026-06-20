@@ -83,6 +83,8 @@ const GalleryBlock = z.object({
   targetId: z.string().nullable().default(null),
   gridType: GridEnum.default("justified"),
   spacing: SpacingEnum.default("normal"),
+  // Carousel only: auto-advance through the slides (pauses on hover/interaction).
+  autoplay: z.boolean().default(false),
   limit: z.number().int().min(1).max(48).default(12),
   effect: EffectEnum.default("none"),
   // For the cinematic-3d-scroll effect: scroll-speed multiplier. Higher = the

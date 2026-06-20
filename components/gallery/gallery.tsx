@@ -21,6 +21,8 @@ interface GalleryLayout {
     | "filmstrip"
     | "mosaic";
   spacing?: "tight" | "normal" | "airy" | string | null;
+  /** Carousel only: auto-advance through slides. */
+  autoplay?: boolean;
 }
 
 interface GalleryProps {
@@ -121,7 +123,9 @@ export function Gallery({
       )}
       {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
       {layout.gridType === "justified" && <JustifiedGrid {...gridProps} />}
-      {layout.gridType === "carousel" && <CarouselGrid {...gridProps} />}
+      {layout.gridType === "carousel" && (
+        <CarouselGrid {...gridProps} autoplay={layout.autoplay} />
+      )}
       {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
       {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
 

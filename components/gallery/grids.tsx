@@ -12,6 +12,8 @@ export interface GridProps {
   spacingClass: string;
   /** Masonry only: per-item margin-bottom to match the horizontal column-gap. */
   itemSpacingClass?: string;
+  /** Carousel only: auto-advance through slides (pauses on hover). */
+  autoplay?: boolean;
   onOpen: (index: number) => void;
 }
 
@@ -78,15 +80,42 @@ export function UniformGrid({ photos, spacingClass, onOpen }: GridProps) {
   );
 }
 
-/** Horizontal sliding carousel with snap + prev/next arrows. */
-export function CarouselGrid({ photos, spacingClass, onOpen }: GridProps) {
+/** Horizontal sliding carousel with snap + prev/next arrows + optional auto-roll. */
+export function CarouselGrid({ photos, spacingClass, autoplay, onOpen }: GridProps) {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = React.useState(false);
   const scrollBy = (dir: -1 | 1) => {
     const el = ref.current;
     if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
   };
+
+  // Auto-roll: step forward every few seconds, loop to the start at the end.
+  // Pauses on hover/focus, and never runs under prefers-reduced-motion.
+  React.useEffect(() => {
+    if (!autoplay || paused || photos.length < 2) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const id = window.setInterval(() => {
+      const el = ref.current;
+      if (!el) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+      if (atEnd) el.scrollTo({ left: 0, behavior: "smooth" });
+      else el.scrollBy({ left: el.clientWidth * 0.85, behavior: "smooth" });
+    }, 3500);
+    return () => window.clearInterval(id);
+  }, [autoplay, paused, photos.length]);
+
   return (
-    <div className="group relative">
+    <div
+      className="group relative"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
       <div
         ref={ref}
         className={cn(
@@ -134,31 +163,43 @@ export function CarouselGrid({ photos, spacingClass, onOpen }: GridProps) {
   );
 }
 
-/** Single-row filmstrip: fixed-height images at their natural aspect, scrolls. */
+// Perforation row: evenly spaced light "sprocket holes" on the dark film body.
+const FILM_PERF_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "repeating-linear-gradient(to right, transparent 0 7px, rgba(255,255,255,0.9) 7px 15px, transparent 15px 22px)",
+  backgroundSize: "22px 100%",
+};
+
+/**
+ * Single-row filmstrip styled as an actual strip of film: a dark celluloid body
+ * with sprocket-hole perforations along the top and bottom edges. Scrolls
+ * horizontally; each frame keeps its natural aspect ratio.
+ */
 export function FilmstripGrid({ photos, spacingClass, onOpen }: GridProps) {
   return (
-    <div
-      className={cn(
-        "flex overflow-x-auto pb-2 [scrollbar-width:thin]",
-        spacingClass,
-      )}
-    >
-      {photos.map((photo, i) => (
-        <button
-          key={photo.id}
-          type="button"
-          onClick={() => onOpen(i)}
-          aria-label={tileLabel(photo)}
-          style={{ aspectRatio: String(ratio(photo)) }}
-          className="block h-44 shrink-0 overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] md:h-60"
-        >
-          <ResponsiveImage
-            photo={photo}
-            sizes="40vw"
-            className="h-full w-full transition-opacity hover:opacity-90"
-          />
-        </button>
-      ))}
+    <div className="overflow-x-auto rounded-md [scrollbar-width:thin]">
+      <div className="inline-flex min-w-full flex-col gap-2 bg-[#171717] px-3 py-2.5">
+        <div aria-hidden className="h-3 w-full rounded-[1px]" style={FILM_PERF_STYLE} />
+        <div className={cn("flex", spacingClass)}>
+          {photos.map((photo, i) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => onOpen(i)}
+              aria-label={tileLabel(photo)}
+              style={{ aspectRatio: String(ratio(photo)) }}
+              className="block h-44 shrink-0 overflow-hidden rounded-[2px] ring-1 ring-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] md:h-60"
+            >
+              <ResponsiveImage
+                photo={photo}
+                sizes="40vw"
+                className="h-full w-full transition-opacity hover:opacity-90"
+              />
+            </button>
+          ))}
+        </div>
+        <div aria-hidden className="h-3 w-full rounded-[1px]" style={FILM_PERF_STYLE} />
+      </div>
     </div>
   );
 }
