@@ -23,6 +23,12 @@ import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { Modal } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GalleryVideoCard } from "@/components/admin/gallery-video-card";
+import {
+  LivePreview,
+  type PreviewGrid,
+  type PreviewSpacing,
+  type PreviewTheme,
+} from "@/components/admin/live-preview";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { useStepUp } from "@/components/admin/step-up";
@@ -42,6 +48,7 @@ interface Gallery {
   status: Status;
   downloadEnabled: boolean;
   expiresAt: string | null;
+  pageConfigId: string | null;
 }
 
 interface ClientOption {
@@ -842,6 +849,133 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+// Per-gallery layout. Stored as a page_config (scope "gallery") referenced by
+// gallery.pageConfigId; the public gallery page resolves it via
+// resolveRenderConfig("gallery", pageConfigId, …). Controls + live preview.
+function LayoutCard({
+  gallery,
+  onSaved,
+}: {
+  gallery: Gallery;
+  onSaved: (g: Gallery) => void;
+}) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [gridType, setGridType] = useState<PreviewGrid>("justified");
+  const [spacing, setSpacing] = useState<PreviewSpacing>("normal");
+  const [theme, setTheme] = useState<PreviewTheme>("auto");
+
+  useEffect(() => {
+    let active = true;
+    if (!gallery.pageConfigId) {
+      setLoading(false);
+      return;
+    }
+    api
+      .get<{ gridType: string | null; spacing: string | null; theme: string | null }>(
+        `/api/v1/admin/page-configs/${gallery.pageConfigId}`,
+      )
+      .then((cfg) => {
+        if (!active) return;
+        if (cfg.gridType === "masonry" || cfg.gridType === "justified" || cfg.gridType === "uniform")
+          setGridType(cfg.gridType);
+        if (cfg.spacing === "tight" || cfg.spacing === "normal" || cfg.spacing === "airy")
+          setSpacing(cfg.spacing);
+        if (cfg.theme === "light" || cfg.theme === "dark" || cfg.theme === "auto")
+          setTheme(cfg.theme);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [gallery.pageConfigId]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      let id = gallery.pageConfigId;
+      if (!id) {
+        const res = await api.post<{ data: { id: string } }>("/api/v1/admin/page-configs", {
+          scope: "gallery",
+          gridType,
+          spacing,
+          theme,
+          hero: { enabled: false },
+          config: {},
+        });
+        id = res.data.id;
+        await api.patch(`/api/v1/admin/galleries/${gallery.id}`, { pageConfigId: id });
+        onSaved({ ...gallery, pageConfigId: id });
+      } else {
+        await api.patch(`/api/v1/admin/page-configs/${id}`, { gridType, spacing, theme });
+      }
+      toast("Layout saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Layout</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Spinner className="h-5 w-5" />
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-3">
+              <Field label="Grid type">
+                <Select value={gridType} onChange={(e) => setGridType(e.target.value as PreviewGrid)}>
+                  <option value="masonry">Masonry</option>
+                  <option value="justified">Justified</option>
+                  <option value="uniform">Uniform</option>
+                </Select>
+              </Field>
+              <Field label="Spacing">
+                <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
+                  <option value="tight">Tight</option>
+                  <option value="normal">Normal</option>
+                  <option value="airy">Airy</option>
+                </Select>
+              </Field>
+              <Field label="Theme">
+                <Select value={theme} onChange={(e) => setTheme(e.target.value as PreviewTheme)}>
+                  <option value="auto">Auto</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </Select>
+              </Field>
+              <div className="pt-1">
+                <Button onClick={save} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save layout
+                </Button>
+              </div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                This gallery&rsquo;s own layout. Galleries without one use the default
+                justified grid.
+              </p>
+            </div>
+            <LivePreview
+              baseUrl={`/preview/gallery/${gallery.id}`}
+              draft={{ gridType, spacing, theme }}
+              height={560}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function GalleryEditorPage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
@@ -912,6 +1046,7 @@ export default function GalleryEditorPage() {
       </div>
 
       <SettingsCard gallery={gallery} onSaved={setGallery} />
+      <LayoutCard gallery={gallery} onSaved={setGallery} />
       <PhotosCard galleryId={gallery.id} />
       <GrantsCard galleryId={gallery.id} />
       <GalleryVideoCard galleryId={gallery.id} />

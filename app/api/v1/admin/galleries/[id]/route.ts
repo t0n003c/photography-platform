@@ -80,7 +80,11 @@ export async function PATCH(
     updates.publishedAt = new Date();
   }
 
-  await db.update(gallery).set(updates).where(eq(gallery.id, id));
+  const [row] = await db
+    .update(gallery)
+    .set(updates)
+    .where(eq(gallery.id, id))
+    .returning();
 
   await writeAudit({
     actorId: a.session.user.id,
@@ -92,7 +96,9 @@ export async function PATCH(
     metadata: { fields: Object.keys(updates) },
   });
 
-  return ok({ id });
+  // Return the full updated row so the editor keeps every field (e.g.
+  // pageConfigId) in sync after a save.
+  return ok({ data: row });
 }
 
 // DELETE — soft delete.
