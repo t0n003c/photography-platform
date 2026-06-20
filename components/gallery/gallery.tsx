@@ -26,6 +26,8 @@ interface GalleryLayout {
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
+  /** 3D infinite carousel only: colored vs. neutral gradient backdrop. */
+  backdrop?: "color" | "neutral";
 }
 
 interface GalleryProps {
@@ -134,7 +136,7 @@ export function Gallery({
       {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
       {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
       {layout.gridType === "carousel3d" && (
-        <Carousel3D photos={photos} onOpen={openAt} />
+        <Carousel3D photos={photos} onOpen={openAt} backdrop={layout.backdrop} />
       )}
 
       {canLoadMore && (

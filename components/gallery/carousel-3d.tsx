@@ -73,13 +73,16 @@ function hslToRgb(h: number, s: number, l: number): RGB {
   return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
 }
 
-// Two complementary-ish gradient colors derived from a photo's dominant color.
-function paletteFor(photo: PhotoDTO | undefined): { c1: RGB; c2: RGB } {
+// Two gradient colors derived from a photo's dominant color. With `neutral`,
+// saturation is dropped to zero so the backdrop keeps its breathing gradient
+// shade but carries no color.
+function paletteFor(photo: PhotoDTO | undefined, neutral = false): { c1: RGB; c2: RGB } {
   const base = hexToRgb(photo?.dominantColor ?? null) ?? [70, 84, 120];
   const [h, s, l] = rgbToHsl(base);
-  const sat = clamp(s * 1.15, 0.35, 0.95);
+  const sat = neutral ? 0 : clamp(s * 1.15, 0.35, 0.95);
+  const hue2 = neutral ? h : (h + 0.09) % 1;
   const c1 = hslToRgb(h, sat, clamp(l * 0.85 + 0.12, 0.28, 0.62));
-  const c2 = hslToRgb((h + 0.09) % 1, sat, clamp(l * 0.85 + 0.28, 0.4, 0.72));
+  const c2 = hslToRgb(hue2, sat, clamp(l * 0.85 + 0.28, 0.4, 0.72));
   return { c1, c2 };
 }
 
@@ -90,6 +93,8 @@ function tileLabel(photo: PhotoDTO): string {
 interface Props {
   photos: PhotoDTO[];
   onOpen: (index: number) => void;
+  /** "color" tints the backdrop from each photo; "neutral" keeps it grayscale. */
+  backdrop?: "color" | "neutral";
 }
 
 /** Pre-hydration / reduced-motion fallback: a plain horizontal scroll row. */
@@ -111,7 +116,7 @@ function StaticRow({ photos, onOpen }: Props) {
   );
 }
 
-export function Carousel3D({ photos, onOpen }: Props) {
+export function Carousel3D({ photos, onOpen, backdrop = "color" }: Props) {
   const [enhanced, setEnhanced] = React.useState(false);
   const [dims, setDims] = React.useState({ w: 300, h: 384 });
 
@@ -129,8 +134,17 @@ export function Carousel3D({ photos, onOpen }: Props) {
   const lastX = React.useRef(0);
   const lastDx = React.useRef(0);
   const activeRef = React.useRef(-1);
+  const neutralRef = React.useRef(backdrop === "neutral");
+  neutralRef.current = backdrop === "neutral";
   const curPal = React.useRef({ c1: [70, 84, 120] as RGB, c2: [110, 130, 170] as RGB });
-  const tgtPal = React.useRef(paletteFor(photos[0]));
+  const tgtPal = React.useRef(paletteFor(photos[0], backdrop === "neutral"));
+
+  // Re-target the gradient immediately when the backdrop mode is toggled
+  // (e.g. in the editor preview); the draw loop eases toward it.
+  React.useEffect(() => {
+    const idx = activeRef.current >= 0 ? activeRef.current : 0;
+    tgtPal.current = paletteFor(photos[idx], backdrop === "neutral");
+  }, [backdrop, photos]);
 
   // Enable the interactive 3D stage only after mount, and never under
   // prefers-reduced-motion (keeps the static row for those users).
@@ -276,7 +290,7 @@ export function Carousel3D({ photos, onOpen }: Props) {
 
       if (best !== -1 && best !== activeRef.current) {
         activeRef.current = best;
-        tgtPal.current = paletteFor(photos[best]);
+        tgtPal.current = paletteFor(photos[best], neutralRef.current);
       }
       drawBackdrop(now);
     };

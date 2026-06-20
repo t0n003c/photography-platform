@@ -87,6 +87,9 @@ const GalleryBlock = z.object({
   spacing: SpacingEnum.default("normal"),
   // Carousel only: auto-advance through the slides (pauses on hover/interaction).
   autoplay: z.boolean().default(false),
+  // 3D infinite carousel only: "color" tints the gradient backdrop from the
+  // active photo; "neutral" keeps the gradient shade but with no color.
+  backdrop: z.enum(["color", "neutral"]).default("color"),
   limit: z.number().int().min(1).max(48).default(12),
   effect: EffectEnum.default("none"),
   // For the cinematic-3d-scroll effect: scroll-speed multiplier. Higher = the

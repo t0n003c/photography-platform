@@ -89,7 +89,7 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, limit: 12, effect: "none", effectSpeed: 1 };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1 };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
@@ -698,6 +698,14 @@ function LeafEditor({
               <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
             </Select>
           </Field>
+          {block.gridType === "carousel3d" && (
+            <Field label="Backdrop">
+              <Select value={block.backdrop ?? "color"} onChange={(e) => set({ backdrop: e.target.value as typeof block.backdrop })}>
+                <option value="color">Color (from photo)</option>
+                <option value="neutral">Neutral (no color)</option>
+              </Select>
+            </Field>
+          )}
           {block.gridType === "carousel" && (
             <Field label="Auto-roll">
               <label className="flex h-9 items-center gap-2 text-sm">

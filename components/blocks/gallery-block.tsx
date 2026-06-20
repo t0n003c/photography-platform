@@ -64,7 +64,7 @@ export async function GalleryBlock({
       </Container>
     );
   }
-  const layout = { gridType: block.gridType, spacing: block.spacing, autoplay: block.autoplay };
+  const layout = { gridType: block.gridType, spacing: block.spacing, autoplay: block.autoplay, backdrop: block.backdrop };
 
   // Cinematic 3D scroll is a layout choice (gridType) — it renders full-bleed
   // and manages its own height, degrading to a standard grid when WebGL is
