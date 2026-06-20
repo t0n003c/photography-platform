@@ -300,6 +300,31 @@ async function loadDefaultPageConfig(
   return rows[0] ?? null;
 }
 
+// ── Footer composition ───────────────────────────────────────────────────────
+export type FooterLayout = "menu" | "logo-text" | "instagram" | "text";
+export interface FooterConfig {
+  layout: FooterLayout;
+  text: string;
+  instagramLimit: number;
+  showSocial: boolean;
+}
+
+// Footer composition lives in the global page_config's `config.footer` jsonb,
+// edited under Design → Footer. Cached via resolvePageConfig (5m) and
+// invalidated when that config is saved.
+export async function getFooterConfig(): Promise<FooterConfig> {
+  const cfg = await resolvePageConfig("global");
+  const f =
+    (cfg?.config as { footer?: Partial<FooterConfig> } | null)?.footer ?? {};
+  return {
+    layout: f.layout ?? "menu",
+    text: f.text ?? "",
+    instagramLimit:
+      typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
+    showSocial: f.showSocial ?? true,
+  };
+}
+
 // ── shared ───────────────────────────────────────────────────────────────────
 async function pageFromRows(
   rows: { photo: typeof photo.$inferSelect; s: number }[],

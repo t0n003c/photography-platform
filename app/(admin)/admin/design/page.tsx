@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Field, Input, Select } from "@/components/ui/form";
+import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
@@ -468,6 +468,7 @@ export default function DesignPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <FooterDesignCard />
           {SCOPES.map((scope) => {
             const matching = configs.filter((c) => c.scope === scope);
             const previewUrl = previewUrlFor(scope, sampleFor(scope));
@@ -516,5 +517,161 @@ export default function DesignPage() {
         </div>
       )}
     </div>
+  );
+}
+
+type FooterLayout = "menu" | "logo-text" | "instagram" | "text";
+interface FooterSettings {
+  layout: FooterLayout;
+  text: string;
+  instagramLimit: number;
+  showSocial: boolean;
+}
+
+// Footer composition lives in the global page_config's `config.footer` jsonb.
+// The public footer reads the DEFAULT global config, so saving ensures this
+// config is the default. Footer menu links stay in the Menus tab.
+function FooterDesignCard() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [cfgId, setCfgId] = useState<string | null>(null);
+  const [isDefault, setIsDefault] = useState(false);
+  const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
+  const [s, setS] = useState<FooterSettings>({
+    layout: "menu",
+    text: "",
+    instagramLimit: 6,
+    showSocial: true,
+  });
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get<{ data: PageConfig[] }>("/api/v1/admin/page-configs?scope=global")
+      .then((res) => {
+        if (!active) return;
+        const globals = res.data.filter((c) => c.scope === "global");
+        const pick = globals.find((c) => c.isDefault) ?? globals[0] ?? null;
+        if (!pick) return;
+        setCfgId(pick.id);
+        setIsDefault(pick.isDefault);
+        const cfg = (pick.config ?? {}) as Record<string, unknown>;
+        setBaseConfig(cfg);
+        const f = (cfg.footer ?? {}) as Partial<FooterSettings>;
+        setS({
+          layout: f.layout ?? "menu",
+          text: f.text ?? "",
+          instagramLimit:
+            typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
+          showSocial: f.showSocial ?? true,
+        });
+      })
+      .catch((err) => active && toast(errMsg(err), "error"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [toast]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      let id = cfgId;
+      let base = baseConfig;
+      if (!id) {
+        const res = await api.post<{ data: PageConfig }>(
+          "/api/v1/admin/page-configs",
+          { scope: "global", gridType: "justified", spacing: "normal", theme: "auto", hero: { enabled: false }, config: {} },
+        );
+        id = res.data.id;
+        base = {};
+        setCfgId(id);
+      }
+      await api.patch(`/api/v1/admin/page-configs/${id}`, {
+        config: { ...base, footer: s },
+      });
+      setBaseConfig({ ...base, footer: s });
+      if (!isDefault) {
+        await api.post(`/api/v1/admin/page-configs/${id}/set-default`);
+        setIsDefault(true);
+      }
+      toast("Footer saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Footer</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Spinner className="h-5 w-5" />
+          </div>
+        ) : (
+          <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+            <Field label="Layout">
+              <Select
+                value={s.layout}
+                onChange={(e) => setS({ ...s, layout: e.target.value as FooterLayout })}
+              >
+                <option value="menu">Menu links</option>
+                <option value="logo-text">Logo + text</option>
+                <option value="instagram">Instagram feed</option>
+                <option value="text">Plain text</option>
+              </Select>
+            </Field>
+            {s.layout === "instagram" && (
+              <Field label="Instagram photos">
+                <Input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={s.instagramLimit}
+                  onChange={(e) =>
+                    setS({ ...s, instagramLimit: Number(e.target.value) || 6 })
+                  }
+                />
+              </Field>
+            )}
+            {(s.layout === "logo-text" || s.layout === "text") && (
+              <Field label={s.layout === "logo-text" ? "Tagline / text" : "Text"}>
+                <Textarea
+                  rows={3}
+                  value={s.text}
+                  onChange={(e) => setS({ ...s, text: e.target.value })}
+                  placeholder="A line about the studio…"
+                />
+              </Field>
+            )}
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={s.showSocial}
+                  onChange={(e) => setS({ ...s, showSocial: e.target.checked })}
+                />
+                Show social icons
+              </label>
+            </div>
+            <div className="sm:col-span-2 flex items-center gap-3">
+              <Button onClick={save} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save footer
+              </Button>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Footer menu links are edited in the Menus tab.
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
