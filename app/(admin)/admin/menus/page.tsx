@@ -324,7 +324,7 @@ export default function MenusPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Menus</h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -334,6 +334,8 @@ export default function MenusPage() {
         </p>
       </div>
 
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
       {(["primary", "footer"] as Role[]).map((role) => (
         <Card key={role}>
           <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -412,9 +414,11 @@ export default function MenusPage() {
           </CardContent>
         </Card>
       ))}
+        </div>
 
+        <div className="lg:sticky lg:top-4">
       {/* Item editor for the selected preset */}
-      {editingMenu && (
+      {editingMenu ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -491,7 +495,16 @@ export default function MenusPage() {
             </div>
           </CardContent>
         </Card>
+      ) : (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-[hsl(var(--muted-foreground))]">
+            Select a preset&rsquo;s <span className="font-medium">Edit</span> button
+            to manage its items here.
+          </CardContent>
+        </Card>
       )}
+        </div>
+      </div>
 
       {/* Edit item modal */}
       {editingItem && (
