@@ -73,15 +73,18 @@ function hslToRgb(h: number, s: number, l: number): RGB {
   return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
 }
 
-// Two gradient colors derived from a photo's dominant color. With `neutral`,
-// saturation is dropped to zero so the backdrop keeps its breathing gradient
-// shade but carries no color.
-function paletteFor(photo: PhotoDTO | undefined, neutral = false): { c1: RGB; c2: RGB } {
-  if (neutral) {
-    // Near-black shades so the additive backdrop stays dark with only a faint
-    // radial gradient, rather than washing the whole stage grey.
-    return { c1: [20, 22, 26], c2: [30, 33, 38] };
-  }
+// Read a theme HSL custom property (e.g. "--background" = "222 14% 8%") as RGB,
+// so the neutral backdrop matches the active light/dark theme.
+function readHslVar(name: string, fallback: RGB): RGB {
+  if (typeof window === "undefined") return fallback;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const m = raw.match(/([\d.]+)\s+([\d.]+)%\s+([\d.]+)%/);
+  if (!m) return fallback;
+  return hslToRgb(Number(m[1]) / 360, Number(m[2]) / 100, Number(m[3]) / 100);
+}
+
+// Two gradient colors derived from a photo's dominant color (color backdrop).
+function paletteFor(photo: PhotoDTO | undefined): { c1: RGB; c2: RGB } {
   const base = hexToRgb(photo?.dominantColor ?? null) ?? [70, 84, 120];
   const [h, s, l] = rgbToHsl(base);
   const sat = clamp(s * 1.15, 0.35, 0.95);
@@ -141,14 +144,32 @@ export function Carousel3D({ photos, onOpen, backdrop = "color" }: Props) {
   const neutralRef = React.useRef(backdrop === "neutral");
   neutralRef.current = backdrop === "neutral";
   const curPal = React.useRef({ c1: [70, 84, 120] as RGB, c2: [110, 130, 170] as RGB });
-  const tgtPal = React.useRef(paletteFor(photos[0], backdrop === "neutral"));
+  const tgtPal = React.useRef(paletteFor(photos[0]));
+  // Theme colors for the neutral backdrop (read from CSS vars; updated on theme change).
+  const bgRef = React.useRef<RGB>([12, 13, 18]);
+  const hintRef = React.useRef<RGB>([30, 33, 40]);
 
-  // Re-target the gradient immediately when the backdrop mode is toggled
-  // (e.g. in the editor preview); the draw loop eases toward it.
+  // Re-target the (color) gradient immediately when the active photo set changes.
   React.useEffect(() => {
     const idx = activeRef.current >= 0 ? activeRef.current : 0;
-    tgtPal.current = paletteFor(photos[idx], backdrop === "neutral");
-  }, [backdrop, photos]);
+    tgtPal.current = paletteFor(photos[idx]);
+  }, [photos]);
+
+  // Keep the neutral backdrop in sync with the active light/dark theme.
+  React.useEffect(() => {
+    if (!enhanced) return;
+    const read = () => {
+      bgRef.current = readHslVar("--background", [12, 13, 18]);
+      hintRef.current = readHslVar("--muted", bgRef.current);
+    };
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style", "data-theme"],
+    });
+    return () => mo.disconnect();
+  }, [enhanced]);
 
   // Enable the interactive 3D stage only after mount, and never under
   // prefers-reduced-motion (keeps the static row for those users).
@@ -219,6 +240,33 @@ export function Carousel3D({ photos, onOpen, backdrop = "color" }: Props) {
       const ctx = c?.getContext("2d");
       if (!c || !ctx) return;
       const { W, H } = dimsRef.current;
+
+      // Neutral: paint the theme background, then a small, tight radial hint
+      // (theme "muted") that doesn't feather across the whole stage.
+      if (neutralRef.current) {
+        const [br, bg, bb] = bgRef.current;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = `rgb(${br | 0},${bg | 0},${bb | 0})`;
+        ctx.fillRect(0, 0, W, H);
+        const [hr, hg, hb] = hintRef.current;
+        const rad = Math.min(W, H) * 0.5;
+        const blobs = [
+          { ox: 0.36, oy: 0.4, sx: 0.00018, sy: 0.00026 },
+          { ox: 0.64, oy: 0.6, sx: 0.00022, sy: 0.00016 },
+        ];
+        for (const b of blobs) {
+          const cx = W * (b.ox + 0.07 * Math.sin(t * b.sx));
+          const cy = H * (b.oy + 0.07 * Math.cos(t * b.sy));
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+          g.addColorStop(0, `rgba(${hr | 0},${hg | 0},${hb | 0},0.6)`);
+          g.addColorStop(0.5, `rgba(${hr | 0},${hg | 0},${hb | 0},0.12)`);
+          g.addColorStop(1, `rgba(${hr | 0},${hg | 0},${hb | 0},0)`);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        }
+        return;
+      }
+
       const cur = curPal.current;
       // ease current palette toward the active photo's target
       for (const key of ["c1", "c2"] as const) {
@@ -294,7 +342,7 @@ export function Carousel3D({ photos, onOpen, backdrop = "color" }: Props) {
 
       if (best !== -1 && best !== activeRef.current) {
         activeRef.current = best;
-        tgtPal.current = paletteFor(photos[best], neutralRef.current);
+        tgtPal.current = paletteFor(photos[best]);
       }
       drawBackdrop(now);
     };
