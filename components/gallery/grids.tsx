@@ -449,6 +449,8 @@ function HorizontalLenisDetail({
   const title = photo.headline || photo.altText || "";
   const subhead = photo.subhead || "";
   const caption = photo.caption || "";
+  // Alt text shown on the right (editorial) only when it isn't already the title.
+  const altRight = photo.headline && photo.altText ? photo.altText : "";
   const reveal = "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
   const chrome = cn("transition-opacity duration-500", bgIn ? "opacity-100" : "opacity-0");
 
@@ -561,16 +563,17 @@ function HorizontalLenisDetail({
               </span>
             </div>
           )}
-          {/* Left side: meta. */}
+          {/* Left side: counter at the top, date running vertically up the
+              bottom-left edge. */}
           <div
             className={cn(
-              "absolute top-0 z-20 hidden h-full w-[15vw] flex-col justify-center gap-1 pr-5 text-right text-white/80 md:flex",
+              "absolute top-0 z-20 hidden h-full w-[15vw] pr-5 text-right text-white/70 md:block",
               chrome,
             )}
             style={{ right: "100%" }}
           >
             <span
-              className={`font-mono text-xs tracking-widest ${reveal} delay-200 ${
+              className={`block pt-[2vw] font-mono text-xs tracking-widest ${reveal} delay-200 ${
                 shown ? "translate-x-0 opacity-100" : "translate-x-3 opacity-0"
               }`}
             >
@@ -578,30 +581,41 @@ function HorizontalLenisDetail({
             </span>
             {date && (
               <span
-                className={`text-xs uppercase tracking-wide text-white/60 ${reveal} delay-300 ${
-                  shown ? "translate-x-0 opacity-100" : "translate-x-3 opacity-0"
+                className={`absolute bottom-0 right-2 origin-bottom-right rotate-180 whitespace-nowrap text-[0.7rem] uppercase tracking-[0.3em] text-white/55 [writing-mode:vertical-rl] ${reveal} delay-300 ${
+                  shown ? "opacity-100" : "opacity-0"
                 }`}
               >
                 {date}
               </span>
             )}
           </div>
-          {/* Right side: caption. */}
-          {caption && (
+          {/* Right side: alt text at the top, caption pinned to the bottom. */}
+          {(altRight || caption) && (
             <div
               className={cn(
-                "absolute top-0 z-20 hidden h-full w-[15vw] flex-col justify-center pl-5 text-white/75 md:flex",
+                "absolute top-0 z-20 hidden h-full w-[15vw] flex-col pl-5 text-white/75 md:flex",
                 chrome,
               )}
               style={{ left: "100%" }}
             >
-              <p
-                className={`text-sm leading-relaxed ${reveal} delay-300 ${
-                  shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
-                }`}
-              >
-                {caption}
-              </p>
+              {altRight && (
+                <p
+                  className={`pt-[2vw] text-sm leading-snug ${reveal} delay-200 ${
+                    shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
+                  }`}
+                >
+                  {altRight}
+                </p>
+              )}
+              {caption && (
+                <p
+                  className={`mt-auto pb-[2vw] text-sm leading-relaxed text-white/65 ${reveal} delay-300 ${
+                    shown ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"
+                  }`}
+                >
+                  {caption}
+                </p>
+              )}
             </div>
           )}
         </figure>
