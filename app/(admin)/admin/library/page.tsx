@@ -310,11 +310,13 @@ function DetailModal({
 
 function AssignModal({
   kind,
+  mode,
   count,
   onClose,
   onAssign,
 }: {
   kind: Exclude<AssignKind, null>;
+  mode: "add" | "remove";
   count: number;
   onClose: () => void;
   onAssign: (id: string) => Promise<void>;
@@ -327,6 +329,7 @@ function AssignModal({
 
   const path = kind === "category" ? "categories" : "locations";
   const noun = kind === "category" ? "category" : "location";
+  const isRemove = mode === "remove";
 
   useEffect(() => {
     let active = true;
@@ -363,7 +366,7 @@ function AssignModal({
   };
 
   return (
-    <Modal open onClose={onClose} title={`Add to ${noun}`}>
+    <Modal open onClose={onClose} title={`${isRemove ? "Remove from" : "Add to"} ${noun}`}>
       {loading ? (
         <div className="flex justify-center py-8">
           <Spinner className="h-6 w-6" />
@@ -376,7 +379,8 @@ function AssignModal({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Add {count} photo{count === 1 ? "" : "s"} to a {noun}.
+            {isRemove ? "Remove" : "Add"} {count} photo{count === 1 ? "" : "s"}{" "}
+            {isRemove ? "from" : "to"} a {noun}.
           </p>
           <div className="space-y-1.5">
             <Label htmlFor="assign-select">{noun}</Label>
@@ -396,9 +400,13 @@ function AssignModal({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={submit} disabled={submitting}>
+            <Button
+              onClick={submit}
+              disabled={submitting}
+              variant={isRemove ? "destructive" : "default"}
+            >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Add
+              {isRemove ? "Remove" : "Add"}
             </Button>
           </div>
         </div>
@@ -416,6 +424,7 @@ export default function LibraryPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detailId, setDetailId] = useState<string | null>(null);
   const [assignKind, setAssignKind] = useState<AssignKind>(null);
+  const [assignMode, setAssignMode] = useState<"add" | "remove">("add");
   const [acting, setActing] = useState(false);
 
   const load = useCallback(
@@ -462,13 +471,15 @@ export default function LibraryPage() {
 
   const assign = async (targetId: string) => {
     const path = assignKind === "category" ? "categories" : "locations";
-    await api.post(`/api/v1/admin/${path}/${targetId}/photos`, {
-      photoIds: selectedIds,
-    });
-    toast(
-      `Added ${selectedIds.length} photo${selectedIds.length === 1 ? "" : "s"}`,
-      "success",
-    );
+    const url = `/api/v1/admin/${path}/${targetId}/photos`;
+    const n = selectedIds.length;
+    if (assignMode === "remove") {
+      await api.del(url, { photoIds: selectedIds });
+      toast(`Removed ${n} photo${n === 1 ? "" : "s"}`, "success");
+    } else {
+      await api.post(url, { photoIds: selectedIds });
+      toast(`Added ${n} photo${n === 1 ? "" : "s"}`, "success");
+    }
     clearSelection();
   };
 
@@ -604,7 +615,7 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setAssignKind("category")}
+                onClick={() => { setAssignMode("add"); setAssignKind("category"); }}
                 disabled={acting}
               >
                 Add to category…
@@ -612,10 +623,26 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setAssignKind("location")}
+                onClick={() => { setAssignMode("add"); setAssignKind("location"); }}
                 disabled={acting}
               >
                 Add to location…
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setAssignMode("remove"); setAssignKind("category"); }}
+                disabled={acting}
+              >
+                Remove from category…
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setAssignMode("remove"); setAssignKind("location"); }}
+                disabled={acting}
+              >
+                Remove from location…
               </Button>
               <Button
                 variant="outline"
@@ -650,6 +677,7 @@ export default function LibraryPage() {
       {assignKind && (
         <AssignModal
           kind={assignKind}
+          mode={assignMode}
           count={selected.size}
           onClose={() => setAssignKind(null)}
           onAssign={assign}
