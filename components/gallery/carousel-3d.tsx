@@ -77,12 +77,16 @@ function hslToRgb(h: number, s: number, l: number): RGB {
 // saturation is dropped to zero so the backdrop keeps its breathing gradient
 // shade but carries no color.
 function paletteFor(photo: PhotoDTO | undefined, neutral = false): { c1: RGB; c2: RGB } {
+  if (neutral) {
+    // Near-black shades so the additive backdrop stays dark with only a faint
+    // radial gradient, rather than washing the whole stage grey.
+    return { c1: [20, 22, 26], c2: [30, 33, 38] };
+  }
   const base = hexToRgb(photo?.dominantColor ?? null) ?? [70, 84, 120];
   const [h, s, l] = rgbToHsl(base);
-  const sat = neutral ? 0 : clamp(s * 1.15, 0.35, 0.95);
-  const hue2 = neutral ? h : (h + 0.09) % 1;
+  const sat = clamp(s * 1.15, 0.35, 0.95);
   const c1 = hslToRgb(h, sat, clamp(l * 0.85 + 0.12, 0.28, 0.62));
-  const c2 = hslToRgb(hue2, sat, clamp(l * 0.85 + 0.28, 0.4, 0.72));
+  const c2 = hslToRgb((h + 0.09) % 1, sat, clamp(l * 0.85 + 0.28, 0.4, 0.72));
   return { c1, c2 };
 }
 
