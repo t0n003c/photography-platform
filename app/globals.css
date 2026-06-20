@@ -31,6 +31,14 @@
     border-color: hsl(var(--border));
   }
 
+  /* Reserve the vertical scrollbar's space on BOTH edges so a classic
+     (non-overlay) scrollbar doesn't push centered content to the left —
+     otherwise the left gutter looks smaller than the right. No-op where
+     overlay scrollbars are used (e.g. macOS default). */
+  html {
+    scrollbar-gutter: stable both-edges;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
