@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import { cn } from "@/src/lib/utils";
 import { ResponsiveImage } from "./responsive-image";
@@ -170,9 +170,15 @@ export function CarouselGrid({ photos, spacingClass, autoplay, onOpen }: GridPro
  * horizontal scroll under prefers-reduced-motion (no Lenis). Inspired by the
  * Moussa Mamadou "flip horizontal scroll" reference.
  */
-export function HorizontalLenisGrid({ photos, onOpen }: GridProps) {
+export function HorizontalLenisGrid({ photos }: GridProps) {
   const wrapperRef = React.useRef<HTMLDivElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lenisRef = React.useRef<any>(null);
+  const [expanded, setExpanded] = React.useState<number | null>(null);
+  // The clicked thumbnail's on-screen rect, so the detail view can morph open
+  // from it (FLIP) rather than just popping in.
+  const [startRect, setStartRect] = React.useState<DOMRect | null>(null);
 
   React.useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -186,11 +192,9 @@ export function HorizontalLenisGrid({ photos, onOpen }: GridProps) {
 
     let raf = 0;
     let cancelled = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let lenis: any = null;
     import("lenis").then(({ default: Lenis }) => {
       if (cancelled) return;
-      lenis = new Lenis({
+      const lenis = new Lenis({
         wrapper,
         content,
         orientation: "horizontal",
@@ -198,6 +202,7 @@ export function HorizontalLenisGrid({ photos, onOpen }: GridProps) {
         smoothWheel: true,
         wheelMultiplier: 0.9,
       });
+      lenisRef.current = lenis;
       const loop = (t: number) => {
         lenis.raf(t);
         raf = requestAnimationFrame(loop);
@@ -208,37 +213,287 @@ export function HorizontalLenisGrid({ photos, onOpen }: GridProps) {
     return () => {
       cancelled = true;
       if (raf) cancelAnimationFrame(raf);
-      lenis?.destroy();
+      lenisRef.current?.destroy();
+      lenisRef.current = null;
     };
   }, []);
 
+  // Freeze the horizontal scroll while the detail overlay is open.
+  React.useEffect(() => {
+    const l = lenisRef.current;
+    if (!l) return;
+    if (expanded !== null) l.stop();
+    else l.start();
+  }, [expanded]);
+
+  return (
+    <>
+      <div
+        ref={wrapperRef}
+        className="relative w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ height: "72vh" }}
+      >
+        <div
+          ref={contentRef}
+          className="flex h-full w-max items-center gap-[7vw] px-[12vw]"
+        >
+          {photos.map((photo, i) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={(e) => {
+                setStartRect(e.currentTarget.getBoundingClientRect());
+                setExpanded(i);
+              }}
+              aria-label={tileLabel(photo)}
+              style={{ transform: i % 2 === 0 ? "translateY(-13%)" : "translateY(13%)" }}
+              className="block aspect-[3/4] h-[48vh] shrink-0 cursor-pointer overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            >
+              <ResponsiveImage
+                photo={photo}
+                sizes="(min-width:768px) 36vw, 70vw"
+                className="h-full w-full object-cover transition-opacity hover:opacity-90"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+      {expanded !== null && (
+        <HorizontalLenisDetail
+          photos={photos}
+          index={expanded}
+          startRect={startRect}
+          onClose={() => setExpanded(null)}
+          onNav={(dir) =>
+            setExpanded((cur) =>
+              cur === null ? cur : (cur + dir + photos.length) % photos.length,
+            )
+          }
+        />
+      )}
+    </>
+  );
+}
+
+// Click-to-expand detail view for the horizontal-lenis layout. The clicked
+// thumbnail MORPHS into the centered photo (FLIP) over a fading backdrop, then
+// its alt text / capture date animate in — in the spirit of the Moussa Mamadou
+// reference, adapted to the metadata we store.
+function HorizontalLenisDetail({
+  photos,
+  index,
+  startRect,
+  onClose,
+  onNav,
+}: {
+  photos: PhotoDTO[];
+  index: number;
+  startRect: DOMRect | null;
+  onClose: () => void;
+  onNav: (dir: -1 | 1) => void;
+}) {
+  const photo = photos[index];
+  const [shown, setShown] = React.useState(false);
+  const [bgIn, setBgIn] = React.useState(false);
+  const imgWrapRef = React.useRef<HTMLDivElement>(null);
+  const reduce =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  // Compute the displayed size ourselves (image aspect within 72vh × 92vw) so
+  // the wrapper always has a definite, measurable size — its intrinsic size
+  // would otherwise be 0 until the image lays out, breaking the FLIP measure.
+  // (This overlay only ever renders client-side, so `window` is safe here.)
+  const display = React.useMemo(() => {
+    if (typeof window === "undefined") return { w: 0, h: 0 };
+    const maxH = window.innerHeight * 0.72;
+    const maxW = window.innerWidth * 0.92;
+    const ar = (photo.width || 1) / (photo.height || 1);
+    let h = maxH;
+    let w = h * ar;
+    if (w > maxW) {
+      w = maxW;
+      h = w / ar;
+    }
+    return { w: Math.round(w), h: Math.round(h) };
+  }, [photo.width, photo.height]);
+
+  // Fade the backdrop in on open.
+  React.useEffect(() => {
+    const r = requestAnimationFrame(() => setBgIn(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
+  // FLIP: start the photo at the clicked thumbnail's rect, then animate to its
+  // natural centered position. Runs once, on open. The image is hidden until the
+  // start transform is applied (pre-paint) so it never flashes at the final spot,
+  // and the rect is measured a frame later so layout is settled (non-zero).
+  React.useLayoutEffect(() => {
+    const el = imgWrapRef.current;
+    if (!el || !startRect || reduce) return;
+    el.style.opacity = "0";
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      const end = el.getBoundingClientRect();
+      if (!end.width || !end.height) {
+        el.style.opacity = "";
+        return;
+      }
+      const dx = startRect.left - end.left;
+      const dy = startRect.top - end.top;
+      const sx = startRect.width / end.width;
+      const sy = startRect.height / end.height;
+      el.style.transformOrigin = "top left";
+      el.style.transition = "none";
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      el.style.opacity = "1";
+      void el.getBoundingClientRect(); // force reflow
+      raf2 = requestAnimationFrame(() => {
+        if (!imgWrapRef.current) return;
+        imgWrapRef.current.style.transition =
+          "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)";
+        imgWrapRef.current.style.transform = "translate(0px, 0px) scale(1, 1)";
+      });
+    });
+    const t = window.setTimeout(() => {
+      if (imgWrapRef.current) {
+        imgWrapRef.current.style.transition = "";
+        imgWrapRef.current.style.transform = "";
+        imgWrapRef.current.style.opacity = "";
+      }
+    }, 800);
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      window.clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // (Re)play the text reveal whenever the shown photo changes.
+  React.useEffect(() => {
+    setShown(false);
+    const r = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setShown(true)),
+    );
+    return () => cancelAnimationFrame(r);
+  }, [index]);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") onNav(1);
+      else if (e.key === "ArrowLeft") onNav(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, onNav]);
+
+  const date = photo.capturedAt
+    ? new Date(photo.capturedAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+  const counter = `${String(index + 1).padStart(2, "0")} / ${String(photos.length).padStart(2, "0")}`;
+  const reveal = "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
+  const chrome = cn("transition-opacity duration-500", bgIn ? "opacity-100" : "opacity-0");
+
   return (
     <div
-      ref={wrapperRef}
-      className="relative w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      style={{ height: "72vh" }}
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-10"
+      role="dialog"
+      aria-modal="true"
+      aria-label={photo.altText || "Photo"}
+      onClick={onClose}
     >
       <div
-        ref={contentRef}
-        className="flex h-full w-max items-center gap-[7vw] px-[12vw]"
+        aria-hidden
+        className={cn(
+          "absolute inset-0 bg-black/90 backdrop-blur-sm",
+          "transition-opacity duration-500",
+          bgIn ? "opacity-100" : "opacity-0",
+        )}
+      />
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className={cn(
+          "absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20",
+          chrome,
+        )}
       >
-        {photos.map((photo, i) => (
+        <X className="h-5 w-5" />
+      </button>
+      {photos.length > 1 && (
+        <>
           <button
-            key={photo.id}
             type="button"
-            onClick={() => onOpen(i)}
-            aria-label={tileLabel(photo)}
-            style={{ transform: i % 2 === 0 ? "translateY(-13%)" : "translateY(13%)" }}
-            className="block aspect-[3/4] h-[48vh] shrink-0 overflow-hidden rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            aria-label="Previous"
+            onClick={(e) => { e.stopPropagation(); onNav(-1); }}
+            className={cn("absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20", chrome)}
           >
-            <ResponsiveImage
-              photo={photo}
-              sizes="(min-width:768px) 36vw, 70vw"
-              className="h-full w-full object-cover transition-opacity hover:opacity-90"
-            />
+            <ChevronLeft className="h-6 w-6" />
           </button>
-        ))}
-      </div>
+          <button
+            type="button"
+            aria-label="Next"
+            onClick={(e) => { e.stopPropagation(); onNav(1); }}
+            className={cn("absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20", chrome)}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </>
+      )}
+
+      <figure
+        className="relative z-[1] flex max-h-full max-w-5xl flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          ref={imgWrapRef}
+          className="relative overflow-hidden rounded-sm shadow-2xl will-change-transform"
+          style={{ width: display.w, height: display.h }}
+        >
+          <ResponsiveImage
+            photo={photo}
+            sizes="(min-width:768px) 70vw, 100vw"
+            className="h-full w-full object-cover"
+          />
+        </div>
+
+        <figcaption className={cn("mt-5 w-full max-w-3xl text-center text-white", chrome)}>
+          <span
+            className={`mb-2 block font-mono text-xs tracking-widest text-white/55 ${reveal} delay-100 ${
+              shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+            }`}
+          >
+            {counter}
+          </span>
+          {photo.altText && (
+            <span className="block overflow-hidden">
+              <span
+                className={`block text-2xl font-semibold tracking-tight sm:text-3xl ${reveal} delay-200 ${
+                  shown ? "translate-y-0" : "translate-y-full"
+                }`}
+              >
+                {photo.altText}
+              </span>
+            </span>
+          )}
+          {date && (
+            <span
+              className={`mt-2 block text-sm text-white/65 ${reveal} delay-300 ${
+                shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+              }`}
+            >
+              {date}
+            </span>
+          )}
+        </figcaption>
+      </figure>
     </div>
   );
 }
