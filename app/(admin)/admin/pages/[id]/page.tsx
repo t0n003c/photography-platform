@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Crosshair,
   Settings,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -449,6 +450,24 @@ function ColumnsEditor({
     onChange({ ...block, colAlign: next });
   };
   const [alignCol, setAlignCol] = useState<number | null>(null);
+
+  // Drag-and-drop column reordering (native HTML5 DnD via a grip handle, so it
+  // doesn't fight with editing the inputs inside each column). colAlign is kept
+  // parallel to columns through the move.
+  const [dragCol, setDragCol] = useState<number | null>(null);
+  const [overCol, setOverCol] = useState<number | null>(null);
+  const moveColumn = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= block.columns.length) return;
+    const cols = [...block.columns];
+    const aligns = [...colAlign];
+    while (aligns.length < block.columns.length) aligns.push("top");
+    const [c] = cols.splice(from, 1);
+    const [a] = aligns.splice(from, 1);
+    cols.splice(to, 0, c);
+    aligns.splice(to, 0, a);
+    onChange({ ...block, columns: cols, colAlign: aligns });
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -470,9 +489,41 @@ function ColumnsEditor({
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${block.columns.length}, minmax(0,1fr))` }}>
         {block.columns.map((col, ci) => (
-          <div key={ci} className="space-y-2 rounded border p-2">
+          <div
+            key={ci}
+            onDragOver={(e) => {
+              if (dragCol === null) return;
+              e.preventDefault();
+              if (overCol !== ci) setOverCol(ci);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragCol !== null) moveColumn(dragCol, ci);
+              setDragCol(null);
+              setOverCol(null);
+            }}
+            className={`space-y-2 rounded border p-2 transition-colors ${
+              dragCol === ci ? "opacity-50" : ""
+            } ${overCol === ci && dragCol !== null && dragCol !== ci ? "border-[hsl(var(--ring))] bg-[hsl(var(--muted))]" : ""}`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium">Column {ci + 1}</span>
+              <span className="flex items-center gap-1 text-xs font-medium">
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={() => setDragCol(ci)}
+                  onDragEnd={() => {
+                    setDragCol(null);
+                    setOverCol(null);
+                  }}
+                  aria-label={`Drag column ${ci + 1}`}
+                  title="Drag to reorder column"
+                  className="cursor-grab text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] active:cursor-grabbing"
+                >
+                  <GripVertical className="h-3.5 w-3.5" />
+                </button>
+                Column {ci + 1}
+              </span>
               <div className="flex items-center gap-1 text-[hsl(var(--muted-foreground))]">
                 <button
                   type="button"
