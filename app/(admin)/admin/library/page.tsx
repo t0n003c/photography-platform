@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Field, Input, Label, Select } from "@/components/ui/form";
+import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { Modal } from "@/components/ui/dialog";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
@@ -138,6 +138,9 @@ function DetailModal({
   const [photo, setPhoto] = useState<PhotoDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [altText, setAltText] = useState("");
+  const [headline, setHeadline] = useState("");
+  const [subhead, setSubhead] = useState("");
+  const [caption, setCaption] = useState("");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -150,6 +153,9 @@ function DetailModal({
         if (!active) return;
         setPhoto(res.photo);
         setAltText(res.photo.altText ?? "");
+        setHeadline(res.photo.headline ?? "");
+        setSubhead(res.photo.subhead ?? "");
+        setCaption(res.photo.caption ?? "");
       })
       .catch((err) => {
         if (active) toast(errMsg(err), "error");
@@ -165,13 +171,19 @@ function DetailModal({
   const save = async () => {
     setSaving(true);
     try {
+      const t = (v: string) => (v.trim() === "" ? null : v.trim());
       const res = await api.patch<{ photo: PhotoDTO }>(
         `/api/v1/admin/photos/${photoId}`,
-        { altText: altText.trim() === "" ? null : altText },
+        {
+          altText: t(altText),
+          headline: t(headline),
+          subhead: t(subhead),
+          caption: t(caption),
+        },
       );
       setPhoto((prev) => (prev ? { ...prev, ...res.photo } : res.photo));
       onChanged(res.photo);
-      toast("Alt text saved", "success");
+      toast("Saved", "success");
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {
@@ -285,6 +297,38 @@ function DetailModal({
               value={altText}
               onChange={(e) => setAltText(e.target.value)}
               placeholder="Describe this image"
+            />
+          </Field>
+
+          <p className="pt-1 text-xs text-[hsl(var(--muted-foreground))]">
+            Editorial copy below shows in immersive layouts (e.g. a gallery&rsquo;s
+            Horizontal Scroll detail view).
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Headline" htmlFor="ph-headline">
+              <Input
+                id="ph-headline"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                placeholder="A short title"
+              />
+            </Field>
+            <Field label="Subhead" htmlFor="ph-subhead">
+              <Input
+                id="ph-subhead"
+                value={subhead}
+                onChange={(e) => setSubhead(e.target.value)}
+                placeholder="A secondary line"
+              />
+            </Field>
+          </div>
+          <Field label="Caption" htmlFor="ph-caption">
+            <Textarea
+              id="ph-caption"
+              rows={3}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="A longer description shown alongside the photo"
             />
           </Field>
 

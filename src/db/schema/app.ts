@@ -154,6 +154,11 @@ export const photo = pgTable(
     lqip: text("lqip"),
     blurhash: text("blurhash"),
     altText: text("alt_text"),
+    // Optional editorial copy shown in immersive layouts (e.g. the horizontal
+    // scroll detail view): a title, a secondary line, and a caption paragraph.
+    headline: text("headline"),
+    subhead: text("subhead"),
+    caption: text("caption"),
     exif: jsonb("exif"),
     processingStatus: text("processing_status", {
       enum: ["pending", "processing", "ready", "failed"],

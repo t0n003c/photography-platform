@@ -26,6 +26,9 @@ export interface PhotoVariantDTO {
 export interface PhotoDTO {
   id: string;
   altText: string | null;
+  headline: string | null;
+  subhead: string | null;
+  caption: string | null;
   width: number;
   height: number;
   dominantColor: string | null;
@@ -45,6 +48,9 @@ export function serializePhoto(p: PhotoRow, variants: VariantRow[]): PhotoDTO {
   return {
     id: p.id,
     altText: p.altText,
+    headline: p.headline,
+    subhead: p.subhead,
+    caption: p.caption,
     width: p.width,
     height: p.height,
     dominantColor: p.dominantColor,

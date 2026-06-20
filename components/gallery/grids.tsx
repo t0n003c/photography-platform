@@ -437,6 +437,10 @@ function HorizontalLenisDetail({
       })
     : null;
   const counter = `${String(index + 1).padStart(2, "0")} / ${String(photos.length).padStart(2, "0")}`;
+  // Editorial copy (set per photo in the Library); falls back to alt text.
+  const title = photo.headline || photo.altText || "";
+  const subhead = photo.subhead || "";
+  const caption = photo.caption || "";
   const reveal = "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]";
   const chrome = cn("transition-opacity duration-500", bgIn ? "opacity-100" : "opacity-0");
 
@@ -489,64 +493,90 @@ function HorizontalLenisDetail({
       )}
 
       <figure
-        className="relative z-[1] flex max-h-full flex-col items-center gap-4"
+        className="relative z-[1] flex max-h-full flex-col items-center gap-3"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top meta row — counter (left) and date (right). */}
-        <div
-          className={cn(
-            "flex w-full items-center justify-between gap-4 px-1 text-white/75",
-            chrome,
-          )}
-          style={{ maxWidth: display.w || undefined }}
-        >
-          <span
-            className={`font-mono text-xs tracking-widest ${reveal} delay-100 ${
-              shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
-            }`}
-          >
-            {counter}
-          </span>
-          {date && (
-            <span
-              className={`text-xs uppercase tracking-wide ${reveal} delay-150 ${
-                shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
-              }`}
-            >
-              {date}
-            </span>
-          )}
-        </div>
-
-        {/* Image */}
-        <div
-          ref={imgWrapRef}
-          className="relative overflow-hidden rounded-sm shadow-2xl will-change-transform"
-          style={{ width: display.w, height: display.h }}
-        >
-          <ResponsiveImage
-            photo={photo}
-            sizes="(min-width:768px) 70vw, 100vw"
-            className="h-full w-full object-cover"
-          />
-        </div>
-
-        {/* Bottom title. */}
-        {photo.altText && (
+        {/* Image with overlaid text zones (counter/date top, title/subhead
+            bottom over a scrim). The text overlay is a sibling of the morphing
+            image, so it doesn't scale during the FLIP. */}
+        <div className="relative" style={{ width: display.w, height: display.h }}>
           <div
-            className={cn("w-full px-1 text-center", chrome)}
-            style={{ maxWidth: display.w || undefined }}
+            ref={imgWrapRef}
+            className="absolute inset-0 overflow-hidden rounded-sm shadow-2xl will-change-transform"
           >
-            <span className="block overflow-hidden">
+            <ResponsiveImage
+              photo={photo}
+              sizes="(min-width:768px) 70vw, 100vw"
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0 z-10 flex flex-col justify-between rounded-sm p-4 sm:p-6",
+              chrome,
+            )}
+          >
+            {/* gradient scrim for the bottom text */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 rounded-b-sm bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+            <div className="relative flex items-start justify-between gap-4 text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
               <span
-                className={`block text-2xl font-semibold tracking-tight text-white sm:text-3xl ${reveal} delay-200 ${
-                  shown ? "translate-y-0" : "translate-y-full"
+                className={`font-mono text-xs tracking-widest text-white/85 ${reveal} delay-100 ${
+                  shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
                 }`}
               >
-                {photo.altText}
+                {counter}
               </span>
-            </span>
+              {date && (
+                <span
+                  className={`text-xs uppercase tracking-wide text-white/85 ${reveal} delay-150 ${
+                    shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                  }`}
+                >
+                  {date}
+                </span>
+              )}
+            </div>
+
+            <div className="relative text-white">
+              {title && (
+                <span className="block overflow-hidden">
+                  <span
+                    className={`block text-2xl font-semibold leading-tight tracking-tight sm:text-3xl ${reveal} delay-200 ${
+                      shown ? "translate-y-0" : "translate-y-full"
+                    }`}
+                  >
+                    {title}
+                  </span>
+                </span>
+              )}
+              {subhead && (
+                <span
+                  className={`mt-1 block text-sm uppercase tracking-wide text-white/80 ${reveal} delay-300 ${
+                    shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                  }`}
+                >
+                  {subhead}
+                </span>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Caption paragraph below the image. */}
+        {caption && (
+          <p
+            className={cn(
+              `max-w-2xl px-1 text-center text-sm leading-relaxed text-white/70 ${reveal} delay-300 ${
+                shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+              }`,
+              chrome,
+            )}
+            style={{ maxWidth: display.w || undefined }}
+          >
+            {caption}
+          </p>
         )}
       </figure>
     </div>

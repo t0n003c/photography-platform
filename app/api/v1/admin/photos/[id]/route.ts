@@ -17,6 +17,9 @@ export const dynamic = "force-dynamic";
 
 const patchSchema = z.object({
   altText: z.string().nullable().optional(),
+  headline: z.string().max(200).nullable().optional(),
+  subhead: z.string().max(200).nullable().optional(),
+  caption: z.string().max(2000).nullable().optional(),
   captureDate: z.string().datetime().nullable().optional(),
 });
 
@@ -92,8 +95,17 @@ export async function PATCH(
   const p = await loadActivePhoto(id);
   if (!p) return notFound();
 
-  const updates: { altText?: string | null; captureDate?: Date | null } = {};
+  const updates: {
+    altText?: string | null;
+    headline?: string | null;
+    subhead?: string | null;
+    caption?: string | null;
+    captureDate?: Date | null;
+  } = {};
   if ("altText" in parsed.data) updates.altText = parsed.data.altText ?? null;
+  if ("headline" in parsed.data) updates.headline = parsed.data.headline ?? null;
+  if ("subhead" in parsed.data) updates.subhead = parsed.data.subhead ?? null;
+  if ("caption" in parsed.data) updates.caption = parsed.data.caption ?? null;
   if ("captureDate" in parsed.data) {
     updates.captureDate = parsed.data.captureDate
       ? new Date(parsed.data.captureDate)
