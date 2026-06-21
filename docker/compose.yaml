@@ -39,7 +39,14 @@ services:
   # volume + filer + S3 gateway in one process. S3 API on :8333, file browser
   # (filer) on :8888, master UI on :9333. Identities/creds in seaweedfs/s3.json.
   seaweedfs:
-    image: chrislusf/seaweedfs:latest
+    # Pinned (not :latest) so `docker compose pull` can't swap in a newer image
+    # that breaks the stack unattended. This is the version most installs are
+    # already running; bump it deliberately when you mean to.
+    image: chrislusf/seaweedfs:4.34
+    # Run as root: the data volume + mounted s3.json are root-owned (created by the
+    # original root-running image). Newer SeaweedFS images default to a non-root
+    # user that then can't read s3.json or write /data — so we force root here.
+    user: "0:0"
     restart: unless-stopped
     command: "server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json -s3.port=8333 -ip=seaweedfs -master.volumeSizeLimitMB=2048 -volume.max=0"
     volumes:
