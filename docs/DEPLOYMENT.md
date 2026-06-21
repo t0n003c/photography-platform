@@ -62,14 +62,17 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 | `worker` | build `docker/Dockerfile.worker` (tsx, node:22) | BullMQ image + email queues; **runs DB migrations on boot** | none (internal `:9091` health only) | none (stateless) | `GET :9091/health` | `unless-stopped` |
 | `db` | `postgres:16-alpine` | System of record (users, galleries, grants, media metadata) | internal only | `pgdata` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
 | `redis` | `redis:7-alpine` (`--appendonly yes`) | BullMQ broker + sessions + rate limiting | internal only | `redisdata` | `redis-cli ping` | `unless-stopped` |
-| `seaweedfs` | `chrislusf/seaweedfs:latest` | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | **none published** (internal network only; debug ports commented out in `docker/compose.yaml`) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
-| `seaweedfs-init` | `minio/mc:latest` | **One-shot**: retries until the S3 gateway is up, then creates the `${S3_BUCKET}` bucket and exits | — | none | — | runs once |
+| `seaweedfs` | `chrislusf/seaweedfs:4.34` (pinned; `user: "0:0"`) | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | **none published** (internal network only; debug ports commented out in `docker/compose.yaml`) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
+| `seaweedfs-init` | `minio/mc:RELEASE.2025-08-13T08-35-41Z` (pinned) | Retries until the S3 gateway is up, creates the `${S3_BUCKET}` bucket, then idles as a healthy sidecar | — | none | `test -f /tmp/ready` | `unless-stopped` |
 | `cloudflared` | `cloudflare/cloudflared:latest` | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile) | none (egress-only) | none | — | `unless-stopped` |
 
 **Notes:**
 
 - `web` and `worker` both `depends_on` `db`, `redis`, and `seaweedfs` with `condition: service_healthy` (plus `seaweedfs-init` with `condition: service_completed_successfully`), so they only start once backing services report healthy and the bucket exists (avoids migration/connection races).
 - SeaweedFS reads its S3 identities/credentials from `docker/seaweedfs/s3.json` (mounted read-only), **not** from env vars — there are no `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD`. The keys in that file **must match** `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` in `.env`.
+- **Third-party images are pinned** (`postgres:16-alpine`, `redis:7-alpine`, `chrislusf/seaweedfs:4.34`, `minio/mc:RELEASE.2025-08-13T08-35-41Z`) so a `docker compose pull` can't swap in a breaking upstream release unattended (only `cloudflared` stays `:latest`, and only our own GHCR `web`/`worker` use `:latest`). Bump these deliberately.
+- **`seaweedfs` runs as `user: "0:0"` (root)** because its `seaweeddata` volume and the mounted `s3.json` are root-owned (created by the original root-running image). Newer SeaweedFS images default to a **non-root** user that then can't read `s3.json` or write `/data`, so it crash-loops — forcing root avoids that.
+- **The mounted `s3.json` and its parent dir must be readable/traversable by the container.** On Synology, files placed via DSM/File Station inherit restrictive perms + an ACL (the trailing `+` in `ls -l`) that deny **even the container's root**. Fix after placing the file: `chmod 755 seaweedfs && chmod 644 seaweedfs/s3.json`. (`seaweedfs`'s healthcheck only probes the master on `:9333`, so it can report "healthy" while the S3 gateway is dead from an unreadable `s3.json` — trust the logs, not just health.)
 - The `worker` Docker image now copies `scripts/`, so first-deploy seeding via `docker compose run --rm worker npm run db:seed` works.
 - `worker` runs **two BullMQ workers** (image pipeline + email), each at **concurrency 4** (`worker/index.ts`).
 - On boot the worker applies Drizzle migrations from `src/db/migrations` (gated by `RUN_MIGRATIONS`, default `true`), so `docker compose up` is self-contained.
@@ -142,6 +145,10 @@ $EDITOR .env
 # 2b. Edit docker/seaweedfs/s3.json so its accessKey/secretKey match
 #     S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in .env.
 $EDITOR docker/seaweedfs/s3.json
+# 2c. Make sure the container can read it. REQUIRED on Synology — files placed
+#     via DSM/File Station get restrictive perms + an ACL that block even the
+#     container's root, which makes seaweedfs crash-loop on "permission denied".
+chmod 755 docker/seaweedfs && chmod 644 docker/seaweedfs/s3.json
 
 # 3. Build + start the production stack (base + prod overlay).
 docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
@@ -176,9 +183,18 @@ build (no Chromium); for Remotion slideshow video, build the worker locally with
 file, not `-f` overlays. Use the pre-merged **`docker/compose.nas.yaml`** (= base
 + prod + ghcr, pull-based). In the project folder place `compose.nas.yaml`, your
 filled **`.env`**, and **`seaweedfs/s3.json`** (copied from `docker/seaweedfs/`,
-keys matching `.env`). Create the Project pointing at that folder (or paste the
-file's contents into the editor), and it pulls + starts — no build. Seed the
-owner once: `docker compose -f compose.nas.yaml run --rm worker npm run db:seed`.
+keys matching `.env`). **Then fix the file perms** — `chmod 755 seaweedfs && chmod
+644 seaweedfs/s3.json` — or seaweedfs crash-loops on "permission denied" (DSM
+adds a restrictive ACL the container's root can't read). Create the Project
+pointing at that folder (or paste the file's contents into the editor), and it
+pulls + starts — no build. Seed the owner once:
+`docker compose -f compose.nas.yaml run --rm worker npm run db:seed`.
+
+**Updating later (Dockge / Container Manager):** push to `main` → CI auto-builds
+and publishes fresh `web`/`worker` images to GHCR (~6 min; wait for the green
+check in GitHub → Actions) → in Dockge hit **Update → Restart** (pulls the new
+`:latest` and recreates). Migrations apply automatically on worker boot. Because
+the third-party images are pinned, that pull only changes our own images.
 
 ```bash
 # 4. Seed the owner account + starter taxonomy (layouts, categories, locations,
@@ -317,4 +333,12 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
 
 - **`web` unhealthy / won't boot in prod** — most common cause is a weak/default `BETTER_AUTH_SECRET` (`instrumentation.ts` refuses to start). Check `dc logs web`; regenerate with `openssl rand -base64 48` and `dc up -d`. Also confirm `db`/`redis`/`seaweedfs` are healthy (`dc ps`).
 - **`worker` stuck / jobs not processing** — check `dc logs -f worker` for `listening on queue` and migration output. Confirm `redis` is healthy and reachable (`dc exec redis redis-cli ping`). Restart with `dc restart worker`; in-flight jobs survive via the Redis AOF.
+- **`seaweedfs` crash-loops / `seaweedfs-init` stuck "waiting for s3 gateway…" / `:8333` connection refused** — the container can't read `seaweedfs/s3.json`. Logs (`dc logs seaweedfs`) show `fail to load config file … s3.json: permission denied` and the master restarting every ~15s. Since the container runs as root, this is a **host-side perm/ACL** problem, classic on **Synology** (DSM/File Station adds a restrictive ACL — the `+` in `ls -l` — that blocks even container-root, and the file open also needs **execute on the parent dir**). Fix:
+  ```bash
+  chmod 755 <stack-dir>/seaweedfs && chmod 644 <stack-dir>/seaweedfs/s3.json
+  docker restart photography-platform-seaweedfs-1   # it's in crash-loop backoff; force it
+  docker logs --since 30s photography-platform-seaweedfs-1 | grep -iE 's3.json|Start S3 API'
+  ```
+  Want: no "permission denied" and a `Start S3 API Server` line. Then `seaweedfs-init` goes healthy and `web`/`worker` start. (Find the real mounted path with `docker inspect <seaweedfs> --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'` if the stack dir differs.) **Don't trust the `seaweedfs` healthcheck here** — it only probes the master (`:9333`) and can read "healthy" while the S3 gateway is dead.
+- **A `docker compose pull` broke a backing service** — third-party images are pinned to avoid exactly this; if one drifted, check the running image vs the pinned tag in `docker/compose.yaml` / `docker/compose.nas.yaml` and recreate.
 - **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), and check `seaweeddata` growth (`docker system df -v`). Move `seaweeddata`/`pgdata` to a larger NAS share if needed and copy backups offsite.
