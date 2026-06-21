@@ -170,11 +170,16 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       const r = el.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     };
-    const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
-    const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
-    // Left items rotate to face right, right items to face left → they face each
-    // other (toward the centre), matching the reference.
-    const faceInward = (idx: number) => (center - (idx % cols)) * 42;
+    // Gentle pull toward the centre (kept visible, not piled to a point).
+    const pullX = (_i: number, el: Element) => (gcx - itemC(el).x) * 0.4;
+    const pullY = (_i: number, el: Element) => (gcy - itemC(el).y) * 0.4;
+    // Left items face right (+), right items face left (-): a clear, uniform
+    // "facing each other" angle (not so steep they go edge-on).
+    const faceInward = (idx: number) => {
+      const col = idx % cols;
+      return col < center ? 50 : col > center ? -50 : 0;
+    };
+    const stagCenter = { grid: "auto" as const, from: "center" as const, amount: 0.5 };
 
     gsap
       .timeline({
@@ -186,19 +191,20 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       .to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
       .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
       .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8)
+      // Items appear at ~half size, pulled toward the centre, FACING EACH OTHER,
+      // then fly out to their slots…
       .fromTo(
         gridItems,
-        { x: toCenterX, y: toCenterY, scale: 0.1, rotationY: faceInward, autoAlpha: 0 },
-        {
-          x: 0,
-          y: 0,
-          scale: 1,
-          rotationY: 0,
-          autoAlpha: 1,
-          duration: 0.7,
-          ease: "power3.out",
-          stagger: { grid: "auto", from: "center", amount: 0.5 },
-        },
+        { x: pullX, y: pullY, scale: 0.5, autoAlpha: 0 },
+        { x: 0, y: 0, scale: 1, autoAlpha: 1, duration: 0.8, ease: "power3.out", stagger: stagCenter },
+        0.85,
+      )
+      // …while the inward rotation flattens MORE SLOWLY, so you clearly see them
+      // face each other first before they turn flat.
+      .fromTo(
+        gridItems,
+        { rotationY: faceInward },
+        { rotationY: 0, duration: 1.15, ease: "power2.inOut", stagger: stagCenter },
         0.85,
       );
   };
@@ -214,8 +220,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     st.isAnimating = true;
     const gridItems = preview.querySelectorAll<HTMLElement>("[data-c3d-grid-item]");
-    // Fly back to the middle like closing a book: items fold to FACE INWARD
-    // toward each other and converge to the grid centre, staggered from the edges.
+    // Close = reverse: items rotate to FACE EACH OTHER again first, then pull
+    // toward the centre as they shrink + fade, staggered from the edges inward.
     const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
     const center = (cols - 1) / 2;
     const grid = preview.querySelector<HTMLElement>(".c3d-grid");
@@ -226,9 +232,13 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       const r = el.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     };
-    const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
-    const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
-    const faceInward = (idx: number) => (center - (idx % cols)) * 42;
+    const pullX = (_i: number, el: Element) => (gcx - itemC(el).x) * 0.4;
+    const pullY = (_i: number, el: Element) => (gcy - itemC(el).y) * 0.4;
+    const faceInward = (idx: number) => {
+      const col = idx % cols;
+      return col < center ? 50 : col > center ? -50 : 0;
+    };
+    const stagEdges = { grid: "auto" as const, from: "edges" as const, amount: 0.35 };
 
     gsap
       .timeline({
@@ -242,25 +252,13 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           st.openIndex = null;
         },
       })
-      .to(
-        gridItems,
-        {
-          x: toCenterX,
-          y: toCenterY,
-          scale: 0.1,
-          rotationY: faceInward,
-          autoAlpha: 0,
-          duration: 0.6,
-          ease: "power3.in",
-          stagger: { grid: "auto", from: "edges", amount: 0.35 },
-        },
-        0,
-      )
-      .to(preview, { opacity: 0, duration: 0.4 }, 0.5)
+      .to(gridItems, { rotationY: faceInward, duration: 0.7, ease: "power2.inOut", stagger: stagEdges }, 0)
+      .to(gridItems, { x: pullX, y: pullY, scale: 0.5, autoAlpha: 0, duration: 0.6, ease: "power2.in", stagger: stagEdges }, 0.2)
+      .to(preview, { opacity: 0, duration: 0.4 }, 0.65)
       .to(
         carousel,
         { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
-        0.55,
+        0.7,
       );
   };
 
