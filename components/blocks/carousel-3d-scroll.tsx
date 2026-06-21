@@ -100,14 +100,15 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         // Title: SplitText char reveal (scrubbed) + parallax drift.
         if (titleSpan) {
           const split = new SplitText(titleSpan, { type: "chars", charsClass: "c3d-char" });
-          // One-shot type-out (NOT scrubbed) so it always finishes and never
-          // freezes mid-typed when you pause scrolling.
+          // Typewriter reveal (matching the reference): each char snaps in
+          // (autoAlpha 0->1, ~instant) staggered left-to-right — clearly a
+          // per-character type effect, not a fade. One-shot so it always
+          // completes and never freezes mid-typed.
           const tReveal = gsap.from(split.chars, {
-            yPercent: 120,
-            opacity: 0,
-            stagger: 0.04,
-            duration: 0.6,
-            ease: "power3.out",
+            autoAlpha: 0,
+            duration: 0.02,
+            ease: "none",
+            stagger: { each: 0.05, from: "start" },
             scrollTrigger: { trigger: scene, start: "top 70%", toggleActions: "play none none reverse" },
           });
           if (tReveal.scrollTrigger) st.triggers.push(tReveal.scrollTrigger);
@@ -152,6 +153,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     preview.classList.add("is-open");
     preview.scrollTop = 0; // always start the grid at the top
     const targetY = window.scrollY + scene.getBoundingClientRect().top;
+    const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
+    const center = (cols - 1) / 2;
 
     gsap
       .timeline({
@@ -162,11 +165,27 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       })
       .to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
       .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
-      .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.85)
+      .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8)
+      // Reference grid-in: items fly in from deep 3D space (z), scaling and
+      // rotating into place, staggered from the centre outward.
       .fromTo(
         gridItems,
-        { yPercent: 25, autoAlpha: 0, clipPath: "inset(100% 0 0 0)" },
-        { yPercent: 0, autoAlpha: 1, clipPath: "inset(0% 0 0 0)", stagger: 0.05, duration: 0.6, ease: "power3.out" },
+        { z: -3500 },
+        { z: 0, duration: 0.5, ease: "expo.out", stagger: { grid: "auto", from: "center", amount: 0.4 } },
+        0.85,
+      )
+      .fromTo(
+        gridItems,
+        { autoAlpha: 0, scale: 0.5, y: 40, rotationY: (idx: number) => ((idx % cols) - center) * 14 },
+        {
+          autoAlpha: 1,
+          scale: 1,
+          y: 0,
+          rotationY: 0,
+          duration: 0.5,
+          ease: "sine.out",
+          stagger: { grid: "auto", from: "center", amount: 0.4 },
+        },
         0.95,
       );
   };
@@ -193,12 +212,16 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           st.openIndex = null;
         },
       })
-      .to(gridItems, { yPercent: 25, autoAlpha: 0, clipPath: "inset(100% 0 0 0)", stagger: 0.03, duration: 0.4 }, 0)
-      .to(preview, { opacity: 0, duration: 0.4 }, 0.2)
+      .to(
+        gridItems,
+        { z: -3500, scale: 0.4, y: 30, autoAlpha: 0, duration: 0.45, ease: "expo.in", stagger: { grid: "auto", from: "edges", amount: 0.25 } },
+        0,
+      )
+      .to(preview, { opacity: 0, duration: 0.4 }, 0.3)
       .to(
         carousel,
         { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
-        0.2,
+        0.35,
       );
   };
 
