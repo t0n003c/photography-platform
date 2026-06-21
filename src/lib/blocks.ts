@@ -204,6 +204,8 @@ const ScrollShowcaseBlock = z.object({
   clusterCount: z.number().int().min(1).max(4).default(4),
   // Show the giant category-name titles.
   showTitles: z.boolean().default(true),
+  // Render style: the cinematic clip-wipe panels, or the on-scroll 3D carousel.
+  style: z.enum(["cinematic", "carousel3d"]).default("cinematic"),
 });
 const InstagramBlock = z.object({
   id,

@@ -12,6 +12,7 @@ import {
   UniformGrid,
 } from "./grids";
 import { Carousel3D } from "./carousel-3d";
+import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { Lightbox } from "./lightbox";
 
 interface GalleryLayout {
@@ -24,7 +25,8 @@ interface GalleryLayout {
     | "mosaic"
     | "carousel3d"
     | "cinematic"
-    | "horizontal-lenis";
+    | "horizontal-lenis"
+    | "carousel-3d-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
@@ -39,6 +41,9 @@ interface GalleryProps {
   layout: GalleryLayout;
   initialCursor?: string | null;
   loadMoreUrl?: string | null;
+  /** The collection this gallery belongs to — needed by layouts that title the
+   *  whole set (e.g. the 3D scroll carousel). */
+  collection?: { name: string; slug: string; kind: "category" | "location" };
 }
 
 interface PageResponse {
@@ -74,6 +79,7 @@ export function Gallery({
   layout,
   initialCursor,
   loadMoreUrl,
+  collection,
 }: GalleryProps) {
   const [photos, setPhotos] = React.useState<PhotoDTO[]>(initialPhotos);
   const [cursor, setCursor] = React.useState<string | null>(
@@ -124,6 +130,18 @@ export function Gallery({
     spacingClass,
     onOpen: openAt,
   };
+
+  // The 3D scroll carousel is a standalone full-bleed experience (it has its own
+  // click-to-open preview grid), so it renders on its own — no load-more/lightbox.
+  if (layout.gridType === "carousel-3d-scroll" && collection) {
+    return (
+      <Carousel3DScroll
+        scenes={[
+          { slug: collection.slug, name: collection.name, kind: collection.kind, photos },
+        ]}
+      />
+    );
+  }
 
   return (
     <div>

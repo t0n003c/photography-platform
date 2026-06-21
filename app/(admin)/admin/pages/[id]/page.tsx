@@ -98,7 +98,7 @@ function makeBlock(type: BlockType): Block {
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
-    case "scrollShowcase": return { id, type, title: "", categoryIds: [], limit: 6, clusterCount: 4, showTitles: true };
+    case "scrollShowcase": return { id, type, title: "", categoryIds: [], limit: 6, clusterCount: 4, showTitles: true, style: "cinematic" };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
@@ -973,6 +973,12 @@ function LeafEditor({
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Style">
+              <Select value={block.style ?? "cinematic"} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                <option value="cinematic">Cinematic wipe</option>
+                <option value="carousel3d">3D carousel (on scroll)</option>
+              </Select>
+            </Field>
             <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
             <Field label="Images per panel">
               <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>

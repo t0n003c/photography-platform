@@ -67,6 +67,7 @@ export default async function LocationPage({
             layout={layout}
             initialCursor={nextCursor}
             loadMoreUrl={`/api/v1/locations/${slug}/photos`}
+            collection={{ name: loc.name, slug, kind: "location" }}
           />
         )}
       </div>

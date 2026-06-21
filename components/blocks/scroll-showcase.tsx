@@ -8,6 +8,9 @@ import {
   ScrollShowcaseClient,
   type ShowcasePanel,
 } from "./scroll-showcase-client";
+import { Carousel3DScroll, type CarouselScene } from "./carousel-3d-scroll";
+
+const RING_SIZE = 10; // photos per 3D-carousel ring
 
 // Cinematic, scroll-driven showcase. Auto-sources published categories (like the
 // Category index block); each becomes a full-screen panel: cover photo as the
@@ -29,6 +32,21 @@ export async function ScrollShowcaseBlock({
           .filter((c): c is (typeof published)[number] => c != null)
       : published.slice(0, block.limit);
   if (categories.length === 0) return null;
+
+  // 3D-carousel style: each category becomes a ring of its photos.
+  if (block.style === "carousel3d") {
+    const scenes = (
+      await Promise.all(
+        categories.map(async (c): Promise<CarouselScene | null> => {
+          const { photos } = await getCategoryPhotos(c.id, null, RING_SIZE);
+          if (photos.length === 0) return null;
+          return { slug: c.slug, name: c.name, kind: "category", photos };
+        }),
+      )
+    ).filter((s): s is CarouselScene => s !== null);
+    if (scenes.length === 0) return null;
+    return <Carousel3DScroll scenes={scenes} />;
+  }
 
   const panels = (
     await Promise.all(

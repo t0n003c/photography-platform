@@ -69,6 +69,7 @@ export default async function CategoryPage({
             layout={layout}
             initialCursor={nextCursor}
             loadMoreUrl={`/api/v1/categories/${slug}/photos`}
+            collection={{ name: cat.name, slug, kind: "category" }}
           />
         )}
       </div>
