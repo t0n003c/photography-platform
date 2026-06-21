@@ -195,7 +195,10 @@ const ScrollShowcaseBlock = z.object({
   type: z.literal("scrollShowcase"),
   // Optional eyebrow label shown small on each panel (blank = none).
   title: z.string().default(""),
-  // Max number of category panels.
+  // Specific categories to show, in this order. Empty = all published
+  // categories automatically (capped by `limit`).
+  categoryIds: z.array(z.string()).default([]),
+  // Max number of category panels (applies only in automatic mode).
   limit: z.number().int().min(1).max(12).default(6),
   // Photos that fly into the cluster per panel (the cover is the background).
   clusterCount: z.number().int().min(1).max(4).default(4),

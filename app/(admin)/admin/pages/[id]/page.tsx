@@ -98,7 +98,7 @@ function makeBlock(type: BlockType): Block {
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
-    case "scrollShowcase": return { id, type, title: "", limit: 6, clusterCount: 4, showTitles: true };
+    case "scrollShowcase": return { id, type, title: "", categoryIds: [], limit: 6, clusterCount: 4, showTitles: true };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
@@ -962,16 +962,16 @@ function LeafEditor({
     case "categoryIndex":
     case "locationIndex":
       return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
-    case "scrollShowcase":
+    case "scrollShowcase": {
+      const cats = targets.category ?? [];
+      const chosen = block.categoryIds;
+      const unchosen = cats.filter((c) => !chosen.includes(c.id));
+      const labelOf = (cid: string) => cats.find((c) => c.id === cid)?.label ?? "(removed)";
+      const auto = chosen.length === 0;
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-            <Field label="Max panels">
-              <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
-                {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-              </Select>
-            </Field>
             <Field label="Images per panel">
               <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
                 <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
@@ -982,13 +982,49 @@ function LeafEditor({
                 <option value="yes">Show category names</option><option value="no">Hide</option>
               </Select>
             </Field>
+            {auto && (
+              <Field label="Max panels">
+                <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
+                  {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
+                </Select>
+              </Field>
+            )}
           </div>
+
+          <Field label="Categories to show">
+            <div className="space-y-1.5">
+              {chosen.length === 0 ? (
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Showing all published categories automatically (up to Max panels). Add categories below to pick and order them yourself.
+                </p>
+              ) : (
+                chosen.map((cid, i) => (
+                  <div key={cid} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
+                    <span className="truncate text-sm">{i + 1}. {labelOf(cid)}</span>
+                    <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                      <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Move down" disabled={i === chosen.length - 1} onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Remove" onClick={() => set({ categoryIds: chosen.filter((x) => x !== cid) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  </div>
+                ))
+              )}
+              {unchosen.length > 0 && (
+                <Select value="" onChange={(e) => e.target.value && set({ categoryIds: [...chosen, e.target.value] })}>
+                  <option value="">＋ Add category…</option>
+                  {unchosen.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </Select>
+              )}
+            </div>
+          </Field>
+
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Cinematic scroll section — each published category becomes a full-screen panel (cover photo, a few photos that fly in, and its name). Manage which categories appear, their order, and covers in{" "}
+            Each category becomes a full-screen panel (cover photo, a few photos that fly in, and its name). Categories with no photos are skipped. Manage covers + which categories are published in{" "}
             <Link href="/admin/categories" className="underline underline-offset-2">Categories</Link>.
           </p>
         </div>
       );
+    }
     case "instagram":
       return (
         <div className="space-y-2">

@@ -16,7 +16,16 @@ export async function ScrollShowcaseBlock({
 }: {
   block: Extract<LeafBlock, { type: "scrollShowcase" }>;
 }) {
-  const categories = (await getPublishedCategories()).slice(0, block.limit);
+  const published = await getPublishedCategories();
+  // Manual selection (in the chosen order) when categoryIds is set; otherwise
+  // all published categories capped by `limit`. Only published categories are
+  // candidates, so an unpublished/deleted pick is simply skipped.
+  const categories =
+    block.categoryIds.length > 0
+      ? block.categoryIds
+          .map((id) => published.find((c) => c.id === id))
+          .filter((c): c is (typeof published)[number] => c != null)
+      : published.slice(0, block.limit);
   if (categories.length === 0) return null;
 
   const panels = (
