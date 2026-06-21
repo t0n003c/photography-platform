@@ -964,7 +964,9 @@ function LeafEditor({
       return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
     case "scrollShowcase": {
       const cats = targets.category ?? [];
-      const chosen = block.categoryIds;
+      // Blocks created before categoryIds existed (or via raw inserts) won't have
+      // it — the editor loads stored blocks without applying schema defaults.
+      const chosen = block.categoryIds ?? [];
       const unchosen = cats.filter((c) => !chosen.includes(c.id));
       const labelOf = (cid: string) => cats.find((c) => c.id === cid)?.label ?? "(removed)";
       const auto = chosen.length === 0;
