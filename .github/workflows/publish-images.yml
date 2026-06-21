@@ -2,15 +2,27 @@ name: Publish images
 
 # Builds the web + worker images and pushes them to GitHub Container Registry
 # (GHCR) so the NAS can pull pre-built images instead of compiling them.
-# ON-DEMAND ONLY to conserve Actions minutes — does NOT run on push to main.
-# Trigger it when you actually want to deploy to the NAS:
-#   • GitHub UI: Actions → "Publish images" → Run workflow (branch: main)
-#   • CLI:       gh workflow run "Publish images" --ref main
-#   • or push a version tag (vX.Y.Z)
+#
+# Runs automatically on every push to main (rebuilds :latest), on version tags
+# (also publishes :X.Y.Z), and on manual dispatch. After a push finishes here,
+# deploy on the NAS with Dockge → Update → Restart (pulls the new :latest).
+#
+# Doc-only changes are skipped (paths-ignore) to save Actions minutes; trigger a
+# manual run from Actions → "Publish images" if you ever need to force a rebuild.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".claude/**"
   workflow_dispatch:
+
+# A newer push supersedes an in-flight build instead of queueing another.
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
