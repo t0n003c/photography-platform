@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, GripVertical, Loader2, Plus, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/dialog";
@@ -22,22 +22,47 @@ function errMsg(err: unknown): string {
 export function MembershipPhotos({
   kind,
   id,
+  coverPhotoId = null,
   onCountChanged,
+  onCoverChanged,
 }: {
   kind: "category" | "location";
   id: string;
+  coverPhotoId?: string | null;
   onCountChanged?: (count: number) => void;
+  onCoverChanged?: (coverPhotoId: string | null) => void;
 }) {
   const { toast } = useToast();
   const base = `/api/v1/admin/${kind === "category" ? "categories" : "locations"}/${id}`;
   const noun = kind === "category" ? "category" : "location";
 
   const [photos, setPhotos] = useState<PhotoDTO[]>([]);
+  const [cover, setCover] = useState<string | null>(coverPhotoId);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+
+  // Keep the cover in sync if the parent opens the manager for a different item.
+  useEffect(() => {
+    setCover(coverPhotoId);
+  }, [coverPhotoId]);
+
+  // Choose / clear the cover (the Scroll Showcase background for categories).
+  const setCoverPhoto = async (pid: string) => {
+    const next = cover === pid ? null : pid;
+    const prev = cover;
+    setCover(next);
+    try {
+      await api.patch(base, { coverPhotoId: next });
+      onCoverChanged?.(next);
+      toast(next ? "Cover set" : "Cover cleared", "success");
+    } catch (err) {
+      setCover(prev);
+      toast(errMsg(err), "error");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,6 +124,12 @@ export function MembershipPhotos({
       const next = photos.filter((p) => p.id !== pid);
       setPhotos(next);
       onCountChanged?.(next.length);
+      // If the removed photo was the cover, clear it so it falls back to first.
+      if (cover === pid) {
+        setCover(null);
+        onCoverChanged?.(null);
+        await api.patch(base, { coverPhotoId: null });
+      }
       toast("Photo removed", "success");
     } catch (err) {
       toast(errMsg(err), "error");
@@ -126,9 +157,12 @@ export function MembershipPhotos({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Drag tiles, or use the arrows, to reorder. The first photo is the{" "}
-          <span className="font-medium text-[hsl(var(--foreground))]">cover</span> and the
-          first shown in galleries, the {noun} page, and the Scroll Showcase.
+          Drag tiles, or use the arrows, to set the order. Click the star to choose the{" "}
+          <span className="font-medium text-[hsl(var(--foreground))]">cover</span> —{" "}
+          {kind === "category"
+            ? "shown as the background in the Scroll Showcase"
+            : "this location's cover image"}
+          . If none is chosen, the first photo is used.
         </p>
         <div className="flex items-center gap-2">
           {savingOrder && (
@@ -163,7 +197,7 @@ export function MembershipPhotos({
         <ol className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {photos.map((photo, index) => {
             const hasVariants = photo.variants.length > 0;
-            const isCover = index === 0;
+            const isCover = photo.id === cover;
             return (
               <li
                 key={photo.id}
@@ -195,22 +229,22 @@ export function MembershipPhotos({
                     <Badge tone="amber">Processing</Badge>
                   </div>
                 )}
+                <span
+                  aria-hidden="true"
+                  className="absolute left-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-black/60 px-1 text-[10px] font-semibold text-white"
+                >
+                  {index + 1}
+                </span>
                 {isCover ? (
-                  <span className="absolute left-2 top-2 rounded-full bg-[hsl(var(--primary))] px-2 py-0.5 text-[10px] font-semibold text-[hsl(var(--primary-foreground))]">
+                  <span className="absolute right-1 top-1 rounded-full bg-[hsl(var(--primary))] px-2 py-0.5 text-[10px] font-semibold text-[hsl(var(--primary-foreground))]">
                     Cover
                   </span>
                 ) : (
-                  <span
+                  <GripVertical
                     aria-hidden="true"
-                    className="absolute left-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-black/60 px-1 text-[10px] font-semibold text-white"
-                  >
-                    {index + 1}
-                  </span>
+                    className="absolute right-1 top-1 h-4 w-4 text-white/80 drop-shadow"
+                  />
                 )}
-                <GripVertical
-                  aria-hidden="true"
-                  className="absolute right-1 top-1 h-4 w-4 text-white/80 drop-shadow"
-                />
                 <div className="absolute inset-x-1 bottom-1 flex items-center justify-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                   <button
                     type="button"
@@ -229,6 +263,15 @@ export function MembershipPhotos({
                     className="flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
                   >
                     <ArrowDown className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={isCover ? "Clear cover" : `Set ${photo.altText ?? "photo"} as cover`}
+                    disabled={busy}
+                    onClick={() => setCoverPhoto(photo.id)}
+                    className="flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black/80 disabled:opacity-30"
+                  >
+                    <Star className={"h-3.5 w-3.5 " + (isCover ? "fill-current text-yellow-300" : "")} />
                   </button>
                   <button
                     type="button"

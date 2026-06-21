@@ -2,6 +2,7 @@ import {
   getPublishedCategories,
   getCategoryPhotos,
 } from "@/src/db/queries/public";
+import { getPhotosByIds } from "@/src/db/queries/pages";
 import type { LeafBlock } from "@/src/lib/blocks";
 import {
   ScrollShowcaseClient,
@@ -32,20 +33,40 @@ export async function ScrollShowcaseBlock({
   const panels = (
     await Promise.all(
       categories.map(async (c): Promise<ShowcasePanel | null> => {
+        // Fetch a couple extra so we can drop the cover from the cluster and
+        // still have enough images flying in.
         const { photos } = await getCategoryPhotos(
           c.id,
           null,
-          block.clusterCount + 1,
+          block.clusterCount + 2,
         );
         if (photos.length === 0) return null;
-        const [background, ...rest] = photos;
+
+        // Background = the category's chosen cover photo; fall back to the first
+        // photo when no cover is set (or the cover isn't usable).
+        let background = photos[0];
+        if (c.coverPhotoId) {
+          const inList = photos.find((p) => p.id === c.coverPhotoId);
+          if (inList) {
+            background = inList;
+          } else {
+            const extra = await getPhotosByIds([c.coverPhotoId]);
+            const cover = extra.get(c.coverPhotoId);
+            if (cover && cover.variants.length > 0) background = cover;
+          }
+        }
+
+        // Cluster = the other photos (cover excluded so it isn't shown twice).
+        const cluster = photos
+          .filter((p) => p.id !== background.id)
+          .slice(0, block.clusterCount);
         return {
           slug: c.slug,
           name: c.name,
           background,
-          // Fall back to the cover itself if the category has only one photo, so
-          // there's always at least one image flying in.
-          cluster: rest.length > 0 ? rest : [background],
+          // Fall back to the cover itself if it's the only photo, so there's
+          // always at least one image flying in.
+          cluster: cluster.length > 0 ? cluster : [background],
         };
       }),
     )

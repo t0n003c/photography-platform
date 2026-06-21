@@ -20,6 +20,7 @@ interface Category {
   sortOrder: number;
   isPublished: boolean;
   photoCount?: number;
+  coverPhotoId?: string | null;
 }
 
 interface Location {
@@ -30,6 +31,7 @@ interface Location {
   sortOrder: number;
   isPublished: boolean;
   photoCount?: number;
+  coverPhotoId?: string | null;
 }
 
 function errMsg(err: unknown): string {
@@ -413,10 +415,18 @@ function TaxonomyCard<T extends Category | Location>({
           <MembershipPhotos
             kind={kind}
             id={managing.id}
+            coverPhotoId={managing.coverPhotoId ?? null}
             onCountChanged={(count) =>
               setItems((prev) =>
                 prev.map((c) =>
                   c.id === managing.id ? ({ ...c, photoCount: count } as T) : c,
+                ),
+              )
+            }
+            onCoverChanged={(coverId) =>
+              setItems((prev) =>
+                prev.map((c) =>
+                  c.id === managing.id ? ({ ...c, coverPhotoId: coverId } as T) : c,
                 ),
               )
             }
