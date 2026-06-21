@@ -27,6 +27,15 @@ function pickUrl(photo: PhotoDTO, buckets: string[]): string | null {
 const BG_BUCKETS = ["xlarge", "large", "medium"];
 const CLUSTER_BUCKETS = ["medium", "small", "large"];
 
+// Soft pastel tints applied to the accent (bottom) title word, matching the
+// reference's color-0…3 palette. Cycled per panel.
+const ACCENTS = ["#b8e6da", "#ffa6a6", "#b3d3ff", "#fff2b3"];
+
+// Editorial display type for the giant straddling titles (reference look):
+// Playfair italic ≈ the reference's Doner Display, uppercase, letter-spaced.
+const TITLE_CLASS =
+  "font-playfair text-[13vw] font-medium italic uppercase leading-[0.82] tracking-[0.03em] whitespace-nowrap will-change-transform sm:text-[12vw]";
+
 export function ScrollShowcaseClient({
   panels,
   title,
@@ -121,6 +130,9 @@ export function ScrollShowcaseClient({
     <div ref={rootRef} className="relative bg-[hsl(var(--background))]">
       {panels.map((p, idx) => {
         const bgUrl = pickUrl(p.background, BG_BUCKETS);
+        // Alternate which corner the index/name occupy, like the reference.
+        const flip = idx % 2 === 1;
+        const accent = ACCENTS[idx % ACCENTS.length];
         return (
           <article
             key={p.slug + idx}
@@ -173,36 +185,30 @@ export function ScrollShowcaseClient({
               })}
             </div>
 
-            {/* Eyebrow label (static) */}
+            {/* Eyebrow label (small, centered top) */}
             {title && (
-              <div className="absolute left-[5vw] top-[6vh] z-10 text-xs font-medium uppercase tracking-[0.25em] text-white mix-blend-difference">
+              <div className="absolute inset-x-0 top-[5vh] z-20 text-center text-[0.7rem] font-medium uppercase tracking-[0.3em] text-white/85">
                 {title}
               </div>
             )}
 
-            {/* Title */}
+            {/* Editorial title — two giant italic words straddling top & bottom,
+                alternating corners, the name tinted (reference styling). */}
             {showTitles && (
-              <Link
-                href={`/categories/${p.slug}`}
-                className="absolute inset-x-0 bottom-[7%] z-10 block px-[5vw] text-white mix-blend-difference"
-              >
-                <div className="overflow-hidden">
-                  <div
-                    data-ss-line
-                    className="text-xs font-medium uppercase tracking-[0.3em] will-change-transform"
-                  >
-                    {String(idx + 1).padStart(2, "0")} / {String(panels.length).padStart(2, "0")}
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-[4vw] py-[8vh]">
+                <div className={`overflow-hidden ${flip ? "self-end text-right" : "self-start text-left"}`}>
+                  <div data-ss-line className={`${TITLE_CLASS} text-white`}>
+                    {String(idx + 1).padStart(2, "0")}
                   </div>
                 </div>
-                <div className="overflow-hidden">
-                  <div
-                    data-ss-line
-                    className="font-serif text-[14vw] font-medium uppercase leading-[0.95] tracking-tight will-change-transform sm:text-[12vw]"
-                  >
-                    {p.name}
-                  </div>
+                <div className={`overflow-hidden ${flip ? "self-start text-left" : "self-end text-right"}`}>
+                  <Link href={`/categories/${p.slug}`} className="pointer-events-auto block">
+                    <div data-ss-line className={TITLE_CLASS} style={{ color: accent }}>
+                      {p.name}
+                    </div>
+                  </Link>
                 </div>
-              </Link>
+              </div>
             )}
           </article>
         );
