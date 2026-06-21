@@ -186,6 +186,22 @@ const LocationIndexBlock = z.object({
   type: z.literal("locationIndex"),
   title: z.string().default("By location"),
 });
+// Cinematic, scroll-driven showcase: each published category becomes a
+// full-screen pinned panel (cover photo background + a few of its photos that
+// fly into a cluster + its name as a giant title). Auto-sourced like the index
+// blocks; only presentation knobs are stored.
+const ScrollShowcaseBlock = z.object({
+  id,
+  type: z.literal("scrollShowcase"),
+  // Optional eyebrow label shown small on each panel (blank = none).
+  title: z.string().default(""),
+  // Max number of category panels.
+  limit: z.number().int().min(1).max(12).default(6),
+  // Photos that fly into the cluster per panel (the cover is the background).
+  clusterCount: z.number().int().min(1).max(4).default(4),
+  // Show the giant category-name titles.
+  showTitles: z.boolean().default(true),
+});
 const InstagramBlock = z.object({
   id,
   type: z.literal("instagram"),
@@ -238,6 +254,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   DividerBlock,
   CategoryIndexBlock,
   LocationIndexBlock,
+  ScrollShowcaseBlock,
   InstagramBlock,
   FaqBlock,
   LogoBlock,
@@ -305,6 +322,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   columns: "Columns",
   categoryIndex: "Category index",
   locationIndex: "Location index",
+  scrollShowcase: "Scroll showcase",
   instagram: "Instagram feed",
   faq: "FAQ",
   logos: "Logos",

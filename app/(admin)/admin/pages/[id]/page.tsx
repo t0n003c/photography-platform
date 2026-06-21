@@ -80,7 +80,7 @@ const newBlockId = () =>
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
   "quote", "cta", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
-  "instagram", "columns",
+  "scrollShowcase", "instagram", "columns",
 ];
 
 function makeBlock(type: BlockType): Block {
@@ -98,6 +98,7 @@ function makeBlock(type: BlockType): Block {
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
+    case "scrollShowcase": return { id, type, title: "", limit: 6, clusterCount: 4, showTitles: true };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
@@ -411,6 +412,8 @@ function blockSummary(block: Block): string {
       return `${block.style} · ${block.items.length} questions`;
     case "logos":
       return `${block.style} · ${block.photoIds.length} logos`;
+    case "scrollShowcase":
+      return `up to ${block.limit} categories`;
     default:
       return "";
   }
@@ -959,6 +962,33 @@ function LeafEditor({
     case "categoryIndex":
     case "locationIndex":
       return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
+    case "scrollShowcase":
+      return (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Max panels">
+              <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
+                {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+            </Field>
+            <Field label="Images per panel">
+              <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              </Select>
+            </Field>
+            <Field label="Titles">
+              <Select value={block.showTitles ? "yes" : "no"} onChange={(e) => set({ showTitles: e.target.value === "yes" })}>
+                <option value="yes">Show category names</option><option value="no">Hide</option>
+              </Select>
+            </Field>
+          </div>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Cinematic scroll section — each published category becomes a full-screen panel (cover photo, a few photos that fly in, and its name). Manage which categories appear, their order, and covers in{" "}
+            <Link href="/admin/categories" className="underline underline-offset-2">Categories</Link>.
+          </p>
+        </div>
+      );
     case "instagram":
       return (
         <div className="space-y-2">
