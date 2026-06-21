@@ -57,7 +57,13 @@ services:
     logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
 
   seaweedfs:
-    image: chrislusf/seaweedfs:latest
+    # Pinned (not :latest) so a `docker compose pull` can't swap in a newer image
+    # that breaks the stack unattended. Bump deliberately when you mean to.
+    image: chrislusf/seaweedfs:4.34
+    # Run as root: the data volume + mounted s3.json are root-owned (created by the
+    # original root-running image). Newer SeaweedFS images default to a non-root
+    # user that then can't read s3.json or write /data — so we force root here.
+    user: "0:0"
     restart: unless-stopped
     command: "server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json -s3.port=8333 -ip=seaweedfs -master.volumeSizeLimitMB=2048 -volume.max=0"
     volumes:
@@ -76,7 +82,8 @@ services:
   # "running" in Container Manager/Dockge, not exited). web/worker wait on its
   # health, not its exit.
   seaweedfs-init:
-    image: minio/mc:latest
+    # Pinned (not :latest) so a pull can't drift this sidecar mid-deploy.
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     restart: unless-stopped
     depends_on:
       seaweedfs:
