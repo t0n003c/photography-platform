@@ -156,11 +156,12 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     preview.classList.add("is-open");
     preview.scrollTop = 0; // always start the grid at the top
     const targetY = window.scrollY + scene.getBoundingClientRect().top;
+    // Reset any leftover transforms, then measure so items open FROM THE MIDDLE
+    // OUT: each starts at the grid centre, angled to FACE INWARD toward each
+    // other (like the reference), then flies to its slot rotating flat.
+    gsap.set(gridItems, { clearProps: "all" });
     const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
     const center = (cols - 1) / 2;
-    // Reset any leftover transforms, then measure so items open FROM THE MIDDLE
-    // OUT: each starts collapsed + folded at the grid centre and flies to its slot.
-    gsap.set(gridItems, { clearProps: "all" });
     const grid = preview.querySelector<HTMLElement>(".c3d-grid");
     const grect = grid?.getBoundingClientRect();
     const gcx = grect ? grect.left + grect.width / 2 : 0;
@@ -171,7 +172,9 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     };
     const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
     const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
-    const fold = (idx: number) => ((idx % cols) - center) * 40;
+    // Left items rotate to face right, right items to face left → they face each
+    // other (toward the centre), matching the reference.
+    const faceInward = (idx: number) => (center - (idx % cols)) * 42;
 
     gsap
       .timeline({
@@ -185,14 +188,14 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8)
       .fromTo(
         gridItems,
-        { x: toCenterX, y: toCenterY, scale: 0.1, rotationY: fold, autoAlpha: 0 },
+        { x: toCenterX, y: toCenterY, scale: 0.1, rotationY: faceInward, autoAlpha: 0 },
         {
           x: 0,
           y: 0,
           scale: 1,
           rotationY: 0,
           autoAlpha: 1,
-          duration: 0.65,
+          duration: 0.7,
           ease: "power3.out",
           stagger: { grid: "auto", from: "center", amount: 0.5 },
         },
@@ -211,8 +214,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     st.isAnimating = true;
     const gridItems = preview.querySelectorAll<HTMLElement>("[data-c3d-grid-item]");
-    // Fly back to the middle like closing a book: items fold + converge to the
-    // grid centre, staggered from the edges inward.
+    // Fly back to the middle like closing a book: items fold to FACE INWARD
+    // toward each other and converge to the grid centre, staggered from the edges.
     const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
     const center = (cols - 1) / 2;
     const grid = preview.querySelector<HTMLElement>(".c3d-grid");
@@ -225,7 +228,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     };
     const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
     const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
-    const fold = (idx: number) => ((idx % cols) - center) * 40;
+    const faceInward = (idx: number) => (center - (idx % cols)) * 42;
 
     gsap
       .timeline({
@@ -245,9 +248,9 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           x: toCenterX,
           y: toCenterY,
           scale: 0.1,
-          rotationY: fold,
+          rotationY: faceInward,
           autoAlpha: 0,
-          duration: 0.55,
+          duration: 0.6,
           ease: "power3.in",
           stagger: { grid: "auto", from: "edges", amount: 0.35 },
         },
