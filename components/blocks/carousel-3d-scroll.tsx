@@ -100,12 +100,15 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         // Title: SplitText char reveal (scrubbed) + parallax drift.
         if (titleSpan) {
           const split = new SplitText(titleSpan, { type: "chars", charsClass: "c3d-char" });
+          // One-shot type-out (NOT scrubbed) so it always finishes and never
+          // freezes mid-typed when you pause scrolling.
           const tReveal = gsap.from(split.chars, {
             yPercent: 120,
             opacity: 0,
-            stagger: 0.03,
+            stagger: 0.04,
+            duration: 0.6,
             ease: "power3.out",
-            scrollTrigger: { trigger: scene, start: "top 85%", end: "top 35%", scrub: true },
+            scrollTrigger: { trigger: scene, start: "top 70%", toggleActions: "play none none reverse" },
           });
           if (tReveal.scrollTrigger) st.triggers.push(tReveal.scrollTrigger);
         }
@@ -147,6 +150,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     st.triggers.forEach((t) => t.disable(false));
     document.body.style.overflow = "hidden";
     preview.classList.add("is-open");
+    preview.scrollTop = 0; // always start the grid at the top
     const targetY = window.scrollY + scene.getBoundingClientRect().top;
 
     gsap
@@ -240,7 +244,12 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
             </div>
 
             {/* Full-screen preview grid (faithful reference transition target) */}
-            <div data-c3d-preview className="c3d-preview" style={{ ["--c3d-cols" as string]: cols }}>
+            <div
+              data-c3d-preview
+              data-lenis-prevent
+              className="c3d-preview"
+              style={{ ["--c3d-cols" as string]: cols }}
+            >
               <header className="c3d-preview-header">
                 <h3 className="c3d-preview-title">{scene.name}</h3>
                 <button type="button" className="c3d-close" onClick={() => closePreview(si)}>

@@ -199,7 +199,10 @@
 /* Click-to-open full-screen preview grid */
 .c3d-preview {
   position: fixed; inset: 0; z-index: 60; padding: 6vh 8vw; overflow-y: auto;
-  display: grid; align-content: center; gap: 1.25rem;
+  -webkit-overflow-scrolling: touch;
+  /* "safe center" centers when it fits but falls back to top-aligned when the
+     grid is taller than the viewport, so the top row is never clipped/unreachable. */
+  display: grid; align-content: safe center; gap: 1.25rem;
   background: hsl(var(--background)); opacity: 0; pointer-events: none;
 }
 .c3d-preview.is-open { pointer-events: auto; }
