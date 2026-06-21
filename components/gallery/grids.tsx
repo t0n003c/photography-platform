@@ -234,17 +234,27 @@ export function HorizontalLenisGrid({ photos, overlay = "minimal" }: GridProps) 
     else l.start();
   }, [activeIndex]);
 
-  // Collapse the row's images (clip away) while the detail is open, and expand
-  // them back on close — mirroring the reference's open/close transition.
+  // While the detail is open, collapse the OTHER images (clip away) and expand
+  // them back on close. The CLICKED image is NOT collapsed — it's hidden,
+  // because it flies to/from the full view as a separate morphing copy in the
+  // overlay. It's restored only once the overlay has fully closed (activeIndex
+  // cleared), so the row thumbnail and the morph hand off seamlessly.
   React.useEffect(() => {
     const content = contentRef.current;
     if (!content || reduce) return;
     const items = content.querySelectorAll<HTMLElement>("[data-hl-item]");
-    items.forEach((el) => {
-      el.style.transition = "clip-path 0.7s cubic-bezier(0.76, 0, 0.24, 1)";
-      el.style.clipPath = open ? "inset(100% 0 0 0)" : "inset(0% 0 0 0)";
+    items.forEach((el, i) => {
+      if (i === activeIndex) {
+        el.style.transition = "none";
+        el.style.clipPath = "inset(0% 0 0 0)";
+        el.style.opacity = "0";
+      } else {
+        el.style.opacity = "";
+        el.style.transition = "clip-path 0.7s cubic-bezier(0.76, 0, 0.24, 1)";
+        el.style.clipPath = open ? "inset(100% 0 0 0)" : "inset(0% 0 0 0)";
+      }
     });
-  }, [open, reduce]);
+  }, [open, activeIndex, reduce]);
 
   return (
     <>
