@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Images, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Label, Textarea } from "@/components/ui/form";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
+import { MembershipPhotos } from "@/components/admin/membership-photos";
 import { api, ApiError } from "@/src/lib/api-client";
 
 interface Category {
@@ -18,6 +19,7 @@ interface Category {
   description: string | null;
   sortOrder: number;
   isPublished: boolean;
+  photoCount?: number;
 }
 
 interface Location {
@@ -27,6 +29,7 @@ interface Location {
   region: string | null;
   sortOrder: number;
   isPublished: boolean;
+  photoCount?: number;
 }
 
 function errMsg(err: unknown): string {
@@ -177,6 +180,7 @@ function TaxonomyCard<T extends Category | Location>({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
+  const [managing, setManaging] = useState<T | null>(null);
 
   const path = kind === "category" ? "categories" : "locations";
 
@@ -240,7 +244,7 @@ function TaxonomyCard<T extends Category | Location>({
       // from the submitted fields + returned id (don't read a non-existent
       // res.data, which previously appended `undefined` and crashed the list).
       const res = await api.post<{ id: string }>(`/api/v1/admin/${path}`, body);
-      const item = { ...body, id: res.id, sortOrder: 0 } as unknown as T;
+      const item = { ...body, id: res.id, sortOrder: 0, photoCount: 0 } as unknown as T;
       setItems((prev) => [...prev, item]);
       toast("Created", "success");
     } catch (err) {
@@ -356,6 +360,15 @@ function TaxonomyCard<T extends Category | Location>({
                   <Button
                     size="sm"
                     variant="outline"
+                    aria-label={`Manage photos (${item.photoCount ?? 0})`}
+                    onClick={() => setManaging(item)}
+                  >
+                    <Images className="h-4 w-4" />
+                    {item.photoCount ?? 0}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => setEditing(item)}
                   >
                     Edit
@@ -389,6 +402,26 @@ function TaxonomyCard<T extends Category | Location>({
           onClose={() => setEditing(null)}
           onSubmit={(form) => update(editing.id, form)}
         />
+      )}
+      {managing && (
+        <Modal
+          open
+          onClose={() => setManaging(null)}
+          title={`Photos — ${managing.name}`}
+          className="w-[min(94vw,64rem)]"
+        >
+          <MembershipPhotos
+            kind={kind}
+            id={managing.id}
+            onCountChanged={(count) =>
+              setItems((prev) =>
+                prev.map((c) =>
+                  c.id === managing.id ? ({ ...c, photoCount: count } as T) : c,
+                ),
+              )
+            }
+          />
+        </Modal>
       )}
     </Card>
   );
