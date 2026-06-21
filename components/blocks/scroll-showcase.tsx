@@ -45,27 +45,34 @@ export async function ScrollShowcaseBlock({
         // Background = the category's chosen cover photo; fall back to the first
         // photo when no cover is set (or the cover isn't usable).
         let background = photos[0];
+        let usedExplicitCover = false;
         if (c.coverPhotoId) {
           const inList = photos.find((p) => p.id === c.coverPhotoId);
           if (inList) {
             background = inList;
+            usedExplicitCover = true;
           } else {
             const extra = await getPhotosByIds([c.coverPhotoId]);
             const cover = extra.get(c.coverPhotoId);
-            if (cover && cover.variants.length > 0) background = cover;
+            if (cover && cover.variants.length > 0) {
+              background = cover;
+              usedExplicitCover = true;
+            }
           }
         }
 
-        // Cluster = the other photos (cover excluded so it isn't shown twice).
-        const cluster = photos
-          .filter((p) => p.id !== background.id)
-          .slice(0, block.clusterCount);
+        // Only drop the photo from the cluster when it's an EXPLICIT cover, so it
+        // isn't shown twice. With no cover, the background is just the first photo
+        // as a fallback — keep it in the cluster so the first photo isn't skipped.
+        const pool = usedExplicitCover
+          ? photos.filter((p) => p.id !== background.id)
+          : photos;
+        const cluster = pool.slice(0, block.clusterCount);
         return {
           slug: c.slug,
           name: c.name,
           background,
-          // Fall back to the cover itself if it's the only photo, so there's
-          // always at least one image flying in.
+          // Always keep at least one image flying in.
           cluster: cluster.length > 0 ? cluster : [background],
         };
       }),
