@@ -1,15 +1,39 @@
 import { z } from "zod";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { requireRole } from "@/src/auth/session";
 import { ok, notFound, parseJson } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
-import { location, photoLocation } from "@/src/db/schema";
+import { location, photoLocation, photo } from "@/src/db/schema";
+import { serializePhotos } from "@/src/db/queries/photos";
 
 export const dynamic = "force-dynamic";
 
 const Body = z.object({ photoIds: z.array(z.string().min(1)).min(1) });
+const OrderSchema = z.object({
+  items: z.array(z.object({ photoId: z.string(), sortOrder: z.number().int() })),
+});
+
+// GET — photos in the location, in display order (first = cover).
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const a = await requireRole("admin");
+  if (a.error) return a.error;
+  const { id } = await ctx.params;
+
+  const rows = await db
+    .select({ photo })
+    .from(photoLocation)
+    .innerJoin(photo, eq(photoLocation.photoId, photo.id))
+    .where(and(eq(photoLocation.locationId, id), isNull(photo.deletedAt)))
+    .orderBy(asc(photoLocation.sortOrder), asc(photo.id));
+
+  const data = await serializePhotos(rows.map((r) => r.photo));
+  return ok({ data });
+}
 
 // POST — tag photos with a location.
 export async function POST(
@@ -86,4 +110,33 @@ export async function DELETE(
     metadata: { count: parsed.data.photoIds.length },
   });
   return ok({ removed: parsed.data.photoIds.length });
+}
+
+// PUT — reorder: set sortOrder for the given photos (first = cover).
+export async function PUT(
+  req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const a = await requireRole("admin");
+  if (a.error) return a.error;
+  const { id } = await ctx.params;
+
+  const parsed = await parseJson(req, OrderSchema);
+  if ("error" in parsed) return parsed.error;
+
+  await db.transaction(async (tx) => {
+    for (const it of parsed.data.items) {
+      await tx
+        .update(photoLocation)
+        .set({ sortOrder: it.sortOrder })
+        .where(
+          and(
+            eq(photoLocation.locationId, id),
+            eq(photoLocation.photoId, it.photoId),
+          ),
+        );
+    }
+  });
+
+  return ok({ reordered: parsed.data.items.length });
 }

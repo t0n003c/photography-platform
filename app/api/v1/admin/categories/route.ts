@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { requireRole } from "@/src/auth/session";
 import { created, conflict, ok, parseJson } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { newId } from "@/src/lib/id";
 import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
-import { collection } from "@/src/db/schema";
+import { collection, collectionPhoto } from "@/src/db/schema";
 import { invalidate, CACHE_KEYS } from "@/src/lib/cache";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,14 @@ export async function GET() {
     .from(collection)
     .orderBy(asc(collection.sortOrder));
 
-  return ok({ data: rows });
+  const counts = await db
+    .select({ id: collectionPhoto.collectionId, n: sql<number>`count(*)` })
+    .from(collectionPhoto)
+    .groupBy(collectionPhoto.collectionId);
+  const countMap = new Map(counts.map((c) => [c.id, Number(c.n)]));
+
+  const data = rows.map((r) => ({ ...r, photoCount: countMap.get(r.id) ?? 0 }));
+  return ok({ data });
 }
 
 // POST — create a category.
