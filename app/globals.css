@@ -215,7 +215,7 @@
   background: none; border: 0; cursor: pointer; font: inherit; color: hsl(var(--foreground));
   text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; white-space: nowrap;
 }
-.c3d-grid { display: grid; grid-template-columns: repeat(var(--c3d-cols, 4), minmax(80px, 1fr)); gap: 1.5rem; perspective: 1200px; }
+.c3d-grid { display: grid; grid-template-columns: repeat(var(--c3d-cols, 4), minmax(80px, 1fr)); gap: 1.5rem; perspective: 900px; }
 .c3d-grid-item { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; transform-style: preserve-3d; will-change: transform, opacity; }
 .c3d-grid-img { width: 100%; aspect-ratio: 4/5; background-size: cover; background-position: 50% 50%; border-radius: 4px; }
 .c3d-grid-cap { font-size: 0.78rem; color: hsl(var(--muted-foreground)); }

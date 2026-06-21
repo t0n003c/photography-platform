@@ -160,53 +160,44 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     // OUT: each starts at the grid centre, angled to FACE INWARD toward each
     // other (like the reference), then flies to its slot rotating flat.
     gsap.set(gridItems, { clearProps: "all" });
-    const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
-    const center = (cols - 1) / 2;
-    const grid = preview.querySelector<HTMLElement>(".c3d-grid");
-    const grect = grid?.getBoundingClientRect();
-    const gcx = grect ? grect.left + grect.width / 2 : 0;
-    const gcy = grect ? grect.top + grect.height / 2 : 0;
-    const itemC = (el: Element) => {
+    // Faithful replication of the reference reveal: each item flies forward from
+    // deep z (-3500) and SWINGS into place — rotationY ±100° around an origin
+    // pushed BEHIND it by |dx|·0.8px (so it arcs like a hinge, not a flat spin) —
+    // rising from a half-pull in y toward the viewport centre. Items keep their
+    // grid X. Per-item distance-based stagger (edges first on open).
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const data = Array.from(gridItems).map((el) => {
       const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    };
-    // Gentle pull toward the centre (kept visible, not piled to a point).
-    const pullX = (_i: number, el: Element) => (gcx - itemC(el).x) * 0.4;
-    const pullY = (_i: number, el: Element) => (gcy - itemC(el).y) * 0.4;
-    // Left items face right (+), right items face left (-): a clear, uniform
-    // "facing each other" angle (not so steep they go edge-on).
-    const faceInward = (idx: number) => {
-      const col = idx % cols;
-      return col < center ? 50 : col > center ? -50 : 0;
-    };
-    const stagCenter = { grid: "auto" as const, from: "center" as const, amount: 0.5 };
+      const ecx = r.left + r.width / 2;
+      const ecy = r.top + r.height / 2;
+      return { el, dx: cx - ecx, dy: cy - ecy, dist: Math.hypot(cx - ecx, cy - ecy), isLeft: ecx < cx };
+    });
+    const maxDist = Math.max(...data.map((d) => d.dist), 1);
+    const totalStagger = 0.025 * (data.length - 1);
 
-    gsap
-      .timeline({
-        onComplete: () => {
-          st.isAnimating = false;
-          st.openIndex = i;
-        },
-      })
-      .to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
+    const tl = gsap.timeline({
+      onComplete: () => {
+        st.isAnimating = false;
+        st.openIndex = i;
+      },
+    });
+    tl.to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
       .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
-      .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8)
-      // Items appear at ~half size, pulled toward the centre, FACING EACH OTHER,
-      // then fly out to their slots…
-      .fromTo(
-        gridItems,
-        { x: pullX, y: pullY, scale: 0.5, autoAlpha: 0 },
-        { x: 0, y: 0, scale: 1, autoAlpha: 1, duration: 0.8, ease: "power3.out", stagger: stagCenter },
-        0.85,
-      )
-      // …while the inward rotation flattens MORE SLOWLY, so you clearly see them
-      // face each other first before they turn flat.
-      .fromTo(
-        gridItems,
-        { rotationY: faceInward },
-        { rotationY: 0, duration: 1.15, ease: "power2.inOut", stagger: stagCenter },
-        0.85,
+      .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8);
+
+    const base = 0.95;
+    data.forEach(({ el, dx, dy, dist, isLeft }) => {
+      const delay = (1 - dist / maxDist) * totalStagger; // 'in': edges first
+      const rotationY = isLeft ? 100 : -100;
+      tl.fromTo(
+        el,
+        { transformOrigin: `50% 50% ${-Math.abs(dx) * 0.8}px`, autoAlpha: 0, y: dy * 0.5, scale: 0.5, rotationY },
+        { y: 0, scale: 1, rotationY: 0, autoAlpha: 1, duration: 0.45, ease: "sine" },
+        base + delay + 0.1,
       );
+      tl.fromTo(el, { z: -3500 }, { z: 0, duration: 0.35, ease: "expo" }, base + delay);
+    });
   };
 
   const closePreview = (i: number) => {
@@ -220,46 +211,54 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     st.isAnimating = true;
     const gridItems = preview.querySelectorAll<HTMLElement>("[data-c3d-grid-item]");
-    // Close = reverse: items rotate to FACE EACH OTHER again first, then pull
-    // toward the centre as they shrink + fade, staggered from the edges inward.
-    const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
-    const center = (cols - 1) / 2;
-    const grid = preview.querySelector<HTMLElement>(".c3d-grid");
-    const grect = grid?.getBoundingClientRect();
-    const gcx = grect ? grect.left + grect.width / 2 : 0;
-    const gcy = grect ? grect.top + grect.height / 2 : 0;
-    const itemC = (el: Element) => {
+    // Reverse of the reference reveal: each item swings back (rotationY ±100°
+    // around the pushed-back origin), drops a half-y toward the centre, shrinks +
+    // fades, then recedes into deep z. Per-item stagger (centre first on close).
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const data = Array.from(gridItems).map((el) => {
       const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    };
-    const pullX = (_i: number, el: Element) => (gcx - itemC(el).x) * 0.4;
-    const pullY = (_i: number, el: Element) => (gcy - itemC(el).y) * 0.4;
-    const faceInward = (idx: number) => {
-      const col = idx % cols;
-      return col < center ? 50 : col > center ? -50 : 0;
-    };
-    const stagEdges = { grid: "auto" as const, from: "edges" as const, amount: 0.35 };
+      const ecx = r.left + r.width / 2;
+      const ecy = r.top + r.height / 2;
+      return { el, dx: cx - ecx, dy: cy - ecy, dist: Math.hypot(cx - ecx, cy - ecy), isLeft: ecx < cx };
+    });
+    const maxDist = Math.max(...data.map((d) => d.dist), 1);
+    const totalStagger = 0.025 * (data.length - 1);
 
-    gsap
-      .timeline({
-        onComplete: () => {
-          gsap.set(gridItems, { clearProps: "all" });
-          preview.classList.remove("is-open");
-          st.triggers.forEach((t) => t.enable());
-          ScrollTrigger.refresh();
-          document.body.style.overflow = "";
-          st.isAnimating = false;
-          st.openIndex = null;
+    const tl = gsap.timeline({
+      onComplete: () => {
+        gsap.set(gridItems, { clearProps: "all" });
+        preview.classList.remove("is-open");
+        st.triggers.forEach((t) => t.enable());
+        ScrollTrigger.refresh();
+        document.body.style.overflow = "";
+        st.isAnimating = false;
+        st.openIndex = null;
+      },
+    });
+    data.forEach(({ el, dx, dy, dist, isLeft }) => {
+      const delay = (dist / maxDist) * totalStagger; // 'out': centre first
+      const rotationY = isLeft ? 100 : -100;
+      tl.to(
+        el,
+        {
+          startAt: { transformOrigin: `50% 50% ${-Math.abs(dx) * 0.8}px` },
+          y: dy * 0.4,
+          rotationY,
+          scale: 0.4,
+          autoAlpha: 0,
+          duration: 0.4,
+          ease: "sine.in",
         },
-      })
-      .to(gridItems, { rotationY: faceInward, duration: 0.7, ease: "power2.inOut", stagger: stagEdges }, 0)
-      .to(gridItems, { x: pullX, y: pullY, scale: 0.5, autoAlpha: 0, duration: 0.6, ease: "power2.in", stagger: stagEdges }, 0.2)
-      .to(preview, { opacity: 0, duration: 0.4 }, 0.65)
-      .to(
-        carousel,
-        { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
-        0.7,
+        delay,
       );
+      tl.to(el, { z: -3500, duration: 0.4, ease: "expo.in" }, delay + 0.7);
+    });
+    tl.to(preview, { opacity: 0, duration: 0.4 }, totalStagger + 1.0).to(
+      carousel,
+      { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
+      totalStagger + 1.0,
+    );
   };
 
   return (
