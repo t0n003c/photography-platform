@@ -54,6 +54,9 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, SplitText);
     const st = stateRef.current;
     st.triggers = [];
+    // Enable the 3D layout BEFORE measuring, so carousel.offsetWidth is the real
+    // card width (not the flat-grid fallback's full-container width).
+    root.classList.add("is-enhanced");
 
     const ctx = gsap.context(() => {
       const sceneEls = gsap.utils.toArray<HTMLElement>("[data-c3d-scene]");
@@ -70,11 +73,13 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         const n = cells.length;
         const cardW = carousel.offsetWidth || 340;
         const minRadius = n > 1 ? cardW / 2 / Math.tan(Math.PI / n) : 0;
-        // Bigger ring => the cards fan out wide with clear background between
-        // them (instead of meeting edge-to-edge as a folded "book").
-        const radius = Math.round(Math.max(cardW * 2.4, minRadius + 40));
+        const radius = Math.round(Math.max(cardW * 1.5, minRadius + 30));
+        // Distribute the cells around the ring. Set the transform as a CSS string
+        // so the order is rotateY()-THEN-translateZ() — a true ring with faces
+        // pointing OUTWARD. (gsap.set applies translate before rotate, which
+        // stacks every cell at the center like a fanned deck sharing edges.)
         cells.forEach((cell, i) => {
-          gsap.set(cell, { rotateY: (360 / n) * i, z: radius });
+          cell.style.transform = `rotateY(${(360 / n) * i}deg) translateZ(${radius}px)`;
         });
         const startY = si % 2 === 1 ? 45 : 0; // alternate, like the reference
         // Push the ring back so the FRONT card sits ~40px deep (prominent) no
@@ -117,11 +122,11 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       ScrollTrigger.refresh();
     }, root);
 
-    root.classList.add("is-enhanced");
     st.enhanced = true;
 
     return () => {
       ctx.revert();
+      root.classList.remove("is-enhanced");
       st.enhanced = false;
       st.triggers = [];
       document.body.style.overflow = "";
