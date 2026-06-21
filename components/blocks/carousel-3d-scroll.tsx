@@ -28,7 +28,9 @@ function pickUrl(photo: PhotoDTO, buckets: string[]): string | null {
 
 const RING_BUCKETS = ["medium", "large", "small"];
 const GRID_BUCKETS = ["medium", "small", "large"];
-const MAX_CELLS = 10;
+// Fewer cards on a bigger ring => they float spread-out with gaps, like the
+// reference (which uses ~4–6 cards). More cards would tile into a solid drum.
+const MAX_CELLS = 6;
 
 // On-scroll 3D carousel (adapted from the Codrops "On-Scroll 3D Carousel"). Each
 // scene holds a ring of cards that rotates as it scrolls through the viewport;
@@ -62,16 +64,22 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         const titleEl = scene.querySelector<HTMLElement>("[data-c3d-title]");
         if (!carousel || cells.length === 0) return;
 
-        // Position the cells in a ring; radius derived from cell count so they
-        // never overlap. cardW = half the carousel width.
+        // Position the cells in a ring. Radius scales with card width (≈ the
+        // reference's radius/card ratio) so cards spread out with gaps rather
+        // than tiling edge-to-edge. Floor at the no-overlap minimum for safety.
         const n = cells.length;
-        const cardW = carousel.offsetWidth || 300;
-        const radius = Math.round(cardW / 2 / Math.tan(Math.PI / n)) + 40;
+        const cardW = carousel.offsetWidth || 340;
+        const minRadius = n > 1 ? cardW / 2 / Math.tan(Math.PI / n) : 0;
+        const radius = Math.round(Math.max(cardW * 1.5, minRadius + 30));
         cells.forEach((cell, i) => {
           gsap.set(cell, { rotateY: (360 / n) * i, z: radius });
         });
         const startY = si % 2 === 1 ? 45 : 0; // alternate, like the reference
-        gsap.set(carousel, { z: -550, rotateY: startY, transformOrigin: "50% 50%" });
+        // Push the ring back so the FRONT card sits ~40px deep (prominent) no
+        // matter the radius — bigger ring spreads the cards wider in view.
+        const restZ = -(radius + 40);
+        carousel.dataset.restZ = String(restZ);
+        gsap.set(carousel, { z: restZ, rotateY: startY, transformOrigin: "50% 50%" });
 
         // Scroll-driven rotation of the ring + subtle wobble.
         const spin = gsap.timeline({
@@ -176,7 +184,11 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       })
       .to(gridItems, { yPercent: 25, autoAlpha: 0, clipPath: "inset(100% 0 0 0)", stagger: 0.03, duration: 0.4 }, 0)
       .to(preview, { opacity: 0, duration: 0.4 }, 0.2)
-      .to(carousel, { rotationX: 0, rotationY: 0, z: -550, duration: 1.0, ease: "power2.inOut" }, 0.2);
+      .to(
+        carousel,
+        { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
+        0.2,
+      );
   };
 
   return (

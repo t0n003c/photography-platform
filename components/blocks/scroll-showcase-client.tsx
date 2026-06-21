@@ -227,7 +227,7 @@ export function ScrollShowcaseClient({
                       <div
                         key={c.id + i}
                         data-ss-img
-                        className="relative aspect-[4/5] w-[23vw] -mx-[2vw] shrink-0 bg-white/75 p-[0.5vw] shadow-2xl will-change-transform"
+                        className="relative aspect-[4/5] w-[25vw] -mx-[1vw] shrink-0 bg-white/75 p-[0.5vw] shadow-2xl will-change-transform"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
