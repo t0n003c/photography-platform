@@ -106,9 +106,11 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           // completes and never freezes mid-typed.
           const tReveal = gsap.from(split.chars, {
             autoAlpha: 0,
-            duration: 0.02,
-            ease: "none",
-            // Slower per-character stagger so the typewriter is clearly visible.
+            yPercent: 18,
+            // Each char eases in (smooth) instead of snapping; the 0.12 stagger
+            // keeps the typewriter cadence.
+            duration: 0.28,
+            ease: "power2.out",
             stagger: { each: 0.12, from: "start" },
             scrollTrigger: { trigger: scene, start: "top 70%", toggleActions: "play none none reverse" },
           });
@@ -156,6 +158,20 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     const targetY = window.scrollY + scene.getBoundingClientRect().top;
     const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
     const center = (cols - 1) / 2;
+    // Reset any leftover transforms, then measure so items open FROM THE MIDDLE
+    // OUT: each starts collapsed + folded at the grid centre and flies to its slot.
+    gsap.set(gridItems, { clearProps: "all" });
+    const grid = preview.querySelector<HTMLElement>(".c3d-grid");
+    const grect = grid?.getBoundingClientRect();
+    const gcx = grect ? grect.left + grect.width / 2 : 0;
+    const gcy = grect ? grect.top + grect.height / 2 : 0;
+    const itemC = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
+    const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
+    const fold = (idx: number) => ((idx % cols) - center) * 40;
 
     gsap
       .timeline({
@@ -167,27 +183,20 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       .to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
       .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
       .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8)
-      // Reference grid-in: items fly in from deep 3D space (z), scaling and
-      // rotating into place, staggered from the centre outward.
       .fromTo(
         gridItems,
-        { z: -3500 },
-        { z: 0, duration: 0.5, ease: "expo.out", stagger: { grid: "auto", from: "center", amount: 0.4 } },
-        0.85,
-      )
-      .fromTo(
-        gridItems,
-        { autoAlpha: 0, scale: 0.5, y: 40, rotationY: (idx: number) => ((idx % cols) - center) * 14 },
+        { x: toCenterX, y: toCenterY, scale: 0.1, rotationY: fold, autoAlpha: 0 },
         {
-          autoAlpha: 1,
-          scale: 1,
+          x: 0,
           y: 0,
+          scale: 1,
           rotationY: 0,
-          duration: 0.5,
-          ease: "sine.out",
-          stagger: { grid: "auto", from: "center", amount: 0.4 },
+          autoAlpha: 1,
+          duration: 0.65,
+          ease: "power3.out",
+          stagger: { grid: "auto", from: "center", amount: 0.5 },
         },
-        0.95,
+        0.85,
       );
   };
 
@@ -202,9 +211,26 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     st.isAnimating = true;
     const gridItems = preview.querySelectorAll<HTMLElement>("[data-c3d-grid-item]");
+    // Fly back to the middle like closing a book: items fold + converge to the
+    // grid centre, staggered from the edges inward.
+    const cols = parseInt(getComputedStyle(preview).getPropertyValue("--c3d-cols"), 10) || 4;
+    const center = (cols - 1) / 2;
+    const grid = preview.querySelector<HTMLElement>(".c3d-grid");
+    const grect = grid?.getBoundingClientRect();
+    const gcx = grect ? grect.left + grect.width / 2 : 0;
+    const gcy = grect ? grect.top + grect.height / 2 : 0;
+    const itemC = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    const toCenterX = (_i: number, el: Element) => gcx - itemC(el).x;
+    const toCenterY = (_i: number, el: Element) => gcy - itemC(el).y;
+    const fold = (idx: number) => ((idx % cols) - center) * 40;
+
     gsap
       .timeline({
         onComplete: () => {
+          gsap.set(gridItems, { clearProps: "all" });
           preview.classList.remove("is-open");
           st.triggers.forEach((t) => t.enable());
           ScrollTrigger.refresh();
@@ -215,14 +241,23 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       })
       .to(
         gridItems,
-        { z: -3500, scale: 0.4, y: 30, autoAlpha: 0, duration: 0.45, ease: "expo.in", stagger: { grid: "auto", from: "edges", amount: 0.25 } },
+        {
+          x: toCenterX,
+          y: toCenterY,
+          scale: 0.1,
+          rotationY: fold,
+          autoAlpha: 0,
+          duration: 0.55,
+          ease: "power3.in",
+          stagger: { grid: "auto", from: "edges", amount: 0.35 },
+        },
         0,
       )
-      .to(preview, { opacity: 0, duration: 0.4 }, 0.3)
+      .to(preview, { opacity: 0, duration: 0.4 }, 0.5)
       .to(
         carousel,
         { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
-        0.35,
+        0.55,
       );
   };
 
