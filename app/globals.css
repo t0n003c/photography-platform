@@ -171,7 +171,9 @@
 .c3d-stage { position: absolute; inset: 0; perspective: 1000px; display: flex; align-items: center; justify-content: center; }
 .c3d-carousel { position: relative; width: 380px; height: 480px; transform-style: preserve-3d; will-change: transform; }
 .c3d-cell { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
-.c3d-card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+/* Card slightly inset in its cell so neighbouring cards keep a visible gap
+   (never meet edge-to-edge), and read as distinct framed photos. */
+.c3d-card { position: relative; width: 82%; height: 94%; margin: 3% auto; transform-style: preserve-3d; }
 .c3d-face {
   position: absolute; inset: 0; background-size: cover; background-position: 50% 50%;
   -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 6px;

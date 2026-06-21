@@ -45,7 +45,9 @@ const TITLE_CLASS =
 // per-image offset tables). Cards fly in from far above/below with a tilt.
 function scatter(panelIndex: number, k: number) {
   const even = panelIndex % 2 === 0;
-  const ys = even ? [185, -235, 300, -135] : [-135, 300, -135, 185];
+  // Keep the up/down variety but near-equal travel distance, so every card flies
+  // in at about the same speed (the 3rd used to start 300% away and raced in).
+  const ys = even ? [200, -205, 195, -200] : [-200, 195, -205, 200];
   const rots = even ? [-5, 5, 5, -5] : [5, -5, 5, -5];
   const z = even ? [3, 1, 3, 1] : [1, 3, 3, 1];
   return {

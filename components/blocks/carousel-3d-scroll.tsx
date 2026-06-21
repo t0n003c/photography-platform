@@ -70,7 +70,9 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         const n = cells.length;
         const cardW = carousel.offsetWidth || 340;
         const minRadius = n > 1 ? cardW / 2 / Math.tan(Math.PI / n) : 0;
-        const radius = Math.round(Math.max(cardW * 1.5, minRadius + 30));
+        // Bigger ring => the cards fan out wide with clear background between
+        // them (instead of meeting edge-to-edge as a folded "book").
+        const radius = Math.round(Math.max(cardW * 2.4, minRadius + 40));
         cells.forEach((cell, i) => {
           gsap.set(cell, { rotateY: (360 / n) * i, z: radius });
         });
