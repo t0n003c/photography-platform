@@ -108,7 +108,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
             autoAlpha: 0,
             duration: 0.02,
             ease: "none",
-            stagger: { each: 0.05, from: "start" },
+            // Slower per-character stagger so the typewriter is clearly visible.
+            stagger: { each: 0.12, from: "start" },
             scrollTrigger: { trigger: scene, start: "top 70%", toggleActions: "play none none reverse" },
           });
           if (tReveal.scrollTrigger) st.triggers.push(tReveal.scrollTrigger);
