@@ -81,7 +81,8 @@ services:
   # "running" in stack UIs like Dockge rather than exited). web/worker wait on its
   # health, not its exit — same guarantee, no exited container.
   seaweedfs-init:
-    image: minio/mc:latest
+    # Pinned (not :latest) so a pull can't drift this sidecar mid-deploy.
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     restart: unless-stopped
     depends_on:
       seaweedfs:
