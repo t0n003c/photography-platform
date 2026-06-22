@@ -135,13 +135,14 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           });
           if (tReveal.scrollTrigger) st.triggers.push(tReveal.scrollTrigger);
         }
-        // Preview-grid title: split into chars now and hide them, so it can type
-        // out when the preview opens.
-        const pTitleSpan = scene.querySelector<HTMLElement>("[data-c3d-preview-title-span]");
-        if (pTitleSpan) {
-          const pSplit = new SplitText(pTitleSpan, { type: "chars", charsClass: "c3d-char" });
-          gsap.set(pSplit.chars, { autoAlpha: 0 });
-        }
+        // Preview-grid header (title + close): split into chars now and hide them,
+        // so they can type out when the preview opens.
+        scene
+          .querySelectorAll<HTMLElement>("[data-c3d-preview-title-span], [data-c3d-close-span]")
+          .forEach((span) => {
+            const s = new SplitText(span, { type: "chars", charsClass: "c3d-char" });
+            gsap.set(s.chars, { autoAlpha: 0 });
+          });
         if (titleEl) {
           const tPar = gsap.to(titleEl, {
             yPercent: -30,
@@ -214,7 +215,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     // The category name types out as the grid appears.
     tl.fromTo(
-      preview.querySelectorAll<HTMLElement>(".c3d-preview-title .c3d-char"),
+      preview.querySelectorAll<HTMLElement>(".c3d-preview-header .c3d-char"),
       { autoAlpha: 0, yPercent: 20 },
       { autoAlpha: 1, yPercent: 0, duration: 0.3, ease: "power2.out", stagger: { each: 0.08, from: "start" } },
       0.95,
@@ -262,7 +263,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(gridItems, { clearProps: "all" });
-        gsap.set(preview.querySelectorAll(".c3d-preview-title .c3d-char"), { autoAlpha: 0, yPercent: 0 });
+        gsap.set(preview.querySelectorAll(".c3d-preview-header .c3d-char"), { autoAlpha: 0, yPercent: 0 });
         preview.classList.remove("is-open");
         st.triggers.forEach((t) => t.enable());
         ScrollTrigger.refresh();
@@ -291,7 +292,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     });
     // Un-type the preview category name as we exit (chars vanish from the end).
     tl.to(
-      preview.querySelectorAll<HTMLElement>(".c3d-preview-title .c3d-char"),
+      preview.querySelectorAll<HTMLElement>(".c3d-preview-header .c3d-char"),
       { autoAlpha: 0, yPercent: 20, duration: 0.25, ease: "power2.in", stagger: { each: 0.07, from: "end" } },
       0,
     );
@@ -363,7 +364,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
                   <span data-c3d-preview-title-span>{scene.name}</span>
                 </h3>
                 <button type="button" className="c3d-close" onClick={() => closePreview(si)}>
-                  Close ✕
+                  <span data-c3d-close-span>Close ✕</span>
                 </button>
               </header>
               <div className="c3d-grid">
