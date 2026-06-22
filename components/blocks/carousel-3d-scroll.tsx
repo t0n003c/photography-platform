@@ -100,6 +100,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         cells.forEach((cell, i) => {
           cell.style.transform = `rotateY(${(360 / n) * i}deg) translateZ(${radius}px)`;
         });
+        carousel.dataset.ringRadius = String(radius);
         const startY = si % 2 === 1 ? 45 : 0; // alternate, like the reference
         // Push the ring back so the FRONT card sits ~40px deep (prominent) no
         // matter the radius — bigger ring spreads the cards wider in view.
@@ -182,7 +183,15 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     document.body.style.overflow = "hidden";
     preview.classList.add("is-open");
     preview.scrollTop = 0; // always start the grid at the top
-    const targetY = window.scrollY + scene.getBoundingClientRect().top;
+    // Capture the carousel's current (scroll-driven) rotation. On close we return
+    // to it and rotate the RING (the cells) by <= half a cell step so an image
+    // faces front there — without touching the page scroll (which Lenis owns).
+    const startY = i % 2 === 1 ? 45 : 0;
+    const vh = window.innerHeight;
+    const scrollStart = window.scrollY + scene.getBoundingClientRect().top - vh;
+    const range = scene.offsetHeight + vh;
+    const curProgress = Math.min(1, Math.max(0, (window.scrollY - scrollStart) / range));
+    carousel.dataset.rClick = String(startY - 180 * curProgress);
     // Reset any leftover transforms, then measure so items open FROM THE MIDDLE
     // OUT: each starts at the grid centre, angled to FACE INWARD toward each
     // other (like the reference), then flies to its slot rotating flat.
@@ -209,8 +218,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         st.openIndex = i;
       },
     });
-    tl.to(window, { duration: 0.7, scrollTo: { y: targetY, autoKill: false }, ease: "power2.inOut" }, 0)
-      .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
+    tl.to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
       .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8);
 
     // The category name types out as the grid appears.
@@ -246,6 +254,14 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
 
     st.isAnimating = true;
     const gridItems = preview.querySelectorAll<HTMLElement>("[data-c3d-grid-item]");
+
+    // Ring geometry — used after the carousel returns to nudge an image to front.
+    const ringCells = carousel.querySelectorAll<HTMLElement>("[data-c3d-cell]");
+    const ringN = ringCells.length || 1;
+    const ringStep = 360 / ringN;
+    const ringRadius = Number(carousel.dataset.ringRadius) || 0;
+    const rClick = Number(carousel.dataset.rClick) || 0;
+
     // Reverse of the reference reveal: each item swings back (rotationY ±100°
     // around the pushed-back origin), drops a half-y toward the centre, shrinks +
     // fades, then recedes into deep z. Per-item stagger (centre first on close).
@@ -265,11 +281,29 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
         gsap.set(gridItems, { clearProps: "all" });
         gsap.set(preview.querySelectorAll(".c3d-preview-header .c3d-char"), { autoAlpha: 0, yPercent: 0 });
         preview.classList.remove("is-open");
+        document.body.style.overflow = ""; // restore before refresh so positions are correct
         st.triggers.forEach((t) => t.enable());
         ScrollTrigger.refresh();
-        document.body.style.overflow = "";
         st.isAnimating = false;
         st.openIndex = null;
+        // The scrub has re-asserted the rotation at the (unchanged) scroll. Gently
+        // rotate the RING so the nearest image snaps to face front (≤ half a step).
+        const settledR = (gsap.getProperty(carousel, "rotationY") as number) || 0;
+        const offOld = Number(carousel.dataset.ringOffset) || 0;
+        const e = settledR + offOld;
+        const offNew = offOld + (Math.round(e / ringStep) * ringStep - e);
+        carousel.dataset.ringOffset = String(offNew);
+        const proxy = { o: offOld };
+        gsap.to(proxy, {
+          o: offNew,
+          duration: 0.45,
+          ease: "power2.out",
+          onUpdate: () => {
+            ringCells.forEach((cell, ci) => {
+              cell.style.transform = `rotateY(${(360 / ringN) * ci + proxy.o}deg) translateZ(${ringRadius}px)`;
+            });
+          },
+        });
       },
     });
     data.forEach(({ el, dx, dy, dist, isLeft }) => {
@@ -298,7 +332,15 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     );
     tl.to(preview, { opacity: 0, duration: 0.4 }, totalStagger + 1.0).to(
       carousel,
-      { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
+      {
+        rotationX: 0,
+        // Return to the captured click rotation; the ring was nudged above so an
+        // image faces front here, and the re-enabled scrub (scroll unchanged) holds it.
+        rotationY: rClick,
+        z: Number(carousel.dataset.restZ) || -550,
+        duration: 1.0,
+        ease: "power2.inOut",
+      },
       totalStagger + 1.0,
     );
     // Re-type the scene's overlay title as the carousel returns into view.
