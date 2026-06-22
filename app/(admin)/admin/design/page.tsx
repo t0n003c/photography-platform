@@ -23,7 +23,7 @@ type Scope =
 // intentionally omitted here.
 const SCOPES: Scope[] = ["home", "category", "location", "about", "global"];
 
-type GridType = "masonry" | "justified" | "uniform" | "carousel-3d-scroll";
+type GridType = "masonry" | "justified" | "uniform" | "carousel-3d-scroll" | "alternative-scroll";
 type Spacing = "tight" | "normal" | "airy";
 type Theme = "light" | "dark" | "auto";
 
@@ -155,6 +155,7 @@ function ConfigEditor({
             {(config.scope === "category" || config.scope === "location") && (
               <option value="carousel-3d-scroll">3D carousel (on scroll)</option>
             )}
+            <option value="alternative-scroll">Alternative scroll</option>
           </Select>
         </Field>
         <Field label="Spacing">

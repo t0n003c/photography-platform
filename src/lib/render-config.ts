@@ -7,7 +7,8 @@ export type GridType =
   | "justified"
   | "uniform"
   | "horizontal-lenis"
-  | "carousel-3d-scroll";
+  | "carousel-3d-scroll"
+  | "alternative-scroll";
 export type Scope =
   | "home"
   | "gallery"

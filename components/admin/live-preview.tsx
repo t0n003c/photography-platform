@@ -4,7 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Monitor, Smartphone, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type PreviewGrid = "masonry" | "justified" | "uniform" | "horizontal-lenis" | "carousel-3d-scroll";
+export type PreviewGrid =
+  | "masonry"
+  | "justified"
+  | "uniform"
+  | "horizontal-lenis"
+  | "carousel-3d-scroll"
+  | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
 export type PreviewTheme = "light" | "dark" | "auto";
 

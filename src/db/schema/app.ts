@@ -426,8 +426,11 @@ export const pageConfig = pgTable(
     layoutId: text("layout_id").references(() => layout.id, {
       onDelete: "set null",
     }),
+    // Plain text column (no DB CHECK) — this enum is a TypeScript/Drizzle hint only,
+    // so adding values needs no migration. Keep it in sync with GridType so the
+    // page-config API can persist newer scroll layouts.
     gridType: text("grid_type", {
-      enum: ["masonry", "justified", "uniform", "horizontal-lenis"],
+      enum: ["masonry", "justified", "uniform", "horizontal-lenis", "carousel-3d-scroll", "alternative-scroll"],
     }),
     spacing: text("spacing"),
     theme: text("theme", { enum: ["light", "dark", "auto"] }),

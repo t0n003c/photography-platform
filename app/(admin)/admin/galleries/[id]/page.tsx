@@ -888,7 +888,8 @@ function LayoutCard({
           cfg.gridType === "masonry" ||
           cfg.gridType === "justified" ||
           cfg.gridType === "uniform" ||
-          cfg.gridType === "horizontal-lenis"
+          cfg.gridType === "horizontal-lenis" ||
+          cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
         if (cfg.spacing === "tight" || cfg.spacing === "normal" || cfg.spacing === "airy")
@@ -955,6 +956,7 @@ function LayoutCard({
                   <option value="justified">Justified</option>
                   <option value="uniform">Uniform</option>
                   <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
+                  <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
               {/* The horizontal-scroll layout manages its own spacing. */}

@@ -13,6 +13,7 @@ import {
 } from "./grids";
 import { Carousel3D } from "./carousel-3d";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
+import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
 
 interface GalleryLayout {
@@ -26,7 +27,8 @@ interface GalleryLayout {
     | "carousel3d"
     | "cinematic"
     | "horizontal-lenis"
-    | "carousel-3d-scroll";
+    | "carousel-3d-scroll"
+    | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
@@ -141,6 +143,13 @@ export function Gallery({
         ]}
       />
     );
+  }
+
+  // Alternative Scroll (Codrops ColumnScroll port): a standalone full-bleed
+  // experience with its own click→content view. Works on any surface (needs only
+  // photos); the collection name, when present, becomes the split heading.
+  if (layout.gridType === "alternative-scroll") {
+    return <ColumnScroll photos={photos} title={collection?.name} />;
   }
 
   return (
