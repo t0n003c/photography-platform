@@ -32,6 +32,25 @@ const GRID_BUCKETS = ["medium", "small", "large"];
 // reference (which uses ~4–6 cards). More cards would tile into a solid drum.
 const MAX_CELLS = 6;
 
+// Pick a preview-grid column count (4–6, never fewer than 4) that fills the rows
+// as evenly as possible — prefers a count that divides the photo count, then
+// fewer rows. e.g. 10 → 5 (2×5), 12 → 6 (2×6), 8 → 4 (2×4).
+function chooseGridCols(n: number): number {
+  if (n <= 4) return 4;
+  let best = 4;
+  let bestScore = Infinity;
+  for (let c = 4; c <= Math.min(6, n); c++) {
+    const rows = Math.ceil(n / c);
+    const empty = c * rows - n; // 0 = perfectly even
+    const score = empty * 10 + rows; // even fill first, then fewer rows
+    if (score < bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return best;
+}
+
 // On-scroll 3D carousel (adapted from the Codrops "On-Scroll 3D Carousel"). Each
 // scene holds a ring of cards that rotates as it scrolls through the viewport;
 // clicking the title flies the ring away and opens a full-screen preview grid of
@@ -270,10 +289,23 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       );
       tl.to(el, { z: -3500, duration: 0.4, ease: "expo.in" }, delay + 0.7);
     });
+    // Un-type the preview category name as we exit (chars vanish from the end).
+    tl.to(
+      preview.querySelectorAll<HTMLElement>(".c3d-preview-title .c3d-char"),
+      { autoAlpha: 0, yPercent: 20, duration: 0.25, ease: "power2.in", stagger: { each: 0.07, from: "end" } },
+      0,
+    );
     tl.to(preview, { opacity: 0, duration: 0.4 }, totalStagger + 1.0).to(
       carousel,
       { rotationX: 0, rotationY: 0, z: Number(carousel.dataset.restZ) || -550, duration: 1.0, ease: "power2.inOut" },
       totalStagger + 1.0,
+    );
+    // Re-type the scene's overlay title as the carousel returns into view.
+    tl.fromTo(
+      scene.querySelectorAll<HTMLElement>("[data-c3d-title-span] .c3d-char"),
+      { autoAlpha: 0, yPercent: 18 },
+      { autoAlpha: 1, yPercent: 0, duration: 0.28, ease: "power2.out", stagger: { each: 0.12, from: "start" } },
+      totalStagger + 1.15,
     );
   };
 
@@ -282,7 +314,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       {scenes.map((scene, si) => {
         const cells = scene.photos.slice(0, MAX_CELLS);
         const href = scene.kind === "category" ? `/categories/${scene.slug}` : `/locations/${scene.slug}`;
-        const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(scene.photos.length))));
+        const cols = chooseGridCols(scene.photos.length);
         return (
           <section key={scene.slug + si} data-c3d-scene className="c3d-scene">
             <h2 data-c3d-title className="c3d-title">
