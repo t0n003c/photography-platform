@@ -59,11 +59,23 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
   // The focused photo + the sibling thumbnails currently shown in the content view.
   const [content, setContent] = React.useState<{ index: number; thumbs: number[] } | null>(null);
 
+  // Responsive column count: 3 desktop / 2 tablet / 1 phone (SSR defaults to 3).
+  const [numCols, setNumCols] = React.useState(NUM_COLS);
+  React.useEffect(() => {
+    const compute = () => {
+      const w = window.innerWidth;
+      setNumCols(w <= 480 ? 1 : w <= 768 ? 2 : 3);
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
+
   const columns = React.useMemo(() => {
-    const cols: { photo: PhotoDTO; index: number }[][] = Array.from({ length: NUM_COLS }, () => []);
-    photos.forEach((p, i) => cols[i % NUM_COLS].push({ photo: p, index: i }));
+    const cols: { photo: PhotoDTO; index: number }[][] = Array.from({ length: numCols }, () => []);
+    photos.forEach((p, i) => cols[i % numCols].push({ photo: p, index: i }));
     return cols;
-  }, [photos]);
+  }, [photos, numCols]);
 
   // ── Enhance: opposite-column scrub + hover + in-view tracking ──────────────
   useIso(() => {
@@ -78,20 +90,23 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     const ctx = gsap.context(() => {
       const cols = gsap.utils.toArray<HTMLElement>("[data-cs-column]");
       const vh = window.innerHeight;
-      const R = vh * 0.14; // drift amplitude; outer −R→+R (down), middle +R→−R (up)
-      cols.forEach((col, i) => {
-        const outer = i !== 1;
-        const tween = gsap.fromTo(
-          col,
-          { y: outer ? -R : R },
-          {
-            y: outer ? R : -R,
-            ease: "none",
-            scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: true },
-          },
-        );
-        if (tween.scrollTrigger) st.scrub.push(tween.scrollTrigger);
-      });
+      const R = vh * 0.14; // drift amplitude; even cols −R→+R (down), odd cols +R→−R (up)
+      // Opposite-direction drift only makes sense with ≥2 columns (1-col phone = plain scroll).
+      if (cols.length > 1) {
+        cols.forEach((col, i) => {
+          const even = i % 2 === 0;
+          const tween = gsap.fromTo(
+            col,
+            { y: even ? -R : R },
+            {
+              y: even ? R : -R,
+              ease: "none",
+              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: true },
+            },
+          );
+          if (tween.scrollTrigger) st.scrub.push(tween.scrollTrigger);
+        });
+      }
 
       const items = gsap.utils.toArray<HTMLElement>("[data-cs-item]");
       items.forEach((item) => {
@@ -139,7 +154,7 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
       st.scrub = [];
       lenis()?.start(); // never leave the next page scroll-locked
     };
-  }, [photos]);
+  }, [photos, numCols]);
 
   // Geometry helper: the centred target box for the focused image (≈70vh tall).
   const focusTarget = React.useCallback((photo: PhotoDTO) => {
