@@ -180,7 +180,12 @@
   box-shadow: 0 25px 60px rgba(0,0,0,0.45);
 }
 .c3d-face.back { transform: rotateY(180deg); }
-@media (max-width: 640px) { .c3d-carousel { width: 220px; height: 300px; } }
+@media (max-width: 640px) {
+  .c3d-carousel { width: 220px; height: 300px; }
+  /* Lighter shadow on phones — large blurred shadows on many 3D cards are a
+     real scroll-jank source on mobile GPUs. */
+  .c3d-face { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4); }
+}
 
 /* Fallback (no JS / reduced motion): flat responsive grid, no 3D */
 .c3d-root:not(.is-enhanced) .c3d-scene { height: auto; min-height: 50vh; flex-direction: column; gap: 1.5rem; padding: 3rem 0; }
@@ -199,7 +204,7 @@
 /* Click-to-open full-screen preview grid */
 .c3d-preview {
   position: fixed; inset: 0; z-index: 60; padding: 6vh 8vw; overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   /* "safe center" centers when it fits but falls back to top-aligned when the
      grid is taller than the viewport, so the top row is never clipped/unreachable. */
   display: flex; flex-direction: column; align-items: center; justify-content: safe center;
@@ -226,5 +231,14 @@
 .c3d-grid-item { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; transform-style: preserve-3d; will-change: transform, opacity; }
 .c3d-grid-img { width: 100%; aspect-ratio: 4/5; background-size: cover; background-position: 50% 50%; border-radius: 4px; }
 .c3d-grid-cap { font-size: 0.78rem; color: hsl(var(--muted-foreground)); }
-/* On small screens the wrapper caps at 100%, so let the columns fill it evenly. */
-@media (max-width: 640px) { .c3d-grid { grid-template-columns: repeat(var(--c3d-cols, 4), minmax(0, 1fr)); } }
+/* Mobile/tablet: the desktop column count (≥4) makes images tiny on a narrow
+   screen, so override to fewer, larger columns and let the wrapper fill the width. */
+@media (max-width: 768px) {
+  .c3d-preview { padding: 5vh 5vw; }
+  .c3d-preview-inner { width: 100%; }
+  .c3d-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .c3d-preview-header { gap: 1rem; }
+}
+@media (max-width: 480px) {
+  .c3d-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
