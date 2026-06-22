@@ -959,8 +959,8 @@ function LayoutCard({
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
-              {/* The horizontal-scroll layout manages its own spacing. */}
-              {gridType !== "horizontal-lenis" && (
+              {/* The horizontal-scroll & alternative-scroll layouts manage their own spacing. */}
+              {gridType !== "horizontal-lenis" && gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
                     <option value="tight">Tight</option>

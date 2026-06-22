@@ -249,19 +249,29 @@
   --cs-item-h: 25vw;
   --cs-item-w: calc(var(--cs-item-h) * var(--cs-ratio));
   position: relative;
-  padding: 12vh 3rem;
-  overflow: hidden; /* clip the column drift at the block edges */
+  /* Generous vertical padding contains the column drift within the section. */
+  padding: 22vh 3rem;
+  /* Clip horizontal overflow (e.g. the pre-hydration 3-column SSR render on a
+     phone) so it can't expand the mobile layout viewport — `clip` (unlike
+     `hidden`) doesn't create a scroll container, so the sticky heading still
+     frames the viewport. */
+  overflow-x: clip;
 }
-.cs-heading { position: relative; margin: 0 0 5vh; text-align: center; pointer-events: none; }
-.cs-heading-line {
-  display: block;
+/* Split title (reference: huge heading--up at the top, heading--down at the bottom)
+   framing the columns; mix-blend keeps it legible over the photos, and the two
+   copies also mask the column ends at the parallax extremes. */
+.cs-heading {
+  position: sticky; z-index: 4; margin: 0; width: 100%; pointer-events: none; text-align: center;
   font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
   font-style: italic; text-transform: uppercase;
-  font-size: clamp(1.75rem, 5vw, 5rem); line-height: 0.9; letter-spacing: 0.02em;
-  color: hsl(var(--foreground));
+  font-size: clamp(3rem, 11vw, 13rem); line-height: 0.85; letter-spacing: 0.01em;
+  color: hsl(var(--foreground)); mix-blend-mode: difference;
+  white-space: nowrap; overflow: hidden; text-overflow: clip;
 }
-/* The 2nd copy stacks exactly over the 1st; on open they part (split heading). */
-.cs-heading-line:nth-child(2) { position: absolute; inset: 0; }
+/* Sticky so the title frames the viewport (top + bottom) while the columns scroll
+   behind it — like the reference's fixed heading--up / heading--down. */
+.cs-heading--up { top: 0; margin-bottom: -8vh; }
+.cs-heading--down { bottom: 0; margin-top: -8vh; }
 .cs-columns { display: flex; justify-content: center; align-items: flex-start; gap: 2.5vw; }
 .cs-column { display: flex; flex-direction: column; will-change: transform; }
 /* Brick-offset the middle column so columns aren't aligned — masks the drift edges. */
@@ -276,7 +286,12 @@
   position: absolute; inset: 0; background-size: cover; background-position: 50% 50%;
   will-change: transform;
 }
-.cs-item-cap { margin-top: 0.6rem; font-size: 0.78rem; color: hsl(var(--muted-foreground)); width: var(--cs-item-w); }
+/* Two-line caption (reference: name + year), uppercase, split to the edges. */
+.cs-item-cap {
+  margin-top: 0.6rem; width: var(--cs-item-w); display: flex; justify-content: space-between; gap: 1rem;
+  text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.04em; color: hsl(var(--muted-foreground));
+}
+.cs-item-cap span:last-child { white-space: nowrap; opacity: 0.7; }
 
 /* Tablet → 2 columns (JS reflows the distribution); larger items, lighter shadow. */
 @media (max-width: 768px) {
@@ -309,13 +324,18 @@
   background-size: cover; background-position: 50% 50%; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
 }
 .cs-overlay.is-open .cs-focus { visibility: visible; }
-.cs-overlay-meta { position: fixed; z-index: 2; left: 6vw; bottom: 24vh; max-width: 28rem; opacity: 0; }
-.cs-meta-line { display: block; }
+/* Content-view text (reference: centred italic-serif title up top, uppercase text
+   bottom-right). */
+.cs-overlay-meta { position: fixed; z-index: 2; inset: 0; pointer-events: none; opacity: 0; }
 .cs-meta-title {
-  margin: 0; font-family: var(--font-playfair), serif; font-style: italic; text-transform: uppercase;
-  font-size: clamp(1.5rem, 3.5vw, 2.75rem); line-height: 1; color: hsl(var(--foreground));
+  position: absolute; top: 6vh; left: 0; right: 0; margin: 0; text-align: center;
+  font-family: var(--font-playfair), serif; font-style: italic; font-weight: 300;
+  font-size: clamp(2rem, 8vh, 6.5rem); line-height: 1; color: hsl(var(--foreground)); mix-blend-mode: difference;
 }
-.cs-meta-text { margin: 0.75rem 0 0; color: hsl(var(--muted-foreground)); font-size: 0.95rem; }
+.cs-meta-text {
+  position: absolute; right: 4vw; bottom: 16vh; max-width: 22rem; margin: 0; text-align: right;
+  text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.03em; color: hsl(var(--muted-foreground));
+}
 .cs-overlay-nav { position: fixed; z-index: 2; bottom: 4vh; left: 0; right: 0; display: flex; justify-content: center; gap: 1rem; }
 .cs-overlay-thumb {
   width: 8vw; height: 10vh; border: 0; padding: 0; border-radius: 6px; cursor: pointer; opacity: 0;

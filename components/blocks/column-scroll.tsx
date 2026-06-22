@@ -43,7 +43,8 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
   const rootRef = React.useRef<HTMLDivElement>(null);
   const overlayRef = React.useRef<HTMLDivElement>(null);
   const focusRef = React.useRef<HTMLDivElement>(null);
-  const headingRef = React.useRef<HTMLDivElement>(null);
+  const headUpRef = React.useRef<HTMLHeadingElement>(null);
+  const headDownRef = React.useRef<HTMLHeadingElement>(null);
   const metaRef = React.useRef<HTMLDivElement>(null);
   const navRef = React.useRef<HTMLDivElement>(null);
   const backRef = React.useRef<HTMLButtonElement>(null);
@@ -90,7 +91,10 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     const ctx = gsap.context(() => {
       const cols = gsap.utils.toArray<HTMLElement>("[data-cs-column]");
       const vh = window.innerHeight;
-      const R = vh * 0.14; // drift amplitude; even cols −R→+R (down), odd cols +R→−R (up)
+      // Pronounced opposite drift so adjacent columns clearly travel against each
+      // other: even cols −R→+R (downward), odd cols +R→−R (upward). The fixed split
+      // heading frames the top/bottom and masks the column ends at the extremes.
+      const R = vh * 0.32;
       // Opposite-direction drift only makes sense with ≥2 columns (1-col phone = plain scroll).
       if (cols.length > 1) {
         cols.forEach((col, i) => {
@@ -248,13 +252,9 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
           );
         }
       });
-      // Split heading parts; meta + back reveal.
-      if (headingRef.current) {
-        const [up, down] = headingRef.current.children as unknown as HTMLElement[];
-        if (up && down) {
-          tl.to(up, { yPercent: -120, autoAlpha: 0 }, 0).to(down, { yPercent: 120, autoAlpha: 0 }, 0.05);
-        }
-      }
+      // The framing split heading parts away as the content view covers the grid.
+      if (headUpRef.current) tl.to(headUpRef.current, { yPercent: -140, autoAlpha: 0 }, 0);
+      if (headDownRef.current) tl.to(headDownRef.current, { yPercent: 140, autoAlpha: 0 }, 0.05);
       tl.fromTo(
         [metaRef.current, backRef.current],
         { autoAlpha: 0 },
@@ -306,10 +306,8 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     if (origin) {
       tl.to(focus, { left: origin.left, top: origin.top, width: origin.width, height: origin.height }, 0.1);
     }
-    if (headingRef.current) {
-      const [up, down] = headingRef.current.children as unknown as HTMLElement[];
-      if (up && down) tl.to([up, down], { yPercent: 0, autoAlpha: 1, duration: 0.8 }, 0.2);
-    }
+    const heads = [headUpRef.current, headDownRef.current].filter(Boolean);
+    if (heads.length) tl.to(heads, { yPercent: 0, autoAlpha: 1, duration: 0.8 }, 0.2);
     tl.to(overlay, { autoAlpha: 0, duration: 0.4 }, "-=0.3");
   }, [content]);
 
@@ -331,12 +329,9 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
   return (
     <div ref={rootRef} data-cs-root className="cs-root">
       {title ? (
-        <div ref={headingRef} className="cs-heading">
-          <span className="cs-heading-line">{title}</span>
-          <span className="cs-heading-line" aria-hidden>
-            {title}
-          </span>
-        </div>
+        <h2 ref={headUpRef} className="cs-heading cs-heading--up" aria-hidden>
+          {title}
+        </h2>
       ) : null}
 
       <div className="cs-columns">
@@ -344,7 +339,9 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
           <div key={ci} data-cs-column data-cs-col={ci} className="cs-column">
             {col.map(({ photo, index }) => {
               const url = pickUrl(photo, COL_BUCKETS);
-              const caption = photo.headline || photo.altText || "";
+              // Two-line caption like the reference (name + secondary), uppercase.
+              const name = photo.headline || photo.altText || "";
+              const sub = photo.caption || "";
               return (
                 <figure
                   key={photo.id}
@@ -365,13 +362,24 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
                       style={{ backgroundImage: url ? `url(${url})` : undefined }}
                     />
                   </div>
-                  {caption ? <figcaption className="cs-item-cap">{caption}</figcaption> : null}
+                  {name || sub ? (
+                    <figcaption className="cs-item-cap">
+                      <span>{name}</span>
+                      {sub ? <span>{sub}</span> : null}
+                    </figcaption>
+                  ) : null}
                 </figure>
               );
             })}
           </div>
         ))}
       </div>
+
+      {title ? (
+        <h2 ref={headDownRef} className="cs-heading cs-heading--down" aria-hidden>
+          {title}
+        </h2>
+      ) : null}
 
       {/* Full-screen content view (fixed overlay; clones, not the clipped real items). */}
       <div ref={overlayRef} data-cs-overlay className="cs-overlay">

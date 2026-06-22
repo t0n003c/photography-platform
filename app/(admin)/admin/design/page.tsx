@@ -158,16 +158,19 @@ function ConfigEditor({
             <option value="alternative-scroll">Alternative scroll</option>
           </Select>
         </Field>
-        <Field label="Spacing">
-          <Select
-            value={spacing}
-            onChange={(e) => setSpacing(e.target.value as Spacing)}
-          >
-            <option value="tight">Tight</option>
-            <option value="normal">Normal</option>
-            <option value="airy">Airy</option>
-          </Select>
-        </Field>
+        {/* The Alternative Scroll layout manages its own spacing. */}
+        {gridType !== "alternative-scroll" && (
+          <Field label="Spacing">
+            <Select
+              value={spacing}
+              onChange={(e) => setSpacing(e.target.value as Spacing)}
+            >
+              <option value="tight">Tight</option>
+              <option value="normal">Normal</option>
+              <option value="airy">Airy</option>
+            </Select>
+          </Field>
+        )}
         <Field label="Theme">
           <Select
             value={theme}
