@@ -116,6 +116,13 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           });
           if (tReveal.scrollTrigger) st.triggers.push(tReveal.scrollTrigger);
         }
+        // Preview-grid title: split into chars now and hide them, so it can type
+        // out when the preview opens.
+        const pTitleSpan = scene.querySelector<HTMLElement>("[data-c3d-preview-title-span]");
+        if (pTitleSpan) {
+          const pSplit = new SplitText(pTitleSpan, { type: "chars", charsClass: "c3d-char" });
+          gsap.set(pSplit.chars, { autoAlpha: 0 });
+        }
         if (titleEl) {
           const tPar = gsap.to(titleEl, {
             yPercent: -30,
@@ -186,6 +193,14 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
       .to(carousel, { duration: 1.3, rotationX: 90, rotationY: -360, z: -2000, ease: "power2.inOut" }, 0)
       .fromTo(preview, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.8);
 
+    // The category name types out as the grid appears.
+    tl.fromTo(
+      preview.querySelectorAll<HTMLElement>(".c3d-preview-title .c3d-char"),
+      { autoAlpha: 0, yPercent: 20 },
+      { autoAlpha: 1, yPercent: 0, duration: 0.3, ease: "power2.out", stagger: { each: 0.08, from: "start" } },
+      0.95,
+    );
+
     const base = 0.95;
     data.forEach(({ el, dx, dy, dist, isLeft }) => {
       const delay = (1 - dist / maxDist) * totalStagger; // 'in': edges first
@@ -228,6 +243,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(gridItems, { clearProps: "all" });
+        gsap.set(preview.querySelectorAll(".c3d-preview-title .c3d-char"), { autoAlpha: 0, yPercent: 0 });
         preview.classList.remove("is-open");
         st.triggers.forEach((t) => t.enable());
         ScrollTrigger.refresh();
@@ -310,7 +326,9 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
               style={{ ["--c3d-cols" as string]: cols }}
             >
               <header className="c3d-preview-header">
-                <h3 className="c3d-preview-title">{scene.name}</h3>
+                <h3 className="c3d-preview-title">
+                  <span data-c3d-preview-title-span>{scene.name}</span>
+                </h3>
                 <button type="button" className="c3d-close" onClick={() => closePreview(si)}>
                   Close ✕
                 </button>
