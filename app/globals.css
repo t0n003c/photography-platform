@@ -252,13 +252,16 @@
   padding: 12vh 3rem;
   overflow: hidden; /* clip the column drift at the block edges */
 }
-.cs-heading {
-  margin: 0 0 5vh; text-align: center; pointer-events: none;
+.cs-heading { position: relative; margin: 0 0 5vh; text-align: center; pointer-events: none; }
+.cs-heading-line {
+  display: block;
   font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
   font-style: italic; text-transform: uppercase;
   font-size: clamp(1.75rem, 5vw, 5rem); line-height: 0.9; letter-spacing: 0.02em;
   color: hsl(var(--foreground));
 }
+/* The 2nd copy stacks exactly over the 1st; on open they part (split heading). */
+.cs-heading-line:nth-child(2) { position: absolute; inset: 0; }
 .cs-columns { display: flex; justify-content: center; align-items: flex-start; gap: 2.5vw; }
 .cs-column { display: flex; flex-direction: column; will-change: transform; }
 /* Brick-offset the middle column so columns aren't aligned — masks the drift edges. */
@@ -280,3 +283,30 @@
 }
 /* Fallback (no JS / reduced motion): no transforms, non-interactive frames. */
 .cs-root:not(.is-enhanced) .cs-item-imgwrap { cursor: default; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2); }
+
+/* Click→content view (fixed overlay; clones the focused image, not the clipped item). */
+.cs-overlay { position: fixed; inset: 0; z-index: 70; opacity: 0; visibility: hidden; pointer-events: none; }
+.cs-overlay.is-open { pointer-events: auto; }
+.cs-overlay-bg { position: absolute; inset: 0; background: hsl(var(--background)); }
+.cs-overlay-back {
+  position: fixed; top: 4vh; left: 4vw; z-index: 3; opacity: 0;
+  background: none; border: 0; cursor: pointer; font: inherit; color: hsl(var(--foreground));
+  text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem;
+}
+.cs-focus {
+  position: fixed; z-index: 1; overflow: hidden; border-radius: 8px; visibility: hidden;
+  background-size: cover; background-position: 50% 50%; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+}
+.cs-overlay.is-open .cs-focus { visibility: visible; }
+.cs-overlay-meta { position: fixed; z-index: 2; left: 6vw; bottom: 24vh; max-width: 28rem; opacity: 0; }
+.cs-meta-line { display: block; }
+.cs-meta-title {
+  margin: 0; font-family: var(--font-playfair), serif; font-style: italic; text-transform: uppercase;
+  font-size: clamp(1.5rem, 3.5vw, 2.75rem); line-height: 1; color: hsl(var(--foreground));
+}
+.cs-meta-text { margin: 0.75rem 0 0; color: hsl(var(--muted-foreground)); font-size: 0.95rem; }
+.cs-overlay-nav { position: fixed; z-index: 2; bottom: 4vh; left: 0; right: 0; display: flex; justify-content: center; gap: 1rem; }
+.cs-overlay-thumb {
+  width: 8vw; height: 10vh; border: 0; padding: 0; border-radius: 6px; cursor: pointer; opacity: 0;
+  background-size: cover; background-position: 50% 50%;
+}
