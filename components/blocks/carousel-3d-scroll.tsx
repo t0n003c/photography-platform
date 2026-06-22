@@ -357,7 +357,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
               className="c3d-preview"
               style={{ ["--c3d-cols" as string]: cols }}
             >
-              <header className="c3d-preview-header">
+              <div className="c3d-preview-inner">
+                <header className="c3d-preview-header">
                 <h3 className="c3d-preview-title">
                   <span data-c3d-preview-title-span>{scene.name}</span>
                 </h3>
@@ -376,6 +377,7 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
                     </figure>
                   );
                 })}
+                </div>
               </div>
             </div>
           </section>

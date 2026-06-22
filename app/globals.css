@@ -202,11 +202,18 @@
   -webkit-overflow-scrolling: touch;
   /* "safe center" centers when it fits but falls back to top-aligned when the
      grid is taller than the viewport, so the top row is never clipped/unreachable. */
-  display: grid; align-content: safe center; gap: 1.25rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center;
   background: hsl(var(--background)); opacity: 0; pointer-events: none;
 }
 .c3d-preview.is-open { pointer-events: auto; }
-.c3d-preview-header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+/* Header + grid share one wrapper sized to the grid's exact width, so the
+   category name sits above the grid's LEFT edge and the close above its RIGHT
+   edge — adapting automatically to the column count. */
+.c3d-preview-inner {
+  display: flex; flex-direction: column; gap: 1.25rem;
+  width: min(calc(var(--c3d-cols, 4) * 150px + (var(--c3d-cols, 4) - 1) * 2rem), 100%);
+}
+.c3d-preview-header { display: flex; align-items: baseline; justify-content: space-between; gap: 2rem; width: 100%; }
 .c3d-preview-title {
   font-family: var(--font-playfair), serif; font-style: italic; text-transform: uppercase;
   font-size: clamp(1.5rem, 4vw, 3rem); margin: 0;
@@ -219,5 +226,5 @@
 .c3d-grid-item { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; transform-style: preserve-3d; will-change: transform, opacity; }
 .c3d-grid-img { width: 100%; aspect-ratio: 4/5; background-size: cover; background-position: 50% 50%; border-radius: 4px; }
 .c3d-grid-cap { font-size: 0.78rem; color: hsl(var(--muted-foreground)); }
-@media (max-width: 900px) { .c3d-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 600px) { .c3d-grid { grid-template-columns: repeat(2, 1fr); } }
+/* On small screens the wrapper caps at 100%, so let the columns fill it evenly. */
+@media (max-width: 640px) { .c3d-grid { grid-template-columns: repeat(var(--c3d-cols, 4), minmax(0, 1fr)); } }
