@@ -370,3 +370,8 @@ is gitignored):
 - **Keep `src/lib/render-config.ts` as the single grid-type source of truth**; retire the unused
   `src/layout-config/` legacy descriptor when convenient.
 - **Set the production `SETTINGS_ENCRYPTION_KEY`** before storing real client/SMTP secrets.
+- **Cross-agent memory:** the git-tracked Markdown here is the portable source of truth. A
+  self-hosted semantic-memory service (FastAPI + SQLite + Qdrant over MCP) is an *optional*
+  accelerator only — design + guardrails (index only docs, never secrets; rebuildable cache)
+  in [`docs/AI-MEMORY-SERVICE.md`](docs/AI-MEMORY-SERVICE.md). Don't make a local DB the truth.
+- **New agent? Run `./scripts/agent-bootstrap.sh`** for instant repo + stack orientation.

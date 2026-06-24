@@ -25,6 +25,11 @@ how to *work* in it. Authoritative long-form: [`docs/`](docs/) (start with
 
 ---
 
+## Orientation
+
+- **Run `./scripts/agent-bootstrap.sh` first** — read-only; prints git status (incl. unpushed
+  commit count), Docker stack health, the rebuild command, and what to read. Changes nothing.
+
 ## Environment & key commands
 
 - **The running app is Docker at `http://localhost:3001`** (`photography-platform-web-1`),
