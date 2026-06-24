@@ -10,6 +10,18 @@ the code wins — verify before asserting.
 > verbatim, is [`docs/PROJECT-BRIEF.md`](docs/PROJECT-BRIEF.md); working conventions and
 > gotchas are [`docs/DEV-WORKFLOW.md`](docs/DEV-WORKFLOW.md).
 
+> ## ⚠️ FIRST, READ THIS: there are unpushed commits
+> The local `main` branch is **ahead of `origin/main` by un-pushed commits** (≈24 as of this
+> handoff, 2026-06-23) — feature work (3D carousel, "Alternative Scroll" layout) plus these
+> handoff docs. **Pushes are intentionally PAUSED** (GitHub Actions minute quota); push only
+> when the **owner explicitly asks**, and **batch everything into a single push**. Check the
+> real count any time with:
+> ```bash
+> git rev-list --count origin/main..HEAD      # how many commits are unpushed
+> git log origin/main..HEAD --oneline         # what they are
+> ```
+> Do not push automatically. See §12 and `AGENTS.md` rule 3.
+
 ---
 
 ## 1. Project purpose
