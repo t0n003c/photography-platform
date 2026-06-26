@@ -118,6 +118,7 @@ export default function PageEditor() {
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<PhotoOption[]>([]);
   const [targets, setTargets] = useState<Record<string, Opt[]>>({ category: [], location: [], gallery: [] });
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -232,52 +233,66 @@ export default function PageEditor() {
         {/* Editor */}
         <div className="min-w-0 space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
           <Card className="min-w-0 overflow-hidden">
-            <CardHeader>
-              <CardTitle>Page settings</CardTitle>
+            <CardHeader className="p-0">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((open) => !open)}
+                className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-[hsl(var(--muted))]/50 sm:p-5"
+                aria-expanded={settingsOpen}
+              >
+                <CardTitle>Page settings</CardTitle>
+                {settingsOpen ? (
+                  <ChevronUp className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                )}
+              </button>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Title">
-                  <Input value={page.title} onChange={(e) => patch({ title: e.target.value })} />
+            {settingsOpen && (
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Title">
+                    <Input value={page.title} onChange={(e) => patch({ title: e.target.value })} />
+                  </Field>
+                  <Field label="URL slug">
+                    <Input value={page.slug} onChange={(e) => patch({ slug: e.target.value })} />
+                  </Field>
+                  <Field label="Theme">
+                    <Select
+                      value={page.theme ?? "auto"}
+                      onChange={(e) => patch({ theme: e.target.value as PageRow["theme"] })}
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                    </Select>
+                  </Field>
+                  <Field label="Set as home page">
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={page.isHome}
+                        onChange={(e) => patch({ isHome: e.target.checked })}
+                      />
+                      Render at /
+                    </label>
+                  </Field>
+                </div>
+                <Field label="SEO title">
+                  <Input
+                    value={page.seoTitle ?? ""}
+                    onChange={(e) => patch({ seoTitle: e.target.value })}
+                  />
                 </Field>
-                <Field label="URL slug">
-                  <Input value={page.slug} onChange={(e) => patch({ slug: e.target.value })} />
+                <Field label="SEO description">
+                  <Textarea
+                    rows={2}
+                    value={page.seoDescription ?? ""}
+                    onChange={(e) => patch({ seoDescription: e.target.value })}
+                  />
                 </Field>
-                <Field label="Theme">
-                  <Select
-                    value={page.theme ?? "auto"}
-                    onChange={(e) => patch({ theme: e.target.value as PageRow["theme"] })}
-                  >
-                    <option value="auto">Auto</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </Select>
-                </Field>
-                <Field label="Set as home page">
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={page.isHome}
-                      onChange={(e) => patch({ isHome: e.target.checked })}
-                    />
-                    Render at /
-                  </label>
-                </Field>
-              </div>
-              <Field label="SEO title">
-                <Input
-                  value={page.seoTitle ?? ""}
-                  onChange={(e) => patch({ seoTitle: e.target.value })}
-                />
-              </Field>
-              <Field label="SEO description">
-                <Textarea
-                  rows={2}
-                  value={page.seoDescription ?? ""}
-                  onChange={(e) => patch({ seoDescription: e.target.value })}
-                />
-              </Field>
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
 
           <Card className="min-w-0 overflow-hidden">

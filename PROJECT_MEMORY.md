@@ -681,6 +681,8 @@ is gitignored):
   page-settings/editor shell, cards, reusable form fields, block rows, and live-preview toolbar.
   Header/action rows wrap on narrow screens so Page settings in the Pages tab should no longer
   be visually cut off on the right side in mobile use.
+  Follow-up: the Page settings card in the Pages tab is now collapsible, open by default, with
+  a clickable header and chevron state indicator.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.
