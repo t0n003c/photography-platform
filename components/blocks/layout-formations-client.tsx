@@ -220,8 +220,8 @@ export function LayoutFormationsClient({
               },
               scrollTrigger: {
                 trigger: rowImages[0],
-                start: "top 92%",
-                end: "top 46%",
+                start: "top 112%",
+                end: "top 64%",
                 scrub: variant === "sidePivot" ? 0.2 : 0.35,
               },
             });
@@ -278,8 +278,8 @@ export function LayoutFormationsClient({
               ease: "power4.out",
               scrollTrigger: {
                 trigger: section,
-                start: "top 88%",
-                end: "top 58%",
+                start: "top 104%",
+                end: "top 72%",
                 scrub: 0.25,
               },
             });
