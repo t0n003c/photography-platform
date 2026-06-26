@@ -29,7 +29,7 @@ function buildSrcSet(variants: Variant[]): string {
 }
 
 /**
- * Native <picture> with AVIF/WebP/JPEG sources. Server component (no client JS).
+ * Native <picture> with WebP primary source and JPEG fallback. Server component (no client JS).
  * Reserves intrinsic width/height to avoid layout shift, and paints a
  * dominant-color / LQIP placeholder behind the image while it loads.
  */
@@ -41,7 +41,6 @@ export function ResponsiveImage({
   objectPosition,
   style,
 }: ResponsiveImageProps) {
-  const avif = variantsForFormat(photo.variants, "avif");
   const webp = variantsForFormat(photo.variants, "webp");
   const jpeg = variantsForFormat(photo.variants, "jpeg");
 
@@ -73,9 +72,6 @@ export function ResponsiveImage({
 
   return (
     <picture className={cn("block", className)} style={placeholderStyle}>
-      {avif.length > 0 && (
-        <source type="image/avif" srcSet={buildSrcSet(avif)} sizes={sizes} />
-      )}
       {webp.length > 0 && (
         <source type="image/webp" srcSet={buildSrcSet(webp)} sizes={sizes} />
       )}

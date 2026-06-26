@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FolderTree, Images, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,21 +62,47 @@ function formatBytes(bytes: number): string {
 function PhotoTile({
   photo,
   selected,
-  onToggle,
-  onInfo,
+  multiSelect,
+  onOpen,
+  onSelect,
+  onLongPress,
   onDragStart,
 }: {
   photo: PhotoDTO;
   selected: boolean;
-  onToggle: () => void;
-  onInfo: () => void;
+  multiSelect: boolean;
+  onOpen: () => void;
+  onSelect: (shiftKey: boolean) => void;
+  onLongPress: () => void;
   onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
 }) {
   const hasVariants = photo.variants.length > 0;
+  const longPressTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
+
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        longPressed.current = false;
+        clearLongPress();
+        longPressTimer.current = window.setTimeout(() => {
+          longPressed.current = true;
+          onLongPress();
+        }, 450);
+      }}
+      onPointerUp={clearLongPress}
+      onPointerCancel={clearLongPress}
+      onPointerLeave={clearLongPress}
       className={
         "group relative aspect-square overflow-hidden rounded-lg border bg-[hsl(var(--muted))] " +
         (selected ? "ring-2 ring-[hsl(var(--ring))]" : "")
@@ -84,7 +110,14 @@ function PhotoTile({
     >
       <button
         type="button"
-        onClick={onToggle}
+        onClick={(e) => {
+          if (longPressed.current) {
+            longPressed.current = false;
+            return;
+          }
+          if (multiSelect) onSelect(e.shiftKey);
+          else onOpen();
+        }}
         aria-pressed={selected}
         className="block h-full w-full text-left"
       >
@@ -121,7 +154,10 @@ function PhotoTile({
       <Button
         size="icon"
         variant="outline"
-        onClick={onInfo}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
         aria-label="Photo details"
         className="absolute right-2 top-2 h-7 w-7 bg-[hsl(var(--background))]/90 opacity-0 transition-opacity group-hover:opacity-100"
       >
@@ -131,7 +167,7 @@ function PhotoTile({
   );
 }
 
-function DetailModal({
+function DetailSidePanel({
   photoId,
   onClose,
   onChanged,
@@ -227,13 +263,22 @@ function DetailModal({
   };
 
   return (
-    <Modal open onClose={onClose} title="Photo details">
+    <aside
+      className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l bg-[hsl(var(--background))] shadow-xl sm:w-[28rem]"
+      aria-label="Photo details"
+    >
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <h2 className="font-semibold">Photo details</h2>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          Close
+        </Button>
+      </div>
       {loading || !photo ? (
         <div className="flex justify-center py-10">
           <Spinner className="h-6 w-6" />
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
             {photo.variants.length > 0 ? (
               <ResponsiveImage
@@ -356,7 +401,7 @@ function DetailModal({
           </div>
         </div>
       )}
-    </Modal>
+    </aside>
   );
 }
 
@@ -475,10 +520,13 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [assignKind, setAssignKind] = useState<AssignKind>(null);
   const [assignMode, setAssignMode] = useState<"add" | "remove">("add");
   const [acting, setActing] = useState(false);
+  const [foldersOpen, setFoldersOpen] = useState(false);
 
   const load = useCallback(
     async (cursor: string | null) => {
@@ -515,14 +563,61 @@ export default function LibraryPage() {
       else next.add(id);
       return next;
     });
+    setLastSelectedId(id);
   }, []);
 
-  const selectAll = () => setSelected(new Set(photos.map((p) => p.id)));
-  const clearSelection = () => setSelected(new Set());
+  const selectAll = () => {
+    setMultiSelect(true);
+    setSelected(new Set(photos.map((p) => p.id)));
+    setLastSelectedId(photos.at(-1)?.id ?? null);
+  };
+  const clearSelection = () => {
+    setSelected(new Set());
+    setLastSelectedId(null);
+    setMultiSelect(false);
+  };
 
   const selectedIds = Array.from(selected);
   const photoDragIds = (photoId: string) =>
     selected.has(photoId) ? selectedIds : [photoId];
+  const selectRange = (toId: string) => {
+    if (!lastSelectedId) {
+      toggle(toId);
+      return;
+    }
+    const from = photos.findIndex((p) => p.id === lastSelectedId);
+    const to = photos.findIndex((p) => p.id === toId);
+    if (from < 0 || to < 0) {
+      toggle(toId);
+      return;
+    }
+    const [start, end] = from < to ? [from, to] : [to, from];
+    const ids = photos.slice(start, end + 1).map((p) => p.id);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setLastSelectedId(toId);
+  };
+  const selectPhoto = (photoId: string, shiftKey: boolean) => {
+    setMultiSelect(true);
+    if (shiftKey) selectRange(photoId);
+    else toggle(photoId);
+  };
+  const openPhoto = (photoId: string) => {
+    setDetailId(photoId);
+    setMultiSelect(false);
+  };
+  const enterMultiSelect = (photoId: string) => {
+    setMultiSelect(true);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.add(photoId);
+      return next;
+    });
+    setLastSelectedId(photoId);
+  };
 
   const assign = async (targetId: string) => {
     const path = assignKind === "category" ? "categories" : "locations";
@@ -635,7 +730,16 @@ export default function LibraryPage() {
       {view === "folders" ? (
         <FoldersManager embedded />
       ) : (
-        <>
+        <div
+          onDragOver={(e) => {
+            if (
+              e.dataTransfer.types.includes("application/x-photo-ids") &&
+              e.clientX > window.innerWidth - 72
+            ) {
+              setFoldersOpen(true);
+            }
+          }}
+        >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Media library</h1>
@@ -679,8 +783,10 @@ export default function LibraryPage() {
                   key={photo.id}
                   photo={photo}
                   selected={selected.has(photo.id)}
-                  onToggle={() => toggle(photo.id)}
-                  onInfo={() => setDetailId(photo.id)}
+                  multiSelect={multiSelect}
+                  onOpen={() => openPhoto(photo.id)}
+                  onSelect={(shiftKey) => selectPhoto(photo.id, shiftKey)}
+                  onLongPress={() => enterMultiSelect(photo.id)}
                   onDragStart={(e) => {
                     const ids = photoDragIds(photo.id);
                     e.dataTransfer.setData(
@@ -688,11 +794,15 @@ export default function LibraryPage() {
                       JSON.stringify(ids),
                     );
                     e.dataTransfer.effectAllowed = "copy";
+                    setFoldersOpen(true);
                   }}
                 />
               ))}
             </div>
-            <FolderDropPanel />
+            <FolderDropPanel
+              mobileOpen={foldersOpen}
+              onMobileOpenChange={setFoldersOpen}
+            />
           </div>
 
           {nextCursor && (
@@ -771,7 +881,7 @@ export default function LibraryPage() {
       )}
 
       {detailId && (
-        <DetailModal
+        <DetailSidePanel
           photoId={detailId}
           onClose={() => setDetailId(null)}
           onChanged={handleDetailChanged}
@@ -788,7 +898,7 @@ export default function LibraryPage() {
           onAssign={assign}
         />
       )}
-        </>
+        </div>
       )}
     </div>
   );

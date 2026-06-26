@@ -704,6 +704,11 @@ is gitignored):
   carries the whole selection, and the Photos view includes a folder/subfolder drop panel. The
   Folders view also accepts dropped photos and supports dragging folders to reorder them beside
   the target folder within the target's parent group.
+  Follow-up: Library photo click now opens a right-side detail panel, press-and-hold enters
+  multi-select mode, and shift-click range-selects photos in between. Mobile Library uses a
+  right-side virtual-folder drawer with a visible handle and auto-opens near right-edge drag.
+  Image pipeline audit confirmed uploads preserve originals for client downloads while web display
+  uses generated WebP responsive variants plus a single JPEG fallback; outdated AVIF UI wording was removed.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

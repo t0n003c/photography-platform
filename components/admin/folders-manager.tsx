@@ -277,7 +277,13 @@ function FolderDropRow({
   );
 }
 
-export function FolderDropPanel() {
+export function FolderDropPanel({
+  mobileOpen,
+  onMobileOpenChange,
+}: {
+  mobileOpen: boolean;
+  onMobileOpenChange: (open: boolean) => void;
+}) {
   const { toast } = useToast();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -313,12 +319,22 @@ export function FolderDropPanel() {
     }
   };
 
-  return (
-    <Card className="self-start">
+  const panel = () => (
+    <Card className="h-full self-start overflow-hidden xl:h-auto">
       <CardHeader>
-        <CardTitle>Folders</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle>Folders</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onMobileOpenChange(false)}
+            className="xl:hidden"
+          >
+            Close
+          </Button>
+        </div>
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Drag selected photos onto a folder or subfolder.
+          Virtual folders organize photos without moving or deleting originals.
         </p>
       </CardHeader>
       <CardContent>
@@ -344,6 +360,36 @@ export function FolderDropPanel() {
         )}
       </CardContent>
     </Card>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Open folders panel"
+        onClick={() => onMobileOpenChange(true)}
+        className="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 items-center gap-1 rounded-l-md border bg-[hsl(var(--background))] px-1.5 py-4 text-xs font-medium shadow-md xl:hidden"
+      >
+        <FolderTree className="h-4 w-4" />
+        <span className="[writing-mode:vertical-rl]">Folders</span>
+      </button>
+      <div className="hidden xl:block">{panel()}</div>
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-[min(86vw,22rem)] bg-[hsl(var(--background))] shadow-xl transition-transform xl:hidden ${
+          mobileOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {panel()}
+      </div>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close folders panel"
+          onClick={() => onMobileOpenChange(false)}
+          className="fixed inset-0 z-40 bg-black/20 xl:hidden"
+        />
+      )}
+    </>
   );
 }
 
@@ -1176,7 +1222,7 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
   const deleteFolder = async (folder: Folder) => {
     if (
       !window.confirm(
-        `Delete “${folder.name}”? This also removes all of its subfolders and their photo memberships. The photos themselves are kept.`,
+        `Delete virtual folder “${folder.name}”? This removes the folder, subfolders, and photo memberships only. The photos themselves are kept in Library.`,
       )
     ) {
       return;

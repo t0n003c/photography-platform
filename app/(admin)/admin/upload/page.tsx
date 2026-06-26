@@ -93,7 +93,7 @@ export default function UploadPage() {
       return found;
     };
 
-    // After the bytes land, the worker generates WebP/AVIF variants. Poll until
+    // After the bytes land, the worker generates WebP/JPEG web variants. Poll until
     // it's ready (or failed) so the row reflects real end-to-end progress.
     const pollProcessing = async (photoId: string, itemId: number) => {
       const deadline = Date.now() + 90_000;
@@ -273,7 +273,7 @@ export default function UploadPage() {
                     </div>
                     <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--muted))]">
                       {it.status === "processing" ? (
-                        // The slow phase (sharp → WebP/AVIF variants): animated.
+                        // The slow phase (sharp -> WebP/JPEG variants): animated.
                         <div className="progress-indeterminate bg-amber-500" />
                       ) : (
                         <div
