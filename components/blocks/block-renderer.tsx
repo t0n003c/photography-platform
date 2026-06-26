@@ -10,6 +10,7 @@ import {
   InstagramBlock,
 } from "@/components/blocks/index-blocks";
 import { ScrollShowcaseBlock } from "@/components/blocks/scroll-showcase";
+import { ContactForm } from "@/components/forms/contact-form";
 import { collectPhotoIds, type Block, type LeafBlock } from "@/src/lib/blocks";
 import { getPhotosByIds } from "@/src/db/queries/pages";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -105,6 +106,11 @@ const CTA_BUTTON: Record<string, string> = {
   soft: "rounded-md bg-[hsl(var(--muted))] px-6 py-2.5 text-[hsl(var(--foreground))] hover:opacity-80",
   link: "text-[hsl(var(--foreground))] underline underline-offset-4 hover:opacity-70",
 };
+const CONTACT_ALIGN: Record<string, string> = {
+  left: "items-start text-left",
+  center: "items-center text-center",
+  right: "items-end text-right",
+};
 
 type PhotoMap = Map<string, PhotoDTO>;
 
@@ -183,6 +189,64 @@ function LeafView({
           </Link>
         </div>
       );
+    case "contactForm": {
+      const intro = (
+        <div className={`flex flex-col ${CONTACT_ALIGN[block.align] ?? CONTACT_ALIGN.left}`}>
+          {block.eyebrow && (
+            <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
+              {block.eyebrow}
+            </p>
+          )}
+          {block.heading && (
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {block.heading}
+            </h2>
+          )}
+          {block.body && (
+            <p className="mt-4 max-w-xl text-[hsl(var(--muted-foreground))]">
+              {block.body}
+            </p>
+          )}
+        </div>
+      );
+      const form = <ContactForm submitLabel={block.submitLabel || "Send message"} />;
+
+      if (block.style === "split") {
+        return (
+          <div className="grid gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-start">
+            {intro}
+            <div>{form}</div>
+          </div>
+        );
+      }
+      if (block.style === "card") {
+        return (
+          <div className="rounded-2xl border bg-[hsl(var(--background))] p-6 shadow-sm sm:p-8">
+            <div className="mb-8">{intro}</div>
+            {form}
+          </div>
+        );
+      }
+      if (block.style === "minimal") {
+        return (
+          <div>
+            {(block.heading || block.body || block.eyebrow) && (
+              <div className="mb-6">{intro}</div>
+            )}
+            <ContactForm
+              submitLabel={block.submitLabel || "Send message"}
+              className="[&_button]:rounded-md"
+            />
+          </div>
+        );
+      }
+      return (
+        <div>
+          <div className="mb-8">{intro}</div>
+          {form}
+        </div>
+      );
+    }
     case "image": {
       const photo = block.photoId ? photoMap.get(block.photoId) : undefined;
       if (!photo) {
@@ -413,6 +477,15 @@ function BlockView({ block, photoMap, preview }: { block: Block; photoMap: Photo
 
   if (isFullBleed(block)) {
     return <LeafView block={block} photoMap={photoMap} preview={preview} />;
+  }
+  if (block.type === "contactForm") {
+    return (
+      <Container className="py-12 sm:py-16">
+        <div className="mx-auto max-w-5xl">
+          <LeafView block={block} photoMap={photoMap} preview={preview} />
+        </div>
+      </Container>
+    );
   }
   return (
     <Container className={blockPy(block)}>

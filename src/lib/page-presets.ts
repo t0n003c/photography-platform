@@ -61,6 +61,7 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
       return [
         { id: gen(), type: "heading", text: "Get in touch", level: 1, align: "left", font: "sans", spacing: "normal" },
         { id: gen(), type: "richtext", text: "Tell visitors how to reach you.", align: "left", font: "sans", size: "base" },
+        { id: gen(), type: "contactForm", style: "stacked", eyebrow: "Contact", heading: "Start a conversation", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" },
       ];
     case "standard":
     default:

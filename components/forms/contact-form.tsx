@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 
 // Spam-protected contact form (honeypot `company` + min-fill-time `_ts`),
 // posting to the public API. The server scores spam; we always show success.
-export function ContactForm() {
+export function ContactForm({
+  submitLabel = "Send message",
+  className = "",
+}: {
+  submitLabel?: string;
+  className?: string;
+}) {
   const [ts, setTs] = useState(0);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
@@ -48,7 +54,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className={`space-y-4 ${className}`}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" name="name" required />
         <Field label="Email" name="email" type="email" required />
@@ -83,7 +89,7 @@ export function ContactForm() {
         disabled={status === "sending"}
         className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
       >
-        {status === "sending" ? "Sending…" : "Send message"}
+        {status === "sending" ? "Sending…" : submitLabel}
       </button>
     </form>
   );

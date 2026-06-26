@@ -81,7 +81,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "cta", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
 
@@ -96,6 +96,7 @@ function makeBlock(type: BlockType): Block {
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
+    case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
     case "spacer": return { id, type, size: "md" };
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
@@ -462,6 +463,8 @@ function blockSummary(block: Block): string {
       return block.headline || block.source;
     case "cta":
       return block.headline || block.buttonLabel;
+    case "contactForm":
+      return `${block.style} · ${block.heading || "Contact"}`;
     case "columns":
       return `${block.columns.length} columns`;
     case "faq":
@@ -798,6 +801,38 @@ function LeafEditor({
               <option value="link">Text link</option>
             </Select>
           </Field>
+        </div>
+      );
+    case "contactForm":
+      return (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Form style">
+              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                <option value="stacked">Stacked intro</option>
+                <option value="split">Split intro + form</option>
+                <option value="card">Card form</option>
+                <option value="minimal">Minimal</option>
+              </Select>
+            </Field>
+            <AlignField value={block.align} onChange={(align) => set({ align })} />
+            <Field label="Top label">
+              <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
+            </Field>
+            <Field label="Heading">
+              <Input value={block.heading} onChange={(e) => set({ heading: e.target.value })} />
+            </Field>
+            <Field label="Submit button">
+              <Input value={block.submitLabel} onChange={(e) => set({ submitLabel: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="Intro text">
+            <Textarea rows={3} value={block.body} onChange={(e) => set({ body: e.target.value })} />
+          </Field>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Messages submit to the existing contact inbox. Manage received messages in{" "}
+            <Link href="/admin/contact" className="underline underline-offset-2">Inbox</Link>.
+          </p>
         </div>
       );
     case "image":

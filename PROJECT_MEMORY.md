@@ -694,6 +694,9 @@ is gitignored):
   to scan without changing the underlying config contract.
   Settings tab follow-up: General, Branding, Email, and Integrations are now collapsible sections.
   They default open on desktop and closed on mobile to reduce narrow-screen scrolling.
+  Pages editor follow-up: Contact form is now a real page-builder block option. It reuses the
+  existing spam-protected contact submission flow and supports stacked, split, card, and minimal
+  presentation styles with editable intro/heading/button text.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

@@ -174,6 +174,19 @@ const CtaBlock = z.object({
   buttonHref: z.string().default("/contact"),
   buttonStyle: CtaButtonStyleEnum.default("pill"),
 });
+export const ContactFormStyleEnum = z.enum(["stacked", "split", "card", "minimal"]);
+const ContactFormBlock = z.object({
+  ...baseBlock,
+  type: z.literal("contactForm"),
+  style: ContactFormStyleEnum.default("stacked"),
+  eyebrow: z.string().default("Contact"),
+  heading: z.string().default("Get in touch"),
+  body: z
+    .string()
+    .default("Tell me about your session, event, or print order and I'll be in touch soon."),
+  submitLabel: z.string().default("Send message"),
+  align: AlignEnum.default("left"),
+});
 const SpacerBlock = z.object({
   ...baseBlock,
   type: z.literal("spacer"),
@@ -304,6 +317,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   BannerBlock,
   QuoteBlock,
   CtaBlock,
+  ContactFormBlock,
   SpacerBlock,
   DividerBlock,
   CategoryIndexBlock,
@@ -373,6 +387,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   banner: "Banner",
   quote: "Quote",
   cta: "Call to action",
+  contactForm: "Contact form",
   spacer: "Spacer",
   divider: "Divider",
   columns: "Columns",
