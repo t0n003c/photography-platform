@@ -84,7 +84,7 @@ function CollapsibleDesignCard({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <Card>

@@ -690,7 +690,7 @@ is gitignored):
   instead of one long mixed grid. Common style/category controls are separated from
   Scroll Panels text/layout/colors, Layout Formations top text/layout, and Cinematic/3D panel content.
   Design tab follow-up: each Design surface card (Home, Category, Location, About, Global) and
-  the Footer design card are now collapsible, open by default, so the layout controls are easier
+  the Footer design card are now collapsible and closed by default, so the layout controls are easier
   to scan without changing the underlying config contract.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
