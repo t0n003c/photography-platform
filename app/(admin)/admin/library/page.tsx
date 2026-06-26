@@ -11,7 +11,10 @@ import { useToast } from "@/components/ui/toast";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { api, ApiError } from "@/src/lib/api-client";
 import type { PhotoDTO } from "@/src/db/queries/photos";
-import { FoldersManager } from "@/components/admin/folders-manager";
+import {
+  FolderDropPanel,
+  FoldersManager,
+} from "@/components/admin/folders-manager";
 
 interface PageMeta {
   nextCursor: string | null;
@@ -61,15 +64,19 @@ function PhotoTile({
   selected,
   onToggle,
   onInfo,
+  onDragStart,
 }: {
   photo: PhotoDTO;
   selected: boolean;
   onToggle: () => void;
   onInfo: () => void;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
 }) {
   const hasVariants = photo.variants.length > 0;
   return (
     <div
+      draggable
+      onDragStart={onDragStart}
       className={
         "group relative aspect-square overflow-hidden rounded-lg border bg-[hsl(var(--muted))] " +
         (selected ? "ring-2 ring-[hsl(var(--ring))]" : "")
@@ -514,6 +521,8 @@ export default function LibraryPage() {
   const clearSelection = () => setSelected(new Set());
 
   const selectedIds = Array.from(selected);
+  const photoDragIds = (photoId: string) =>
+    selected.has(photoId) ? selectedIds : [photoId];
 
   const assign = async (targetId: string) => {
     const path = assignKind === "category" ? "categories" : "locations";
@@ -663,16 +672,27 @@ export default function LibraryPage() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {photos.map((photo) => (
-              <PhotoTile
-                key={photo.id}
-                photo={photo}
-                selected={selected.has(photo.id)}
-                onToggle={() => toggle(photo.id)}
-                onInfo={() => setDetailId(photo.id)}
-              />
-            ))}
+          <div className="grid gap-6 xl:grid-cols-[1fr_20rem]">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-5">
+              {photos.map((photo) => (
+                <PhotoTile
+                  key={photo.id}
+                  photo={photo}
+                  selected={selected.has(photo.id)}
+                  onToggle={() => toggle(photo.id)}
+                  onInfo={() => setDetailId(photo.id)}
+                  onDragStart={(e) => {
+                    const ids = photoDragIds(photo.id);
+                    e.dataTransfer.setData(
+                      "application/x-photo-ids",
+                      JSON.stringify(ids),
+                    );
+                    e.dataTransfer.effectAllowed = "copy";
+                  }}
+                />
+              ))}
+            </div>
+            <FolderDropPanel />
           </div>
 
           {nextCursor && (

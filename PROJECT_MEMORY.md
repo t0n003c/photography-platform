@@ -700,6 +700,10 @@ is gitignored):
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.
+  Library/Folders follow-up: photo tiles in Library are draggable; dragging one selected photo
+  carries the whole selection, and the Photos view includes a folder/subfolder drop panel. The
+  Folders view also accepts dropped photos and supports dragging folders to reorder them beside
+  the target folder within the target's parent group.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

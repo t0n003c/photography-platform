@@ -42,6 +42,11 @@ interface TreeNode extends Folder {
   depth: number;
 }
 
+interface FolderDragPayload {
+  kind: "folder";
+  folderId: string;
+}
+
 function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
@@ -79,6 +84,28 @@ function buildTree(folders: Folder[]): TreeNode[] {
   };
   sortRec(roots, 0);
   return roots;
+}
+
+function collectDescendantIds(folders: Folder[], folderId: string): Set<string> {
+  const children = new Map<string | null, string[]>();
+  for (const f of folders) {
+    const list = children.get(f.parentId) ?? [];
+    list.push(f.id);
+    children.set(f.parentId, list);
+  }
+  const out = new Set<string>();
+  const visit = (id: string) => {
+    for (const childId of children.get(id) ?? []) {
+      out.add(childId);
+      visit(childId);
+    }
+  };
+  visit(folderId);
+  return out;
+}
+
+async function addPhotosToFolder(folderId: string, photoIds: string[]) {
+  await api.post(`/api/v1/admin/folders/${folderId}/photos`, { photoIds });
 }
 
 // ── Name modal (used for create / subfolder / rename) ─────────────────────────
@@ -192,6 +219,131 @@ function MoveModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function FolderDropRow({
+  node,
+  onDropPhotos,
+}: {
+  node: TreeNode;
+  onDropPhotos: (folder: Folder, photoIds: string[]) => Promise<void>;
+}) {
+  const [over, setOver] = useState(false);
+  const hasChildren = node.children.length > 0;
+
+  return (
+    <li>
+      <div
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes("application/x-photo-ids")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+            setOver(true);
+          }
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          const raw = e.dataTransfer.getData("application/x-photo-ids");
+          if (!raw) return;
+          e.preventDefault();
+          setOver(false);
+          const photoIds = JSON.parse(raw) as string[];
+          void onDropPhotos(node, photoIds);
+        }}
+        className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+          over ? "bg-[hsl(var(--primary))]/10 ring-1 ring-[hsl(var(--ring))]" : "hover:bg-[hsl(var(--muted))]"
+        }`}
+        style={{ marginLeft: `${node.depth * 14}px` }}
+      >
+        <FolderTree className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
+        <span className="min-w-0 flex-1 truncate">{node.name}</span>
+        <Badge tone="neutral" className="shrink-0">
+          {node.photoCount}
+        </Badge>
+      </div>
+      {hasChildren && (
+        <ul>
+          {node.children.map((child) => (
+            <FolderDropRow
+              key={child.id}
+              node={child}
+              onDropPhotos={onDropPhotos}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+export function FolderDropPanel() {
+  const { toast } = useToast();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<{ data: Folder[] }>("/api/v1/admin/folders");
+      setFolders(res.data);
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const tree = useMemo(() => buildTree(folders), [folders]);
+
+  const dropPhotos = async (folder: Folder, photoIds: string[]) => {
+    try {
+      await addPhotosToFolder(folder.id, photoIds);
+      await load();
+      toast(
+        `Added ${photoIds.length} photo${photoIds.length === 1 ? "" : "s"} to ${folder.name}`,
+        "success",
+      );
+    } catch (err) {
+      toast(errMsg(err), "error");
+    }
+  };
+
+  return (
+    <Card className="self-start">
+      <CardHeader>
+        <CardTitle>Folders</CardTitle>
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+          Drag selected photos onto a folder or subfolder.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner className="h-5 w-5" />
+          </div>
+        ) : tree.length === 0 ? (
+          <EmptyState
+            title="No folders yet"
+            description="Switch to the Folders view to create one."
+          />
+        ) : (
+          <ul className="-mx-1 space-y-0.5">
+            {tree.map((node) => (
+              <FolderDropRow
+                key={node.id}
+                node={node}
+                onDropPhotos={dropPhotos}
+              />
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -476,33 +628,110 @@ function TreeRow({
   node,
   selectedId,
   expanded,
+  dragFolderId,
+  dropFolderId,
   onToggleExpand,
   onSelect,
   onNewSub,
   onRename,
   onMove,
   onDelete,
+  onDragStartFolder,
+  onDragEnterFolder,
+  onDropFolder,
+  onDropPhotos,
+  onDragLeaveFolder,
+  onDragEndFolder,
 }: {
   node: TreeNode;
   selectedId: string | null;
   expanded: Set<string>;
+  dragFolderId: string | null;
+  dropFolderId: string | null;
   onToggleExpand: (id: string) => void;
   onSelect: (node: TreeNode) => void;
   onNewSub: (node: TreeNode) => void;
   onRename: (node: TreeNode) => void;
   onMove: (node: TreeNode) => void;
   onDelete: (node: TreeNode) => void;
+  onDragStartFolder: (node: TreeNode) => void;
+  onDragEnterFolder: (node: TreeNode) => void;
+  onDropFolder: (draggedId: string, target: TreeNode) => void;
+  onDropPhotos: (folder: Folder, photoIds: string[]) => void;
+  onDragLeaveFolder: () => void;
+  onDragEndFolder: () => void;
 }) {
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
   const isSelected = selectedId === node.id;
+  const isDropTarget = dropFolderId === node.id;
 
   return (
     <li>
       <div
+        draggable
+        onDragStart={(e) => {
+          const payload: FolderDragPayload = {
+            kind: "folder",
+            folderId: node.id,
+          };
+          e.dataTransfer.setData(
+            "application/x-folder",
+            JSON.stringify(payload),
+          );
+          e.dataTransfer.effectAllowed = "move";
+          onDragStartFolder(node);
+        }}
+        onDragOver={(e) => {
+          if (
+            e.dataTransfer.types.includes("application/x-folder") ||
+            e.dataTransfer.types.includes("application/x-photo-ids")
+          ) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = e.dataTransfer.types.includes(
+              "application/x-photo-ids",
+            )
+              ? "copy"
+              : "move";
+          }
+        }}
+        onDragEnter={(e) => {
+          if (
+            e.dataTransfer.types.includes("application/x-folder") ||
+            e.dataTransfer.types.includes("application/x-photo-ids")
+          ) {
+            e.preventDefault();
+            onDragEnterFolder(node);
+          }
+        }}
+        onDragLeave={onDragLeaveFolder}
+        onDrop={(e) => {
+          const photoRaw = e.dataTransfer.getData("application/x-photo-ids");
+          const folderRaw = e.dataTransfer.getData("application/x-folder");
+          if (photoRaw) {
+            e.preventDefault();
+            onDragLeaveFolder();
+            onDropPhotos(node, JSON.parse(photoRaw) as string[]);
+            onDragEndFolder();
+            return;
+          }
+          if (folderRaw) {
+            e.preventDefault();
+            onDragLeaveFolder();
+            const payload = JSON.parse(folderRaw) as FolderDragPayload;
+            onDropFolder(payload.folderId, node);
+            onDragEndFolder();
+          }
+        }}
+        onDragEnd={onDragEndFolder}
         className={
           "group flex items-center gap-1 rounded-md pr-1 " +
-          (isSelected ? "bg-[hsl(var(--muted))]" : "hover:bg-[hsl(var(--muted))]")
+          (isDropTarget
+            ? "bg-[hsl(var(--primary))]/10 ring-1 ring-[hsl(var(--ring))]"
+            : isSelected
+              ? "bg-[hsl(var(--muted))]"
+              : "hover:bg-[hsl(var(--muted))]") +
+          (dragFolderId === node.id ? " opacity-50" : "")
         }
         style={{ paddingLeft: `${node.depth * 16}px` }}
       >
@@ -585,12 +814,20 @@ function TreeRow({
               node={child}
               selectedId={selectedId}
               expanded={expanded}
+              dragFolderId={dragFolderId}
+              dropFolderId={dropFolderId}
               onToggleExpand={onToggleExpand}
               onSelect={onSelect}
               onNewSub={onNewSub}
               onRename={onRename}
               onMove={onMove}
               onDelete={onDelete}
+              onDragStartFolder={onDragStartFolder}
+              onDragEnterFolder={onDragEnterFolder}
+              onDropFolder={onDropFolder}
+              onDropPhotos={onDropPhotos}
+              onDragLeaveFolder={onDragLeaveFolder}
+              onDragEndFolder={onDragEndFolder}
             />
           ))}
         </ul>
@@ -866,6 +1103,8 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [modal, setModal] = useState<ModalState>(null);
+  const [dragFolderId, setDragFolderId] = useState<string | null>(null);
+  const [dropFolderId, setDropFolderId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -952,6 +1191,67 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
+  const dropPhotosOnFolder = async (target: Folder, photoIds: string[]) => {
+    try {
+      await addPhotosToFolder(target.id, photoIds);
+      await load();
+      toast(
+        `Added ${photoIds.length} photo${photoIds.length === 1 ? "" : "s"} to ${target.name}`,
+        "success",
+      );
+    } catch (err) {
+      toast(errMsg(err), "error");
+    }
+  };
+
+  const reorderFolder = async (draggedId: string, target: Folder) => {
+    if (draggedId === target.id) return;
+    const dragged = folders.find((f) => f.id === draggedId);
+    if (!dragged) return;
+
+    const descendants = collectDescendantIds(folders, draggedId);
+    const nextParentId = target.parentId;
+    if (nextParentId && descendants.has(nextParentId)) {
+      toast("Cannot move a folder into its own subfolder.", "error");
+      return;
+    }
+
+    const siblings = folders
+      .filter((f) => f.parentId === nextParentId && f.id !== draggedId)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    const targetIndex = siblings.findIndex((f) => f.id === target.id);
+    if (targetIndex < 0) return;
+
+    const ordered = [...siblings];
+    ordered.splice(targetIndex, 0, { ...dragged, parentId: nextParentId });
+    const orderById = new Map(
+      ordered.map((f, index) => [f.id, { parentId: nextParentId, sortOrder: index }]),
+    );
+
+    setFolders((prev) =>
+      prev.map((f) => {
+        const next = orderById.get(f.id);
+        return next ? { ...f, ...next } : f;
+      }),
+    );
+
+    try {
+      await Promise.all(
+        ordered.map((f, index) =>
+          api.patch(`/api/v1/admin/folders/${f.id}`, {
+            ...(f.id === draggedId ? { parentId: nextParentId } : {}),
+            sortOrder: index,
+          }),
+        ),
+      );
+      await load();
+      toast("Folder reordered", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+      await load();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {!embedded && (
@@ -995,12 +1295,23 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
                     node={node}
                     selectedId={selectedId}
                     expanded={expanded}
+                    dragFolderId={dragFolderId}
+                    dropFolderId={dropFolderId}
                     onToggleExpand={toggleExpand}
                     onSelect={(n) => setSelectedId(n.id)}
                     onNewSub={(n) => setModal({ kind: "new-sub", folder: n })}
                     onRename={(n) => setModal({ kind: "rename", folder: n })}
                     onMove={(n) => setModal({ kind: "move", folder: n })}
                     onDelete={(n) => void deleteFolder(n)}
+                    onDragStartFolder={(n) => setDragFolderId(n.id)}
+                    onDragEnterFolder={(n) => setDropFolderId(n.id)}
+                    onDropFolder={(id, n) => void reorderFolder(id, n)}
+                    onDropPhotos={(n, ids) => void dropPhotosOnFolder(n, ids)}
+                    onDragLeaveFolder={() => setDropFolderId(null)}
+                    onDragEndFolder={() => {
+                      setDragFolderId(null);
+                      setDropFolderId(null);
+                    }}
                   />
                 ))}
               </ul>
