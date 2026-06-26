@@ -127,12 +127,35 @@ export function LayoutFormationsClient({
         if (!grid || images.length === 0) return;
 
         if (!isDesktop) {
+          const useMobileRowScrub =
+            variant === "tilted" || variant === "depth" || variant === "sidePivot";
+          if (useMobileRowScrub) {
+            const rows = new Map<number, HTMLElement[]>();
+            for (const image of images) {
+              const rowTop = Math.round(image.offsetTop);
+              rows.set(rowTop, [...(rows.get(rowTop) ?? []), image]);
+            }
+
+            rows.forEach((rowImages) => {
+              gsap.from(rowImages, {
+                y: 96,
+                autoAlpha: 0,
+                stagger: 0.045,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: rowImages[0],
+                  start: "top 78%",
+                  end: "top 18%",
+                  scrub: true,
+                },
+              });
+            });
+            return;
+          }
+
           const useSlowMobileScrub =
             variant === "columns" ||
-            variant === "zoomed" ||
-            variant === "tilted" ||
-            variant === "depth" ||
-            variant === "sidePivot";
+            variant === "zoomed";
           const mobileTiming =
             useSlowMobileScrub
               ? { start: "top 74%", end: "top -42%" }

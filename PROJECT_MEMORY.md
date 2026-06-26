@@ -602,6 +602,11 @@ is gitignored):
   text-to-grid gap tightly so the grid does not drift away from the title. Column Reveal mobile
   restored the count-aware dense layout behavior that 6/9-photo formations used before, instead
   of forcing every count into the same 3-column phone grid.
+  Latest mobile spacing pass: Column Assemble and Column Reveal first mobile sections use larger
+  top offsets but override the title-to-grid gap to a very small value, keeping the text lower
+  without creating a large blank space before the first grid. Tilted Fly-in, 3D Depth Fly-in, and
+  Side Pivot no longer animate the whole mobile grid as one unit; mobile groups photos by rendered
+  row and gives each row its own scrub trigger so later rows animate when they enter view.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

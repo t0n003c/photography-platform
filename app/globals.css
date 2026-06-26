@@ -976,10 +976,14 @@ html.js .pr-root.is-enhanced {
     padding-top: clamp(16.5rem, 62vw, 19rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(32rem, 115vw, 38rem);
+    padding-top: clamp(36rem, 130vw, 44rem);
   }
+  .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
+    padding-top: clamp(24rem, 90vw, 30rem);
+  }
+  .lf-root[data-lf-variant="reveal"] .lf-stage,
   .lf-root[data-lf-variant="columns"] .lf-stage {
-    gap: clamp(0.75rem, 3vw, 1rem);
+    gap: clamp(0.2rem, 1vw, 0.35rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section,
   .lf-root[data-lf-variant="columns"] .lf-stage,
