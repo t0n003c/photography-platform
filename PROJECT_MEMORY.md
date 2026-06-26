@@ -612,6 +612,10 @@ is gitignored):
   distinct mobile entrances again: Tilted uses alternating rotation, Depth uses scale + rotationX
   perspective, and Side Pivot uses an x-offset + rotationY side pivot. Column Assemble/Reveal
   mobile first sections got larger top offsets, with the title-to-grid gap collapsed to zero.
+  Live-preview follow-up: Column Assemble/Reveal mobile spacing now also pulls the first grid up
+  slightly with a negative mobile grid margin, because a measured 0px grid gap can still look
+  visually roomy from the title line box. Mobile row animations use explicit from/to end states,
+  smoothed scrub, and no per-photo row stagger to avoid endpoint snapping.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

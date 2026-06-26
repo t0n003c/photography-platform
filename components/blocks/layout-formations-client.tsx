@@ -164,18 +164,32 @@ export function LayoutFormationsClient({
                           transformOrigin: "0% 50%",
                         }
                       : { y: 112 };
-              gsap.from(rowImages, {
-                ...fromVars,
-                autoAlpha: 0,
-                stagger: 0.045,
-                ease: "none",
-                scrollTrigger: {
-                  trigger: rowImages[0],
-                  start: "top 78%",
-                  end: "top 18%",
-                  scrub: true,
+              const toVars =
+                variant === "tilted"
+                  ? { y: 0, rotation: 0 }
+                  : variant === "depth"
+                    ? { y: 0, scale: 1, rotationX: 0 }
+                    : variant === "sidePivot"
+                      ? { x: 0, y: 0, rotationY: 0 }
+                      : { y: 0 };
+              gsap.fromTo(
+                rowImages,
+                {
+                  ...fromVars,
+                  autoAlpha: 0,
                 },
-              });
+                {
+                  ...toVars,
+                  autoAlpha: 1,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger: rowImages[0],
+                    start: "top 84%",
+                    end: "top 4%",
+                    scrub: 0.65,
+                  },
+                },
+              );
             });
             return;
           }
