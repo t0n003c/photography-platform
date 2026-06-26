@@ -168,6 +168,7 @@ export async function ScrollShowcaseBlock({
         variant={block.layoutFormationsVariant ?? "rise"}
         photoCount={layoutFormationsPhotoCount}
         headerAlign={block.layoutFormationsHeaderAlign ?? "left"}
+        heading={block.layoutFormationsHeading ?? "Layout formations"}
       />
     );
   }

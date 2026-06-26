@@ -252,6 +252,7 @@ const ScrollShowcaseBlock = z.object({
     .optional(),
   // LayoutFormations-only: horizontal position of the top label block.
   layoutFormationsHeaderAlign: AlignEnum.default("left").optional(),
+  layoutFormationsHeading: z.string().default("Layout formations").optional(),
   // LayoutFormations-only: photos used in each assembled layout.
   layoutFormationsPhotoCount: z.number().int().min(6).max(24).default(12).optional(),
 });

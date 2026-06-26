@@ -683,6 +683,9 @@ is gitignored):
   be visually cut off on the right side in mobile use.
   Follow-up: the Page settings card in the Pages tab is now collapsible, open by default, with
   a clickable header and chevron state indicator.
+  Layout Formations follow-up: Scroll Showcase blocks now store `layoutFormationsHeading`,
+  exposed in the Pages tab as "Top heading", so the top text no longer has to say
+  "Layout formations". Existing blocks default to the old text.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

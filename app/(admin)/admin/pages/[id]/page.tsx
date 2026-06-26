@@ -1184,6 +1184,13 @@ function LeafEditor({
                     placeholder="Selected work"
                   />
                 </Field>
+                <Field label="Top heading">
+                  <Input
+                    value={block.layoutFormationsHeading ?? "Layout formations"}
+                    onChange={(e) => set({ layoutFormationsHeading: e.target.value })}
+                    placeholder="Layout formations"
+                  />
+                </Field>
                 <Field label="Formation variant">
                   <Select
                     value={layoutFormationVariant}

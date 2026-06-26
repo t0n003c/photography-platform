@@ -91,6 +91,7 @@ export function LayoutFormationsClient({
   variant,
   photoCount,
   headerAlign,
+  heading,
 }: {
   panels: ShowcasePanel[];
   title: string;
@@ -98,6 +99,7 @@ export function LayoutFormationsClient({
   variant: LayoutFormationVariant;
   photoCount: number;
   headerAlign: LayoutFormationHeaderAlign;
+  heading: string;
 }) {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const effectivePhotoCount = variant === "zoomed" ? 9 : photoCount;
@@ -548,7 +550,7 @@ export function LayoutFormationsClient({
     >
       <header className="lf-header">
         {title && <p className="lf-eyebrow">{title}</p>}
-        <h2>Layout formations</h2>
+        {heading && <h2>{heading}</h2>}
         <p>{variantLabels[variant]}</p>
       </header>
 
