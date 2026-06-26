@@ -976,7 +976,7 @@ html.js .pr-root.is-enhanced {
     padding-top: clamp(16.5rem, 62vw, 19rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(18rem, 68vw, 22rem);
+    padding-top: clamp(21rem, 76vw, 25rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section,
   .lf-root[data-lf-variant="columns"] .lf-stage,
@@ -1019,7 +1019,13 @@ html.js .pr-root.is-enhanced {
   .lf-grid,
   .lf-root[data-lf-variant="columns"] .lf-grid,
   .lf-root[data-lf-variant="zoomed"] .lf-grid,
-  .lf-root[data-lf-variant="reveal"] .lf-grid {
+  .lf-root[data-lf-variant="reveal"] .lf-grid,
+  .lf-root[data-lf-variant="tilted"] .lf-grid,
+  .lf-root[data-lf-variant="tilted"][data-lf-count] .lf-grid,
+  .lf-root[data-lf-variant="depth"] .lf-grid,
+  .lf-root[data-lf-variant="depth"][data-lf-count] .lf-grid,
+  .lf-root[data-lf-variant="sidePivot"] .lf-grid,
+  .lf-root[data-lf-variant="sidePivot"][data-lf-count] .lf-grid {
     width: 100%;
     height: auto;
     min-height: 0;
@@ -1064,7 +1070,13 @@ html.js .pr-root.is-enhanced {
 @media (max-width: 480px) {
   .lf-grid,
   .lf-root[data-lf-variant="columns"] .lf-grid,
-  .lf-root[data-lf-variant="zoomed"] .lf-grid {
+  .lf-root[data-lf-variant="zoomed"] .lf-grid,
+  .lf-root[data-lf-variant="tilted"] .lf-grid,
+  .lf-root[data-lf-variant="tilted"][data-lf-count] .lf-grid,
+  .lf-root[data-lf-variant="depth"] .lf-grid,
+  .lf-root[data-lf-variant="depth"][data-lf-count] .lf-grid,
+  .lf-root[data-lf-variant="sidePivot"] .lf-grid,
+  .lf-root[data-lf-variant="sidePivot"][data-lf-count] .lf-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .lf-root[data-lf-variant="reveal"] .lf-grid {

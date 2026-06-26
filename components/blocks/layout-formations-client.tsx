@@ -128,7 +128,13 @@ export function LayoutFormationsClient({
 
         if (!isDesktop) {
           const mobileTiming =
-            variant === "rise" || variant === "columns" || variant === "zoomed"
+            variant === "columns" ||
+            variant === "zoomed" ||
+            variant === "tilted" ||
+            variant === "depth" ||
+            variant === "sidePivot"
+              ? { start: "top 62%", end: "top 24%" }
+              : variant === "rise"
               ? { start: "top 74%", end: "top 34%" }
               : { start: "top 88%", end: "top 48%" };
           gsap.from(images, {

@@ -590,6 +590,11 @@ is gitignored):
   Mobile Zoomed Grid no longer uses the desktop full-viewport pinned-stage layout; it flows like a
   normal mobile grid with extra section spacing. Column Assemble's first mobile text block has
   more top breathing room.
+  Follow-up for mobile timing: Column Assemble, Zoomed Grid, Tilted Fly-in, 3D Depth Fly-in, and
+  Side Pivot now start later (`top 62%` to `top 24%`) so the entrance is not mostly complete before
+  the user reaches the photos. Tilted/Depth/Side Pivot also explicitly reset to natural mobile grid
+  rows at tablet/phone widths to avoid inherited desktop row sizing that made rows overlap.
+  Column Assemble's first mobile text block has additional top spacing.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
