@@ -374,7 +374,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-columns {
-    gap: clamp(0.75rem, 2vw, 2rem);
+    gap: clamp(0.75rem, 1.6vw, 1.6rem);
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-column {
@@ -390,15 +390,15 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column-wrap {
-    width: min(15vw, 11rem);
+    width: min(16vw, 12rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-column-wrap {
-    width: min(12vw, 9rem);
+    width: min(13vw, 9.75rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column-wrap {
-    width: min(10vw, 7.5rem);
+    width: min(13vw, 9.75rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,
@@ -573,6 +573,10 @@ html.js .pr-root.is-enhanced {
   .sp-column-wrap:nth-child(even) {
     margin-top: 7vh;
   }
+  .sp-root[data-sp-variant="scatter"] .sp-column-wrap:nth-child(4),
+  .sp-root[data-sp-variant="scatter"] .sp-column-wrap:nth-child(5) {
+    display: none;
+  }
   .sp-root[data-sp-variant="demo4"] .sp-column-wrap:nth-child(even) {
     margin-top: 12vh;
   }
@@ -629,6 +633,9 @@ html.js .pr-root.is-enhanced {
   }
   .sp-columns .sp-column-wrap:nth-child(3) {
     display: none;
+  }
+  .sp-root[data-sp-variant="scatter"] .sp-columns .sp-column-wrap:nth-child(3) {
+    display: block;
   }
   .sp-root[data-sp-variant="perspective"] .sp-columns .sp-column-wrap:nth-child(3) {
     display: block;

@@ -663,6 +663,9 @@ is gitignored):
   (`top 100%` to `top -35%`) so the effect stays visible on phones. Desktop Scatter now fetches enough
   photos for the selected intro count and uses count-specific column widths for 6/9/12/15/18 so
   the live preview visibly changes instead of always clipping to roughly the same six photos.
+  Follow-up: desktop Scatter now also changes the real intro column count by selected count
+  (3 columns for 6/9, 4 columns for 12, 5 columns for 15/18) so all selected photos can stay
+  visible without shrinking the entire effect into the original three-column shape.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

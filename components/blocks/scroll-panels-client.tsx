@@ -49,6 +49,14 @@ function uniquePhotos(panels: ShowcasePanel[]): PhotoDTO[] {
   return photos;
 }
 
+function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number) {
+  if (variant === "perspective") return 4;
+  if (variant !== "scatter") return 3;
+  if (introCount >= 15) return 5;
+  if (introCount >= 12) return 4;
+  return 3;
+}
+
 function distanceFromCenter(target: HTMLElement, spread = 420) {
   const rect = target.getBoundingClientRect();
   const el = {
@@ -112,7 +120,7 @@ export function ScrollPanelsClient({
     () => uniquePhotos(panels).slice(0, introCount),
     [introCount, panels],
   );
-  const columnCount = variant === "perspective" ? 4 : 3;
+  const columnCount = getIntroColumnCount(variant, panelPhotos.length);
   const columns = React.useMemo(
     () => distribute(panelPhotos, columnCount),
     [columnCount, panelPhotos],
