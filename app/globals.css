@@ -976,22 +976,30 @@ html.js .pr-root.is-enhanced {
     padding-top: clamp(12rem, 46vw, 16rem);
     padding-bottom: clamp(1.1rem, 4vw, 1.75rem);
   }
+  .lf-root[data-lf-variant="columns"] .lf-header,
+  .lf-root[data-lf-variant="reveal"] .lf-header {
+    padding-top: clamp(14rem, 54vw, 18rem);
+    padding-bottom: clamp(1.4rem, 5vw, 2.25rem);
+  }
   .lf-section--first .lf-stage {
     padding-top: clamp(16.25rem, 61vw, 20rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage,
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(5rem, 16vw, 7rem);
+    padding-top: clamp(7rem, 23vw, 9.5rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(5.5rem, 18vw, 7.75rem);
+    padding-top: clamp(7.5rem, 25vw, 10.25rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(5rem, 16vw, 7rem);
+    padding-top: clamp(7rem, 23vw, 9.5rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-stage,
   .lf-root[data-lf-variant="columns"] .lf-stage {
     gap: clamp(1.25rem, 4vw, 2rem);
+  }
+  .lf-root[data-lf-variant="reveal"] .lf-stage {
+    gap: clamp(2rem, 7vw, 3rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-grid,
   .lf-root[data-lf-variant="reveal"] .lf-grid {
