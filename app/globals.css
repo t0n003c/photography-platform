@@ -733,6 +733,11 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="reveal"][data-lf-show-titles="false"] .lf-stage {
   gap: 0;
 }
+.lf-root[data-lf-variant="reveal"][data-lf-count="12"] .lf-stage,
+.lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-stage,
+.lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-stage {
+  padding-block: clamp(2.75rem, 6vh, 4.75rem);
+}
 .lf-root[data-lf-variant="columns"] .lf-section--first,
 .lf-root[data-lf-variant="reveal"] .lf-section--first,
 .lf-root[data-lf-variant="tilted"] .lf-section--first,

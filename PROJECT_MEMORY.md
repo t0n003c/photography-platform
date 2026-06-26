@@ -579,7 +579,8 @@ is gitignored):
   row height with explicit 18-photo (9x2) and 24-photo (8x3) desktop layouts to avoid large row
   gaps. Column Reveal also keeps the grid cells stationary during animation and slides the image
   contents inside each cell, preventing multi-row photos from overlapping while they reveal. Mobile
-  Reveal overrides keep 18/24-photo grids at 4 columns on tablet and 3 columns on phones.
+  Reveal overrides keep 18/24-photo grids at 4 columns on tablet and 3 columns on phones. Reveal
+  counts 12/18/24 also have extra stage padding so category grids have more separation.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
