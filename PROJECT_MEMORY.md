@@ -686,6 +686,9 @@ is gitignored):
   Layout Formations follow-up: Scroll Showcase blocks now store `layoutFormationsHeading`,
   exposed in the Pages tab as "Top heading", so the top text no longer has to say
   "Layout formations". Existing blocks default to the old text.
+  Scroll Showcase editor follow-up: the Pages tab block settings are now grouped by style
+  instead of one long mixed grid. Common style/category controls are separated from
+  Scroll Panels text/layout/colors, Layout Formations top text/layout, and Cinematic/3D panel content.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -350,6 +350,30 @@ function AddBlockMenu({ onAdd }: { onAdd: (t: BlockType) => void }) {
         ))}
       </Select>
     </div>
+  );
+}
+
+function SettingsGroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-3 rounded-lg border bg-[hsl(var(--muted))]/20 p-3">
+      <div className="space-y-0.5">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        {description && (
+          <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
+            {description}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -1052,248 +1076,309 @@ function LeafEditor({
           ? 9
           : storedLayoutFormationPhotoCount;
       return (
-        <div className="space-y-2">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Style">
-              <Select value={block.style ?? "cinematic"} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
-                <option value="cinematic">Cinematic wipe</option>
-                <option value="carousel3d">3D carousel (on scroll)</option>
-                <option value="scrollPanels">Scroll panels</option>
-                <option value="layoutFormations">Layout formations</option>
-              </Select>
-            </Field>
-            {isScrollPanels ? (
-              <>
-                <Field label="Top label">
+        <div className="space-y-3">
+          <SettingsGroup
+            title="Style"
+            description="Choose the animation family first. The controls below change to match that style."
+          >
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Showcase style">
+                <Select value={block.style ?? "cinematic"} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                  <option value="cinematic">Cinematic wipe</option>
+                  <option value="carousel3d">3D carousel (on scroll)</option>
+                  <option value="scrollPanels">Scroll panels</option>
+                  <option value="layoutFormations">Layout formations</option>
+                </Select>
+              </Field>
+              <Field label="Category title display">
+                <Select value={block.showTitles ? "yes" : "no"} onChange={(e) => set({ showTitles: e.target.value === "yes" })}>
+                  <option value="yes">Show category names</option>
+                  <option value="no">Hide category names</option>
+                </Select>
+              </Field>
+              {auto && (
+                <Field label="Max categories">
+                  <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
+                    {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </Select>
+                </Field>
+              )}
+            </div>
+          </SettingsGroup>
+
+          {isScrollPanels ? (
+            <>
+              <SettingsGroup
+                title="Intro text"
+                description="Text shown before the collection rows rise over the intro photos."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Top label">
+                    <Input
+                      value={block.title}
+                      onChange={(e) => set({ title: e.target.value })}
+                      placeholder="Selected work"
+                    />
+                  </Field>
+                  <Field label="Text position">
+                    <Select
+                      value={block.scrollPanelsIntroAlign ?? "left"}
+                      onChange={(e) => set({ scrollPanelsIntroAlign: e.target.value as typeof block.scrollPanelsIntroAlign })}
+                    >
+                      <option value="left">Left side</option>
+                      <option value="center">Middle</option>
+                      <option value="right">Right side</option>
+                    </Select>
+                  </Field>
+                  <Field label="Main heading">
+                    <Textarea
+                      rows={2}
+                      value={block.scrollPanelsIntroHeading ?? "Selected Stories"}
+                      onChange={(e) => set({ scrollPanelsIntroHeading: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Supporting text">
+                    <Textarea
+                      rows={3}
+                      value={
+                        block.scrollPanelsIntroText ??
+                        "Scroll through featured collections, places, and small visual fragments from the archive."
+                      }
+                      onChange={(e) => set({ scrollPanelsIntroText: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Collection heading">
+                    <Textarea
+                      rows={2}
+                      value={block.scrollPanelsShowcaseHeading ?? "Selected Work"}
+                      onChange={(e) => set({ scrollPanelsShowcaseHeading: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup
+                title="Scroll panels layout"
+                description="Controls the intro photo treatment and the category rows below it."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Demo variant">
+                    <Select
+                      value={
+                        block.scrollPanelsVariant === "zoom" || block.scrollPanelsVariant === "brightness"
+                          ? "demo4"
+                          : block.scrollPanelsVariant ?? "classic"
+                      }
+                      onChange={(e) => set({ scrollPanelsVariant: e.target.value as typeof block.scrollPanelsVariant })}
+                    >
+                      <option value="classic">Classic columns</option>
+                      <option value="scatter">Scatter outward</option>
+                      <option value="demo4">Angled rows</option>
+                      <option value="perspective">Perspective blur</option>
+                    </Select>
+                  </Field>
+                  <Field label="Intro photo count">
+                    <Select
+                      value={String(block.scrollPanelsIntroCount ?? 12)}
+                      onChange={(e) => set({ scrollPanelsIntroCount: Number(e.target.value) })}
+                    >
+                      {[6, 9, 12, 15, 18].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label="Photos per collection row">
+                    <Select
+                      value={String(block.scrollPanelsRowCount ?? 5)}
+                      onChange={(e) => set({ scrollPanelsRowCount: Number(e.target.value) })}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label="Photo tone">
+                    <Select
+                      value={block.scrollPanelsTone ?? "color"}
+                      onChange={(e) => set({ scrollPanelsTone: e.target.value as typeof block.scrollPanelsTone })}
+                    >
+                      <option value="color">Full color</option>
+                      <option value="grayscale">Reveal from black and white</option>
+                    </Select>
+                  </Field>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup
+                title="Colors"
+                description="Use custom colors for this block, or let the page theme decide."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Background mode">
+                    <Select
+                      value={useScrollPanelsBackground ? "yes" : "no"}
+                      onChange={(e) => set({ scrollPanelsUseBackground: e.target.value === "yes" })}
+                    >
+                      <option value="yes">Use custom background</option>
+                      <option value="no">Use page background</option>
+                    </Select>
+                  </Field>
+                  {useScrollPanelsBackground && (
+                    <>
+                      <Field label="Background color">
+                        <Input
+                          type="color"
+                          value={block.scrollPanelsBackground ?? "#f4f0e8"}
+                          onChange={(e) => set({ scrollPanelsBackground: e.target.value })}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                      <Field label="Text color">
+                        <Input
+                          type="color"
+                          value={block.scrollPanelsTextColor ?? "#171717"}
+                          onChange={(e) => set({ scrollPanelsTextColor: e.target.value })}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                    </>
+                  )}
+                </div>
+              </SettingsGroup>
+            </>
+          ) : isLayoutFormations ? (
+            <>
+              <SettingsGroup
+                title="Top text"
+                description="Text shown above the first animated formation grid."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Eyebrow">
+                    <Input
+                      value={block.title}
+                      onChange={(e) => set({ title: e.target.value })}
+                      placeholder="Selected work"
+                    />
+                  </Field>
+                  <Field label="Top heading">
+                    <Input
+                      value={block.layoutFormationsHeading ?? "Layout formations"}
+                      onChange={(e) => set({ layoutFormationsHeading: e.target.value })}
+                      placeholder="Layout formations"
+                    />
+                  </Field>
+                  <Field label="Text position">
+                    <Select
+                      value={block.layoutFormationsHeaderAlign ?? "left"}
+                      onChange={(e) =>
+                        set({
+                          layoutFormationsHeaderAlign:
+                            e.target.value as typeof block.layoutFormationsHeaderAlign,
+                        })
+                      }
+                    >
+                      <option value="left">Left side</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right side</option>
+                    </Select>
+                  </Field>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup
+                title="Formation layout"
+                description="Choose the animation pattern and how many photos each category formation uses."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Formation variant">
+                    <Select
+                      value={layoutFormationVariant}
+                      onChange={(e) => {
+                        const nextVariant =
+                          e.target.value as typeof block.layoutFormationsVariant;
+                        set({
+                          layoutFormationsVariant: nextVariant,
+                          ...(nextVariant === "zoomed"
+                            ? { layoutFormationsPhotoCount: 9 }
+                            : {}),
+                        });
+                      }}
+                    >
+                      <option value="rise">Rise grid</option>
+                      <option value="columns">Column assemble</option>
+                      <option value="zoomed">Zoomed grid</option>
+                      <option value="reveal">Column reveal</option>
+                      <option value="tilted">Tilted fly-in</option>
+                      <option value="depth">3D depth fly-in</option>
+                      <option value="sidePivot">Side pivot</option>
+                    </Select>
+                  </Field>
+                  <Field label="Photos per formation">
+                    <Select
+                      value={String(layoutFormationPhotoCount)}
+                      onChange={(e) =>
+                        set({ layoutFormationsPhotoCount: Number(e.target.value) })
+                      }
+                    >
+                      {layoutFormationPhotoOptions.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </div>
+              </SettingsGroup>
+            </>
+          ) : (
+            <SettingsGroup
+              title={block.style === "carousel3d" ? "3D carousel content" : "Cinematic panel content"}
+              description="These styles use each category as a scroll-driven panel."
+            >
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Eyebrow">
                   <Input
                     value={block.title}
                     onChange={(e) => set({ title: e.target.value })}
                     placeholder="Selected work"
                   />
                 </Field>
-                <Field label="Intro heading">
-                  <Textarea
-                    rows={2}
-                    value={block.scrollPanelsIntroHeading ?? "Selected Stories"}
-                    onChange={(e) => set({ scrollPanelsIntroHeading: e.target.value })}
-                  />
-                </Field>
-                <Field label="Intro text">
-                  <Textarea
-                    rows={3}
-                    value={
-                      block.scrollPanelsIntroText ??
-                      "Scroll through featured collections, places, and small visual fragments from the archive."
-                    }
-                    onChange={(e) => set({ scrollPanelsIntroText: e.target.value })}
-                  />
-                </Field>
-                <Field label="Intro text position">
-                  <Select
-                    value={block.scrollPanelsIntroAlign ?? "left"}
-                    onChange={(e) => set({ scrollPanelsIntroAlign: e.target.value as typeof block.scrollPanelsIntroAlign })}
-                  >
-                    <option value="left">Left side</option>
-                    <option value="center">Middle</option>
-                    <option value="right">Right side</option>
-                  </Select>
-                </Field>
-                <Field label="Showcase heading">
-                  <Textarea
-                    rows={2}
-                    value={block.scrollPanelsShowcaseHeading ?? "Selected Work"}
-                    onChange={(e) => set({ scrollPanelsShowcaseHeading: e.target.value })}
-                  />
-                </Field>
-                <Field label="Demo variant">
-                  <Select
-                    value={
-                      block.scrollPanelsVariant === "zoom" || block.scrollPanelsVariant === "brightness"
-                        ? "demo4"
-                        : block.scrollPanelsVariant ?? "classic"
-                    }
-                    onChange={(e) => set({ scrollPanelsVariant: e.target.value as typeof block.scrollPanelsVariant })}
-                  >
-                    <option value="classic">Classic columns</option>
-                    <option value="scatter">Scatter outward</option>
-                    <option value="demo4">Angled rows</option>
-                    <option value="perspective">Perspective blur</option>
-                  </Select>
-                </Field>
-                <Field label="Intro photos">
-                  <Select
-                    value={String(block.scrollPanelsIntroCount ?? 12)}
-                    onChange={(e) => set({ scrollPanelsIntroCount: Number(e.target.value) })}
-                  >
-                    {[6, 9, 12, 15, 18].map((n) => <option key={n} value={n}>{n}</option>)}
-                  </Select>
-                </Field>
-                <Field label="Row photos">
-                  <Select
-                    value={String(block.scrollPanelsRowCount ?? 5)}
-                    onChange={(e) => set({ scrollPanelsRowCount: Number(e.target.value) })}
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
-                  </Select>
-                </Field>
-                <Field label="Photo tone">
-                  <Select
-                    value={block.scrollPanelsTone ?? "color"}
-                    onChange={(e) => set({ scrollPanelsTone: e.target.value as typeof block.scrollPanelsTone })}
-                  >
-                    <option value="color">Full color</option>
-                    <option value="grayscale">Reveal from black and white</option>
-                  </Select>
-                </Field>
-                <Field label="Background">
-                  <Select
-                    value={useScrollPanelsBackground ? "yes" : "no"}
-                    onChange={(e) => set({ scrollPanelsUseBackground: e.target.value === "yes" })}
-                  >
-                    <option value="yes">Use custom background</option>
-                    <option value="no">Use page background</option>
-                  </Select>
-                </Field>
-                {useScrollPanelsBackground && (
-                  <>
-                    <Field label="Background color">
-                      <Input
-                        type="color"
-                        value={block.scrollPanelsBackground ?? "#f4f0e8"}
-                        onChange={(e) => set({ scrollPanelsBackground: e.target.value })}
-                        className="h-10 p-1"
-                      />
-                    </Field>
-                    <Field label="Text color">
-                      <Input
-                        type="color"
-                        value={block.scrollPanelsTextColor ?? "#171717"}
-                        onChange={(e) => set({ scrollPanelsTextColor: e.target.value })}
-                        className="h-10 p-1"
-                      />
-                    </Field>
-                  </>
-                )}
-              </>
-            ) : isLayoutFormations ? (
-              <>
-                <Field label="Eyebrow (optional)">
-                  <Input
-                    value={block.title}
-                    onChange={(e) => set({ title: e.target.value })}
-                    placeholder="Selected work"
-                  />
-                </Field>
-                <Field label="Top heading">
-                  <Input
-                    value={block.layoutFormationsHeading ?? "Layout formations"}
-                    onChange={(e) => set({ layoutFormationsHeading: e.target.value })}
-                    placeholder="Layout formations"
-                  />
-                </Field>
-                <Field label="Formation variant">
-                  <Select
-                    value={layoutFormationVariant}
-                    onChange={(e) => {
-                      const nextVariant =
-                        e.target.value as typeof block.layoutFormationsVariant;
-                      set({
-                        layoutFormationsVariant: nextVariant,
-                        ...(nextVariant === "zoomed"
-                          ? { layoutFormationsPhotoCount: 9 }
-                          : {}),
-                      });
-                    }}
-                  >
-                    <option value="rise">Rise grid</option>
-                    <option value="columns">Column assemble</option>
-                    <option value="zoomed">Zoomed grid</option>
-                    <option value="reveal">Column reveal</option>
-                    <option value="tilted">Tilted fly-in</option>
-                    <option value="depth">3D depth fly-in</option>
-                    <option value="sidePivot">Side pivot</option>
-                  </Select>
-                </Field>
-                <Field label="Top text position">
-                  <Select
-                    value={block.layoutFormationsHeaderAlign ?? "left"}
-                    onChange={(e) =>
-                      set({
-                        layoutFormationsHeaderAlign:
-                          e.target.value as typeof block.layoutFormationsHeaderAlign,
-                      })
-                    }
-                  >
-                    <option value="left">Left side</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right side</option>
-                  </Select>
-                </Field>
-                <Field label="Photos per formation">
-                  <Select
-                    value={String(layoutFormationPhotoCount)}
-                    onChange={(e) =>
-                      set({ layoutFormationsPhotoCount: Number(e.target.value) })
-                    }
-                  >
-                    {layoutFormationPhotoOptions.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
                 <Field label="Images per panel">
                   <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
                     <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                   </Select>
                 </Field>
-              </>
-            )}
-            <Field label="Titles">
-              <Select value={block.showTitles ? "yes" : "no"} onChange={(e) => set({ showTitles: e.target.value === "yes" })}>
-                <option value="yes">Show category names</option><option value="no">Hide</option>
-              </Select>
-            </Field>
-            {auto && (
-              <Field label="Max panels">
-                <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
-                  {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-                </Select>
-              </Field>
-            )}
-          </div>
+              </div>
+            </SettingsGroup>
+          )}
 
-          <Field label="Categories to show">
-            <div className="space-y-1.5">
-              {chosen.length === 0 ? (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Showing all published categories automatically (up to Max panels). Add categories below to pick and order them yourself.
-                </p>
-              ) : (
-                chosen.map((cid, i) => (
-                  <div key={cid} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
-                    <span className="truncate text-sm">{i + 1}. {labelOf(cid)}</span>
-                    <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
-                      <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Move down" disabled={i === chosen.length - 1} onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Remove" onClick={() => set({ categoryIds: chosen.filter((x) => x !== cid) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+          <SettingsGroup
+            title="Categories"
+            description="Choose the categories and order used by this showcase. Empty means automatic."
+          >
+            <Field label="Categories to show">
+              <div className="space-y-1.5">
+                {chosen.length === 0 ? (
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    Showing all published categories automatically, up to the max category count.
+                  </p>
+                ) : (
+                  chosen.map((cid, i) => (
+                    <div key={cid} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
+                      <span className="truncate text-sm">{i + 1}. {labelOf(cid)}</span>
+                      <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                        <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                        <button type="button" aria-label="Move down" disabled={i === chosen.length - 1} onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                        <button type="button" aria-label="Remove" onClick={() => set({ categoryIds: chosen.filter((x) => x !== cid) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-              {unchosen.length > 0 && (
-                <Select value="" onChange={(e) => e.target.value && set({ categoryIds: [...chosen, e.target.value] })}>
-                  <option value="">＋ Add category…</option>
-                  {unchosen.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                </Select>
-              )}
-            </div>
-          </Field>
+                  ))
+                )}
+                {unchosen.length > 0 && (
+                  <Select value="" onChange={(e) => e.target.value && set({ categoryIds: [...chosen, e.target.value] })}>
+                    <option value="">＋ Add category…</option>
+                    {unchosen.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </Select>
+                )}
+              </div>
+            </Field>
+          </SettingsGroup>
 
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             Each category becomes a full-screen panel or formation using its photos and name. Categories with no photos are skipped. Manage covers + which categories are published in{" "}
