@@ -369,11 +369,12 @@ export function LayoutFormationsClient({
         } else if (variant === "reveal") {
           tl.fromTo(
             shuffledImages,
-            { autoAlpha: 0, yPercent: -120 },
-            { stagger: 0.055, autoAlpha: 1, yPercent: 0, ease: "power1.out" },
-          ).from(
+            { autoAlpha: 0 },
+            { stagger: 0.055, autoAlpha: 1, ease: "power1.out" },
+          ).fromTo(
             shuffledImages.map((img) => img.querySelector<HTMLElement>("[data-lf-img-inner]")),
-            { stagger: 0.055, yPercent: 120, ease: "power1.out" },
+            { yPercent: 120 },
+            { stagger: 0.055, yPercent: 0, ease: "power1.out" },
             0,
           );
         } else if (variant === "tilted") {

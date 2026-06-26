@@ -866,7 +866,7 @@ html.js .pr-root.is-enhanced {
   width: min(100%, 100rem);
   height: auto;
   min-height: 0;
-  gap: clamp(1.25rem, 1.8vw, 2.4rem);
+  gap: clamp(0.35rem, 0.7vw, 0.85rem);
 }
 .lf-root[data-lf-variant="columns"] .lf-img {
   width: 100%;
@@ -908,11 +908,11 @@ html.js .pr-root.is-enhanced {
 }
 .lf-root[data-lf-variant="reveal"] .lf-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-rows: auto;
   width: min(100%, 110rem);
-  height: min(62vh, 48vw);
+  height: auto;
   align-items: center;
-  gap: clamp(0.45rem, 0.85vw, 1rem);
+  gap: clamp(0.35rem, 0.65vw, 0.75rem);
 }
 .lf-root[data-lf-variant="columns"] .lf-title,
 .lf-root[data-lf-variant="reveal"] .lf-title {
@@ -936,16 +936,18 @@ html.js .pr-root.is-enhanced {
 }
 .lf-root[data-lf-variant="reveal"][data-lf-count="6"] .lf-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  height: min(52vh, 34vw);
 }
 .lf-root[data-lf-variant="reveal"][data-lf-count="9"] .lf-grid {
   grid-template-columns: repeat(9, minmax(0, 1fr));
-  height: min(54vh, 38vw);
 }
-.lf-root[data-lf-variant="reveal"][data-lf-count="12"] .lf-grid,
+.lf-root[data-lf-variant="reveal"][data-lf-count="12"] .lf-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
 .lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-grid {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  height: min(56vh, 40vw);
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+}
+.lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-grid {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
 }
 
 @media (max-width: 768px) {
@@ -1004,6 +1006,10 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.55rem;
   }
+  .lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-grid,
+  .lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
   .lf-img {
     aspect-ratio: 0.8;
   }
@@ -1034,6 +1040,10 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .lf-root[data-lf-variant="reveal"] .lf-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-grid,
+  .lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
