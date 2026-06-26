@@ -968,18 +968,26 @@ html.js .pr-root.is-enhanced {
     place-items: stretch;
     padding: 12vw 5vw;
   }
+  .lf-root[data-lf-variant="columns"] .lf-header,
+  .lf-root[data-lf-variant="reveal"] .lf-header,
+  .lf-root[data-lf-variant="tilted"] .lf-header,
+  .lf-root[data-lf-variant="depth"] .lf-header,
+  .lf-root[data-lf-variant="sidePivot"] .lf-header {
+    padding-top: clamp(12rem, 46vw, 16rem);
+    padding-bottom: clamp(1.1rem, 4vw, 1.75rem);
+  }
   .lf-section--first .lf-stage {
     padding-top: clamp(16.25rem, 61vw, 20rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage,
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(16.5rem, 62vw, 19rem);
+    padding-top: clamp(0.75rem, 2vw, 1.25rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(48rem, 175vw, 60rem);
+    padding-top: clamp(0.5rem, 1.5vw, 1rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(36rem, 135vw, 46rem);
+    padding-top: clamp(0.5rem, 1.5vw, 1rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-stage,
   .lf-root[data-lf-variant="columns"] .lf-stage {

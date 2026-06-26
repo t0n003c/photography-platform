@@ -185,8 +185,8 @@ export function LayoutFormationsClient({
                   scrollTrigger: {
                     trigger: rowImages[0],
                     start: "top 84%",
-                    end: "top 4%",
-                    scrub: 0.65,
+                    end: "top 42%",
+                    scrub: 0.28,
                   },
                 },
               );

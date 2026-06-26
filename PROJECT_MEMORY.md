@@ -616,6 +616,13 @@ is gitignored):
   slightly with a negative mobile grid margin, because a measured 0px grid gap can still look
   visually roomy from the title line box. Mobile row animations use explicit from/to end states,
   smoothed scrub, and no per-photo row stagger to avoid endpoint snapping.
+  Clarification follow-up: the visible "top text block" in the mobile live preview is the
+  Layout Formations block header (`.lf-header`), not the first category title (`.lf-title`).
+  Mobile Column Assemble/Reveal now add top space on `.lf-header` and remove the large first
+  section spacer so the first grid sits much closer to the visible header text. Mobile row
+  animations now finish faster (`top 84%` to `top 42%`, scrub `0.28`) for Tilted/Depth/Side Pivot,
+  and the same stronger header spacing is applied to Tilted/Depth/Side Pivot so the mobile live
+  preview shows a visible top-text spacing change across the new formation variants.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
