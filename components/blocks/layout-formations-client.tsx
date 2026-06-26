@@ -12,7 +12,14 @@ const useIsoLayoutEffect =
 
 const BUCKETS = ["medium", "large", "small"];
 
-export type LayoutFormationVariant = "rise" | "columns" | "zoomed" | "reveal";
+export type LayoutFormationVariant =
+  | "rise"
+  | "columns"
+  | "zoomed"
+  | "reveal"
+  | "tilted"
+  | "depth"
+  | "sidePivot";
 type LayoutFormationHeaderAlign = "left" | "center" | "right";
 
 const variantLabels: Record<LayoutFormationVariant, string> = {
@@ -20,6 +27,9 @@ const variantLabels: Record<LayoutFormationVariant, string> = {
   columns: "Column assemble",
   zoomed: "Zoomed grid",
   reveal: "Column reveal",
+  tilted: "Tilted fly-in",
+  depth: "3D depth fly-in",
+  sidePivot: "Side pivot",
 };
 
 function pickUrl(photo: PhotoDTO): string | null {
@@ -136,6 +146,8 @@ export function LayoutFormationsClient({
           images,
           `${variant}-${section.dataset.lfPanel ?? "0"}-${images.length}`,
         );
+        const isEntranceFormation =
+          variant === "tilted" || variant === "depth" || variant === "sidePivot";
         if (variant === "columns") {
           const rows = new Map<string, HTMLElement[]>();
           for (const image of images) {
@@ -186,7 +198,9 @@ export function LayoutFormationsClient({
               ? "top 5%"
               : variant === "reveal"
                 ? "top 76%"
-                : "center center";
+                : isEntranceFormation
+                  ? "top 70%"
+                  : "center center";
         const triggerEnd =
           variant === "rise"
             ? `+=${Math.round(window.innerHeight * 0.62)}`
@@ -194,15 +208,30 @@ export function LayoutFormationsClient({
               ? `+=${Math.round(window.innerHeight * 0.58)}`
               : variant === "reveal"
                 ? "top 16%"
-                : `+=${Math.round(window.innerHeight * 2.2)}`;
+                : variant === "sidePivot"
+                  ? `+=${Math.round(window.innerHeight * 1.5)}`
+                  : isEntranceFormation
+                    ? `+=${Math.round(window.innerHeight * 2.1)}`
+                    : `+=${Math.round(window.innerHeight * 2.2)}`;
         const tl = gsap.timeline({
-          defaults: { ease: variant === "zoomed" ? "power2.inOut" : "sine.inOut" },
+          defaults: {
+            ease:
+              variant === "zoomed"
+                ? "power2.inOut"
+                : variant === "tilted"
+                  ? "power3.inOut"
+                  : variant === "depth"
+                    ? "sine.inOut"
+                    : variant === "sidePivot"
+                      ? "expo.inOut"
+                      : "sine.inOut",
+          },
           scrollTrigger: {
             trigger: section,
             start: triggerStart,
             end: () => triggerEnd,
             pin: variant !== "rise" && variant !== "reveal",
-            scrub: variant === "rise" ? 0.2 : 0.35,
+            scrub: variant === "rise" || variant === "sidePivot" ? 0.2 : 0.35,
           },
         });
 
@@ -263,6 +292,65 @@ export function LayoutFormationsClient({
             { stagger: 0.055, yPercent: 120, ease: "power1.out" },
             0,
           );
+        } else if (variant === "tilted") {
+          const middleIndex = Math.floor(images.length / 2);
+          tl.from(images, {
+            stagger: { amount: 0.3, from: "center" },
+            y: window.innerHeight,
+            transformOrigin: "50% 0%",
+            rotation: (pos) => {
+              const distance = Math.abs(pos - middleIndex);
+              return pos < middleIndex ? distance * 3 : distance * -3;
+            },
+          });
+          if (titleBlock) {
+            tl.from(
+              titleBlock,
+              { yPercent: 70, autoAlpha: 0, duration: 1, ease: "power4.out" },
+              0.15,
+            );
+          }
+        } else if (variant === "depth") {
+          tl.set(grid, { perspective: 1000 });
+          tl.from(shuffledImages, {
+            stagger: { amount: 0.4, from: "random" },
+            y: window.innerHeight,
+            rotationX: -70,
+            transformOrigin: "50% 0%",
+            z: -900,
+            autoAlpha: 0,
+          });
+          if (titleBlock) {
+            tl.from(
+              titleBlock,
+              { yPercent: 95, autoAlpha: 0, duration: 1.15, ease: "power4.out" },
+              0.35,
+            );
+          }
+        } else if (variant === "sidePivot") {
+          tl.set(grid, { perspective: 2000 });
+          tl.from(images, {
+            stagger: { amount: 0.8, from: "start" },
+            rotationY: 65,
+            transformOrigin: "0% 50%",
+            z: -200,
+            yPercent: 10,
+          }).from(
+            images,
+            {
+              stagger: { amount: 0.8, from: "start" },
+              duration: 0.2,
+              autoAlpha: 0,
+            },
+            0,
+          );
+          if (titleBlock) {
+            tl.from(
+              titleBlock,
+              { xPercent: -18, autoAlpha: 0, duration: 0.8 },
+              0.28,
+            );
+          }
         }
 
         if (variant === "zoomed") {

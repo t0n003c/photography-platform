@@ -239,7 +239,15 @@ const ScrollShowcaseBlock = z.object({
   scrollPanelsShowcaseHeading: z.string().default("Selected Work").optional(),
   // LayoutFormations-only: which Codrops formation family to use.
   layoutFormationsVariant: z
-    .enum(["rise", "columns", "zoomed", "reveal"])
+    .enum([
+      "rise",
+      "columns",
+      "zoomed",
+      "reveal",
+      "tilted",
+      "depth",
+      "sidePivot",
+    ])
     .default("rise")
     .optional(),
   // LayoutFormations-only: horizontal position of the top label block.

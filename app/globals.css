@@ -782,28 +782,46 @@ html.js .pr-root.is-enhanced {
   text-decoration: underline;
   text-underline-offset: 0.22em;
 }
-.lf-root[data-lf-variant="rise"] .lf-grid {
+.lf-root[data-lf-variant="rise"] .lf-grid,
+.lf-root[data-lf-variant="tilted"] .lf-grid,
+.lf-root[data-lf-variant="depth"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"] .lf-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
   width: min(100%, 104rem);
   height: min(72vh, 62vw);
   gap: clamp(0.65rem, 1.25vw, 1.35rem);
 }
-.lf-root[data-lf-variant="rise"][data-lf-count="6"] .lf-grid {
+.lf-root[data-lf-variant="rise"][data-lf-count="6"] .lf-grid,
+.lf-root[data-lf-variant="tilted"][data-lf-count="6"] .lf-grid,
+.lf-root[data-lf-variant="depth"][data-lf-count="6"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"][data-lf-count="6"] .lf-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   height: min(64vh, 56vw);
 }
-.lf-root[data-lf-variant="rise"][data-lf-count="9"] .lf-grid {
+.lf-root[data-lf-variant="rise"][data-lf-count="9"] .lf-grid,
+.lf-root[data-lf-variant="tilted"][data-lf-count="9"] .lf-grid,
+.lf-root[data-lf-variant="depth"][data-lf-count="9"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"][data-lf-count="9"] .lf-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   height: min(72vh, 70vw);
 }
-.lf-root[data-lf-variant="rise"][data-lf-count="12"] .lf-grid {
+.lf-root[data-lf-variant="rise"][data-lf-count="12"] .lf-grid,
+.lf-root[data-lf-variant="tilted"][data-lf-count="12"] .lf-grid,
+.lf-root[data-lf-variant="depth"][data-lf-count="12"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"][data-lf-count="12"] .lf-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.lf-root[data-lf-variant="rise"][data-lf-count="18"] .lf-grid {
+.lf-root[data-lf-variant="rise"][data-lf-count="18"] .lf-grid,
+.lf-root[data-lf-variant="tilted"][data-lf-count="18"] .lf-grid,
+.lf-root[data-lf-variant="depth"][data-lf-count="18"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"][data-lf-count="18"] .lf-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
-.lf-root[data-lf-variant="rise"][data-lf-count="24"] .lf-grid {
+.lf-root[data-lf-variant="rise"][data-lf-count="24"] .lf-grid,
+.lf-root[data-lf-variant="tilted"][data-lf-count="24"] .lf-grid,
+.lf-root[data-lf-variant="depth"][data-lf-count="24"] .lf-grid,
+.lf-root[data-lf-variant="sidePivot"][data-lf-count="24"] .lf-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   height: min(78vh, 72vw);
 }

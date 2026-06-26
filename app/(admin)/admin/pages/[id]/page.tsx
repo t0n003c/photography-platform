@@ -1187,6 +1187,9 @@ function LeafEditor({
                     <option value="columns">Column assemble</option>
                     <option value="zoomed">Zoomed grid</option>
                     <option value="reveal">Column reveal</option>
+                    <option value="tilted">Tilted fly-in</option>
+                    <option value="depth">3D depth fly-in</option>
+                    <option value="sidePivot">Side pivot</option>
                   </Select>
                 </Field>
                 <Field label="Top text position">
