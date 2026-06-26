@@ -750,7 +750,7 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="tilted"] .lf-section--first .lf-stage,
 .lf-root[data-lf-variant="depth"] .lf-section--first .lf-stage,
 .lf-root[data-lf-variant="sidePivot"] .lf-section--first .lf-stage {
-  padding-top: clamp(1rem, 2.5vh, 2rem);
+  padding-top: clamp(4rem, 8vh, 6rem);
 }
 .lf-root[data-lf-variant="tilted"] .lf-section:last-child .lf-stage,
 .lf-root[data-lf-variant="depth"] .lf-section:last-child .lf-stage,

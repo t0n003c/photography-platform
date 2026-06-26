@@ -209,6 +209,8 @@ export function LayoutFormationsClient({
             const rowSeed = `${variant}-${section.dataset.lfPanel ?? "0"}-${rowIndex}`;
             const rowOrder =
               variant === "depth" ? seededShuffle(rowImages, rowSeed) : rowImages;
+            const rowStartFactor = variant === "sidePivot" ? 1.16 : 1.3;
+            const rowEndFactor = variant === "sidePivot" ? 0.42 : 0.58;
             const rowTimeline = gsap.timeline({
               defaults: {
                 ease:
@@ -220,8 +222,8 @@ export function LayoutFormationsClient({
               },
               scrollTrigger: {
                 trigger: section,
-                start: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.3,
-                end: () => layoutPageTop(rowImages[0]) - window.innerHeight * 0.58,
+                start: () => layoutPageTop(rowImages[0]) - window.innerHeight * rowStartFactor,
+                end: () => layoutPageTop(rowImages[0]) - window.innerHeight * rowEndFactor,
                 scrub: variant === "sidePivot" ? 0.2 : 0.35,
               },
             });
