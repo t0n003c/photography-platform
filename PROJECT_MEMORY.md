@@ -677,6 +677,10 @@ is gitignored):
   (`localhost:3001`), while CI explicitly rewrites the copied env back to `localhost:3000`
   for GitHub Actions. Current-state docs were also cleaned up to describe SeaweedFS/S3 as
   the default storage path instead of stale MinIO wording.
+  Page editor mobile follow-up: the admin page editor now forces `min-w-0` through the
+  page-settings/editor shell, cards, reusable form fields, block rows, and live-preview toolbar.
+  Header/action rows wrap on narrow screens so Page settings in the Pages tab should no longer
+  be visually cut off on the right side in mobile use.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

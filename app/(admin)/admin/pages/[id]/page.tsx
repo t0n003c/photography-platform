@@ -206,14 +206,14 @@ export default function PageEditor() {
   }
 
   return (
-    <div className="space-y-4 lg:flex lg:h-[calc(100dvh-6.5rem)] lg:flex-col lg:overflow-hidden">
+    <div className="min-w-0 space-y-4 lg:flex lg:h-[calc(100dvh-6.5rem)] lg:flex-col lg:overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 lg:flex-none">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold">{page.title}</h1>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h1 className="min-w-0 break-words text-xl font-semibold">{page.title}</h1>
           <Badge tone={page.status === "published" ? "green" : "neutral"}>{page.status}</Badge>
           {page.isHome && <Badge tone="blue">Home</Badge>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -228,10 +228,10 @@ export default function PageEditor() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-hidden">
+      <div className="grid min-w-0 gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-hidden">
         {/* Editor */}
-        <div className="space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
-          <Card>
+        <div className="min-w-0 space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
+          <Card className="min-w-0 overflow-hidden">
             <CardHeader>
               <CardTitle>Page settings</CardTitle>
             </CardHeader>
@@ -280,8 +280,8 @@ export default function PageEditor() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex items-center justify-between gap-2">
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>Blocks</CardTitle>
               <AddBlockMenu onAdd={addBlock} />
             </CardHeader>
@@ -316,7 +316,7 @@ export default function PageEditor() {
 
 function AddBlockMenu({ onAdd }: { onAdd: (t: BlockType) => void }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="min-w-0 flex-1 sm:flex-none">
       <Select
         defaultValue=""
         onChange={(e) => {
@@ -358,12 +358,12 @@ function BlockCard({
   const [open, setOpen] = useState(false);
   const hidden = block.hidden ?? false;
   return (
-    <div className={`rounded-lg border ${hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
-      <div className="flex items-center gap-2 px-3 py-2">
+    <div className={`min-w-0 rounded-lg border ${hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="min-w-0 flex-1 text-left text-sm font-medium"
+          className="min-w-0 flex-[1_1_12rem] text-left text-sm font-medium"
         >
           {BLOCK_LABELS[block.type]}
           {hidden && (
@@ -1500,10 +1500,10 @@ function PreviewPane({
   }, [id, bust, theme]);
 
   return (
-    <div className="space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
-      <div className="flex items-center justify-between gap-2">
+    <div className="min-w-0 space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">Live preview</span>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button
             type="button"
             variant={device === "desktop" ? "default" : "outline"}
@@ -1536,7 +1536,7 @@ function PreviewPane({
           </a>
         </div>
       </div>
-      <div ref={paneRef} className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))] lg:flex-none">
+      <div ref={paneRef} className="min-w-0 overflow-hidden rounded-lg border bg-[hsl(var(--muted))] lg:flex-none">
         {(() => {
           const baseW = device === "mobile" ? 390 : 1440;
           const baseH = device === "mobile" ? 844 : 900;

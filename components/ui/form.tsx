@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 import { cn } from "@/src/lib/utils";
 
 const fieldBase =
-  "w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] disabled:opacity-50";
+  "min-w-0 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] disabled:opacity-50";
 
 export const Input = forwardRef<
   HTMLInputElement,
@@ -58,7 +58,7 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       {label && <Label htmlFor={htmlFor}>{label}</Label>}
       {children}
       {hint && (
