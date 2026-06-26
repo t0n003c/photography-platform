@@ -627,6 +627,10 @@ is gitignored):
   visually collide with the grid during scroll. Mobile Column Assemble/Reveal now keep a real
   positive stage gap, remove the negative grid margin, and add a modest first-section spacer below
   the Layout Formations header before the first category grid.
+  Follow-up spacing bump: mobile Column Assemble/Reveal first-section spacer was increased again
+  (`columns` up to `clamp(5.5rem, 18vw, 7.75rem)`, `reveal` up to
+  `clamp(5rem, 16vw, 7rem)`) because the live preview still needed more visible air between the
+  Layout Formations header text block and the first category grid.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
