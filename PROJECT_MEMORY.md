@@ -607,6 +607,11 @@ is gitignored):
   without creating a large blank space before the first grid. Tilted Fly-in, 3D Depth Fly-in, and
   Side Pivot no longer animate the whole mobile grid as one unit; mobile groups photos by rendered
   row and gives each row its own scrub trigger so later rows animate when they enter view.
+  Follow-up: Column Assemble now uses the same per-row mobile scrub so lower rows animate as they
+  enter instead of being completed by the time the user reaches them. Tilted/Depth/Side Pivot have
+  distinct mobile entrances again: Tilted uses alternating rotation, Depth uses scale + rotationX
+  perspective, and Side Pivot uses an x-offset + rotationY side pivot. Column Assemble/Reveal
+  mobile first sections got larger top offsets, with the title-to-grid gap collapsed to zero.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

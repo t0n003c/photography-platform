@@ -128,7 +128,10 @@ export function LayoutFormationsClient({
 
         if (!isDesktop) {
           const useMobileRowScrub =
-            variant === "tilted" || variant === "depth" || variant === "sidePivot";
+            variant === "columns" ||
+            variant === "tilted" ||
+            variant === "depth" ||
+            variant === "sidePivot";
           if (useMobileRowScrub) {
             const rows = new Map<number, HTMLElement[]>();
             for (const image of images) {
@@ -137,8 +140,32 @@ export function LayoutFormationsClient({
             }
 
             rows.forEach((rowImages) => {
+              const fromVars =
+                variant === "tilted"
+                  ? {
+                      y: 104,
+                      rotation: (index: number) => (index % 2 === 0 ? -7 : 7),
+                      transformOrigin: "50% 100%",
+                    }
+                  : variant === "depth"
+                    ? {
+                        y: 118,
+                        scale: 0.86,
+                        rotationX: -42,
+                        transformPerspective: 900,
+                        transformOrigin: "50% 0%",
+                      }
+                    : variant === "sidePivot"
+                      ? {
+                          x: -52,
+                          y: 48,
+                          rotationY: 58,
+                          transformPerspective: 1100,
+                          transformOrigin: "0% 50%",
+                        }
+                      : { y: 112 };
               gsap.from(rowImages, {
-                y: 96,
+                ...fromVars,
                 autoAlpha: 0,
                 stagger: 0.045,
                 ease: "none",
@@ -153,9 +180,7 @@ export function LayoutFormationsClient({
             return;
           }
 
-          const useSlowMobileScrub =
-            variant === "columns" ||
-            variant === "zoomed";
+          const useSlowMobileScrub = variant === "zoomed";
           const mobileTiming =
             useSlowMobileScrub
               ? { start: "top 74%", end: "top -42%" }
