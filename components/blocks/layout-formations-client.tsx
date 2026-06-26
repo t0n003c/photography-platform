@@ -191,6 +191,101 @@ export function LayoutFormationsClient({
           });
           return;
         }
+        if (isEntranceFormation) {
+          if (variant === "depth") gsap.set(grid, { perspective: 1000 });
+          if (variant === "sidePivot") gsap.set(grid, { perspective: 2000 });
+
+          const rowGroups = new Map<number, HTMLElement[]>();
+          for (const image of images) {
+            const top = Math.round(image.offsetTop);
+            rowGroups.set(top, [...(rowGroups.get(top) ?? []), image]);
+          }
+          const rows = [...rowGroups.entries()]
+            .sort(([a], [b]) => a - b)
+            .map(([, rowImages]) => rowImages);
+          const middleIndex = (images.length - 1) / 2;
+
+          rows.forEach((rowImages, rowIndex) => {
+            const rowSeed = `${variant}-${section.dataset.lfPanel ?? "0"}-${rowIndex}`;
+            const rowOrder =
+              variant === "depth" ? seededShuffle(rowImages, rowSeed) : rowImages;
+            const rowTimeline = gsap.timeline({
+              defaults: {
+                ease:
+                  variant === "tilted"
+                    ? "power3.inOut"
+                    : variant === "depth"
+                      ? "sine.inOut"
+                      : "expo.inOut",
+              },
+              scrollTrigger: {
+                trigger: rowImages[0],
+                start: "top 92%",
+                end: "top 46%",
+                scrub: variant === "sidePivot" ? 0.2 : 0.35,
+              },
+            });
+
+            if (variant === "tilted") {
+              rowTimeline.from(rowOrder, {
+                stagger: { amount: 0.18, from: "center" },
+                y: window.innerHeight * 0.65,
+                autoAlpha: 0,
+                transformOrigin: "50% 0%",
+                rotation: (_, target) => {
+                  const distance = Math.abs(images.indexOf(target as HTMLElement) - middleIndex);
+                  return images.indexOf(target as HTMLElement) < middleIndex
+                    ? distance * 3
+                    : distance * -3;
+                },
+              });
+            } else if (variant === "depth") {
+              rowTimeline.from(rowOrder, {
+                stagger: { amount: 0.24, from: "random" },
+                y: window.innerHeight * 0.72,
+                rotationX: -70,
+                transformOrigin: "50% 0%",
+                z: -900,
+                autoAlpha: 0,
+              });
+            } else {
+              rowTimeline
+                .from(rowOrder, {
+                  stagger: { amount: 0.28, from: "start" },
+                  rotationY: 65,
+                  transformOrigin: "0% 50%",
+                  z: -200,
+                  yPercent: 10,
+                })
+                .from(
+                  rowOrder,
+                  {
+                    stagger: { amount: 0.28, from: "start" },
+                    duration: 0.2,
+                    autoAlpha: 0,
+                  },
+                  0,
+                );
+            }
+          });
+
+          if (titleBlock) {
+            gsap.from(titleBlock, {
+              xPercent: variant === "sidePivot" ? -18 : 0,
+              yPercent: variant === "sidePivot" ? 0 : 70,
+              autoAlpha: 0,
+              duration: 1,
+              ease: "power4.out",
+              scrollTrigger: {
+                trigger: section,
+                start: "top 88%",
+                end: "top 58%",
+                scrub: 0.25,
+              },
+            });
+          }
+          return;
+        }
         const triggerStart =
           variant === "rise"
             ? "top 50%"
@@ -206,30 +301,19 @@ export function LayoutFormationsClient({
             ? `+=${Math.round(window.innerHeight * 0.62)}`
             : variant === "zoomed"
               ? `+=${Math.round(window.innerHeight * 0.58)}`
-                : variant === "reveal"
-                  ? "top 16%"
-                  : isEntranceFormation
-                    ? "bottom 42%"
-                    : `+=${Math.round(window.innerHeight * 2.2)}`;
+              : variant === "reveal"
+                ? "top 16%"
+                : `+=${Math.round(window.innerHeight * 2.2)}`;
         const tl = gsap.timeline({
           defaults: {
-            ease:
-              variant === "zoomed"
-                ? "power2.inOut"
-                : variant === "tilted"
-                  ? "power3.inOut"
-                  : variant === "depth"
-                    ? "sine.inOut"
-                    : variant === "sidePivot"
-                      ? "expo.inOut"
-                      : "sine.inOut",
+            ease: variant === "zoomed" ? "power2.inOut" : "sine.inOut",
           },
           scrollTrigger: {
             trigger: section,
             start: triggerStart,
             end: () => triggerEnd,
-            pin: variant !== "rise" && variant !== "reveal" && !isEntranceFormation,
-            scrub: variant === "rise" || variant === "sidePivot" ? 0.2 : 0.35,
+            pin: variant !== "rise" && variant !== "reveal",
+            scrub: variant === "rise" ? 0.2 : 0.35,
           },
         });
 

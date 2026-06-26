@@ -722,6 +722,11 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="reveal"] .lf-stage {
   gap: clamp(0.25rem, 0.65vh, 0.45rem);
 }
+.lf-root[data-lf-variant="tilted"] .lf-stage,
+.lf-root[data-lf-variant="depth"] .lf-stage,
+.lf-root[data-lf-variant="sidePivot"] .lf-stage {
+  padding-block: clamp(7rem, 14vh, 11rem);
+}
 .lf-root[data-lf-variant="columns"][data-lf-show-titles="false"] .lf-stage {
   gap: clamp(0.2rem, 0.55vh, 0.4rem);
 }
