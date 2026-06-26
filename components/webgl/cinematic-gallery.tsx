@@ -16,7 +16,8 @@ interface Layout {
     | "filmstrip"
     | "mosaic"
     | "carousel3d"
-    | "cinematic";
+    | "cinematic"
+    | "horizontal-lenis";
   spacing?: string;
 }
 

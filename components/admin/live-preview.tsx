@@ -9,12 +9,21 @@ export type PreviewGrid =
   | "justified"
   | "uniform"
   | "horizontal-lenis"
+  | "parallax-ring"
+  | "image-trail"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
 export type PreviewTheme = "light" | "dark" | "auto";
 
 export type PreviewOverlay = "minimal" | "editorial" | "centered";
+export type PreviewImageTrailVariant =
+  | "fade-shrink"
+  | "zoom-fade"
+  | "drop"
+  | "scatter"
+  | "stretch-drop"
+  | "full-frame";
 
 export interface PreviewDraft {
   gridType: PreviewGrid;
@@ -22,6 +31,20 @@ export interface PreviewDraft {
   theme: PreviewTheme;
   hero?: Record<string, unknown>;
   overlay?: PreviewOverlay;
+  altUseBackground?: boolean;
+  altBackgroundColor?: string;
+  altTextColor?: string;
+  altShowText?: boolean;
+  imgTrailVariant?: PreviewImageTrailVariant;
+  imgTrailUseBackground?: boolean;
+  imgTrailBackgroundColor?: string;
+}
+
+type PreviewDevice = "desktop" | "mobile";
+
+function preferredPreviewDevice(): PreviewDevice {
+  if (typeof window === "undefined") return "desktop";
+  return window.matchMedia("(max-width: 767px)").matches ? "mobile" : "desktop";
 }
 
 // Browser-safe encoder matching src/lib/preview.ts decodePreview (base64url of
@@ -44,8 +67,18 @@ export function LivePreview({
   draft: PreviewDraft;
   height?: number;
 }) {
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [device, setDevice] = useState<PreviewDevice>(preferredPreviewDevice);
+  const [manualDevice, setManualDevice] = useState(false);
   const [nudge, setNudge] = useState(0);
+
+  useEffect(() => {
+    if (manualDevice) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setDevice(mq.matches ? "mobile" : "desktop");
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [manualDevice]);
 
   // Debounce so we don't reload the iframe on every keystroke.
   const [debounced, setDebounced] = useState(draft);
@@ -54,14 +87,19 @@ export function LivePreview({
     return () => clearTimeout(t);
   }, [draft]);
 
-  const src = useMemo(() => {
+  const { src, openSrc } = useMemo(() => {
     const params = new URLSearchParams();
     params.set("__pc", encodePreviewClient(debounced));
     if (debounced.theme === "light" || debounced.theme === "dark") {
       params.set("__theme", debounced.theme);
     }
     if (nudge) params.set("__r", String(nudge));
-    return `${baseUrl}?${params.toString()}`;
+    const openParams = new URLSearchParams(params);
+    params.set("__previewFrame", "1");
+    return {
+      src: `${baseUrl}?${params.toString()}`,
+      openSrc: `${baseUrl}?${openParams.toString()}`,
+    };
   }, [baseUrl, debounced, nudge]);
 
   return (
@@ -75,7 +113,10 @@ export function LivePreview({
             type="button"
             variant={device === "desktop" ? "default" : "outline"}
             size="sm"
-            onClick={() => setDevice("desktop")}
+            onClick={() => {
+              setManualDevice(true);
+              setDevice("desktop");
+            }}
             aria-label="Desktop preview"
           >
             <Monitor className="h-4 w-4" />
@@ -84,7 +125,10 @@ export function LivePreview({
             type="button"
             variant={device === "mobile" ? "default" : "outline"}
             size="sm"
-            onClick={() => setDevice("mobile")}
+            onClick={() => {
+              setManualDevice(true);
+              setDevice("mobile");
+            }}
             aria-label="Mobile preview"
           >
             <Smartphone className="h-4 w-4" />
@@ -99,7 +143,7 @@ export function LivePreview({
             <RefreshCw className="h-4 w-4" />
           </Button>
           <a
-            href={src}
+            href={openSrc}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex h-8 items-center rounded-md border px-2 text-xs"

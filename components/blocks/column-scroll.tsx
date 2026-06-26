@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import { prefersReducedMotion } from "@/components/webgl/feature";
 
@@ -27,20 +26,37 @@ function lenis(): Lenis | undefined {
 }
 
 // "Alternative Scroll" — port of the Codrops "ColumnScroll" demo. A multi-column
-// photo grid whose OUTER columns drift opposite to the middle one as the section
-// scrolls through the viewport (hover squeeze/zoom), and a click→full-screen
+// photo grid whose OUTER columns drift opposite to the middle one as the grid
+// receives wheel/touch input (hover squeeze/zoom), and a click→full-screen
 // "content view": the image scales up to centre, the other in-view photos fly to a
 // thumbnail nav, an optional split heading parts, and the photo's title/caption
 // reveal; Back (or Esc) reverses it; nav thumbs switch the focused photo.
 //
 // The reference drives the columns with Locomotive Scroll, which would fight our
-// global Lenis — so we reproduce the opposite-column motion with a scrubbed GSAP
-// ScrollTrigger. Because our columns use overflow:hidden for the drift, the content
-// view animates fixed-position OVERLAY clones (not the clipped real items) — same
-// visual, robust. Progressive enhancement: SSR / reduced-motion render a plain
-// static column grid; GSAP enhances on mount.
-export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: string }) {
+// global Lenis — so we keep the section fixed and drive only the column transforms
+// from local wheel/touch progress. Because our columns use overflow:hidden for the
+// drift, the content view animates fixed-position OVERLAY clones (not the clipped
+// real items) — same visual, robust. Progressive enhancement: SSR / reduced-motion
+// render a plain photo grid; GSAP enhances on mount.
+export function ColumnScroll({
+  photos,
+  title,
+  subtitle,
+  useBackground = true,
+  backgroundColor = "#b7b19f",
+  textColor = "#111111",
+  showText = true,
+}: {
+  photos: PhotoDTO[];
+  title?: string;
+  subtitle?: string | null;
+  useBackground?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  showText?: boolean;
+}) {
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const stageRef = React.useRef<HTMLDivElement>(null);
   const overlayRef = React.useRef<HTMLDivElement>(null);
   const focusRef = React.useRef<HTMLDivElement>(null);
   const headUpRef = React.useRef<HTMLHeadingElement>(null);
@@ -53,19 +69,21 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     enhanced: boolean;
     isAnimating: boolean;
     open: boolean;
-    scrub: ScrollTrigger[];
     inView: Set<number>;
-  }>({ enhanced: false, isAnimating: false, open: false, scrub: [], inView: new Set() });
+    scrollProgress: number;
+  }>({ enhanced: false, isAnimating: false, open: false, inView: new Set(), scrollProgress: 0.5 });
 
   // The focused photo + the sibling thumbnails currently shown in the content view.
   const [content, setContent] = React.useState<{ index: number; thumbs: number[] } | null>(null);
 
-  // Responsive column count: 3 desktop / 2 tablet / 1 phone (SSR defaults to 3).
+  // Responsive column count: 3 desktop / 2 mobile. The Codrops reference needs at
+  // least two columns for the opposite-scroll effect to read, so phones keep two
+  // columns with larger, tighter frames instead of collapsing to one.
   const [numCols, setNumCols] = React.useState(NUM_COLS);
   React.useEffect(() => {
     const compute = () => {
       const w = window.innerWidth;
-      setNumCols(w <= 480 ? 1 : w <= 768 ? 2 : 3);
+      setNumCols(w <= 768 ? 2 : 3);
     };
     compute();
     window.addEventListener("resize", compute);
@@ -81,35 +99,106 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
   // ── Enhance: opposite-column scrub + hover + in-view tracking ──────────────
   useIso(() => {
     const root = rootRef.current;
-    if (!root || prefersReducedMotion() || photos.length === 0) return;
+    const stage = stageRef.current;
+    if (!root || !stage || prefersReducedMotion() || photos.length === 0) return;
 
-    gsap.registerPlugin(ScrollTrigger);
     const st = state.current;
-    st.scrub = [];
     root.classList.add("is-enhanced");
 
     const ctx = gsap.context(() => {
       const cols = gsap.utils.toArray<HTMLElement>("[data-cs-column]");
-      const vh = window.innerHeight;
-      // Pronounced opposite drift so adjacent columns clearly travel against each
-      // other: even cols −R→+R (downward), odd cols +R→−R (upward). The fixed split
-      // heading frames the top/bottom and masks the column ends at the extremes.
-      const R = vh * 0.32;
-      // Opposite-direction drift only makes sense with ≥2 columns (1-col phone = plain scroll).
+      const stageStyle = window.getComputedStyle(stage);
+      const verticalPadding =
+        Number.parseFloat(stageStyle.paddingTop) +
+        Number.parseFloat(stageStyle.paddingBottom);
+      const visibleHeight = Math.max(
+        1,
+        (stage.clientHeight || window.innerHeight) - verticalPadding,
+      );
+      // Keep the scene fixed with CSS and animate only the columns. The travel is
+      // measured from each column's own overflow. That lets every column reach
+      // its first/last image while shorter columns move less, avoiding big blank
+      // bands when the neighboring columns hit their ends.
+      // Opposite-direction drift only makes sense with ≥2 columns.
       if (cols.length > 1) {
+        gsap.set(cols, { y: 0 });
+        const stageRect = stage.getBoundingClientRect();
+        const topTarget = Number.parseFloat(stageStyle.paddingTop);
+        const bottomTarget = stageRect.height - Number.parseFloat(stageStyle.paddingBottom);
+        const ranges: { start: number; end: number }[] = [];
         cols.forEach((col, i) => {
-          const even = i % 2 === 0;
-          const tween = gsap.fromTo(
-            col,
-            { y: even ? -R : R },
-            {
-              y: even ? R : -R,
-              ease: "none",
-              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: true },
-            },
+          if (col.scrollHeight <= visibleHeight) {
+            ranges[i] = { start: 0, end: 0 };
+            return;
+          }
+          const items = Array.from(col.querySelectorAll<HTMLElement>("[data-cs-item]"));
+          const first = items[0]?.getBoundingClientRect();
+          const last = items[items.length - 1]?.getBoundingClientRect();
+          if (!first || !last) {
+            ranges[i] = { start: 0, end: 0 };
+            return;
+          }
+          const firstTop = first.top - stageRect.top;
+          const lastBottom = last.bottom - stageRect.top;
+          const isReversedColumn = i % 2 === 1;
+          const itemHeight = Math.max(first.height, last.height);
+          const endpointInset = Math.min(
+            visibleHeight * (isReversedColumn ? 0.08 : 0.42),
+            itemHeight * (isReversedColumn ? 0.25 : 1.25),
           );
-          if (tween.scrollTrigger) st.scrub.push(tween.scrollTrigger);
+          ranges[i] = {
+            start: topTarget + endpointInset - firstTop,
+            end: bottomTarget - endpointInset - lastBottom,
+          };
         });
+        const maxTravel = Math.max(
+          ...ranges.map(({ start, end }) => Math.abs(end - start)),
+          0,
+        );
+        const applyProgress = (progress: number) => {
+          st.scrollProgress = Math.min(1, Math.max(0, progress));
+          cols.forEach((col, i) => {
+            const { start, end } = ranges[i] ?? { start: 0, end: 0 };
+            gsap.to(col, {
+              y: start + (end - start) * st.scrollProgress,
+              duration: 0.55,
+              ease: "power3.out",
+              overwrite: true,
+            });
+          });
+        };
+
+        applyProgress(st.scrollProgress);
+
+        if (maxTravel > 0) {
+          let touchY: number | null = null;
+          const deltaScale = Math.max(visibleHeight * 1.2, maxTravel * 1.6);
+          const onWheel = (event: WheelEvent) => {
+            if (st.open) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            applyProgress(st.scrollProgress + event.deltaY / deltaScale);
+          };
+          const onTouchStart = (event: TouchEvent) => {
+            touchY = event.touches[0]?.clientY ?? null;
+          };
+          const onTouchMove = (event: TouchEvent) => {
+            if (st.open || touchY === null) return;
+            const nextY = event.touches[0]?.clientY ?? touchY;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            applyProgress(st.scrollProgress + (touchY - nextY) / deltaScale);
+            touchY = nextY;
+          };
+          root.addEventListener("wheel", onWheel, { passive: false });
+          root.addEventListener("touchstart", onTouchStart, { passive: true });
+          root.addEventListener("touchmove", onTouchMove, { passive: false });
+          return () => {
+            root.removeEventListener("wheel", onWheel);
+            root.removeEventListener("touchstart", onTouchStart);
+            root.removeEventListener("touchmove", onTouchMove);
+          };
+        }
       }
 
       const items = gsap.utils.toArray<HTMLElement>("[data-cs-item]");
@@ -146,8 +235,6 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     root.querySelectorAll<HTMLElement>("[data-cs-item]").forEach((el) => io.observe(el));
 
     st.enhanced = true;
-    ScrollTrigger.refresh();
-
     return () => {
       io.disconnect();
       ctx.revert();
@@ -155,7 +242,6 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
       st.enhanced = false;
       st.open = false;
       st.isAnimating = false;
-      st.scrub = [];
       lenis()?.start(); // never leave the next page scroll-locked
     };
   }, [photos, numCols]);
@@ -165,7 +251,7 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const ar = photo.width && photo.height ? photo.width / photo.height : 0.8;
-    let h = vh * 0.7;
+    let h = vh * 0.62;
     let w = h * ar;
     const maxW = vw * 0.9;
     if (w > maxW) {
@@ -215,7 +301,6 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
       // First open: fly the focus in from the clicked item, fly thumbs to the nav.
       openedRef.current = true;
       lenis()?.stop();
-      st.scrub.forEach((t) => t.disable(false));
       overlay.classList.add("is-open");
       const origin = originRectsRef.current.get(content.index);
       const tl = gsap.timeline({
@@ -253,20 +338,24 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
         }
       });
       // The framing split heading parts away as the content view covers the grid.
-      if (headUpRef.current) tl.to(headUpRef.current, { yPercent: -140, autoAlpha: 0 }, 0);
-      if (headDownRef.current) tl.to(headDownRef.current, { yPercent: 140, autoAlpha: 0 }, 0.05);
-      tl.fromTo(
-        [metaRef.current, backRef.current],
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.5, ease: "power2.out" },
-        0.8,
-      );
-      tl.fromTo(
-        metaRef.current?.querySelectorAll(".cs-meta-line") ?? [],
-        { yPercent: 120, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, stagger: 0.06, duration: 0.7, ease: "expo.out" },
-        0.85,
-      );
+      if (showText) {
+        if (headUpRef.current) tl.to(headUpRef.current, { yPercent: -140, autoAlpha: 0 }, 0);
+        if (headDownRef.current) tl.to(headDownRef.current, { yPercent: 140, autoAlpha: 0 }, 0.05);
+        tl.fromTo(
+          [metaRef.current, backRef.current],
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.5, ease: "power2.out" },
+          0.8,
+        );
+        tl.fromTo(
+          metaRef.current?.querySelectorAll(".cs-meta-line") ?? [],
+          { yPercent: 120, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, stagger: 0.06, duration: 0.7, ease: "expo.out" },
+          0.85,
+        );
+      } else {
+        tl.fromTo(backRef.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 0.8);
+      }
     } else {
       // Switch focused photo (thumb click): quick crossfade of the focus image + meta.
       gsap.fromTo(focus, { autoAlpha: 0.2 }, { autoAlpha: 1, duration: 0.4, ease: "power2.out" });
@@ -277,7 +366,7 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
         { yPercent: 0, autoAlpha: 1, stagger: 0.05, duration: 0.5, ease: "expo.out" },
       );
     }
-  }, [content, photos, focusTarget]);
+  }, [content, photos, focusTarget, showText]);
 
   const closeContent = React.useCallback(() => {
     const st = state.current;
@@ -294,22 +383,22 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
         openedRef.current = false;
         st.open = false;
         lenis()?.start();
-        st.scrub.forEach((t) => t.enable());
-        ScrollTrigger.refresh();
         st.isAnimating = false;
         setContent(null);
       },
     });
-    tl.to([metaRef.current, backRef.current], { autoAlpha: 0, duration: 0.4 }, 0);
+    const fadeTargets: HTMLElement[] = backRef.current ? [backRef.current] : [];
+    if (showText && metaRef.current) fadeTargets.push(metaRef.current);
+    tl.to(fadeTargets, { autoAlpha: 0, duration: 0.4 }, 0);
     const thumbEls = navRef.current ? gsap.utils.toArray<HTMLElement>(navRef.current.children) : [];
     tl.to(thumbEls, { autoAlpha: 0, y: 40, duration: 0.5, stagger: 0.02 }, 0);
     if (origin) {
       tl.to(focus, { left: origin.left, top: origin.top, width: origin.width, height: origin.height }, 0.1);
     }
-    const heads = [headUpRef.current, headDownRef.current].filter(Boolean);
+    const heads = showText ? [headUpRef.current, headDownRef.current].filter(Boolean) : [];
     if (heads.length) tl.to(heads, { yPercent: 0, autoAlpha: 1, duration: 0.8 }, 0.2);
     tl.to(overlay, { autoAlpha: 0, duration: 0.4 }, "-=0.3");
-  }, [content]);
+  }, [content, showText]);
 
   // Esc closes the content view.
   React.useEffect(() => {
@@ -327,59 +416,63 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
   const focusUrl = focusPhoto ? pickUrl(focusPhoto, FOCUS_BUCKETS) : null;
 
   return (
-    <div ref={rootRef} data-cs-root className="cs-root">
-      {title ? (
-        <h2 ref={headUpRef} className="cs-heading cs-heading--up" aria-hidden>
-          {title}
-        </h2>
-      ) : null}
+    <div
+      ref={rootRef}
+      data-cs-root
+      className="cs-root"
+      style={
+        {
+          "--cs-bg": backgroundColor,
+          "--cs-bg-active": useBackground ? backgroundColor : "transparent",
+          "--cs-text": textColor,
+        } as React.CSSProperties
+      }
+    >
+      <div ref={stageRef} className="cs-stage">
+        {showText && title ? (
+          <h2 ref={headUpRef} className="cs-heading cs-heading--up" aria-hidden>
+            {title}
+          </h2>
+        ) : null}
 
-      <div className="cs-columns">
-        {columns.map((col, ci) => (
-          <div key={ci} data-cs-column data-cs-col={ci} className="cs-column">
-            {col.map(({ photo, index }) => {
-              const url = pickUrl(photo, COL_BUCKETS);
-              // Two-line caption like the reference (name + secondary), uppercase.
-              const name = photo.headline || photo.altText || "";
-              const sub = photo.caption || "";
-              return (
-                <figure
-                  key={photo.id}
-                  data-cs-item
-                  data-cs-index={index}
-                  className="cs-item"
-                  onClick={(e) => {
-                    if (state.current.enhanced) {
-                      const wrap = (e.currentTarget as HTMLElement).querySelector<HTMLElement>("[data-cs-imgwrap]");
-                      if (wrap) openContent(index, wrap);
-                    }
-                  }}
-                >
-                  <div data-cs-imgwrap className="cs-item-imgwrap">
-                    <div
-                      data-cs-img
-                      className="cs-item-img"
-                      style={{ backgroundImage: url ? `url(${url})` : undefined }}
-                    />
-                  </div>
-                  {name || sub ? (
-                    <figcaption className="cs-item-cap">
-                      <span>{name}</span>
-                      {sub ? <span>{sub}</span> : null}
-                    </figcaption>
-                  ) : null}
-                </figure>
-              );
-            })}
-          </div>
-        ))}
+        <div className="cs-columns">
+          {columns.map((col, ci) => (
+            <div key={ci} data-cs-column data-cs-col={ci} className="cs-column">
+              {col.map(({ photo, index }) => {
+                const url = pickUrl(photo, COL_BUCKETS);
+                return (
+                  <figure
+                    key={photo.id}
+                    data-cs-item
+                    data-cs-index={index}
+                    className="cs-item"
+                    onClick={(e) => {
+                      if (state.current.enhanced) {
+                        const wrap = (e.currentTarget as HTMLElement).querySelector<HTMLElement>("[data-cs-imgwrap]");
+                        if (wrap) openContent(index, wrap);
+                      }
+                    }}
+                  >
+                    <div data-cs-imgwrap className="cs-item-imgwrap">
+                      <div
+                        data-cs-img
+                        className="cs-item-img"
+                        style={{ backgroundImage: url ? `url(${url})` : undefined }}
+                      />
+                    </div>
+                  </figure>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {showText && (subtitle || title) ? (
+          <h2 ref={headDownRef} className="cs-heading cs-heading--down" aria-hidden>
+            {subtitle || title}
+          </h2>
+        ) : null}
       </div>
-
-      {title ? (
-        <h2 ref={headDownRef} className="cs-heading cs-heading--down" aria-hidden>
-          {title}
-        </h2>
-      ) : null}
 
       {/* Full-screen content view (fixed overlay; clones, not the clipped real items). */}
       <div ref={overlayRef} data-cs-overlay className="cs-overlay">
@@ -392,10 +485,14 @@ export function ColumnScroll({ photos, title }: { photos: PhotoDTO[]; title?: st
           className="cs-focus"
           style={{ backgroundImage: focusUrl ? `url(${focusUrl})` : undefined }}
         />
-        <div ref={metaRef} className="cs-overlay-meta">
-          <h3 className="cs-meta-line cs-meta-title">{focusPhoto?.headline || title || ""}</h3>
-          {focusPhoto?.caption ? <p className="cs-meta-line cs-meta-text">{focusPhoto.caption}</p> : null}
-        </div>
+        {showText ? (
+          <div ref={metaRef} className="cs-overlay-meta">
+            <h3 className="cs-meta-line cs-meta-title">{focusPhoto?.headline || title || ""}</h3>
+            {focusPhoto?.caption || subtitle ? (
+              <p className="cs-meta-line cs-meta-text">{focusPhoto?.caption || subtitle}</p>
+            ) : null}
+          </div>
+        ) : null}
         <div ref={navRef} className="cs-overlay-nav">
           {content?.thumbs.map((i) => {
             const url = pickUrl(photos[i], COL_BUCKETS);

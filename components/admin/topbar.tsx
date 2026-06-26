@@ -19,8 +19,8 @@ export function Topbar({
 
   return (
     <>
-      <header className="flex h-14 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
+      <header className="flex h-14 items-center justify-between gap-3 border-b px-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
           {/* Mobile menu trigger (the sidebar is hidden below md). */}
           <button
             type="button"
@@ -32,12 +32,12 @@ export function Topbar({
           </button>
           <Link
             href="/admin"
-            className="text-sm font-semibold tracking-tight hover:opacity-80"
+            className="truncate text-sm font-semibold tracking-tight hover:opacity-80"
           >
             Studio admin
           </Link>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <div className="hidden text-right sm:block">
             <p className="text-sm font-medium leading-tight">{user.name}</p>
             <p className="text-xs capitalize text-[hsl(var(--muted-foreground))]">
@@ -48,13 +48,15 @@ export function Topbar({
           <Button
             variant="outline"
             size="sm"
+            className="px-2 sm:px-3"
             onClick={async () => {
               await signOut();
               router.push("/login");
               router.refresh();
             }}
           >
-            <LogOut className="h-4 w-4" /> Sign out
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Sign out</span>
           </Button>
         </div>
       </header>
@@ -66,7 +68,7 @@ export function Topbar({
             className="absolute inset-0 bg-black/40"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="absolute left-0 top-0 flex h-full w-64 flex-col border-r bg-[hsl(var(--background))] shadow-lg">
+          <div className="absolute left-0 top-0 flex h-full w-[min(18rem,85vw)] flex-col border-r bg-[hsl(var(--background))] shadow-lg">
             <div className="flex h-14 items-center justify-between border-b px-4 font-semibold">
               Photography
               <button

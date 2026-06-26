@@ -41,6 +41,14 @@ function statusTone(s: Status): "green" | "amber" | "neutral" {
   return "neutral";
 }
 
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function NewGalleryModal({
   onClose,
   onCreated,
@@ -51,6 +59,7 @@ function NewGalleryModal({
   const { toast } = useToast();
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("private");
   const [submitting, setSubmitting] = useState(false);
@@ -75,20 +84,27 @@ function NewGalleryModal({
   return (
     <Modal open onClose={onClose} title="New gallery">
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Slug" htmlFor="new-gallery-slug">
-          <Input
-            id="new-gallery-slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="autumn-wedding"
-            required
-          />
-        </Field>
         <Field label="Title" htmlFor="new-gallery-title">
           <Input
             id="new-gallery-title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              const nextTitle = e.target.value;
+              setTitle(nextTitle);
+              if (!slugEdited) setSlug(slugify(nextTitle));
+            }}
+            required
+          />
+        </Field>
+        <Field label="Slug" htmlFor="new-gallery-slug">
+          <Input
+            id="new-gallery-slug"
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugEdited(e.target.value.trim() !== "");
+            }}
+            placeholder="autumn-wedding"
             required
           />
         </Field>

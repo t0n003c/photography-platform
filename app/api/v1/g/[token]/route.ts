@@ -67,6 +67,7 @@ export async function GET(
     gallery: {
       id: g.id,
       title: g.title,
+      subtitle: g.subtitle,
       description: g.description,
       downloadEnabled: g.downloadEnabled,
     },

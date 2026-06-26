@@ -46,6 +46,14 @@ function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
 
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 // Build a nested tree from the flat folder list (roots = parentId null).
 function buildTree(folders: Folder[]): TreeNode[] {
   const byId = new Map<string, TreeNode>();
@@ -198,8 +206,9 @@ function PublishModal({
 }) {
   const { toast } = useToast();
   const [as, setAs] = useState<"gallery" | "category">("gallery");
-  const [slug, setSlug] = useState("");
   const [title, setTitle] = useState(folder.name);
+  const [slug, setSlug] = useState(() => slugify(folder.name));
+  const [slugEdited, setSlugEdited] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; as: string } | null>(
@@ -267,19 +276,26 @@ function PublishModal({
               <option value="category">Category</option>
             </Select>
           </Field>
-          <Field label="Slug" htmlFor="publish-slug">
-            <Input
-              id="publish-slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="summer-weddings"
-            />
-          </Field>
           <Field label="Title" htmlFor="publish-title">
             <Input
               id="publish-title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                const nextTitle = e.target.value;
+                setTitle(nextTitle);
+                if (!slugEdited) setSlug(slugify(nextTitle));
+              }}
+            />
+          </Field>
+          <Field label="Slug" htmlFor="publish-slug">
+            <Input
+              id="publish-slug"
+              value={slug}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugEdited(e.target.value.trim() !== "");
+              }}
+              placeholder="summer-weddings"
             />
           </Field>
           {error && (

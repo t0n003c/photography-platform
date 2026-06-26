@@ -20,9 +20,11 @@ export function AdminShell({
             </div>
             <Sidebar />
           </aside>
-          <div className="flex min-h-dvh flex-col">
+          <div className="flex min-h-dvh min-w-0 flex-col">
             <Topbar user={user} />
-            <main className="flex-1 p-4 sm:p-6">{children}</main>
+            <main className="min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6">
+              {children}
+            </main>
           </div>
         </div>
       </StepUpProvider>

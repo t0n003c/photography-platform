@@ -65,6 +65,7 @@ export function PhotoPicker({
               )}
             >
               {p.thumbUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={p.thumbUrl}
                   alt={p.label}

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import type { PhotoDTO } from "@/src/db/queries/photos";
-import { cn } from "@/src/lib/utils";
 import { ResponsiveImage } from "./responsive-image";
 
 // 3D infinite carousel. Adapted from the technique in

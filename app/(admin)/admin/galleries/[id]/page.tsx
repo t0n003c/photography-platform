@@ -26,6 +26,7 @@ import { GalleryVideoCard } from "@/components/admin/gallery-video-card";
 import {
   LivePreview,
   type PreviewGrid,
+  type PreviewImageTrailVariant,
   type PreviewSpacing,
   type PreviewTheme,
   type PreviewOverlay,
@@ -44,6 +45,7 @@ interface Gallery {
   id: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
   visibility: Visibility;
   status: Status;
@@ -105,6 +107,7 @@ function SettingsCard({
 }) {
   const { toast } = useToast();
   const [title, setTitle] = useState(gallery.title);
+  const [subtitle, setSubtitle] = useState(gallery.subtitle ?? "");
   const [description, setDescription] = useState(gallery.description ?? "");
   const [visibility, setVisibility] = useState<Visibility>(gallery.visibility);
   const [status, setStatus] = useState<Status>(gallery.status);
@@ -121,6 +124,7 @@ function SettingsCard({
         `/api/v1/admin/galleries/${gallery.id}`,
         {
           title,
+          subtitle: subtitle.trim() === "" ? null : subtitle,
           description: description.trim() === "" ? null : description,
           visibility,
           status,
@@ -164,6 +168,13 @@ function SettingsCard({
             id="g-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+          />
+        </Field>
+        <Field label="Subtitle" htmlFor="g-subtitle">
+          <Input
+            id="g-subtitle"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
           />
         </Field>
         <Field label="Description" htmlFor="g-desc">
@@ -867,6 +878,14 @@ function LayoutCard({
   const [spacing, setSpacing] = useState<PreviewSpacing>("normal");
   const [theme, setTheme] = useState<PreviewTheme>("auto");
   const [overlay, setOverlay] = useState<PreviewOverlay>("minimal");
+  const [altUseBackground, setAltUseBackground] = useState(true);
+  const [altBackgroundColor, setAltBackgroundColor] = useState("#b7b19f");
+  const [altTextColor, setAltTextColor] = useState("#111111");
+  const [altShowText, setAltShowText] = useState(true);
+  const [imgTrailVariant, setImgTrailVariant] =
+    useState<PreviewImageTrailVariant>("fade-shrink");
+  const [imgTrailUseBackground, setImgTrailUseBackground] = useState(true);
+  const [imgTrailBackgroundColor, setImgTrailBackgroundColor] = useState("#efece5");
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -889,6 +908,8 @@ function LayoutCard({
           cfg.gridType === "justified" ||
           cfg.gridType === "uniform" ||
           cfg.gridType === "horizontal-lenis" ||
+          cfg.gridType === "parallax-ring" ||
+          cfg.gridType === "image-trail" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -900,6 +921,35 @@ function LayoutCard({
         setBaseConfig(c);
         const o = c.hlOverlay;
         if (o === "minimal" || o === "editorial" || o === "centered") setOverlay(o);
+        if (typeof c.altUseBackground === "boolean") {
+          setAltUseBackground(c.altUseBackground);
+        }
+        if (typeof c.altBackgroundColor === "string") {
+          setAltBackgroundColor(c.altBackgroundColor);
+        }
+        if (typeof c.altTextColor === "string") {
+          setAltTextColor(c.altTextColor);
+        }
+        if (typeof c.altShowText === "boolean") {
+          setAltShowText(c.altShowText);
+        }
+        const trailVariant = c.imgTrailVariant;
+        if (
+          trailVariant === "fade-shrink" ||
+          trailVariant === "zoom-fade" ||
+          trailVariant === "drop" ||
+          trailVariant === "scatter" ||
+          trailVariant === "stretch-drop" ||
+          trailVariant === "full-frame"
+        ) {
+          setImgTrailVariant(trailVariant);
+        }
+        if (typeof c.imgTrailUseBackground === "boolean") {
+          setImgTrailUseBackground(c.imgTrailUseBackground);
+        }
+        if (typeof c.imgTrailBackgroundColor === "string") {
+          setImgTrailBackgroundColor(c.imgTrailBackgroundColor);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -911,7 +961,19 @@ function LayoutCard({
   const save = async () => {
     setSaving(true);
     try {
-      const config = { ...baseConfig, hlOverlay: overlay };
+      const restConfig = { ...baseConfig };
+      delete restConfig.motionEffect;
+      const config = {
+        ...restConfig,
+        hlOverlay: overlay,
+        altUseBackground,
+        altBackgroundColor,
+        altTextColor,
+        altShowText,
+        imgTrailVariant,
+        imgTrailUseBackground,
+        imgTrailBackgroundColor,
+      };
       let id = gallery.pageConfigId;
       if (!id) {
         const res = await api.post<{ data: { id: string } }>("/api/v1/admin/page-configs", {
@@ -956,11 +1018,16 @@ function LayoutCard({
                   <option value="justified">Justified</option>
                   <option value="uniform">Uniform</option>
                   <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
+                  <option value="parallax-ring">Parallax 3D ring</option>
+                  <option value="image-trail">Image trail cursor</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
               {/* The horizontal-scroll & alternative-scroll layouts manage their own spacing. */}
-              {gridType !== "horizontal-lenis" && gridType !== "alternative-scroll" && (
+              {gridType !== "horizontal-lenis" &&
+                gridType !== "parallax-ring" &&
+                gridType !== "image-trail" &&
+                gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
                     <option value="tight">Tight</option>
@@ -985,6 +1052,91 @@ function LayoutCard({
                   </Select>
                 </Field>
               )}
+              {gridType === "image-trail" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <Field label="Demo style">
+                    <Select
+                      value={imgTrailVariant}
+                      onChange={(e) =>
+                        setImgTrailVariant(e.target.value as PreviewImageTrailVariant)
+                      }
+                    >
+                      <option value="fade-shrink">Demo 1 — fade + shrink</option>
+                      <option value="zoom-fade">Demo 2 — zoom fade</option>
+                      <option value="drop">Demo 3 — drop away</option>
+                      <option value="scatter">Demo 4 — scatter</option>
+                      <option value="stretch-drop">Demo 5 — stretch drop</option>
+                      <option value="full-frame">Demo 6 — full-frame sweep</option>
+                    </Select>
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    <Field label="Background color" htmlFor="img-trail-bg-color">
+                      <Input
+                        id="img-trail-bg-color"
+                        type="color"
+                        value={imgTrailBackgroundColor}
+                        onChange={(e) => setImgTrailBackgroundColor(e.target.value)}
+                        disabled={!imgTrailUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <label className="flex items-center gap-2 pb-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={imgTrailUseBackground}
+                        onChange={(e) => setImgTrailUseBackground(e.target.checked)}
+                      />
+                      Use background
+                    </label>
+                  </div>
+                </div>
+              )}
+              {gridType === "alternative-scroll" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Background color" htmlFor="alt-bg-color">
+                      <Input
+                        id="alt-bg-color"
+                        type="color"
+                        value={altBackgroundColor}
+                        onChange={(e) => setAltBackgroundColor(e.target.value)}
+                        disabled={!altUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Text color" htmlFor="alt-text-color">
+                      <Input
+                        id="alt-text-color"
+                        type="color"
+                        value={altTextColor}
+                        onChange={(e) => setAltTextColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={altUseBackground}
+                        onChange={(e) => setAltUseBackground(e.target.checked)}
+                      />
+                      Use background color
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={altShowText}
+                        onChange={(e) => setAltShowText(e.target.checked)}
+                      />
+                      Show text overlay
+                    </label>
+                  </div>
+                </div>
+              )}
               <div className="pt-1">
                 <Button onClick={save} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -998,7 +1150,19 @@ function LayoutCard({
             </div>
             <LivePreview
               baseUrl={`/preview/gallery/${gallery.id}`}
-              draft={{ gridType, spacing, theme, overlay }}
+              draft={{
+                gridType,
+                spacing,
+                theme,
+                overlay,
+                altUseBackground,
+                altBackgroundColor,
+                altTextColor,
+                altShowText,
+                imgTrailVariant,
+                imgTrailUseBackground,
+                imgTrailBackgroundColor,
+              }}
               height={560}
             />
           </div>

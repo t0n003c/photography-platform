@@ -12,6 +12,7 @@ export async function GET() {
       id: gallery.id,
       slug: gallery.slug,
       title: gallery.title,
+      subtitle: gallery.subtitle,
       description: gallery.description,
       coverPhotoId: gallery.coverPhotoId,
       publishedAt: gallery.publishedAt,

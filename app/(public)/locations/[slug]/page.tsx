@@ -8,7 +8,7 @@ import {
   getLocationPhotos,
 } from "@/src/db/queries/public";
 import { resolveRenderConfig } from "@/src/lib/render-config";
-import { buildMetadata, breadcrumbJsonLd, imageGalleryJsonLd } from "@/src/lib/seo";
+import { buildMetadata, breadcrumbJsonLd } from "@/src/lib/seo";
 
 export const dynamic = "force-dynamic";
 

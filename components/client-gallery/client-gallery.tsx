@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, Heart, ImageOff, Loader2 } from "lucide-react";
+import { Download, Heart, ImageOff } from "lucide-react";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -18,6 +18,7 @@ interface ClientGalleryProps {
 interface GalleryMeta {
   id: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
   downloadEnabled: boolean;
 }
@@ -387,6 +388,11 @@ export function ClientGallery({ token }: ClientGalleryProps) {
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             {meta.title}
           </h1>
+          {meta.subtitle && (
+            <p className="mt-1 text-lg text-[hsl(var(--muted-foreground))]">
+              {meta.subtitle}
+            </p>
+          )}
           {meta.description && (
             <p className="mt-2 max-w-2xl text-[hsl(var(--muted-foreground))]">
               {meta.description}
@@ -398,7 +404,7 @@ export function ClientGallery({ token }: ClientGalleryProps) {
       {/* Sticky action bar */}
       {showActionBar && (
         <div className="sticky top-0 z-30 border-b bg-[hsl(var(--background))]/85 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--background))]/70">
-          <Container className="flex flex-wrap items-center gap-3 py-3">
+          <Container className="flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center">
             {permissions.favorite && (
               <Button
                 type="button"
@@ -422,11 +428,12 @@ export function ClientGallery({ token }: ClientGalleryProps) {
             )}
 
             {permissions.download && (
-              <div className="ml-auto flex flex-wrap items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="flex-1 sm:flex-none"
                   disabled={preparingZip !== null}
                   onClick={() => void downloadZip("all")}
                 >
@@ -441,6 +448,7 @@ export function ClientGallery({ token }: ClientGalleryProps) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="flex-1 sm:flex-none"
                   disabled={preparingZip !== null || favoriteIds.size === 0}
                   onClick={() => void downloadZip("favorites")}
                 >
@@ -495,7 +503,7 @@ export function ClientGallery({ token }: ClientGalleryProps) {
             }
           />
         ) : (
-          <div className="[column-fill:_balance] gap-4 [columns:2] sm:[columns:3] xl:[columns:4]">
+          <div className="[column-fill:_balance] gap-4 [columns:1] sm:[columns:2] lg:[columns:3] 2xl:[columns:4]">
             {visiblePhotos.map((photo, index) => {
               const favorited = favoriteIds.has(photo.id);
               const pending = pendingFavorites.has(photo.id);

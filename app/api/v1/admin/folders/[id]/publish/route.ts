@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { requireRole } from "@/src/auth/session";
 import { created, notFound, conflict, problem, parseJson } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";

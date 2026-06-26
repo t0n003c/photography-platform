@@ -37,6 +37,8 @@ docker-compose.override.yaml
 
 # testing
 /coverage
+/test-results/
+/.codex/screenshots/
 
 # editor
 .vscode/*

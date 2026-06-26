@@ -10,9 +10,9 @@ import { Gallery } from "@/components/gallery/gallery";
 
 export const dynamic = "force-dynamic";
 
-// Admin-only live preview of a gallery (any status/visibility), rendering its
-// photos with the resolved layout — including the editor's unsaved `__pc` draft.
-// Wrapped in public chrome for a faithful preview; non-admins get a 404.
+// Live preview of a gallery rendering its photos with the resolved layout —
+// including the editor's unsaved `__pc` draft. Published public galleries may be
+// previewed directly; draft/private galleries remain admin-only.
 export default async function GalleryPreview({
   params,
   searchParams,
@@ -21,8 +21,6 @@ export default async function GalleryPreview({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await getSession();
-  if (!session) notFound();
-
   const { id } = await params;
   const rows = await db
     .select()
@@ -31,25 +29,62 @@ export default async function GalleryPreview({
     .limit(1);
   const g = rows[0];
   if (!g) notFound();
+  const isPublishedPublic =
+    g.visibility === "public" && g.status === "published";
+  if (!session && !isPublishedPublic) notFound();
 
   const [{ photos }, layout] = await Promise.all([
     getGalleryPhotos(g.id),
-    resolveRenderConfig("gallery", g.pageConfigId, await searchParams, "justified"),
+    resolveRenderConfig(
+      "gallery",
+      g.pageConfigId,
+      await searchParams,
+      "justified",
+      { allowDraftPreview: isPublishedPublic || Boolean(session) },
+    ),
   ]);
+  const isImmersiveLayout =
+    layout.gridType === "alternative-scroll" ||
+    layout.gridType === "parallax-ring" ||
+    layout.gridType === "image-trail";
 
   return (
-    <Container className="py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">{g.title}</h1>
-      {g.description && (
-        <p className="mt-2 max-w-2xl text-[hsl(var(--muted-foreground))]">
-          {g.description}
-        </p>
+    <Container
+      className={
+        isImmersiveLayout
+          ? "max-w-none px-0 py-0 sm:px-0 lg:px-0"
+          : "py-12"
+      }
+    >
+      {!isImmersiveLayout && (
+        <>
+          <h1 className="text-3xl font-semibold tracking-tight">{g.title}</h1>
+          {g.subtitle && (
+            <p className="mt-1 text-lg text-[hsl(var(--muted-foreground))]">
+              {g.subtitle}
+            </p>
+          )}
+          {g.description && (
+            <p className="mt-2 max-w-2xl text-[hsl(var(--muted-foreground))]">
+              {g.description}
+            </p>
+          )}
+        </>
       )}
-      <div className="mt-8">
+      <div className={isImmersiveLayout ? "" : "mt-8"}>
         {photos.length === 0 ? (
           <p className="text-[hsl(var(--muted-foreground))]">This gallery is empty.</p>
         ) : (
-          <Gallery photos={photos} layout={layout} />
+          <Gallery
+            photos={photos}
+            layout={layout}
+            collection={{
+              name: g.title,
+              subtitle: g.subtitle,
+              slug: g.slug,
+              kind: "gallery",
+            }}
+          />
         )}
       </div>
     </Container>

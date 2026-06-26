@@ -52,10 +52,20 @@ export default async function RootLayout({
   const nonce = h.get("x-nonce") ?? undefined;
   // Live-design preview forces a theme (admin design editor only).
   const forcedTheme = h.get("x-preview-theme") ?? undefined;
+  const isPreviewFrame = h.get("x-preview-frame") === "1";
   const settings = await getSiteSettings();
   const orgLogo = settings.iconStorageKey ? "/api/v1/media/site-icon" : undefined;
   return (
-    <html lang={settings.locale} className={fontVars} suppressHydrationWarning>
+    <html lang={settings.locale} className={`${fontVars} no-js`} suppressHydrationWarning>
+      <head>
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html:
+              "document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js')",
+          }}
+        />
+      </head>
       <body>
         <JsonLd
           data={orgJsonLd({
@@ -72,6 +82,7 @@ export default async function RootLayout({
           disableTransitionOnChange
           nonce={nonce}
           forcedTheme={forcedTheme}
+          storageKey={isPreviewFrame ? "theme-preview-frame" : "theme"}
         >
           {children}
         </ThemeProvider>

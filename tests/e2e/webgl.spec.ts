@@ -3,12 +3,10 @@ import { test, expect, type ConsoleMessage } from "@playwright/test";
 /**
  * E2E coverage for the public home page and its progressive WebGL hero.
  *
- * The hero is rendered as a static <picture> (the LCP / complete fallback)
- * with an idle-mounted <canvas> enhancement layered on top. The canvas only
- * appears when (a) there is at least one published photo to build the hero,
- * (b) WebGL is supported, and (c) the user has not requested reduced motion.
- * On an empty DB (CI seeds taxonomy but no photos) the home page shows the
- * empty-state hero with no <picture>, so the WebGL assertion is skipped.
+ * The hand-built home can render a static <picture> (the LCP / complete
+ * fallback) with an idle-mounted <canvas> enhancement layered on top. A
+ * published builder-driven home may not use the WebGL hero at all, so the
+ * canvas assertion is scoped to the actual enhancement surface.
  */
 
 // Console noise that is benign and not indicative of a real page error.
@@ -45,7 +43,7 @@ test("home renders without console errors", async ({ page }) => {
   );
 });
 
-test("WebGL hero canvas mounts as enhancement", async ({ page }, testInfo) => {
+test("WebGL hero canvas mounts when configured", async ({ page }, testInfo) => {
   await page.goto("/");
 
   // The static <picture> is the LCP fallback and must be present immediately.
@@ -61,9 +59,15 @@ test("WebGL hero canvas mounts as enhancement", async ({ page }, testInfo) => {
   await expect(picture).toBeVisible();
   await expect(picture.locator("img").first()).toBeVisible();
 
+  const hero = page.locator("[data-webgl-hero]").first();
+  test.skip(
+    (await hero.count()) === 0,
+    "Home is not using the WebGL hero; static image fallback is the expected render.",
+  );
+
   // The canvas mounts after requestIdleCallback, once the WebGL gate passes.
   // In a standard Chromium runner WebGL is available, so we expect it to show.
-  await expect(page.locator("canvas")).toBeVisible({ timeout: 8000 });
+  await expect(hero.locator("canvas")).toBeVisible({ timeout: 8000 });
 
   // Visual reference for the enhanced hero.
   await page.screenshot({

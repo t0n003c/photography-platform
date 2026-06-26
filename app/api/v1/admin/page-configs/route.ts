@@ -17,7 +17,16 @@ const CreateSchema = z.object({
   scope: z.enum(SCOPES),
   layoutId: z.string().optional(),
   gridType: z
-    .enum(["masonry", "justified", "uniform", "horizontal-lenis", "carousel-3d-scroll", "alternative-scroll"])
+    .enum([
+      "masonry",
+      "justified",
+      "uniform",
+      "horizontal-lenis",
+      "parallax-ring",
+      "image-trail",
+      "carousel-3d-scroll",
+      "alternative-scroll",
+    ])
     .optional(),
   spacing: z.string().optional(),
   theme: z.enum(["light", "dark", "auto"]).optional(),

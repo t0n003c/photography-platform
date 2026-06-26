@@ -1,0 +1,1 @@
+ALTER TABLE "gallery" ADD COLUMN "subtitle" text;

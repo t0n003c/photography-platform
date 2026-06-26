@@ -16,6 +16,8 @@ import {
   Crosshair,
   Settings,
   GripVertical,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -204,8 +206,8 @@ export default function PageEditor() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-4 lg:flex lg:h-[calc(100dvh-6.5rem)] lg:flex-col lg:overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 lg:flex-none">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-semibold">{page.title}</h1>
           <Badge tone={page.status === "published" ? "green" : "neutral"}>{page.status}</Badge>
@@ -226,9 +228,9 @@ export default function PageEditor() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-hidden">
         {/* Editor */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
           <Card>
             <CardHeader>
               <CardTitle>Page settings</CardTitle>
@@ -354,8 +356,9 @@ function BlockCard({
   onRemove: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const hidden = block.hidden ?? false;
   return (
-    <div className="rounded-lg border">
+    <div className={`rounded-lg border ${hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
       <div className="flex items-center gap-2 px-3 py-2">
         <button
           type="button"
@@ -363,11 +366,25 @@ function BlockCard({
           className="min-w-0 flex-1 text-left text-sm font-medium"
         >
           {BLOCK_LABELS[block.type]}
+          {hidden && (
+            <span className="ml-2 rounded-full bg-[hsl(var(--muted))] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+              Hidden
+            </span>
+          )}
           <span className="ml-2 truncate text-xs font-normal text-[hsl(var(--muted-foreground))]">
             {blockSummary(block)}
           </span>
         </button>
-        <button type="button" aria-label="Locate in preview" title="Locate in preview" onClick={() => locateInPreview(block.id)} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+        <button
+          type="button"
+          aria-label={hidden ? "Show block" : "Hide block"}
+          title={hidden ? "Show block" : "Hide block"}
+          onClick={() => onChange({ ...block, hidden: !hidden } as Block)}
+          className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+        >
+          {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+        <button type="button" aria-label="Locate in preview" title="Locate in preview" disabled={hidden} onClick={() => locateInPreview(block.id)} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] disabled:opacity-30">
           <Crosshair className="h-4 w-4" />
         </button>
         <button type="button" aria-label="Move up" onClick={onUp} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
@@ -413,7 +430,7 @@ function blockSummary(block: Block): string {
     case "logos":
       return `${block.style} · ${block.photoIds.length} logos`;
     case "scrollShowcase":
-      return `up to ${block.limit} categories`;
+      return `${block.style ?? "cinematic"} · up to ${block.limit} categories`;
     default:
       return "";
   }
@@ -568,10 +585,36 @@ function ColumnsEditor({
               </div>
             )}
             {col.map((leaf, li) => (
-              <div key={leaf.id} className="rounded border p-2">
+              <div key={leaf.id} className={`rounded border p-2 ${leaf.hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs">{BLOCK_LABELS[leaf.type]}</span>
+                  <span className="text-xs">
+                    {BLOCK_LABELS[leaf.type]}
+                    {leaf.hidden && (
+                      <span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                        Hidden
+                      </span>
+                    )}
+                  </span>
                   <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                    <button
+                      type="button"
+                      aria-label={leaf.hidden ? "Show block" : "Hide block"}
+                      title={leaf.hidden ? "Show block" : "Hide block"}
+                      onClick={() =>
+                        setColumns(
+                          block.columns.map((c, idx) =>
+                            idx === ci
+                              ? c.map((x, k) =>
+                                  k === li ? ({ ...x, hidden: !(x.hidden ?? false) } as LeafBlock) : x,
+                                )
+                              : c,
+                          ),
+                        )
+                      }
+                      className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                    >
+                      {leaf.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
                     <button
                       type="button"
                       aria-label="Move up"
@@ -750,8 +793,17 @@ function LeafEditor({
             </Field>
           )}
           <Field label="Grid">
-            <Select value={block.gridType} onChange={(e) => set({ gridType: e.target.value as typeof block.gridType })}>
-              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="cinematic">Cinematic 3D scroll</option>
+            <Select
+              value={block.gridType}
+              onChange={(e) => {
+                const gridType = e.target.value as typeof block.gridType;
+                set({
+                  gridType,
+                  effect: "none",
+                });
+              }}
+            >
+              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option>
             </Select>
           </Field>
           {/* The 3D infinite carousel and cinematic 3D scroll manage their own
@@ -970,6 +1022,20 @@ function LeafEditor({
       const unchosen = cats.filter((c) => !chosen.includes(c.id));
       const labelOf = (cid: string) => cats.find((c) => c.id === cid)?.label ?? "(removed)";
       const auto = chosen.length === 0;
+      const isScrollPanels = block.style === "scrollPanels";
+      const isLayoutFormations = block.style === "layoutFormations";
+      const useScrollPanelsBackground = block.scrollPanelsUseBackground ?? true;
+      const layoutFormationVariant = block.layoutFormationsVariant ?? "rise";
+      const layoutFormationPhotoOptions =
+        layoutFormationVariant === "zoomed" ? [9] : [6, 9, 12, 18, 24];
+      const storedLayoutFormationPhotoCount =
+        block.layoutFormationsPhotoCount === 17
+          ? 18
+          : (block.layoutFormationsPhotoCount ?? 12);
+      const layoutFormationPhotoCount =
+        layoutFormationVariant === "zoomed"
+          ? 9
+          : storedLayoutFormationPhotoCount;
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
@@ -977,14 +1043,192 @@ function LeafEditor({
               <Select value={block.style ?? "cinematic"} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
                 <option value="cinematic">Cinematic wipe</option>
                 <option value="carousel3d">3D carousel (on scroll)</option>
+                <option value="scrollPanels">Scroll panels</option>
+                <option value="layoutFormations">Layout formations</option>
               </Select>
             </Field>
-            <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-            <Field label="Images per panel">
-              <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-              </Select>
-            </Field>
+            {isScrollPanels ? (
+              <>
+                <Field label="Top label">
+                  <Input
+                    value={block.title}
+                    onChange={(e) => set({ title: e.target.value })}
+                    placeholder="Selected work"
+                  />
+                </Field>
+                <Field label="Intro heading">
+                  <Textarea
+                    rows={2}
+                    value={block.scrollPanelsIntroHeading ?? "Selected Stories"}
+                    onChange={(e) => set({ scrollPanelsIntroHeading: e.target.value })}
+                  />
+                </Field>
+                <Field label="Intro text">
+                  <Textarea
+                    rows={3}
+                    value={
+                      block.scrollPanelsIntroText ??
+                      "Scroll through featured collections, places, and small visual fragments from the archive."
+                    }
+                    onChange={(e) => set({ scrollPanelsIntroText: e.target.value })}
+                  />
+                </Field>
+                <Field label="Intro text position">
+                  <Select
+                    value={block.scrollPanelsIntroAlign ?? "left"}
+                    onChange={(e) => set({ scrollPanelsIntroAlign: e.target.value as typeof block.scrollPanelsIntroAlign })}
+                  >
+                    <option value="left">Left side</option>
+                    <option value="center">Middle</option>
+                    <option value="right">Right side</option>
+                  </Select>
+                </Field>
+                <Field label="Showcase heading">
+                  <Textarea
+                    rows={2}
+                    value={block.scrollPanelsShowcaseHeading ?? "Selected Work"}
+                    onChange={(e) => set({ scrollPanelsShowcaseHeading: e.target.value })}
+                  />
+                </Field>
+                <Field label="Demo variant">
+                  <Select
+                    value={
+                      block.scrollPanelsVariant === "zoom" || block.scrollPanelsVariant === "brightness"
+                        ? "demo4"
+                        : block.scrollPanelsVariant ?? "classic"
+                    }
+                    onChange={(e) => set({ scrollPanelsVariant: e.target.value as typeof block.scrollPanelsVariant })}
+                  >
+                    <option value="classic">Classic columns</option>
+                    <option value="scatter">Scatter outward</option>
+                    <option value="demo4">Angled rows</option>
+                    <option value="perspective">Perspective blur</option>
+                  </Select>
+                </Field>
+                <Field label="Intro photos">
+                  <Select
+                    value={String(block.scrollPanelsIntroCount ?? 12)}
+                    onChange={(e) => set({ scrollPanelsIntroCount: Number(e.target.value) })}
+                  >
+                    {[6, 9, 12, 15, 18].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Row photos">
+                  <Select
+                    value={String(block.scrollPanelsRowCount ?? 5)}
+                    onChange={(e) => set({ scrollPanelsRowCount: Number(e.target.value) })}
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Photo tone">
+                  <Select
+                    value={block.scrollPanelsTone ?? "color"}
+                    onChange={(e) => set({ scrollPanelsTone: e.target.value as typeof block.scrollPanelsTone })}
+                  >
+                    <option value="color">Full color</option>
+                    <option value="grayscale">Reveal from black and white</option>
+                  </Select>
+                </Field>
+                <Field label="Background">
+                  <Select
+                    value={useScrollPanelsBackground ? "yes" : "no"}
+                    onChange={(e) => set({ scrollPanelsUseBackground: e.target.value === "yes" })}
+                  >
+                    <option value="yes">Use custom background</option>
+                    <option value="no">Use page background</option>
+                  </Select>
+                </Field>
+                {useScrollPanelsBackground && (
+                  <>
+                    <Field label="Background color">
+                      <Input
+                        type="color"
+                        value={block.scrollPanelsBackground ?? "#f4f0e8"}
+                        onChange={(e) => set({ scrollPanelsBackground: e.target.value })}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Text color">
+                      <Input
+                        type="color"
+                        value={block.scrollPanelsTextColor ?? "#171717"}
+                        onChange={(e) => set({ scrollPanelsTextColor: e.target.value })}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </>
+                )}
+              </>
+            ) : isLayoutFormations ? (
+              <>
+                <Field label="Eyebrow (optional)">
+                  <Input
+                    value={block.title}
+                    onChange={(e) => set({ title: e.target.value })}
+                    placeholder="Selected work"
+                  />
+                </Field>
+                <Field label="Formation variant">
+                  <Select
+                    value={layoutFormationVariant}
+                    onChange={(e) => {
+                      const nextVariant =
+                        e.target.value as typeof block.layoutFormationsVariant;
+                      set({
+                        layoutFormationsVariant: nextVariant,
+                        ...(nextVariant === "zoomed"
+                          ? { layoutFormationsPhotoCount: 9 }
+                          : {}),
+                      });
+                    }}
+                  >
+                    <option value="rise">Rise grid</option>
+                    <option value="columns">Column assemble</option>
+                    <option value="zoomed">Zoomed grid</option>
+                    <option value="reveal">Column reveal</option>
+                  </Select>
+                </Field>
+                <Field label="Top text position">
+                  <Select
+                    value={block.layoutFormationsHeaderAlign ?? "left"}
+                    onChange={(e) =>
+                      set({
+                        layoutFormationsHeaderAlign:
+                          e.target.value as typeof block.layoutFormationsHeaderAlign,
+                      })
+                    }
+                  >
+                    <option value="left">Left side</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right side</option>
+                  </Select>
+                </Field>
+                <Field label="Photos per formation">
+                  <Select
+                    value={String(layoutFormationPhotoCount)}
+                    onChange={(e) =>
+                      set({ layoutFormationsPhotoCount: Number(e.target.value) })
+                    }
+                  >
+                    {layoutFormationPhotoOptions.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Eyebrow (optional)"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
+                <Field label="Images per panel">
+                  <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                  </Select>
+                </Field>
+              </>
+            )}
             <Field label="Titles">
               <Select value={block.showTitles ? "yes" : "no"} onChange={(e) => set({ showTitles: e.target.value === "yes" })}>
                 <option value="yes">Show category names</option><option value="no">Hide</option>
@@ -1027,7 +1271,7 @@ function LeafEditor({
           </Field>
 
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Each category becomes a full-screen panel (cover photo, a few photos that fly in, and its name). Categories with no photos are skipped. Manage covers + which categories are published in{" "}
+            Each category becomes a full-screen panel or formation using its photos and name. Categories with no photos are skipped. Manage covers + which categories are published in{" "}
             <Link href="/admin/categories" className="underline underline-offset-2">Categories</Link>.
           </p>
         </div>
@@ -1177,7 +1421,13 @@ function PreviewPane({
   slug: string;
 }) {
   const { toast } = useToast();
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [device, setDevice] = useState<"desktop" | "mobile">(() => {
+    if (typeof window === "undefined") return "desktop";
+    return window.matchMedia("(max-width: 767px)").matches
+      ? "mobile"
+      : "desktop";
+  });
+  const [manualDevice, setManualDevice] = useState(false);
   const [bust, setBust] = useState(0);
 
   // Preserve the preview's scroll position across reloads (each draft push busts
@@ -1211,6 +1461,15 @@ function PreviewPane({
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (manualDevice) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setDevice(mq.matches ? "mobile" : "desktop");
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [manualDevice]);
+
   const pushDraft = useCallback(async () => {
     try {
       await api.post(`/api/v1/admin/pages/${id}/preview`, { blocks, theme });
@@ -1233,18 +1492,37 @@ function PreviewPane({
     const params = new URLSearchParams();
     params.set("v", String(bust));
     if (theme === "light" || theme === "dark") params.set("__theme", theme);
+    params.set("__previewFrame", "1");
     return `/preview/page/${id}?${params.toString()}`;
   }, [id, bust, theme]);
 
   return (
-    <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
+    <div className="space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">Live preview</span>
         <div className="flex items-center gap-1">
-          <Button type="button" variant={device === "desktop" ? "default" : "outline"} size="sm" onClick={() => setDevice("desktop")} aria-label="Desktop">
+          <Button
+            type="button"
+            variant={device === "desktop" ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setManualDevice(true);
+              setDevice("desktop");
+            }}
+            aria-label="Desktop"
+          >
             <Monitor className="h-4 w-4" />
           </Button>
-          <Button type="button" variant={device === "mobile" ? "default" : "outline"} size="sm" onClick={() => setDevice("mobile")} aria-label="Mobile">
+          <Button
+            type="button"
+            variant={device === "mobile" ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setManualDevice(true);
+              setDevice("mobile");
+            }}
+            aria-label="Mobile"
+          >
             <Smartphone className="h-4 w-4" />
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={pushDraft} aria-label="Refresh">
@@ -1255,24 +1533,25 @@ function PreviewPane({
           </a>
         </div>
       </div>
-      <div ref={paneRef} className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
+      <div ref={paneRef} className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))] lg:flex-none">
         {(() => {
-          const baseW = device === "mobile" ? 390 : 1280;
-          const visH = 640;
+          const baseW = device === "mobile" ? 390 : 1440;
+          const baseH = device === "mobile" ? 844 : 900;
           const scale = paneWidth > 0 ? Math.min(1, paneWidth / baseW) : 1;
+          const visH = Math.min(640, baseH * scale);
           return (
             <div className="mx-auto" style={{ width: baseW * scale, height: visH }}>
               <iframe
                 ref={iframeRef}
                 onLoad={handlePreviewLoad}
                 id="page-preview-iframe"
-                key={device}
+                key={`${device}-${bust}`}
                 src={src}
                 title="Page preview"
                 className="border-0 bg-[hsl(var(--background))]"
                 style={{
                   width: baseW,
-                  height: visH / scale,
+                  height: baseH,
                   transform: `scale(${scale})`,
                   transformOrigin: "top left",
                 }}

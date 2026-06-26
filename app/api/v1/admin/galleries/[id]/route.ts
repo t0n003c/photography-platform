@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 const PatchSchema = z.object({
   title: z.string().min(1).optional(),
+  subtitle: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   visibility: z.enum(["public", "private"]).optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
@@ -61,6 +62,7 @@ export async function PATCH(
 
   const updates: Partial<typeof gallery.$inferInsert> = {};
   if (body.title !== undefined) updates.title = body.title;
+  if (body.subtitle !== undefined) updates.subtitle = body.subtitle;
   if (body.description !== undefined) updates.description = body.description;
   if (body.visibility !== undefined) updates.visibility = body.visibility;
   if (body.status !== undefined) updates.status = body.status;

@@ -11,9 +11,12 @@ the code wins — verify before asserting.
 > gotchas are [`docs/DEV-WORKFLOW.md`](docs/DEV-WORKFLOW.md).
 
 > ## ⚠️ FIRST, READ THIS: there are unpushed commits
-> The local `main` branch is **ahead of `origin/main` by un-pushed commits** (≈24 as of this
-> handoff, 2026-06-23) — feature work (3D carousel, "Alternative Scroll" layout) plus these
-> handoff docs. **Pushes are intentionally PAUSED** (GitHub Actions minute quota); push only
+> The local `main` branch is **ahead of `origin/main` by un-pushed commits** (**26 as of
+> 2026-06-24**) — feature work (3D carousel, "Alternative Scroll" layout) plus these
+> handoff docs. There is also current uncommitted work from the Codex gallery/mobile UI pass
+> (Alternative Scroll tuning, gallery subtitle/slug autofill, preview route fixes, mobile
+> preview behavior, migration files). **Pushes are intentionally PAUSED** (GitHub Actions
+> minute quota); push only
 > when the **owner explicitly asks**, and **batch everything into a single push**. Check the
 > real count any time with:
 > ```bash
@@ -317,9 +320,134 @@ is gitignored):
 
 ## 12. Current unfinished tasks
 
-- **Unpushed commits:** `main` is **~23 commits ahead of `origin`** (3D-carousel refinements,
-  the "Alternative Scroll" layout, docs/skills). **Pushes are PAUSED** by owner request (GitHub
-  Actions minutes near quota); push only when the owner explicitly asks, batched into one push.
+- **Unpushed commits:** `main` is **26 commits ahead of `origin/main`** as of 2026-06-24
+  (3D-carousel refinements, the "Alternative Scroll" layout, docs/skills, Claude→Codex
+  handoff docs). There is also uncommitted Codex work in the tree for gallery/mobile UI and
+  Alternative Scroll refinements, plus a Pages editor fix so Gallery block grid changes
+  update the live preview and support the newer grid types. Latest Pages editor work adds
+  per-block hide/show toggles, skips hidden blocks in preview/public rendering, and removes
+  Alternative Scroll and On-scroll 3D carousel from Pages gallery-block options. Alternative
+  Scroll remains Gallery-tab only; the working On-scroll 3D carousel remains available through
+  the Scroll showcase block style. Alternative Scroll gallery images were also enlarged
+  slightly across desktop/tablet/mobile. The Codrops ScrollPanels reference was evaluated and
+  placed as a new **Scroll panels** style on the existing Pages → Scroll showcase block, reusing
+  its category selection/title controls; it is intentionally not a Gallery-tab grid type and not
+  a Pages Gallery-block grid option. Scroll panels now has its own settings for Codrops demo
+  variant, intro photo count, row photo count, photo tone, background color, and text color; the
+  old “Images per panel” control remains only for the cinematic style. The Scroll panels variant
+  picker intentionally exposes Classic, Scatter, Angled rows, and Perspective blur; the
+  earlier Zoom/Brightness labels are hidden and old saved values are normalized to Demo 4. Scroll
+  panels text is editable via Top label, Intro heading, Intro text, and Showcase heading, and the
+  fixed intro columns should fade before the category rows enter so Classic columns do not bleed
+  into the bottom of the showcase/list section. Perspective blur uses 4 intro columns; Angled rows
+  should read as Codrops-style angled bands with staggered row/column travel, not a generic light
+  sweep. Scatter, Perspective, and Angled rows keep the intro photos visible longer and fade them over
+  the handoff so the page should not go blank before the showcase rows are meaningfully visible;
+  Angled rows keeps the larger-photo Codrops-style rotated band look. Classic columns and Angled
+  rows use a cover/reveal intro: the text panel stays above a fixed full-viewport photo grid
+  with an opaque cover background, then scrolls away as the grid fades in and remains centered;
+  the showcase/list section later rises over the grid while the grid fades away. The text block
+  can be positioned left, middle, or right. Classic columns and Angled rows use larger intro
+  typography than the other Scroll panels variants; Angled rows uses full-size intro images with
+  a right/up viewport offset (currently biased farther right than center) so the visible grid keeps
+  a larger-photo Codrops feel while balancing top/bottom breathing room.
+  The Pages editor live preview uses a fixed simulated viewport for animation fidelity
+  (desktop 1440x900, mobile 390x844) scaled into the preview pane; do not derive iframe height
+  from pane scale for ScrollPanels because `vh`/`vw` then diverge from the opened page.
+  To avoid reload flashes/overlap on restored scroll positions, the document starts with `html.no-js`
+  and a head script flips it to `html.js` before body paint; desktop ScrollPanels intro grids stay
+  hidden until GSAP adds `is-enhanced`. The enhanced `.sp-columns-panel` must use explicit viewport
+  dimensions (`width:100vw`, `height:100svh`, `overflow:hidden`) instead of relying on `inset:0`
+  with auto height; otherwise restored-scroll reloads can briefly let the tall angled grid content
+  define the fixed panel's height (~full section height) before it settles back to the viewport.
+  Global Lenis also syncs to `window.scrollY` immediately on mount so restored-scroll reloads start
+  from the browser's actual scroll position rather than catching up after paint.
+  Reduced motion is excluded with CSS media queries and also marks `is-reduced-motion` so the static
+  fallback remains visible. For Scatter/Perspective, keep the showcase fade-out tween
+  `immediateRender:false` or GSAP can briefly force the fixed grid visible over earlier heading/text
+  blocks on reload.
+  Scatter and Perspective
+  intentionally keep the stronger editorial overlap. Scroll panels also has a Background setting:
+  when custom background is off, background/text color pickers are hidden and the block inherits
+  page background plus theme foreground color. The Titles setting must not substitute fallback
+  copy like "View collection" when category names are hidden.
+  Gallery-tab layouts now include `parallax-ring`, a separate optional layout inspired by the
+  Creative Ocean CodePen "Parallax Photo Carousel" (`mdROBXx`): a draggable 3D cylindrical photo
+  ring. Keep the panels curved around the ring, but keep each photo centered on its own panel
+  (`background-position: 50% 50%`) rather than sliding image content like a stitched panorama; the
+  user preferred the curved display without the cut/reversed image feel. The enhanced ring should
+  use continuous angle-based opacity while dragging, not rank-based show/hide; the user specifically
+  rejected visible-count drops and wants CodePen-like continuity. The target behavior is five strong
+  front panels at all drag positions with softer edge panels fading in/out continuously. After
+  testing, avoid opacity-based hiding entirely for the ring panels; let the 3D cylinder/backface
+  geometry carry continuity. The Creative Ocean CodePen hardcodes 10 panels at 36 degrees on a
+  500px radius. To support more than 10 gallery photos without changing the look, keep 10 physical
+  visual slots with the same 36-degree spread/radius behavior and recycle photo data into the slot
+  currently hidden at the back of the ring as it advances; do not globally shift every slot at once,
+  because visible photos jump ahead. The viewer-angle math must match the actual card transform
+  `rotateY(index * -step)`, so compute it as `rotation - index * step`; the opposite sign recycles
+  an edge/front slot and causes visible jumping. Also base recycling on GSAP's rendered ring
+  `rotationY`, not the future drag target stored in a ref, or photos swap before the card visually
+  reaches the hidden back position. Do not add all photos as physical panels, because that changes
+  the angles and gutter spacing.
+  The transformed 3D buttons do not always win browser hit-testing, so tap/click open is
+  resolved from the ring wrapper on pointer-up: if movement stays under the drag threshold, open the
+  prominent photo closest to the pointer. For the CodePen-like parallax, keep the 3D panel transform
+  on the button and put the actual image on a nested layer; shift that nested image layer with the
+  panel angle so parallax does not rewrite the ring transform. Keep the visible gutter as fixed
+  black masks above the photo, not by making the photo layer itself narrower; the image layer should
+  extend underneath the masks so adjacent photos can feel like they share/overlap inside one gutter
+  while the resting black gap stays the same size. Use fixed pixel gutters, not a percentage width or
+  scaled image, so the black spacing reads consistently across panels and at the wrap edges. Split
+  the intended gutter across neighboring cards so two adjacent photos read as sharing one black
+  gutter instead of doubling the space; parallax travel should stay within that mask range. The
+  parallax should be a shared total-drag-distance offset for all visible image layers,
+  revealing image content into the gutter opposite the drag direction (drag/scroll left reveals into
+  the right gutter) and easing back on release; keep
+  this as numeric GSAP `xPercent + x`, not panel-angle offsets or CSS `calc()`, to avoid rough
+  shifting between images. The reload entrance also lives on an inner float layer (`y` + `autoAlpha`
+  stagger) for the same reason; sort those float layers by their measured visual left edge before
+  staggering so reloads rise left-to-right instead of following the 3D ring's DOM order. To avoid
+  refresh flashes, render both the static fallback and enhanced ring markup, then use `html.js`
+  CSS to hide the fallback before first paint for normal-motion JS users while keeping the fallback
+  visible for no-JS and `prefers-reduced-motion: reduce`. It does not
+  replace the existing `carousel3d` layout and is
+  intentionally scoped to Gallery-tab page configs for now, not Pages tab Gallery blocks.
+  Gallery-tab layouts also include `gridType: "image-trail"`, inspired by Codrops
+  ImageTrailEffects. It is its own Gallery-tab grid type, not a separate motion effect that can be
+  layered onto arbitrary grids. It renders a reference-like full-stage layout with the gallery
+  title/subtitle in the frame and a large outlined center title; reduced motion/no-JS falls back to
+  a normal justified grid so the gallery remains usable. The selected gallery photos are the only
+  image source for the trail. Settings live in `page_config.config`: `imgTrailVariant` supports the
+  six Codrops-inspired variants (`fade-shrink`, `zoom-fade`, `drop`, `scatter`, `stretch-drop`,
+  `full-frame`), plus `imgTrailUseBackground` and `imgTrailBackgroundColor`. If background is off,
+  the stage inherits the site background/text color. It supports coarse-pointer mobile with smaller
+  trail images and lower movement thresholds, and disables animation under `prefers-reduced-motion`.
+  Demo 6/full-frame uses full-stage `<img>` layers with `object-contain`; keep only one layer visible
+  at rest, then sweep the next selected gallery photo in, so photos scale proportionally without
+  aggressive crop/zoom and the full-frame stack does not appear like every layer is active at once.
+  When `imgTrailUseBackground` is false, Demo 6 must not paint photo-dominant backdrops behind the
+  contained image; the stage and outlined title should inherit the active light/dark theme.
+  Demos 1-5 intentionally use larger cursor-trail images (`clamp(9rem,38vw,16rem)` on base and
+  `clamp(12rem,24vw,20rem)` from `sm`) than the original first pass so the trail reads clearly on
+  desktop and mobile; Demo 6 remains separate full-frame contain sizing. The large overlay title
+  should keep the Codrops reference palette per demo (`--color-title` + `--blendmode-title`):
+  Demo 1 white/difference, Demo 2 dark gray/difference, Demo 3 purple/normal, Demo 4 pale
+  pink/normal, Demo 5 dark teal-gray/normal, Demo 6 white/overlay. Keep the title out of parent
+  `z-index` stacking contexts; otherwise `mix-blend-mode` blends against the text layer instead of
+  the image trail layer. The stage background is a separate lower layer; the title and trail images
+  sit in a transparent isolated layer so Demo 1's `difference` title stays white on plain background
+  and only changes where it crosses trail photos. The old default `imgTrailBackgroundColor:
+  "#efece5"` should be treated as "no custom background selected" so Demo 2-6 can use their own
+  reference backgrounds.
+  Live-preview iframes pass `__previewFrame=1`;
+  middleware converts that to `x-preview-frame`, and the root `ThemeProvider` uses
+  `storageKey="theme-preview-frame"` only inside those iframes so the public light/dark button in a
+  preview cannot change the admin shell or normal public-site theme storage.
+  Keep it scoped to Gallery-tab page configs for now; do not add it to Pages tab Gallery blocks
+  unless the owner explicitly asks for a page-level decorative cursor/touch effect.
+  **Pushes are PAUSED** by owner request (GitHub Actions
+  minutes near quota); push only when the owner explicitly asks, batched into one push.
 - **Finish Home migration:** `/admin/pages` seeds a DRAFT "Home" page reproducing the old
   homepage; the live home stays bespoke until the owner previews and **publishes** it.
 - **Production secret:** set a dedicated `SETTINGS_ENCRYPTION_KEY` (`openssl rand -hex 32`).
@@ -356,8 +484,8 @@ is gitignored):
 
 ## 14. Future recommendations
 
-- **Push the 23 local commits** when the owner is ready (one batch); then make GHCR packages
-  public and pull on the NAS.
+- **Push the 26 local commits plus the current uncommitted Codex changes** when the owner is
+  ready (one batch); then make GHCR packages public and pull on the NAS.
 - **Reduce CI cost:** move the Lighthouse-on-full-stack CI job off every `push` (to
   `workflow_dispatch`/schedule); it's the biggest minute sink and unrelated to publishing images.
 - **Implement payments** when needed via the existing `PaymentProvider` stub (Stripe driver);
@@ -366,7 +494,77 @@ is gitignored):
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
   delegate the smoke test to the `animation-visual-reviewer` agent. `carousel-3d-scroll.tsx` and
-  `column-scroll.tsx` are working templates.
+  `column-scroll.tsx` are working templates. The ScrollPanels port lives in the Scroll showcase
+  block as `style: "scrollPanels"` and uses the app's existing Lenis/ScrollTrigger setup rather
+  than creating its own Lenis instance.
+- **OnScrollLayoutFormations port:** Pages tab → Scroll Showcase now has
+  `style: "layoutFormations"` with four first-pass variants: `rise`, `columns`, `zoomed`, and
+  `reveal`. It is category-driven like the other Scroll Showcase styles; each category becomes a
+  pinned desktop formation section using its photos and name. Mobile intentionally uses simpler
+  non-pinned reveal motion because the upstream Codrops demo has reported mobile layout-shift
+  issues. Current tuning: `Photos per formation` now drives the rendered cell count for all
+  variants at 6/9/12/18/24; rise grid, column assemble, and column reveal animate in a
+  deterministic random order; column reveal has no gray hidden-cell backing; zoomed grid uses a
+  smoother single timeline; column assemble has stronger row/column separation. Latest tuning:
+  zoomed grid is intentionally locked to 9 photos, keeps the center photo centered, and renders
+  oversized so the outer edges can crop; column reveal now has visible gutters between photos;
+  rise grid now uses dense count-aware grids instead of sparse hand-placed slots; the former 17
+  option was replaced with 18 so the selectable counts fill clean rectangular grids. The Layout
+  Formations header was converted to a compact top overlay and Rise Grid no longer pins while
+  offscreen; this removes the large black band between the style text and the grid in live
+  preview while preserving a shorter rise motion. Follow-up spacing tuning reserves enough
+  top padding for the first formation so the style text and grid no longer overlap; verified
+  with a focused Chrome smoke at ~52px desktop gap and ~35px iPhone 13 gap. Layout
+  Formations now also stores `layoutFormationsHeaderAlign` so the top text can be aligned
+  left, center, or right; the header has slightly more before/after padding, with latest
+  focused smoke showing ~39px desktop gap and ~31px iPhone 13 gap after the padding/alignment
+  update. Follow-up tuning keeps Zoomed Grid pinned near the top (`top 5%`) but shortens its
+  scrub range to ~0.58 viewport heights, so the motion starts promptly without holding a mostly
+  empty gap. The special first-section Zoomed grid size override and center-photo scale were later
+  removed: first and later category grids now use the same dimensions, and all nine Zoomed photos
+  finish at the same size/scale. Rise Grid starts at `top 50%`, uses a ~0.62 viewport scroll range,
+  and the image fly-in tween has `duration: 1.55`, so it reads slower while still completing by the
+  end of the entrance range. Rise still starts hidden (`autoAlpha: 0`) and flies from roughly
+  0.55-1.05 viewport heights, so it is not visible before animation and has a dramatic travel
+  distance. The first-section spacing uses an explicit `lf-section--first` class rather than
+  brittle `:first-of-type` CSS. Column Reveal now top-aligns the first grid with tighter
+  non-overlapping text/grid spacing. Column Reveal is now intentionally **not pinned** on desktop:
+  it uses a flowing section reveal (`top 76%` → `top 16%`) so the text and grid keep traveling
+  together instead of the grid pausing while the page leaves a large empty band. Reveal-only layout
+  is now compact and flow-based: the main header is relative, category titles sit above their grids
+  in a small horizontal row, category titles no longer animate separately, and the grid-to-next-title
+  rhythm is tight instead of viewport-panel sized. Column Assemble now uses a compact non-pinned
+  flow rhythm, but intentionally keeps more category-name-to-grid and grid-to-grid breathing room
+  than Column Reveal; its photos fly in straight vertically from below with a wider stagger instead
+  of sideways/rotated.
+  The shared Layout Formations intro/header now has extra top padding across all variants
+  (`.lf-header` desktop and mobile) so the beginning text block breathes more before the effect.
+  Zoomed Grid now adds only a modest first-grid downward offset for breathing room while preserving
+  all three rows. Latest code checks for the compact Column Reveal update passed `typecheck`,
+  `lint`, and unit tests; Docker web rebuilt healthy after restarting Docker Desktop. Latest focused
+  Chrome smoke measured Column Reveal title-to-grid gaps at ~6px when titles are shown and ~0px
+  when hidden; hidden titles render only the numeric index, and "Open collection" links are removed
+  from Layout Formations entirely. Column Assemble has also been rechecked at 6/12/18/24 photos:
+  those render as 1/2/3/4 rows and the grid is content-height, so the 1-row case keeps the
+  portrait-card feel instead of stretching tall while 2/3/4-row grids keep the same photo size and
+  grow vertically. Latest focused Chrome smoke at 1360px measured matching row/column photo gaps at
+  ~40.8px, category-title-to-grid spacing at ~49.5px, grid-to-next-category visual spacing at
+  ~144px, and stable photo cards at ~255px tall. Its photos still fly straight upward from below
+  with staggered opacity/transform changes during scroll, with no console errors. Column Assemble
+  now animates desktop rows independently using each row's layout position, not the transformed
+  element position, so 3/4-row grids do not finish their lower-row fly-in before those rows enter
+  view. Focused smoke measured 18/24-photo lower rows hidden before entry, ~50% opacity while
+  entering, and fully visible only after entering.
+  Previous focused Chrome smoke measured Rise mid-motion opacity at
+  ~0.27-0.99 and
+  Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
+  every photo at ~582x338/scale 1; first Zoomed category showing 3 visible rows; Column Reveal
+  transform changing from about -226px to -160px with opacity reaching ~0.92 by the mid-scroll
+  sample; and 0 console errors.
+  Deferred Codrops source variants to consider later: radial/3D scatter assemble
+  (`data-grid-fourth`), deeper 3D scatter from far Z (`data-grid-fourth-v2`), tilted wide-grid
+  fly-in (`data-grid-fifth`), 3D side-door reveal (`data-grid-eighth`), and skewed fan-in
+  (`data-grid-ninth`). Re-read `codrops/OnScrollLayoutFormations/js/index.js` before adding them.
 - **Keep `src/lib/render-config.ts` as the single grid-type source of truth**; retire the unused
   `src/layout-config/` legacy descriptor when convenient.
 - **Set the production `SETTINGS_ENCRYPTION_KEY`** before storing real client/SMTP secrets.

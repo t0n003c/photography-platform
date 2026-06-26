@@ -211,8 +211,8 @@ export default function ClientsPage() {
         />
       ) : (
         <Card>
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full min-w-[42rem] text-sm">
               <thead>
                 <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
                   <th className="px-4 py-3 font-medium">Name</th>

@@ -183,8 +183,8 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold">Upload</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Drag and drop images, or choose files to upload.
@@ -192,7 +192,7 @@ export default function UploadPage() {
         </div>
         <Link
           href="/admin/library"
-          className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+          className="inline-flex w-fit items-center gap-1.5 text-sm font-medium hover:underline"
         >
           View library
           <ArrowRight className="h-4 w-4" />
@@ -260,7 +260,7 @@ export default function UploadPage() {
               {items.map((it) => (
                 <li
                   key={it.id}
-                  className="flex items-center gap-4 rounded-lg border p-3"
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:gap-4"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">

@@ -35,6 +35,7 @@ export interface GallerySummary {
   id: string;
   slug: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
   coverPhotoId: string | null;
 }
@@ -181,6 +182,7 @@ export async function getPublicGalleries(): Promise<GallerySummary[]> {
       id: gallery.id,
       slug: gallery.slug,
       title: gallery.title,
+      subtitle: gallery.subtitle,
       description: gallery.description,
       coverPhotoId: gallery.coverPhotoId,
     })

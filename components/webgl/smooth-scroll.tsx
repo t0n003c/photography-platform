@@ -10,6 +10,7 @@ export function SmoothScroll() {
   useEffect(() => {
     if (prefersReducedMotion()) return;
     const lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+    lenis.scrollTo(window.scrollY, { immediate: true, force: true });
     // Expose the instance so components can drive the page scroll THROUGH Lenis
     // (a plain window.scrollTo gets overwritten by Lenis's rAF loop).
     (window as Window & { __lenis?: Lenis }).__lenis = lenis;

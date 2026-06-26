@@ -41,17 +41,36 @@ export default async function GalleryPage({
     getGalleryPhotos(g.id),
     resolveRenderConfig("gallery", g.pageConfigId, await searchParams, "justified"),
   ]);
+  const isImmersiveLayout =
+    layout.gridType === "alternative-scroll" ||
+    layout.gridType === "parallax-ring" ||
+    layout.gridType === "image-trail";
 
   return (
-    <Container className="py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">{g.title}</h1>
-      {g.description && (
-        <p className="mt-2 max-w-2xl text-[hsl(var(--muted-foreground))]">
-          {g.description}
-        </p>
+    <Container
+      className={
+        isImmersiveLayout
+          ? "max-w-none px-0 py-0 sm:px-0 lg:px-0"
+          : "py-12"
+      }
+    >
+      {!isImmersiveLayout && (
+        <>
+          <h1 className="text-3xl font-semibold tracking-tight">{g.title}</h1>
+          {g.subtitle && (
+            <p className="mt-1 text-lg text-[hsl(var(--muted-foreground))]">
+              {g.subtitle}
+            </p>
+          )}
+          {g.description && (
+            <p className="mt-2 max-w-2xl text-[hsl(var(--muted-foreground))]">
+              {g.description}
+            </p>
+          )}
+        </>
       )}
 
-      <div className="mt-8">
+      <div className={isImmersiveLayout ? "" : "mt-8"}>
         {photos.length === 0 ? (
           <p className="text-[hsl(var(--muted-foreground))]">
             This gallery is empty.
@@ -62,6 +81,12 @@ export default async function GalleryPage({
             layout={layout}
             initialCursor={nextCursor}
             loadMoreUrl={`/api/v1/galleries/${slug}/photos`}
+            collection={{
+              name: g.title,
+              subtitle: g.subtitle,
+              slug,
+              kind: "gallery",
+            }}
           />
         )}
       </div>

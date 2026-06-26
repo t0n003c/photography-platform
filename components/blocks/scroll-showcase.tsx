@@ -9,6 +9,8 @@ import {
   type ShowcasePanel,
 } from "./scroll-showcase-client";
 import { Carousel3DScroll, type CarouselScene } from "./carousel-3d-scroll";
+import { LayoutFormationsClient } from "./layout-formations-client";
+import { ScrollPanelsClient } from "./scroll-panels-client";
 
 const RING_SIZE = 10; // photos per 3D-carousel ring
 
@@ -48,6 +50,21 @@ export async function ScrollShowcaseBlock({
     return <Carousel3DScroll scenes={scenes} />;
   }
 
+  const scrollPanelsRowCount =
+    block.style === "scrollPanels" ? (block.scrollPanelsRowCount ?? 5) : 0;
+  const layoutFormationsPhotoCount =
+    block.style === "layoutFormations"
+      ? block.layoutFormationsPhotoCount === 17
+        ? 18
+        : (block.layoutFormationsPhotoCount ?? 12)
+      : 0;
+  const photoFetchCount =
+    block.style === "scrollPanels"
+      ? Math.max(block.clusterCount + 2, scrollPanelsRowCount + 1)
+      : block.style === "layoutFormations"
+        ? Math.max(layoutFormationsPhotoCount + 1, 7)
+      : block.clusterCount + 2;
+
   const panels = (
     await Promise.all(
       categories.map(async (c): Promise<ShowcasePanel | null> => {
@@ -56,7 +73,7 @@ export async function ScrollShowcaseBlock({
         const { photos } = await getCategoryPhotos(
           c.id,
           null,
-          block.clusterCount + 2,
+          photoFetchCount,
         );
         if (photos.length === 0) return null;
 
@@ -91,13 +108,60 @@ export async function ScrollShowcaseBlock({
           name: c.name,
           background,
           // Always keep at least one image flying in.
-          cluster: cluster.length > 0 ? cluster : [background],
+          cluster:
+            block.style === "scrollPanels"
+              ? pool.slice(0, Math.max(scrollPanelsRowCount - 1, 1))
+              : block.style === "layoutFormations"
+                ? pool.slice(0, layoutFormationsPhotoCount)
+              : cluster.length > 0 ? cluster : [background],
         };
       }),
     )
   ).filter((p): p is ShowcasePanel => p !== null);
 
   if (panels.length === 0) return null;
+
+  if (block.style === "scrollPanels") {
+    const rawVariant = block.scrollPanelsVariant ?? "classic";
+    const variant =
+      rawVariant === "zoom" || rawVariant === "brightness"
+        ? "demo4"
+        : rawVariant;
+    return (
+      <ScrollPanelsClient
+        panels={panels}
+        title={block.title}
+        showTitles={block.showTitles}
+        variant={variant}
+        introCount={block.scrollPanelsIntroCount ?? 12}
+        rowCount={block.scrollPanelsRowCount ?? 5}
+        tone={block.scrollPanelsTone ?? "color"}
+        introAlign={block.scrollPanelsIntroAlign ?? "left"}
+        useBackground={block.scrollPanelsUseBackground ?? true}
+        background={block.scrollPanelsBackground ?? "#f4f0e8"}
+        textColor={block.scrollPanelsTextColor ?? "#171717"}
+        introHeading={block.scrollPanelsIntroHeading ?? "Selected Stories"}
+        introText={
+          block.scrollPanelsIntroText ??
+          "Scroll through featured collections, places, and small visual fragments from the archive."
+        }
+        showcaseHeading={block.scrollPanelsShowcaseHeading ?? "Selected Work"}
+      />
+    );
+  }
+
+  if (block.style === "layoutFormations") {
+    return (
+      <LayoutFormationsClient
+        panels={panels}
+        title={block.title}
+        showTitles={block.showTitles}
+        variant={block.layoutFormationsVariant ?? "rise"}
+        photoCount={layoutFormationsPhotoCount}
+        headerAlign={block.layoutFormationsHeaderAlign ?? "left"}
+      />
+    );
+  }
 
   return (
     <ScrollShowcaseClient

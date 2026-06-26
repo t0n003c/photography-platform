@@ -73,7 +73,11 @@ export function HeroMedia({
   const showCanvas = enabled && inView && !!src;
 
   return (
-    <div ref={ref} className={cn("relative overflow-hidden", className)}>
+    <div
+      ref={ref}
+      data-webgl-hero
+      className={cn("relative overflow-hidden", className)}
+    >
       <ResponsiveImage
         photo={photo}
         sizes="100vw"

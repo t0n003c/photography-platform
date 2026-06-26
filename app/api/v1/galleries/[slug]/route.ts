@@ -13,6 +13,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
       id: gallery.id,
       slug: gallery.slug,
       title: gallery.title,
+      subtitle: gallery.subtitle,
       description: gallery.description,
       coverPhotoId: gallery.coverPhotoId,
       publishedAt: gallery.publishedAt,

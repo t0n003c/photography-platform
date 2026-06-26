@@ -593,7 +593,7 @@ export default function LibraryPage() {
             {photos.length} photo{photos.length === 1 ? "" : "s"} loaded
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <Button variant="outline" size="sm" onClick={selectAll}>
             Select all
           </Button>
@@ -605,7 +605,7 @@ export default function LibraryPage() {
           >
             Clear
           </Button>
-          <span className="text-sm text-[hsl(var(--muted-foreground))]">
+          <span className="ml-auto text-sm text-[hsl(var(--muted-foreground))] sm:ml-0">
             {selected.size} selected
           </span>
         </div>
@@ -651,11 +651,11 @@ export default function LibraryPage() {
 
       {selected.size > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-[hsl(var(--background))]/95 backdrop-blur">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm font-medium">
               {selected.size} selected
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"

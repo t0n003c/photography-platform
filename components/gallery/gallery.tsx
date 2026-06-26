@@ -12,6 +12,8 @@ import {
   UniformGrid,
 } from "./grids";
 import { Carousel3D } from "./carousel-3d";
+import { ParallaxRing } from "./parallax-ring";
+import { ImageTrail } from "./image-trail";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -27,6 +29,8 @@ interface GalleryLayout {
     | "carousel3d"
     | "cinematic"
     | "horizontal-lenis"
+    | "parallax-ring"
+    | "image-trail"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -36,6 +40,25 @@ interface GalleryLayout {
   backdrop?: "color" | "neutral";
   /** Horizontal-scroll only: text-overlay style for the detail view. */
   overlay?: "minimal" | "editorial" | "centered";
+  /** Alternative-scroll only: colors and text visibility. */
+  alternativeScroll?: {
+    useBackground: boolean;
+    backgroundColor: string;
+    textColor: string;
+    showText: boolean;
+  };
+  /** Image-trail only: Codrops demo variant and background. */
+  imageTrail?: {
+    variant?:
+      | "fade-shrink"
+      | "zoom-fade"
+      | "drop"
+      | "scatter"
+      | "stretch-drop"
+      | "full-frame";
+    useBackground?: boolean;
+    backgroundColor?: string;
+  };
 }
 
 interface GalleryProps {
@@ -45,7 +68,12 @@ interface GalleryProps {
   loadMoreUrl?: string | null;
   /** The collection this gallery belongs to — needed by layouts that title the
    *  whole set (e.g. the 3D scroll carousel). */
-  collection?: { name: string; slug: string; kind: "category" | "location" };
+  collection?: {
+    name: string;
+    subtitle?: string | null;
+    slug: string;
+    kind: "category" | "location" | "gallery";
+  };
 }
 
 interface PageResponse {
@@ -135,7 +163,11 @@ export function Gallery({
 
   // The 3D scroll carousel is a standalone full-bleed experience (it has its own
   // click-to-open preview grid), so it renders on its own — no load-more/lightbox.
-  if (layout.gridType === "carousel-3d-scroll" && collection) {
+  if (
+    layout.gridType === "carousel-3d-scroll" &&
+    collection &&
+    collection.kind !== "gallery"
+  ) {
     return (
       <Carousel3DScroll
         scenes={[
@@ -149,11 +181,64 @@ export function Gallery({
   // experience with its own click→content view. Works on any surface (needs only
   // photos); the collection name, when present, becomes the split heading.
   if (layout.gridType === "alternative-scroll") {
-    return <ColumnScroll photos={photos} title={collection?.name} />;
+    return (
+      <ColumnScroll
+        photos={photos}
+        title={collection?.name}
+        subtitle={collection?.subtitle}
+        useBackground={layout.alternativeScroll?.useBackground}
+        backgroundColor={layout.alternativeScroll?.backgroundColor}
+        textColor={layout.alternativeScroll?.textColor}
+        showText={layout.alternativeScroll?.showText}
+      />
+    );
   }
 
-  return (
-    <div>
+  if (layout.gridType === "parallax-ring") {
+    return (
+      <div>
+        <ParallaxRing
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "image-trail") {
+    return (
+      <div>
+        <ImageTrail
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          variant={layout.imageTrail?.variant}
+          useBackground={layout.imageTrail?.useBackground}
+          backgroundColor={layout.imageTrail?.backgroundColor}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  const grid = (
+    <>
       {layout.gridType === "masonry" && (
         <MasonryGrid {...gridProps} itemSpacingClass={masonryItemClass(layout.spacing)} />
       )}
@@ -172,6 +257,12 @@ export function Gallery({
       {layout.gridType === "horizontal-lenis" && (
         <HorizontalLenisGrid {...gridProps} overlay={layout.overlay} />
       )}
+    </>
+  );
+
+  return (
+    <div>
+      {grid}
 
       {canLoadMore && (
         <div className="mt-8 flex justify-center">

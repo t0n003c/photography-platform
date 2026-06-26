@@ -59,6 +59,7 @@ export const gallery = pgTable(
     id: text("id").primaryKey(),
     slug: text("slug").notNull().unique(),
     title: text("title").notNull(),
+    subtitle: text("subtitle"),
     description: text("description"),
     visibility: text("visibility", { enum: ["public", "private"] })
       .notNull()
@@ -430,7 +431,16 @@ export const pageConfig = pgTable(
     // so adding values needs no migration. Keep it in sync with GridType so the
     // page-config API can persist newer scroll layouts.
     gridType: text("grid_type", {
-      enum: ["masonry", "justified", "uniform", "horizontal-lenis", "carousel-3d-scroll", "alternative-scroll"],
+      enum: [
+        "masonry",
+        "justified",
+        "uniform",
+        "horizontal-lenis",
+        "parallax-ring",
+        "image-trail",
+        "carousel-3d-scroll",
+        "alternative-scroll",
+      ],
     }),
     spacing: text("spacing"),
     theme: text("theme", { enum: ["light", "dark", "auto"] }),

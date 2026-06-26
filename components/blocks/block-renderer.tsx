@@ -234,6 +234,7 @@ function LeafView({
       const logo = (p: PhotoDTO, key: string | number) => {
         const url = logoUrl(p);
         return url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img key={key} src={url} alt={p.altText ?? ""} loading="lazy" className={imgCls} />
         ) : null;
       };
@@ -375,6 +376,8 @@ function isFullBleed(block: Block): boolean {
 }
 
 function BlockView({ block, photoMap, preview }: { block: Block; photoMap: PhotoMap; preview?: boolean }) {
+  if (block.hidden) return null;
+
   if (block.type === "columns") {
     const cols = block.columns.length;
     const flex = block.justify === "center" || block.justify === "spread";
@@ -397,7 +400,9 @@ function BlockView({ block, photoMap, preview }: { block: Block; photoMap: Photo
               className={`flex flex-col gap-6 ${colSize} ${COL_ALIGN[block.colAlign?.[i] ?? "top"] ?? "justify-start"}`}
             >
               {col.map((leaf) => (
-                <LeafView key={leaf.id} block={leaf} photoMap={photoMap} preview={preview} />
+                leaf.hidden ? null : (
+                  <LeafView key={leaf.id} block={leaf} photoMap={photoMap} preview={preview} />
+                )
               ))}
             </div>
           ))}

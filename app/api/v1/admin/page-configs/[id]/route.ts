@@ -12,7 +12,16 @@ export const dynamic = "force-dynamic";
 
 const PatchSchema = z.object({
   gridType: z
-    .enum(["masonry", "justified", "uniform", "horizontal-lenis", "carousel-3d-scroll", "alternative-scroll"])
+    .enum([
+      "masonry",
+      "justified",
+      "uniform",
+      "horizontal-lenis",
+      "parallax-ring",
+      "image-trail",
+      "carousel-3d-scroll",
+      "alternative-scroll",
+    ])
     .nullable()
     .optional(),
   spacing: z.string().nullable().optional(),

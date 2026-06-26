@@ -56,6 +56,9 @@ export function middleware(request: NextRequest) {
   if (previewTheme === "light" || previewTheme === "dark") {
     requestHeaders.set("x-preview-theme", previewTheme);
   }
+  if (request.nextUrl.searchParams.get("__previewFrame") === "1") {
+    requestHeaders.set("x-preview-frame", "1");
+  }
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 

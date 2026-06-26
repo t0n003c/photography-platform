@@ -13,6 +13,7 @@ export const GridEnum = z.enum([
   "mosaic",
   "carousel3d",
   "cinematic",
+  "horizontal-lenis",
 ]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
@@ -30,10 +31,14 @@ export const FontEnum = z.enum([
 ]);
 
 const id = z.string().min(1);
+const baseBlock = {
+  id,
+  hidden: z.boolean().default(false).optional(),
+};
 
 // ── Leaf blocks (cannot contain children) ────────────────────────────────────
 const HeadingBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("heading"),
   text: z.string().default(""),
   level: z
@@ -53,7 +58,7 @@ const HeadingBlock = z.object({
   spacing: SpacingEnum.default("normal"),
 });
 const SubheadingBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("subheading"),
   text: z.string().default(""),
   align: AlignEnum.default("left"),
@@ -62,7 +67,7 @@ const SubheadingBlock = z.object({
 });
 export const TextSizeEnum = z.enum(["sm", "base", "lg", "xl"]);
 const RichTextBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("richtext"),
   // Plain text; blank lines split paragraphs. Rendered as text (no raw HTML).
   text: z.string().default(""),
@@ -71,7 +76,7 @@ const RichTextBlock = z.object({
   size: TextSizeEnum.default("base"),
 });
 const ImageBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("image"),
   photoId: z.string().nullable().default(null),
   caption: z.string().optional(),
@@ -79,7 +84,7 @@ const ImageBlock = z.object({
   rounded: z.boolean().default(true),
 });
 const GalleryBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("gallery"),
   source: z.enum(["featured", "category", "location", "gallery"]).default("featured"),
   targetId: z.string().nullable().default(null),
@@ -114,7 +119,7 @@ export const BannerLayoutEnum = z.enum([
   "split-bottom",
 ]);
 const BannerBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("banner"),
   // "photo" uses photoId; "featured" pulls the latest featured photo.
   source: z.enum(["photo", "featured"]).default("photo"),
@@ -148,7 +153,7 @@ const BannerBlock = z.object({
   effect: BannerEffectEnum.default("none"),
 });
 const QuoteBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("quote"),
   text: z.string().default(""),
   cite: z.string().optional(),
@@ -161,7 +166,7 @@ export const CtaButtonStyleEnum = z.enum([
   "link",
 ]);
 const CtaBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("cta"),
   headline: z.string().default(""),
   body: z.string().optional(),
@@ -170,19 +175,19 @@ const CtaBlock = z.object({
   buttonStyle: CtaButtonStyleEnum.default("pill"),
 });
 const SpacerBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("spacer"),
   size: z.enum(["sm", "md", "lg"]).default("md"),
 });
-const DividerBlock = z.object({ id, type: z.literal("divider") });
+const DividerBlock = z.object({ ...baseBlock, type: z.literal("divider") });
 // Home-style index sections (cover grids of published categories/locations).
 const CategoryIndexBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("categoryIndex"),
   title: z.string().default("By category"),
 });
 const LocationIndexBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("locationIndex"),
   title: z.string().default("By location"),
 });
@@ -191,7 +196,7 @@ const LocationIndexBlock = z.object({
 // fly into a cluster + its name as a giant title). Auto-sourced like the index
 // blocks; only presentation knobs are stored.
 const ScrollShowcaseBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("scrollShowcase"),
   // Optional eyebrow label shown small on each panel (blank = none).
   title: z.string().default(""),
@@ -204,11 +209,46 @@ const ScrollShowcaseBlock = z.object({
   clusterCount: z.number().int().min(1).max(4).default(4),
   // Show the giant category-name titles.
   showTitles: z.boolean().default(true),
-  // Render style: the cinematic clip-wipe panels, or the on-scroll 3D carousel.
-  style: z.enum(["cinematic", "carousel3d"]).default("cinematic"),
+  // Render style: cinematic clip-wipe panels, on-scroll 3D carousel, the
+  // Codrops ScrollPanels-inspired editorial panel/list treatment, or Codrops
+  // OnScrollLayoutFormations-style pinned image assemblies.
+  style: z
+    .enum(["cinematic", "carousel3d", "scrollPanels", "layoutFormations"])
+    .default("cinematic"),
+  // ScrollPanels-only: which Codrops demo motion family to emulate.
+  scrollPanelsVariant: z
+    .enum(["classic", "scatter", "demo4", "perspective", "zoom", "brightness"])
+    .default("classic")
+    .optional(),
+  // ScrollPanels-only: number of photos in the fixed intro columns.
+  scrollPanelsIntroCount: z.number().int().min(6).max(18).default(12).optional(),
+  // ScrollPanels-only: number of thumbnails shown in each collection row.
+  scrollPanelsRowCount: z.number().int().min(1).max(6).default(5).optional(),
+  // ScrollPanels-only: optional initial treatment for the intro photos.
+  scrollPanelsTone: z.enum(["color", "grayscale"]).default("color").optional(),
+  // ScrollPanels-only: horizontal position of the intro text block.
+  scrollPanelsIntroAlign: AlignEnum.default("left").optional(),
+  scrollPanelsUseBackground: z.boolean().default(true).optional(),
+  scrollPanelsBackground: z.string().default("#f4f0e8").optional(),
+  scrollPanelsTextColor: z.string().default("#171717").optional(),
+  scrollPanelsIntroHeading: z.string().default("Selected Stories").optional(),
+  scrollPanelsIntroText: z
+    .string()
+    .default("Scroll through featured collections, places, and small visual fragments from the archive.")
+    .optional(),
+  scrollPanelsShowcaseHeading: z.string().default("Selected Work").optional(),
+  // LayoutFormations-only: which Codrops formation family to use.
+  layoutFormationsVariant: z
+    .enum(["rise", "columns", "zoomed", "reveal"])
+    .default("rise")
+    .optional(),
+  // LayoutFormations-only: horizontal position of the top label block.
+  layoutFormationsHeaderAlign: AlignEnum.default("left").optional(),
+  // LayoutFormations-only: photos used in each assembled layout.
+  layoutFormationsPhotoCount: z.number().int().min(6).max(24).default(12).optional(),
 });
 const InstagramBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("instagram"),
   title: z.string().default("From the field"),
   count: z.number().int().min(1).max(12).default(6),
@@ -224,7 +264,7 @@ const FaqItem = z.object({
   a: z.string().default(""),
 });
 const FaqBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("faq"),
   title: z.string().optional(),
   style: FaqStyleEnum.default("accordion"),
@@ -234,7 +274,7 @@ const FaqBlock = z.object({
 export const LogoStyleEnum = z.enum(["row", "grid", "marquee"]);
 export const LogoSpacingEnum = z.enum(["tighter", "tight", "normal", "airy"]);
 const LogoBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("logos"),
   title: z.string().optional(),
   // row = centered strip; grid = bordered cells; marquee = scrolling row.
@@ -269,7 +309,7 @@ export type LeafBlock = z.infer<typeof LeafBlock>;
 // ── Columns (one level of nesting; holds leaf blocks) ────────────────────────
 export const ColAlignEnum = z.enum(["top", "center", "bottom"]);
 const ColumnsBlock = z.object({
-  id,
+  ...baseBlock,
   type: z.literal("columns"),
   gap: SpacingEnum.default("normal"),
   columns: z.array(z.array(LeafBlock)).min(1).max(4).default([[], []]),
@@ -302,11 +342,13 @@ export function parseBlocks(raw: unknown): Block[] {
 export function collectPhotoIds(blocks: Block[]): string[] {
   const ids: string[] = [];
   const visitLeaf = (b: LeafBlock) => {
+    if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
     if (b.type === "logos") ids.push(...b.photoIds);
   };
   for (const b of blocks) {
+    if (b.hidden) continue;
     if (b.type === "columns") b.columns.flat().forEach(visitLeaf);
     else visitLeaf(b);
   }

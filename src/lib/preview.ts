@@ -10,12 +10,27 @@ export interface PreviewConfig {
     | "justified"
     | "uniform"
     | "horizontal-lenis"
+    | "parallax-ring"
+    | "image-trail"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
   theme?: "light" | "dark" | "auto";
   hero?: { enabled?: boolean; headline?: string } | null;
   overlay?: "minimal" | "editorial" | "centered";
+  altUseBackground?: boolean;
+  altBackgroundColor?: string;
+  altTextColor?: string;
+  altShowText?: boolean;
+  imgTrailVariant?:
+    | "fade-shrink"
+    | "zoom-fade"
+    | "drop"
+    | "scatter"
+    | "stretch-drop"
+    | "full-frame";
+  imgTrailUseBackground?: boolean;
+  imgTrailBackgroundColor?: string;
 }
 
 export const PREVIEW_PARAM = "__pc";

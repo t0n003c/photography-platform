@@ -49,6 +49,7 @@ export function FocalPointPicker({
         className="relative aspect-[16/9] w-full cursor-crosshair touch-none select-none overflow-hidden rounded-md border bg-[hsl(var(--muted))]"
       >
         {thumbUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={thumbUrl}
             alt=""

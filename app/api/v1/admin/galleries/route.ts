@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const CreateSchema = z.object({
   slug: z.string().min(1),
   title: z.string().min(1),
+  subtitle: z.string().nullable().optional(),
   description: z.string().optional(),
   visibility: z.enum(["public", "private"]).optional(),
   clientId: z.string().optional(),
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
     id,
     slug: body.slug,
     title: body.title,
+    subtitle: body.subtitle ?? null,
     description: body.description ?? null,
     visibility: body.visibility ?? "private",
     ownerId: a.session.user.id,

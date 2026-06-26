@@ -2,7 +2,15 @@
 // public renderer (components/gallery). See .claude/skills/gallery-layout and
 // docs/DATA-MODEL.md (page_configs / layouts). Types only in Phase 1.
 
-export type GridType = "masonry" | "justified" | "uniform";
+export type GridType =
+  | "masonry"
+  | "justified"
+  | "uniform"
+  | "horizontal-lenis"
+  | "parallax-ring"
+  | "image-trail"
+  | "carousel-3d-scroll"
+  | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";
 
 export interface HeroConfig {
