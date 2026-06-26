@@ -221,17 +221,34 @@ export function LayoutFormationsClient({
             );
           }
         } else if (variant === "zoomed") {
+          tl.set(grid, {
+            transformOrigin: "50% 50%",
+          });
           tl.fromTo(
             images,
             {
-              scale: 0.84,
+              scale: 0.7,
               autoAlpha: 0,
             },
             {
-              stagger: { amount: 0.16, from: "center" },
+              stagger: { amount: 0.18, from: "edges", grid: [3, 3] },
               scale: 1,
               autoAlpha: 1,
             },
+            0,
+          ).fromTo(
+            grid,
+            {
+              scale: 0.72,
+              skewY: 5,
+              rotationZ: -1.5,
+            },
+            {
+              scale: 1,
+              skewY: 0,
+              rotationZ: 0,
+            },
+            0,
           );
           if (titleBlock) {
             tl.from(titleBlock, { yPercent: 70, autoAlpha: 0 }, 0.2);
@@ -253,9 +270,10 @@ export function LayoutFormationsClient({
             images,
             {
               x: (i, target) =>
-                i === 4 ? 0 : distanceFromCenter(target as HTMLElement, 90).x,
+                i === 4 ? 0 : distanceFromCenter(target as HTMLElement, 70).x,
               y: (i, target) =>
-                i === 4 ? 0 : distanceFromCenter(target as HTMLElement, 90).y,
+                i === 4 ? 0 : distanceFromCenter(target as HTMLElement, 70).y,
+              rotationZ: (i) => (i === 4 ? 0 : i < 4 ? -3 : 3),
             },
             0,
           );
