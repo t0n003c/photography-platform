@@ -59,6 +59,23 @@ function formatBytes(bytes: number): string {
   return `${val.toFixed(1)} ${units[i]}`;
 }
 
+function createPhotoDragImage(count: number): HTMLElement {
+  const el = document.createElement("div");
+  el.textContent = `${count} photo${count === 1 ? "" : "s"}`;
+  el.style.position = "fixed";
+  el.style.top = "-1000px";
+  el.style.left = "-1000px";
+  el.style.zIndex = "9999";
+  el.style.borderRadius = "999px";
+  el.style.padding = "8px 12px";
+  el.style.background = "hsl(var(--primary))";
+  el.style.color = "hsl(var(--primary-foreground))";
+  el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
+  el.style.font = "600 13px system-ui, sans-serif";
+  document.body.appendChild(el);
+  return el;
+}
+
 function PhotoTile({
   photo,
   selected,
@@ -67,6 +84,7 @@ function PhotoTile({
   onSelect,
   onLongPress,
   onDragStart,
+  onDragEnd,
 }: {
   photo: PhotoDTO;
   selected: boolean;
@@ -75,6 +93,7 @@ function PhotoTile({
   onSelect: (shiftKey: boolean) => void;
   onLongPress: () => void;
   onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
 }) {
   const hasVariants = photo.variants.length > 0;
   const longPressTimer = useRef<number | null>(null);
@@ -91,6 +110,7 @@ function PhotoTile({
     <div
       draggable
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         longPressed.current = false;
@@ -535,6 +555,7 @@ export default function LibraryPage() {
   const [assignMode, setAssignMode] = useState<"add" | "remove">("add");
   const [acting, setActing] = useState(false);
   const [foldersOpen, setFoldersOpen] = useState(false);
+  const dragImageRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(
     async (cursor: string | null) => {
@@ -588,6 +609,10 @@ export default function LibraryPage() {
   const selectedIds = Array.from(selected);
   const photoDragIds = (photoId: string) =>
     selected.has(photoId) ? selectedIds : [photoId];
+  const cleanupDragImage = () => {
+    dragImageRef.current?.remove();
+    dragImageRef.current = null;
+  };
   const selectRange = (toId: string) => {
     if (!lastSelectedId) {
       toggle(toId);
@@ -802,8 +827,13 @@ export default function LibraryPage() {
                       JSON.stringify(ids),
                     );
                     e.dataTransfer.effectAllowed = "copy";
+                    cleanupDragImage();
+                    const dragImage = createPhotoDragImage(ids.length);
+                    dragImageRef.current = dragImage;
+                    e.dataTransfer.setDragImage(dragImage, 44, 18);
                     setFoldersOpen(true);
                   }}
+                  onDragEnd={cleanupDragImage}
                 />
               ))}
             </div>
