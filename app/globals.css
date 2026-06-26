@@ -398,15 +398,15 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column-wrap {
-    width: min(12vw, 9rem);
+    width: min(14vw, 10.5rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
-    gap: clamp(0.65rem, 1.25vw, 1.25rem);
+    gap: clamp(0.45rem, 0.9vw, 0.9rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
-    gap: clamp(0.35rem, 0.9vh, 0.7rem);
+    gap: clamp(0.25rem, 0.65vh, 0.5rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,
