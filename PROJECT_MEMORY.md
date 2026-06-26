@@ -635,6 +635,11 @@ is gitignored):
   between the Layout Formations text block and first grid was increased (`columns`
   `clamp(7rem, 23vw, 9.75rem)`, `reveal` `clamp(6.5rem, 21vw, 9rem)`); top-of-header spacing and
   category-title-to-grid spacing were intentionally left unchanged from the previous accepted state.
+  Desktop spacing follow-up: Rise Grid, Tilted Fly-in, 3D Depth Fly-in, and Side Pivot now have
+  more space above the Layout Formations header text and more spacing before the first grid. Rise
+  uses a larger default first-stage spacer (`clamp(24rem, 46vh, 30rem)`) because its header is
+  absolute; Tilted/Depth/Side Pivot use larger relative header
+  padding and first-section stage padding. Mobile spacing rules are unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
