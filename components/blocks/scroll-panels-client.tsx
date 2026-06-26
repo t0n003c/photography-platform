@@ -52,6 +52,7 @@ function uniquePhotos(panels: ShowcasePanel[]): PhotoDTO[] {
 function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number) {
   if (variant === "perspective") return 4;
   if (variant !== "scatter") return 3;
+  if (introCount >= 18) return 6;
   if (introCount >= 15) return 5;
   if (introCount >= 12) return 4;
   return 3;

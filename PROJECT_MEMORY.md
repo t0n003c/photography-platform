@@ -666,6 +666,8 @@ is gitignored):
   Follow-up: desktop Scatter now also changes the real intro column count by selected count
   (3 columns for 6/9, 4 columns for 12, 5 columns for 15/18) so all selected photos can stay
   visible without shrinking the entire effect into the original three-column shape.
+  Follow-up: desktop Scatter 18-photo mode now uses 6 real columns, and 9-photo mode uses a
+  slightly smaller desktop column width so the bottom row is not cut off.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

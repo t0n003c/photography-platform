@@ -386,7 +386,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="9"] .sp-column-wrap {
-    width: min(19vw, 14.5rem);
+    width: min(17.5vw, 13rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column-wrap {
@@ -398,7 +398,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column-wrap {
-    width: min(13vw, 9.75rem);
+    width: min(11vw, 8.25rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,
