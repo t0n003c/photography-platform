@@ -981,21 +981,21 @@ html.js .pr-root.is-enhanced {
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage,
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(0.75rem, 2vw, 1.25rem);
+    padding-top: clamp(2.75rem, 9vw, 4.25rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(0.5rem, 1.5vw, 1rem);
+    padding-top: clamp(3rem, 10vw, 4.5rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
-    padding-top: clamp(0.5rem, 1.5vw, 1rem);
+    padding-top: clamp(2.75rem, 9vw, 4.25rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-stage,
   .lf-root[data-lf-variant="columns"] .lf-stage {
-    gap: 0;
+    gap: clamp(1.25rem, 4vw, 2rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-grid,
   .lf-root[data-lf-variant="reveal"] .lf-grid {
-    margin-top: clamp(-1.25rem, -3.5vw, -0.75rem);
+    margin-top: 0;
   }
   .lf-root[data-lf-variant="columns"] .lf-section,
   .lf-root[data-lf-variant="columns"] .lf-stage,

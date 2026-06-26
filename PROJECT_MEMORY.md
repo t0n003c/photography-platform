@@ -623,6 +623,10 @@ is gitignored):
   animations now finish faster (`top 84%` to `top 42%`, scrub `0.28`) for Tilted/Depth/Side Pivot,
   and the same stronger header spacing is applied to Tilted/Depth/Side Pivot so the mobile live
   preview shows a visible top-text spacing change across the new formation variants.
+  Follow-up: the near-zero mobile title-to-grid gap made Column Assemble/Reveal category names
+  visually collide with the grid during scroll. Mobile Column Assemble/Reveal now keep a real
+  positive stage gap, remove the negative grid margin, and add a modest first-section spacer below
+  the Layout Formations header before the first category grid.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
