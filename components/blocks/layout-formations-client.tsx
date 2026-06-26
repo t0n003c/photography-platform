@@ -133,9 +133,9 @@ export function LayoutFormationsClient({
             stagger: 0.04,
             ease: "power2.out",
             scrollTrigger: {
-              trigger: section,
-              start: "top 78%",
-              end: "top 35%",
+              trigger: grid,
+              start: "top 88%",
+              end: "top 48%",
               scrub: true,
             },
           });

@@ -581,6 +581,10 @@ is gitignored):
   contents inside each cell, preventing multi-row photos from overlapping while they reveal. Mobile
   Reveal overrides keep 18/24-photo grids at 4 columns on tablet and 3 columns on phones. Reveal
   counts 12/18/24 also have extra stage padding so category grids have more separation.
+  Mobile Layout Formations use a non-pinned progressive animation keyed to the grid entering the
+  viewport (`top 88%` to `top 48%`), so the fade/slide remains visible on phones even when a
+  variant has a large intro/title area. Mobile live-preview frames use the full 390x844 phone
+  viewport instead of clipping to the desktop preview height.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

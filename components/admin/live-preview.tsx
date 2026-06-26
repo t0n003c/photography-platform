@@ -70,6 +70,7 @@ export function LivePreview({
   const [device, setDevice] = useState<PreviewDevice>(preferredPreviewDevice);
   const [manualDevice, setManualDevice] = useState(false);
   const [nudge, setNudge] = useState(0);
+  const frameHeight = device === "mobile" ? Math.max(height, 844) : height;
 
   useEffect(() => {
     if (manualDevice) return;
@@ -162,7 +163,7 @@ export function LivePreview({
             src={src}
             title="Preview"
             className="w-full border-0"
-            style={{ height }}
+            style={{ height: frameHeight }}
             sandbox="allow-same-origin allow-scripts allow-popups"
           />
         </div>

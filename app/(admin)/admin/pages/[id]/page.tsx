@@ -1541,7 +1541,7 @@ function PreviewPane({
           const baseW = device === "mobile" ? 390 : 1440;
           const baseH = device === "mobile" ? 844 : 900;
           const scale = paneWidth > 0 ? Math.min(1, paneWidth / baseW) : 1;
-          const visH = Math.min(640, baseH * scale);
+          const visH = device === "mobile" ? baseH * scale : Math.min(640, baseH * scale);
           return (
             <div className="mx-auto" style={{ width: baseW * scale, height: visH }}>
               <iframe
