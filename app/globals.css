@@ -398,7 +398,15 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column-wrap {
-    width: min(11vw, 8.25rem);
+    width: min(12vw, 9rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
+    gap: clamp(0.65rem, 1.25vw, 1.25rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
+    gap: clamp(0.35rem, 0.9vh, 0.7rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,

@@ -668,6 +668,8 @@ is gitignored):
   visible without shrinking the entire effect into the original three-column shape.
   Follow-up: desktop Scatter 18-photo mode now uses 6 real columns, and 9-photo mode uses a
   slightly smaller desktop column width so the bottom row is not cut off.
+  Follow-up: desktop Scatter 18-photo mode photos were enlarged again (`min(12vw, 9rem)`) with
+  tighter 18-only grid gaps so the 6-column grid remains visible without bottom clipping.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.
