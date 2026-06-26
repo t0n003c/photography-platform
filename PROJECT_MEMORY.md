@@ -640,6 +640,11 @@ is gitignored):
   uses a larger default first-stage spacer (`clamp(24rem, 46vh, 30rem)`) because its header is
   absolute; Tilted/Depth/Side Pivot use larger relative header
   padding and first-section stage padding. Mobile spacing rules are unchanged.
+  Follow-up spacing bump: desktop Rise/Tilted/Depth/Side Pivot intro spacing was increased again
+  (`rise` header `clamp(7.5rem, 15vh, 11rem)`, first stage `clamp(28rem, 54vh, 35rem)`;
+  Tilted/Depth/Side Pivot header `clamp(6.5rem, 14vh, 10rem)`, first stage
+  `clamp(9rem, 18vh, 13rem)`). Mobile Rise Grid now adds extra top padding between category
+  sections (`.lf-section + .lf-section .lf-stage`) to increase spacing between grids.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

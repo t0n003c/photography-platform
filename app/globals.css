@@ -697,15 +697,15 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="tilted"] .lf-header,
 .lf-root[data-lf-variant="depth"] .lf-header,
 .lf-root[data-lf-variant="sidePivot"] .lf-header {
-  padding-top: clamp(5rem, 11vh, 8rem);
-  padding-bottom: clamp(2rem, 5vh, 4rem);
+  padding-top: clamp(6.5rem, 14vh, 10rem);
+  padding-bottom: clamp(3rem, 7vh, 5.5rem);
 }
 .lf-root[data-lf-variant="rise"] .lf-header {
-  padding-top: clamp(6rem, 12vh, 9rem);
-  padding-bottom: clamp(2rem, 5vh, 4rem);
+  padding-top: clamp(7.5rem, 15vh, 11rem);
+  padding-bottom: clamp(3rem, 7vh, 5.5rem);
 }
 .lf-root[data-lf-variant="rise"] .lf-section--first .lf-stage {
-  padding-top: clamp(24rem, 46vh, 30rem);
+  padding-top: clamp(28rem, 54vh, 35rem);
 }
 .lf-root[data-lf-variant="columns"] .lf-section,
 .lf-root[data-lf-variant="reveal"] .lf-section,
@@ -763,7 +763,7 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="tilted"] .lf-section--first .lf-stage,
 .lf-root[data-lf-variant="depth"] .lf-section--first .lf-stage,
 .lf-root[data-lf-variant="sidePivot"] .lf-section--first .lf-stage {
-  padding-top: clamp(7rem, 14vh, 10rem);
+  padding-top: clamp(9rem, 18vh, 13rem);
 }
 .lf-root[data-lf-variant="tilted"] .lf-section:last-child .lf-stage,
 .lf-root[data-lf-variant="depth"] .lf-section:last-child .lf-stage,
@@ -1062,6 +1062,9 @@ html.js .pr-root.is-enhanced {
   }
   .lf-root[data-lf-variant="rise"] .lf-img {
     grid-area: auto !important;
+  }
+  .lf-root[data-lf-variant="rise"] .lf-section + .lf-section .lf-stage {
+    padding-top: clamp(7rem, 24vw, 10rem);
   }
   .lf-root[data-lf-variant="reveal"] .lf-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
