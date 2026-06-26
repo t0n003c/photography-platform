@@ -700,11 +700,17 @@ html.js .pr-root.is-enhanced {
   padding-top: clamp(3rem, 7vh, 5rem);
 }
 .lf-root[data-lf-variant="columns"] .lf-section,
-.lf-root[data-lf-variant="reveal"] .lf-section {
+.lf-root[data-lf-variant="reveal"] .lf-section,
+.lf-root[data-lf-variant="tilted"] .lf-section,
+.lf-root[data-lf-variant="depth"] .lf-section,
+.lf-root[data-lf-variant="sidePivot"] .lf-section {
   min-height: auto;
 }
 .lf-root[data-lf-variant="columns"] .lf-stage,
-.lf-root[data-lf-variant="reveal"] .lf-stage {
+.lf-root[data-lf-variant="reveal"] .lf-stage,
+.lf-root[data-lf-variant="tilted"] .lf-stage,
+.lf-root[data-lf-variant="depth"] .lf-stage,
+.lf-root[data-lf-variant="sidePivot"] .lf-stage {
   grid-template-areas: "title" "main";
   min-height: auto;
   padding-block: clamp(0.75rem, 1.5vh, 1.25rem);
@@ -723,11 +729,17 @@ html.js .pr-root.is-enhanced {
   gap: 0;
 }
 .lf-root[data-lf-variant="columns"] .lf-section--first,
-.lf-root[data-lf-variant="reveal"] .lf-section--first {
+.lf-root[data-lf-variant="reveal"] .lf-section--first,
+.lf-root[data-lf-variant="tilted"] .lf-section--first,
+.lf-root[data-lf-variant="depth"] .lf-section--first,
+.lf-root[data-lf-variant="sidePivot"] .lf-section--first {
   min-height: auto;
 }
 .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage,
-.lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage {
+.lf-root[data-lf-variant="reveal"] .lf-section--first .lf-stage,
+.lf-root[data-lf-variant="tilted"] .lf-section--first .lf-stage,
+.lf-root[data-lf-variant="depth"] .lf-section--first .lf-stage,
+.lf-root[data-lf-variant="sidePivot"] .lf-section--first .lf-stage {
   min-height: auto;
 }
 .lf-root[data-lf-variant="tilted"] .lf-section--first .lf-stage,

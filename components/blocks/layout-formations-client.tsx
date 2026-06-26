@@ -199,19 +199,17 @@ export function LayoutFormationsClient({
               : variant === "reveal"
                 ? "top 76%"
                 : isEntranceFormation
-                  ? "top 70%"
+                  ? "top 86%"
                   : "center center";
         const triggerEnd =
           variant === "rise"
             ? `+=${Math.round(window.innerHeight * 0.62)}`
             : variant === "zoomed"
               ? `+=${Math.round(window.innerHeight * 0.58)}`
-              : variant === "reveal"
-                ? "top 16%"
-                : variant === "sidePivot"
-                  ? `+=${Math.round(window.innerHeight * 0.95)}`
+                : variant === "reveal"
+                  ? "top 16%"
                   : isEntranceFormation
-                    ? `+=${Math.round(window.innerHeight * 1.05)}`
+                    ? "bottom 42%"
                     : `+=${Math.round(window.innerHeight * 2.2)}`;
         const tl = gsap.timeline({
           defaults: {
@@ -230,7 +228,7 @@ export function LayoutFormationsClient({
             trigger: section,
             start: triggerStart,
             end: () => triggerEnd,
-            pin: variant !== "rise" && variant !== "reveal",
+            pin: variant !== "rise" && variant !== "reveal" && !isEntranceFormation,
             scrub: variant === "rise" || variant === "sidePivot" ? 0.2 : 0.35,
           },
         });
