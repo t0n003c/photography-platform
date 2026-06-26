@@ -117,6 +117,7 @@ export function ScrollPanelsClient({
     () => distribute(panelPhotos, columnCount),
     [columnCount, panelPhotos],
   );
+  const introRows = Math.max(1, Math.ceil(panelPhotos.length / columnCount));
   const topStackedIntro = variant === "classic" || variant === "demo4";
 
   useIsoLayoutEffect(() => {
@@ -145,11 +146,13 @@ export function ScrollPanelsClient({
         filter: tone === "grayscale" ? "grayscale(100%)" : "grayscale(0%)",
       });
       if (variant === "perspective") {
+        const perspectiveSpread = isMobile ? 1000 : 340;
         gsap.set(items, {
-          rotationX: () => gsap.utils.random(14, 24),
-          x: (i, target) => distanceFromCenter(target, 340).x,
-          y: (i, target) => distanceFromCenter(target, 340).y,
-          filter: "blur(5px)",
+          rotationX: () => gsap.utils.random(isMobile ? 36 : 14, isMobile ? 56 : 24),
+          rotationY: () => gsap.utils.random(isMobile ? -16 : -4, isMobile ? 16 : 4),
+          x: (i, target) => distanceFromCenter(target, perspectiveSpread).x,
+          y: (i, target) => distanceFromCenter(target, perspectiveSpread).y,
+          filter: `blur(${isMobile ? 18 : 5}px)`,
         });
       }
 
@@ -191,8 +194,8 @@ export function ScrollPanelsClient({
             ease: "power2.out",
             scrollTrigger: {
               trigger: root,
-              start: "top 92%",
-              end: "top 20%",
+              start: variant === "scatter" ? "top 98%" : "top 92%",
+              end: variant === "scatter" ? "top 28%" : "top 20%",
               scrub: true,
             },
           },
@@ -285,8 +288,8 @@ export function ScrollPanelsClient({
           ease: "power2.out",
           scrollTrigger: {
             trigger: showcase,
-            start: isMobile ? "top 92%" : "top 78%",
-            end: isMobile ? "top 34%" : "top 22%",
+            start: isMobile ? "top 98%" : "top 78%",
+            end: isMobile ? "top 42%" : "top 22%",
             scrub: true,
           },
         });
@@ -300,9 +303,9 @@ export function ScrollPanelsClient({
           ease: "power2.out",
           scrollTrigger: {
             trigger: root,
-            start: isMobile ? "top 85%" : "top top",
+            start: isMobile ? "top 100%" : "top top",
             end: isMobile
-              ? "top 10%"
+              ? "top -35%"
               : () => `+=${Math.round(window.innerHeight * 0.85)}`,
             scrub: true,
           },
@@ -335,10 +338,12 @@ export function ScrollPanelsClient({
       className="sp-root"
       data-sp-variant={variantLabels[variant]}
       data-sp-intro-align={introAlign}
+      data-sp-intro-count={panelPhotos.length}
       style={{
         ["--sp-bg" as string]: useBackground ? background : "transparent",
         ["--sp-ink" as string]: useBackground ? textColor : "hsl(var(--foreground))",
         ["--sp-cover-bg" as string]: useBackground ? background : "hsl(var(--background))",
+        ["--sp-intro-rows" as string]: String(introRows),
       }}
     >
       {topStackedIntro && (

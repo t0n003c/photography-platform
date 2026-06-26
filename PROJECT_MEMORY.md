@@ -658,6 +658,11 @@ is gitignored):
   on/off reveal. Angled Rows uses stronger mobile drift (`-48%` step), Scatter Outward starts its
   outward movement earlier on mobile (`top 92%` to `top 34%`), and desktop Scatter is pulled
   slightly inward (`0.62` start scale, `380` spread) to reduce clipped intro-grid edges.
+  Follow-up: mobile Scatter now starts even earlier (`top 98%` to `top 42%`). Mobile Perspective
+  Blur now uses stronger mobile-only offsets/rotation/blur and a longer assembly range
+  (`top 100%` to `top -35%`) so the effect stays visible on phones. Desktop Scatter now fetches enough
+  photos for the selected intro count and uses count-specific column widths for 6/9/12/15/18 so
+  the live preview visibly changes instead of always clipping to roughly the same six photos.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

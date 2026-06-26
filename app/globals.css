@@ -369,6 +369,38 @@ html.js .pr-root.is-enhanced {
     pointer-events: none;
   }
 
+  .sp-root.is-enhanced[data-sp-variant="scatter"] .sp-columns-panel {
+    padding: 4vh 4vw;
+  }
+
+  .sp-root[data-sp-variant="scatter"] .sp-columns {
+    gap: clamp(0.75rem, 2vw, 2rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"] .sp-column {
+    gap: clamp(0.45rem, 1.15vh, 0.85rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"] .sp-column-wrap {
+    width: min(24vw, 18rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="9"] .sp-column-wrap {
+    width: min(19vw, 14.5rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column-wrap {
+    width: min(15vw, 11rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-column-wrap {
+    width: min(12vw, 9rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column-wrap {
+    width: min(10vw, 7.5rem);
+  }
+
   .sp-root[data-sp-variant="classic"] .sp-title,
   .sp-root[data-sp-variant="demo4"] .sp-title {
     max-width: 12.5ch;
