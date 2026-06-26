@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Upload as UploadIcon, Send } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Loader2, Upload as UploadIcon, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,41 @@ const LOCALES = [
   "en", "en-US", "en-GB", "fr", "fr-FR", "de", "es", "es-ES", "it", "pt",
   "pt-BR", "nl", "ja", "ko", "zh", "zh-CN", "vi", "ru",
 ];
+
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return !window.matchMedia("(max-width: 639px)").matches;
+  });
+
+  return (
+    <Card>
+      <CardHeader className="gap-0">
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 text-left"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 transition-transform ${
+              open ? "" : "-rotate-90"
+            }`}
+            aria-hidden="true"
+          />
+          <CardTitle>{title}</CardTitle>
+        </button>
+      </CardHeader>
+      {open && <CardContent>{children}</CardContent>}
+    </Card>
+  );
+}
 
 function useTimezones(): string[] {
   return useMemo(() => {
@@ -201,11 +236,8 @@ export default function SettingsPage() {
       </div>
 
       {/* General */}
-      <Card>
-        <CardHeader>
-          <CardTitle>General</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SettingsSection title="General">
+        <div className="space-y-4">
           <Field label="Site title">
             <Input
               value={s.siteTitle}
@@ -276,15 +308,12 @@ export default function SettingsPage() {
               </Select>
             </Field>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
 
       {/* Branding */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Branding</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <SettingsSection title="Branding">
+        <div className="space-y-3">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -327,15 +356,12 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
 
       {/* Email */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Email (SMTP)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SettingsSection title="Email (SMTP)">
+        <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Driver">
               <Select
@@ -430,15 +456,12 @@ export default function SettingsPage() {
               Save first — the test uses your saved settings.
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
 
       {/* Integrations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Integrations</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <SettingsSection title="Integrations">
+        <div className="space-y-3">
           <Field label="Instagram access token">
             <Input
               type="password"
@@ -466,8 +489,8 @@ export default function SettingsPage() {
             . Until connected, the Instagram block shows your most recent library
             photos instead. The token is stored encrypted.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
 
       <div className="sticky bottom-0 flex justify-end border-t bg-[hsl(var(--background))] py-3">
         <Button onClick={save} disabled={saving}>

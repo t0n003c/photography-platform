@@ -692,6 +692,8 @@ is gitignored):
   Design tab follow-up: each Design surface card (Home, Category, Location, About, Global) and
   the Footer design card are now collapsible and closed by default, so the layout controls are easier
   to scan without changing the underlying config contract.
+  Settings tab follow-up: General, Branding, Email, and Integrations are now collapsible sections.
+  They default open on desktop and closed on mobile to reduce narrow-screen scrolling.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.
