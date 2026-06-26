@@ -209,9 +209,9 @@ export function LayoutFormationsClient({
               : variant === "reveal"
                 ? "top 16%"
                 : variant === "sidePivot"
-                  ? `+=${Math.round(window.innerHeight * 1.5)}`
+                  ? `+=${Math.round(window.innerHeight * 0.95)}`
                   : isEntranceFormation
-                    ? `+=${Math.round(window.innerHeight * 2.1)}`
+                    ? `+=${Math.round(window.innerHeight * 1.05)}`
                     : `+=${Math.round(window.innerHeight * 2.2)}`;
         const tl = gsap.timeline({
           defaults: {
