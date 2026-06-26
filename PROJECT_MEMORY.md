@@ -573,6 +573,8 @@ is gitignored):
   rows complete before the page bottom. Focused Chrome smoke covered desktop, iPhone 13, and
   reduced-motion contexts for all three variants, with visible desktop motion, final rows fully
   settled, and 0 console/page errors.
+  Photo gutters were later tightened for Rise Grid, Column Assemble, Zoomed Grid, Tilted fly-in,
+  3D Depth fly-in, and Side Pivot; Column Reveal spacing was intentionally left unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

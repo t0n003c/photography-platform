@@ -825,7 +825,7 @@ html.js .pr-root.is-enhanced {
   grid-auto-rows: minmax(0, 1fr);
   width: min(100%, 104rem);
   height: min(72vh, 62vw);
-  gap: clamp(0.65rem, 1.25vw, 1.35rem);
+  gap: clamp(0.35rem, 0.75vw, 0.85rem);
 }
 .lf-root[data-lf-variant="rise"][data-lf-count="6"] .lf-grid,
 .lf-root[data-lf-variant="tilted"][data-lf-count="6"] .lf-grid,
@@ -866,7 +866,7 @@ html.js .pr-root.is-enhanced {
   width: min(100%, 100rem);
   height: auto;
   min-height: 0;
-  gap: clamp(2.25rem, 3vw, 4rem);
+  gap: clamp(1.25rem, 1.8vw, 2.4rem);
 }
 .lf-root[data-lf-variant="columns"] .lf-img {
   width: 100%;
@@ -882,7 +882,7 @@ html.js .pr-root.is-enhanced {
   height: max(62rem, 118vh);
   max-width: none;
   max-height: none;
-  gap: clamp(1rem, 1.8vw, 2rem);
+  gap: clamp(0.45rem, 0.9vw, 1rem);
 }
 .lf-root[data-lf-variant="zoomed"] .lf-stage {
   position: relative;
@@ -995,13 +995,14 @@ html.js .pr-root.is-enhanced {
     min-height: 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-auto-rows: auto;
-    gap: 0.55rem;
+    gap: 0.35rem;
   }
   .lf-root[data-lf-variant="rise"] .lf-img {
     grid-area: auto !important;
   }
   .lf-root[data-lf-variant="reveal"] .lf-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.55rem;
   }
   .lf-img {
     aspect-ratio: 0.8;
