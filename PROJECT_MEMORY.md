@@ -564,6 +564,11 @@ is gitignored):
   element position, so 3/4-row grids do not finish their lower-row fly-in before those rows enter
   view. Focused smoke measured 18/24-photo lower rows hidden before entry, ~50% opacity while
   entering, and fully visible only after entering.
+  The newer Layout Formation variants (`tilted`, `depth`, and `sidePivot`) now use stable row
+  layout positions for their ScrollTrigger start/end math instead of each animated row as its own
+  trigger. Their row animations start earlier and complete before the page bottom; the last section
+  also has extra bottom runway. Focused Chrome smoke covered desktop, iPhone 13, and reduced-motion
+  contexts for all three variants, with final rows fully settled and 0 console/page errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -752,6 +752,11 @@ html.js .pr-root.is-enhanced {
 .lf-root[data-lf-variant="sidePivot"] .lf-section--first .lf-stage {
   padding-top: clamp(1rem, 2.5vh, 2rem);
 }
+.lf-root[data-lf-variant="tilted"] .lf-section:last-child .lf-stage,
+.lf-root[data-lf-variant="depth"] .lf-section:last-child .lf-stage,
+.lf-root[data-lf-variant="sidePivot"] .lf-section:last-child .lf-stage {
+  padding-bottom: clamp(10rem, 22vh, 16rem);
+}
 .lf-grid {
   grid-area: main;
   display: grid;

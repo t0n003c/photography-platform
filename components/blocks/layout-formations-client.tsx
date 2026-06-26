@@ -148,21 +148,21 @@ export function LayoutFormationsClient({
         );
         const isEntranceFormation =
           variant === "tilted" || variant === "depth" || variant === "sidePivot";
+        const layoutPageTop = (element: HTMLElement) => {
+          let top = 0;
+          let node: HTMLElement | null = element;
+          while (node) {
+            top += node.offsetTop;
+            node = node.offsetParent as HTMLElement | null;
+          }
+          return top;
+        };
         if (variant === "columns") {
           const rows = new Map<string, HTMLElement[]>();
           for (const image of images) {
             const row = image.dataset.lfRow ?? "0";
             rows.set(row, [...(rows.get(row) ?? []), image]);
           }
-          const layoutPageTop = (element: HTMLElement) => {
-            let top = 0;
-            let node: HTMLElement | null = element;
-            while (node) {
-              top += node.offsetTop;
-              node = node.offsetParent as HTMLElement | null;
-            }
-            return top;
-          };
 
           rows.forEach((rowImages, row) => {
             gsap
@@ -219,9 +219,9 @@ export function LayoutFormationsClient({
                       : "expo.inOut",
               },
               scrollTrigger: {
-                trigger: rowImages[0],
-                start: "top 135%",
-                end: "top 78%",
+                trigger: section,
+                start: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.62,
+                end: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.04,
                 scrub: variant === "sidePivot" ? 0.2 : 0.35,
               },
             });
@@ -278,8 +278,8 @@ export function LayoutFormationsClient({
               ease: "power4.out",
               scrollTrigger: {
                 trigger: section,
-                start: "top 122%",
-                end: "top 84%",
+                start: "top 138%",
+                end: "top 96%",
                 scrub: 0.25,
               },
             });
