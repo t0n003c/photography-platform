@@ -651,6 +651,13 @@ is gitignored):
   Scroll Panels Scatter mobile follow-up: scatter now uses stronger mobile-only column drift
   (`±18%` instead of desktop `±6%`) and a larger outward scatter spread (`720` instead of `440`)
   so the intro photos separate more clearly on small screens.
+  Scroll Panels mobile fade follow-up: mobile enhanced intro grids no longer force
+  `opacity:1!important`, so GSAP `autoAlpha` fades are visible on phones too. Top-stacked
+  Classic/Angled intro grids now start fading in earlier on mobile (`top 82%`), while mobile
+  Scatter/Perspective use a scrubbed root fade-in (`top 92%` to `top 20%`) instead of a late
+  on/off reveal. Angled Rows uses stronger mobile drift (`-48%` step), Scatter Outward starts its
+  outward movement earlier on mobile (`top 92%` to `top 34%`), and desktop Scatter is pulled
+  slightly inward (`0.62` start scale, `380` spread) to reduce clipped intro-grid edges.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

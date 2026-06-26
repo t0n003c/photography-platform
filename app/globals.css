@@ -509,8 +509,6 @@ html.js .pr-root.is-enhanced {
     position: relative;
     inset: auto;
     padding: 6vh 5vw 0;
-    opacity: 1 !important;
-    visibility: visible !important;
   }
   .sp-columns {
     display: grid;

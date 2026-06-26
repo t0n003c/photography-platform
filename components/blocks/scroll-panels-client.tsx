@@ -163,8 +163,8 @@ export function ScrollPanelsClient({
             ease: "power2.out",
             scrollTrigger: {
               trigger: root,
-              start: "top top",
-              end: () => `+=${Math.round(window.innerHeight * 0.9)}`,
+              start: isMobile ? "top 82%" : "top top",
+              end: () => `+=${Math.round(window.innerHeight * (isMobile ? 0.7 : 0.9))}`,
               scrub: true,
             },
           },
@@ -182,6 +182,21 @@ export function ScrollPanelsClient({
             scrub: true,
           },
         });
+      } else if (isMobile) {
+        gsap.fromTo(
+          columnsPanel,
+          { autoAlpha: 0 },
+          {
+            autoAlpha: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: root,
+              start: "top 92%",
+              end: "top 20%",
+              scrub: true,
+            },
+          },
+        );
       } else {
         ScrollTrigger.create({
           trigger: root,
@@ -219,14 +234,14 @@ export function ScrollPanelsClient({
         // visually lower band moves least, the middle faster, and the upper
         // band fastest once the section is rotated.
         demo4: (i) => {
-          const step = isMobile ? -36 : -15;
+          const step = isMobile ? -48 : -15;
           return i * step + step;
         },
         perspective: (i) => (i % 2 ? 8 : -8),
       };
       const panelStartScale: Record<ScrollPanelsVariant, number> = {
         classic: 1,
-        scatter: 0.7,
+        scatter: isMobile ? 0.7 : 0.62,
         demo4: 1,
         perspective: 0.7,
       };
@@ -263,15 +278,15 @@ export function ScrollPanelsClient({
         .to(images, { scale: imageScale[variant] }, 0);
 
       if (variant === "scatter") {
-        const scatterSpread = window.matchMedia("(max-width: 768px)").matches ? 720 : 440;
+        const scatterSpread = isMobile ? 720 : 380;
         gsap.to(items, {
           x: (i, target) => distanceFromCenter(target, scatterSpread).x,
           y: (i, target) => distanceFromCenter(target, scatterSpread).y,
           ease: "power2.out",
           scrollTrigger: {
             trigger: showcase,
-            start: "top 78%",
-            end: "top 22%",
+            start: isMobile ? "top 92%" : "top 78%",
+            end: isMobile ? "top 34%" : "top 22%",
             scrub: true,
           },
         });
