@@ -215,7 +215,11 @@ export function ScrollPanelsClient({
         // Codrops demo 4: angled bands with staggered vertical travel. The
         // visually lower band moves least, the middle faster, and the upper
         // band fastest once the section is rotated.
-        demo4: (i) => i * -15 - 15,
+        demo4: (i) => {
+          const mobile = window.matchMedia("(max-width: 768px)").matches;
+          const step = mobile ? -36 : -15;
+          return i * step + step;
+        },
         perspective: (i) => (i % 2 ? 8 : -8),
       };
       const panelStartScale: Record<ScrollPanelsVariant, number> = {
