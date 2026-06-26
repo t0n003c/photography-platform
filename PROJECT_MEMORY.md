@@ -648,6 +648,9 @@ is gitignored):
   Scroll Panels Angled Rows mobile follow-up: demo4 column drift now uses a larger mobile-only
   step (`-36%` per visible column instead of the desktop `-15%`) so the intro photos move
   noticeably even when small screens show only a couple of columns.
+  Scroll Panels Scatter mobile follow-up: scatter now uses stronger mobile-only column drift
+  (`±18%` instead of desktop `±6%`) and a larger outward scatter spread (`720` instead of `440`)
+  so the intro photos separate more clearly on small screens.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

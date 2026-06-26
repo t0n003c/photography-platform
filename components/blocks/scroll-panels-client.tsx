@@ -211,7 +211,10 @@ export function ScrollPanelsClient({
 
       const columnDrift: Record<ScrollPanelsVariant, (i: number) => number> = {
         classic: (i) => (i % 2 ? 3 : -3),
-        scatter: (i) => (i % 2 ? 6 : -6),
+        scatter: (i) => {
+          const mobile = window.matchMedia("(max-width: 768px)").matches;
+          return i % 2 ? (mobile ? 18 : 6) : mobile ? -18 : -6;
+        },
         // Codrops demo 4: angled bands with staggered vertical travel. The
         // visually lower band moves least, the middle faster, and the upper
         // band fastest once the section is rotated.
@@ -258,9 +261,10 @@ export function ScrollPanelsClient({
         .to(images, { scale: imageScale[variant] }, 0);
 
       if (variant === "scatter") {
+        const scatterSpread = window.matchMedia("(max-width: 768px)").matches ? 720 : 440;
         gsap.to(items, {
-          x: (i, target) => distanceFromCenter(target, 440).x,
-          y: (i, target) => distanceFromCenter(target, 440).y,
+          x: (i, target) => distanceFromCenter(target, scatterSpread).x,
+          y: (i, target) => distanceFromCenter(target, scatterSpread).y,
           ease: "power2.out",
           scrollTrigger: {
             trigger: showcase,
