@@ -631,6 +631,10 @@ is gitignored):
   (`columns` up to `clamp(5.5rem, 18vw, 7.75rem)`, `reveal` up to
   `clamp(5rem, 16vw, 7rem)`) because the live preview still needed more visible air between the
   Layout Formations header text block and the first category grid.
+  Follow-up after reverting a broader spacing experiment: only the mobile first-section spacer
+  between the Layout Formations text block and first grid was increased (`columns`
+  `clamp(7rem, 23vw, 9.75rem)`, `reveal` `clamp(6.5rem, 21vw, 9rem)`); top-of-header spacing and
+  category-title-to-grid spacing were intentionally left unchanged from the previous accepted state.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
