@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Instagram, Mail } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Instagram, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -73,6 +73,43 @@ function previewUrlFor(scope: Scope, sampleSlug: string | null): string | null {
     case "gallery":
       return sampleSlug ? `/galleries/${sampleSlug}` : null;
   }
+}
+
+function CollapsibleDesignCard({
+  title,
+  actions,
+  children,
+}: {
+  title: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <Card>
+      <CardHeader className="gap-0">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+          >
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 transition-transform ${
+                open ? "" : "-rotate-90"
+              }`}
+              aria-hidden="true"
+            />
+            <CardTitle>{title}</CardTitle>
+          </button>
+          {actions && <div className="shrink-0">{actions}</div>}
+        </div>
+      </CardHeader>
+      {open && <CardContent>{children}</CardContent>}
+    </Card>
+  );
 }
 
 function ConfigEditor({
@@ -361,26 +398,26 @@ export default function DesignPage() {
             const previewUrl = previewUrlFor(scope, sampleFor(scope));
             return (
               <Fragment key={scope}>
-              <Card>
-                <CardHeader className="flex items-center justify-between gap-2">
-                  <CardTitle>{SCOPE_LABEL[scope]}</CardTitle>
-                  {matching.length === 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => createConfig(scope)}
-                      disabled={creatingScope === scope}
-                    >
-                      {creatingScope === scope ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      Create config
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent>
+              <CollapsibleDesignCard
+                title={SCOPE_LABEL[scope]}
+                actions={
+                  matching.length === 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => createConfig(scope)}
+                    disabled={creatingScope === scope}
+                  >
+                    {creatingScope === scope ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Create config
+                  </Button>
+                  ) : null
+                }
+              >
                   {matching.length === 0 ? (
                     <EmptyState
                       title="No config for this surface"
@@ -398,8 +435,7 @@ export default function DesignPage() {
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+              </CollapsibleDesignCard>
               {scope === "about" && <FooterDesignCard />}
               </Fragment>
             );
@@ -505,11 +541,7 @@ function FooterDesignCard() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Footer</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CollapsibleDesignCard title="Footer">
         {loading ? (
           <div className="flex justify-center py-6">
             <Spinner className="h-5 w-5" />
@@ -578,8 +610,7 @@ function FooterDesignCard() {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleDesignCard>
   );
 }
 
