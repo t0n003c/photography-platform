@@ -585,6 +585,11 @@ is gitignored):
   viewport (`top 88%` to `top 48%`), so the fade/slide remains visible on phones even when a
   variant has a large intro/title area. Mobile live-preview frames use the full 390x844 phone
   viewport instead of clipping to the desktop preview height.
+  Follow-up mobile tuning: Rise Grid, Column Assemble, and Zoomed Grid use a later mobile trigger
+  window (`top 74%` to `top 34%`) so their motion is not finished before the photos are visible.
+  Mobile Zoomed Grid no longer uses the desktop full-viewport pinned-stage layout; it flows like a
+  normal mobile grid with extra section spacing. Column Assemble's first mobile text block has
+  more top breathing room.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

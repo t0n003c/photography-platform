@@ -127,6 +127,10 @@ export function LayoutFormationsClient({
         if (!grid || images.length === 0) return;
 
         if (!isDesktop) {
+          const mobileTiming =
+            variant === "rise" || variant === "columns" || variant === "zoomed"
+              ? { start: "top 74%", end: "top 34%" }
+              : { start: "top 88%", end: "top 48%" };
           gsap.from(images, {
             y: 42,
             autoAlpha: 0,
@@ -134,8 +138,8 @@ export function LayoutFormationsClient({
             ease: "power2.out",
             scrollTrigger: {
               trigger: grid,
-              start: "top 88%",
-              end: "top 48%",
+              start: mobileTiming.start,
+              end: mobileTiming.end,
               scrub: true,
             },
           });
