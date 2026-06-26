@@ -707,6 +707,8 @@ is gitignored):
   Follow-up: Library photo click now opens a right-side detail panel, press-and-hold enters
   multi-select mode, and shift-click range-selects photos in between. Mobile Library uses a
   right-side virtual-folder drawer with a visible handle and auto-opens near right-edge drag.
+  Follow-up: the Library photo detail panel now closes from the full outside-click area, and
+  normal photo tiles hide the selection badge and info action until multi-select is active.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display
   uses generated WebP responsive variants plus a single JPEG fallback; outdated AVIF UI wording was removed.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column

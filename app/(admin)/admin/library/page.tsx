@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FolderTree, Images, Info, Loader2 } from "lucide-react";
+import { FolderTree, Images, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
@@ -159,30 +159,19 @@ function PhotoTile({
         )}
       </button>
 
-      <span
-        aria-hidden="true"
-        className={
-          "pointer-events-none absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] " +
-          (selected
-            ? "border-[hsl(var(--ring))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-            : "border-white/80 bg-black/30 text-transparent")
-        }
-      >
-        ✓
-      </span>
-
-      <Button
-        size="icon"
-        variant="outline"
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpen();
-        }}
-        aria-label="Photo details"
-        className="absolute right-2 top-2 h-7 w-7 bg-[hsl(var(--background))]/90 opacity-0 transition-opacity group-hover:opacity-100"
-      >
-        <Info className="h-3.5 w-3.5" />
-      </Button>
+      {multiSelect && (
+        <span
+          aria-hidden="true"
+          className={
+            "pointer-events-none absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] " +
+            (selected
+              ? "border-[hsl(var(--ring))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+              : "border-white/80 bg-black/30 text-transparent")
+          }
+        >
+          ✓
+        </span>
+      )}
     </div>
   );
 }
@@ -283,15 +272,15 @@ function DetailSidePanel({
   };
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close photo details"
-        onClick={onClose}
-        className="fixed inset-0 z-40 bg-transparent"
-      />
+    <div
+      role="presentation"
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-transparent"
+    >
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l bg-[hsl(var(--background))] shadow-xl sm:w-[28rem]"
+        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l bg-[hsl(var(--background))] shadow-xl sm:w-[28rem]"
         aria-label="Photo details"
       >
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -429,7 +418,7 @@ function DetailSidePanel({
           </div>
         )}
       </aside>
-    </>
+    </div>
   );
 }
 
