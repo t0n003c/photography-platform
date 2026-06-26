@@ -220,8 +220,8 @@ export function LayoutFormationsClient({
               },
               scrollTrigger: {
                 trigger: section,
-                start: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.62,
-                end: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.04,
+                start: () => layoutPageTop(rowImages[0]) - window.innerHeight * 1.3,
+                end: () => layoutPageTop(rowImages[0]) - window.innerHeight * 0.58,
                 scrub: variant === "sidePivot" ? 0.2 : 0.35,
               },
             });

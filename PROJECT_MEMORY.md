@@ -566,9 +566,11 @@ is gitignored):
   entering, and fully visible only after entering.
   The newer Layout Formation variants (`tilted`, `depth`, and `sidePivot`) now use stable row
   layout positions for their ScrollTrigger start/end math instead of each animated row as its own
-  trigger. Their row animations start earlier and complete before the page bottom; the last section
-  also has extra bottom runway. Focused Chrome smoke covered desktop, iPhone 13, and reduced-motion
-  contexts for all three variants, with final rows fully settled and 0 console/page errors.
+  trigger. Their row animations use a visible mid-scroll window (`rowTop - 1.3vh` to
+  `rowTop - 0.58vh`) so the motion is still seen while entering, and they complete before the page
+  bottom; the last section also has extra bottom runway. Focused Chrome smoke covered desktop,
+  iPhone 13, and reduced-motion contexts for all three variants, with visible desktop motion,
+  final rows fully settled, and 0 console/page errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
