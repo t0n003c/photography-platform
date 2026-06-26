@@ -137,6 +137,7 @@ export function ScrollPanelsClient({
       const items = gsap.utils.toArray<HTMLElement>("[data-sp-item]");
       const images = gsap.utils.toArray<HTMLElement>("[data-sp-img]");
       if (!columnsPanel || !showcase || wraps.length === 0) return;
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
       gsap.set(columnsPanel, { autoAlpha: 0 });
       gsap.set(images, { scale: 1.08 });
@@ -212,15 +213,13 @@ export function ScrollPanelsClient({
       const columnDrift: Record<ScrollPanelsVariant, (i: number) => number> = {
         classic: (i) => (i % 2 ? 3 : -3),
         scatter: (i) => {
-          const mobile = window.matchMedia("(max-width: 768px)").matches;
-          return i % 2 ? (mobile ? 18 : 6) : mobile ? -18 : -6;
+          return i % 2 ? (isMobile ? 18 : 6) : isMobile ? -18 : -6;
         },
         // Codrops demo 4: angled bands with staggered vertical travel. The
         // visually lower band moves least, the middle faster, and the upper
         // band fastest once the section is rotated.
         demo4: (i) => {
-          const mobile = window.matchMedia("(max-width: 768px)").matches;
-          const step = mobile ? -36 : -15;
+          const step = isMobile ? -36 : -15;
           return i * step + step;
         },
         perspective: (i) => (i % 2 ? 8 : -8),
@@ -251,7 +250,10 @@ export function ScrollPanelsClient({
       if (!topStackedIntro) {
         tl.fromTo(
           columnsPanel,
-          { scale: panelStartScale[variant], y: 0 },
+          {
+            scale: variant === "perspective" && isMobile ? 1 : panelStartScale[variant],
+            y: 0,
+          },
           { scale: 1, y: 0 },
           0,
         );
@@ -283,8 +285,10 @@ export function ScrollPanelsClient({
           ease: "power2.out",
           scrollTrigger: {
             trigger: root,
-            start: "top top",
-            end: () => `+=${Math.round(window.innerHeight * 0.85)}`,
+            start: isMobile ? "top 85%" : "top top",
+            end: isMobile
+              ? "top 10%"
+              : () => `+=${Math.round(window.innerHeight * 0.85)}`,
             scrub: true,
           },
         });

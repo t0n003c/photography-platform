@@ -651,6 +651,11 @@ is gitignored):
   Scroll Panels Scatter mobile follow-up: scatter now uses stronger mobile-only column drift
   (`±18%` instead of desktop `±6%`) and a larger outward scatter spread (`720` instead of `440`)
   so the intro photos separate more clearly on small screens.
+  Scroll Panels Perspective Blur mobile follow-up: perspective assembly now starts earlier on
+  mobile (`top 85%` to `top 10%` instead of waiting for `top top`) and the mobile intro grid uses
+  nearly the full viewport width with tighter gaps/padding so the photos appear larger and reduce
+  empty space on the left/right. The mobile perspective panel also no longer starts from the
+  desktop `0.7` panel scale, which was the actual cause of the side gaps during the intro.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
