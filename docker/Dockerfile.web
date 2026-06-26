@@ -7,7 +7,7 @@ WORKDIR /app
 # ── deps ────────────────────────────────────────────────────────────────────
 FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --foreground-scripts
 
 # ── build ───────────────────────────────────────────────────────────────────
 FROM base AS build

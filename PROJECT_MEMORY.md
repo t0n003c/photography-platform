@@ -10,20 +10,18 @@ the code wins — verify before asserting.
 > verbatim, is [`docs/PROJECT-BRIEF.md`](docs/PROJECT-BRIEF.md); working conventions and
 > gotchas are [`docs/DEV-WORKFLOW.md`](docs/DEV-WORKFLOW.md).
 
-> ## ⚠️ FIRST, READ THIS: there are unpushed commits
-> The local `main` branch is **ahead of `origin/main` by un-pushed commits** (**26 as of
-> 2026-06-24**) — feature work (3D carousel, "Alternative Scroll" layout) plus these
-> handoff docs. There is also current uncommitted work from the Codex gallery/mobile UI pass
-> (Alternative Scroll tuning, gallery subtitle/slug autofill, preview route fixes, mobile
-> preview behavior, migration files). **Pushes are intentionally PAUSED** (GitHub Actions
-> minute quota); push only
-> when the **owner explicitly asks**, and **batch everything into a single push**. Check the
-> real count any time with:
+> ## FIRST, READ THIS: push/audit state
+> The previously paused Claude-to-Codex backlog was pushed to GitHub on **2026-06-26** after
+> the owner explicitly approved it. The repository is now public at
+> `https://github.com/t0n003c/photography-platform`, so standard GitHub-hosted Actions minutes
+> for public-repo workflows should not count against the private-repo minute quota. Continue to
+> commit directly to `main`, but still **do not push unless the owner explicitly asks**. Check the
+> real local state any time with:
 > ```bash
 > git rev-list --count origin/main..HEAD      # how many commits are unpushed
 > git log origin/main..HEAD --oneline         # what they are
 > ```
-> Do not push automatically. See §12 and `AGENTS.md` rule 3.
+> See §12 and `AGENTS.md` rule 3.
 
 ---
 
@@ -320,11 +318,21 @@ is gitignored):
 
 ## 12. Current unfinished tasks
 
-- **Unpushed commits:** `main` is **26 commits ahead of `origin/main`** as of 2026-06-24
-  (3D-carousel refinements, the "Alternative Scroll" layout, docs/skills, Claude→Codex
-  handoff docs). There is also uncommitted Codex work in the tree for gallery/mobile UI and
-  Alternative Scroll refinements, plus a Pages editor fix so Gallery block grid changes
-  update the live preview and support the newer grid types. Latest Pages editor work adds
+- **Push state:** the Claude-to-Codex backlog and subsequent Codex UI/effect work were pushed
+  to `origin/main` on 2026-06-26 after owner approval. The repo is public. Keep committing
+  directly to `main`, but push only when the owner explicitly asks.
+- **Audit state after the push:** local checks passed on 2026-06-26: `npm run typecheck`,
+  `npm run lint`, `npm test`, and `E2E_BASE_URL=http://localhost:3001 npm run test:e2e`.
+  Docker image builds for both `docker/Dockerfile.web` and `docker/Dockerfile.worker` passed
+  after changing Docker installs to `npm ci --foreground-scripts`. Runtime audit findings were
+  patched by upgrading `nodemailer` to 9.0.1, Remotion packages to 4.0.483, Vitest to 4.1.9,
+  and pinning root `esbuild` to 0.28.1. `npm audit --audit-level=high` still reports a high
+  advisory through dev-only Lighthouse tooling (`@lhci/cli` -> `tmp`) plus moderate transitive
+  tooling advisories; npm's suggested force fixes are breaking downgrades, so do not apply them
+  blindly. CI Lighthouse is advisory and currently reports `/` SEO at 0.92 vs the 0.95 budget.
+- **Recent UI/effect scope:** gallery/mobile UI and Alternative Scroll refinements, plus a
+  Pages editor fix so Gallery block grid changes update the live preview and support the newer
+  grid types. Latest Pages editor work adds
   per-block hide/show toggles, skips hidden blocks in preview/public rendering, and removes
   Alternative Scroll and On-scroll 3D carousel from Pages gallery-block options. Alternative
   Scroll remains Gallery-tab only; the working On-scroll 3D carousel remains available through
@@ -446,8 +454,6 @@ is gitignored):
   preview cannot change the admin shell or normal public-site theme storage.
   Keep it scoped to Gallery-tab page configs for now; do not add it to Pages tab Gallery blocks
   unless the owner explicitly asks for a page-level decorative cursor/touch effect.
-  **Pushes are PAUSED** by owner request (GitHub Actions
-  minutes near quota); push only when the owner explicitly asks, batched into one push.
 - **Finish Home migration:** `/admin/pages` seeds a DRAFT "Home" page reproducing the old
   homepage; the live home stays bespoke until the owner previews and **publishes** it.
 - **Production secret:** set a dedicated `SETTINGS_ENCRYPTION_KEY` (`openssl rand -hex 32`).
