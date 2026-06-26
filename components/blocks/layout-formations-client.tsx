@@ -135,12 +135,13 @@ export function LayoutFormationsClient({
             variant === "sidePivot";
           const mobileTiming =
             useSlowMobileScrub
-              ? { start: "top 70%", end: "top -10%" }
+              ? { start: "top 74%", end: "top -42%" }
               : variant === "rise"
               ? { start: "top 74%", end: "top 34%" }
               : { start: "top 88%", end: "top 48%" };
           gsap.from(images, {
-            y: useSlowMobileScrub ? 64 : 42,
+            y: useSlowMobileScrub ? (variant === "zoomed" ? 120 : 96) : 42,
+            scale: variant === "zoomed" ? 0.86 : 1,
             autoAlpha: 0,
             stagger: 0.04,
             ease: useSlowMobileScrub ? "none" : "power2.out",

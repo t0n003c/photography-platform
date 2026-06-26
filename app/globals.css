@@ -978,6 +978,9 @@ html.js .pr-root.is-enhanced {
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
     padding-top: clamp(32rem, 115vw, 38rem);
   }
+  .lf-root[data-lf-variant="columns"] .lf-stage {
+    gap: clamp(0.75rem, 3vw, 1rem);
+  }
   .lf-root[data-lf-variant="columns"] .lf-section,
   .lf-root[data-lf-variant="columns"] .lf-stage,
   .lf-root[data-lf-variant="columns"] .lf-section--first,
@@ -1036,8 +1039,7 @@ html.js .pr-root.is-enhanced {
   .lf-root[data-lf-variant="rise"] .lf-img {
     grid-area: auto !important;
   }
-  .lf-root[data-lf-variant="reveal"] .lf-grid,
-  .lf-root[data-lf-variant="reveal"][data-lf-count] .lf-grid {
+  .lf-root[data-lf-variant="reveal"] .lf-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.55rem;
   }
@@ -1079,8 +1081,7 @@ html.js .pr-root.is-enhanced {
   .lf-root[data-lf-variant="sidePivot"][data-lf-count] .lf-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .lf-root[data-lf-variant="reveal"] .lf-grid,
-  .lf-root[data-lf-variant="reveal"][data-lf-count] .lf-grid {
+  .lf-root[data-lf-variant="reveal"] .lf-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
