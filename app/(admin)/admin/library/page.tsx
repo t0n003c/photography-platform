@@ -263,35 +263,42 @@ function DetailSidePanel({
   };
 
   return (
-    <aside
-      className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l bg-[hsl(var(--background))] shadow-xl sm:w-[28rem]"
-      aria-label="Photo details"
-    >
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="font-semibold">Photo details</h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          Close
-        </Button>
-      </div>
-      {loading || !photo ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="h-6 w-6" />
+    <>
+      <button
+        type="button"
+        aria-label="Close photo details"
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-transparent"
+      />
+      <aside
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l bg-[hsl(var(--background))] shadow-xl sm:w-[28rem]"
+        aria-label="Photo details"
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h2 className="font-semibold">Photo details</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
         </div>
-      ) : (
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-          <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
-            {photo.variants.length > 0 ? (
-              <ResponsiveImage
-                photo={photo}
-                sizes="(max-width:768px) 92vw, 28rem"
-                className="h-auto w-full"
-              />
-            ) : (
-              <div className="flex aspect-video items-center justify-center">
-                <Badge tone="amber">Processing</Badge>
-              </div>
-            )}
+        {loading || !photo ? (
+          <div className="flex justify-center py-10">
+            <Spinner className="h-6 w-6" />
           </div>
+        ) : (
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+            <div className="overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
+              {photo.variants.length > 0 ? (
+                <ResponsiveImage
+                  photo={photo}
+                  sizes="(max-width:768px) 92vw, 28rem"
+                  className="h-auto w-full"
+                />
+              ) : (
+                <div className="flex aspect-video items-center justify-center">
+                  <Badge tone="amber">Processing</Badge>
+                </div>
+              )}
+            </div>
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
             {photo.filename && (
@@ -399,9 +406,10 @@ function DetailSidePanel({
               </Button>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
 
