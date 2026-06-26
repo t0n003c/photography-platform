@@ -976,7 +976,7 @@ html.js .pr-root.is-enhanced {
     padding-top: clamp(16.5rem, 62vw, 19rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section--first .lf-stage {
-    padding-top: clamp(21rem, 76vw, 25rem);
+    padding-top: clamp(32rem, 115vw, 38rem);
   }
   .lf-root[data-lf-variant="columns"] .lf-section,
   .lf-root[data-lf-variant="columns"] .lf-stage,
@@ -1036,13 +1036,13 @@ html.js .pr-root.is-enhanced {
   .lf-root[data-lf-variant="rise"] .lf-img {
     grid-area: auto !important;
   }
-  .lf-root[data-lf-variant="reveal"] .lf-grid {
+  .lf-root[data-lf-variant="reveal"] .lf-grid,
+  .lf-root[data-lf-variant="reveal"][data-lf-count] .lf-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.55rem;
   }
-  .lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-grid,
-  .lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .lf-root[data-lf-variant="reveal"] .lf-img {
+    aspect-ratio: 0.8;
   }
   .lf-img {
     aspect-ratio: 0.8;
@@ -1079,11 +1079,8 @@ html.js .pr-root.is-enhanced {
   .lf-root[data-lf-variant="sidePivot"][data-lf-count] .lf-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .lf-root[data-lf-variant="reveal"] .lf-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .lf-root[data-lf-variant="reveal"][data-lf-count="18"] .lf-grid,
-  .lf-root[data-lf-variant="reveal"][data-lf-count="24"] .lf-grid {
+  .lf-root[data-lf-variant="reveal"] .lf-grid,
+  .lf-root[data-lf-variant="reveal"][data-lf-count] .lf-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

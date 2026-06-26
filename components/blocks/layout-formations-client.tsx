@@ -127,21 +127,23 @@ export function LayoutFormationsClient({
         if (!grid || images.length === 0) return;
 
         if (!isDesktop) {
-          const mobileTiming =
+          const useSlowMobileScrub =
             variant === "columns" ||
             variant === "zoomed" ||
             variant === "tilted" ||
             variant === "depth" ||
-            variant === "sidePivot"
-              ? { start: "top 62%", end: "top 24%" }
+            variant === "sidePivot";
+          const mobileTiming =
+            useSlowMobileScrub
+              ? { start: "top 70%", end: "top -10%" }
               : variant === "rise"
               ? { start: "top 74%", end: "top 34%" }
               : { start: "top 88%", end: "top 48%" };
           gsap.from(images, {
-            y: 42,
+            y: useSlowMobileScrub ? 64 : 42,
             autoAlpha: 0,
             stagger: 0.04,
-            ease: "power2.out",
+            ease: useSlowMobileScrub ? "none" : "power2.out",
             scrollTrigger: {
               trigger: grid,
               start: mobileTiming.start,

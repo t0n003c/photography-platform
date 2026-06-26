@@ -595,6 +595,11 @@ is gitignored):
   the user reaches the photos. Tilted/Depth/Side Pivot also explicitly reset to natural mobile grid
   rows at tablet/phone widths to avoid inherited desktop row sizing that made rows overlap.
   Column Assemble's first mobile text block has additional top spacing.
+  Follow-up mobile scrub tuning: those same variants now use a wider linear mobile scrub window
+  (`top 70%` to `top -10%`) with a longer slide distance so the entrance animation progresses
+  more visibly while scrolling. Column Assemble's first mobile section got a larger top offset,
+  and Column Reveal mobile grid rules are explicit for every photo-count option so 18/24-photo
+  formations keep the same mobile layout style as 6/9/12.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
