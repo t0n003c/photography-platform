@@ -14,8 +14,9 @@ how to *work* in it. Authoritative long-form: [`docs/`](docs/) (start with
    summarize and pause between phases. Trivial fixes (typo, one-liner) don't need a plan.
 2. **No secrets in code.** `.env` is gitignored; document new keys in `.env.example` with
    placeholder values. Never print real secret values into logs/output.
-3. **Commit to `main`, but do NOT push unless the owner explicitly asks.** Pushes are
-   paused (CI minute quota). Keep committing locally; batch into one push when asked.
+3. **Commit to `main`, but do NOT push unless the owner explicitly asks.** The repo is
+   public now, so standard GitHub-hosted Actions minutes should be free, but pushes still
+   trigger CI + image publishing. Keep pushes intentional; batch related work when asked.
 4. **End commit messages** with a `Co-Authored-By:` trailer for your agent.
 5. **Progressive enhancement is mandatory** for any animation/WebGL/Lenis work: SSR
    fallback, `prefersReducedMotion()` gate, never block LCP/INP, fully usable without JS.

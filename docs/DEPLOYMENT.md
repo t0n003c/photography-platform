@@ -68,7 +68,7 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 
 **Notes:**
 
-- `web` and `worker` both `depends_on` `db`, `redis`, and `seaweedfs` with `condition: service_healthy` (plus `seaweedfs-init` with `condition: service_completed_successfully`), so they only start once backing services report healthy and the bucket exists (avoids migration/connection races).
+- `web` and `worker` both `depends_on` `db`, `redis`, `seaweedfs`, and `seaweedfs-init` with `condition: service_healthy`, so they only start once backing services report healthy and the bucket exists (avoids migration/connection races). `seaweedfs-init` idles after bucket creation so stack UIs show it as running/healthy rather than exited.
 - SeaweedFS reads its S3 identities/credentials from `docker/seaweedfs/s3.json` (mounted read-only), **not** from env vars — there are no `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD`. The keys in that file **must match** `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` in `.env`.
 - **Third-party images are pinned** (`postgres:16-alpine`, `redis:7-alpine`, `chrislusf/seaweedfs:4.34`, `minio/mc:RELEASE.2025-08-13T08-35-41Z`) so a `docker compose pull` can't swap in a breaking upstream release unattended (only `cloudflared` stays `:latest`, and only our own GHCR `web`/`worker` use `:latest`). Bump these deliberately.
 - **`seaweedfs` runs as `user: "0:0"` (root)** because its `seaweeddata` volume and the mounted `s3.json` are root-owned (created by the original root-running image). Newer SeaweedFS images default to a **non-root** user that then can't read `s3.json` or write `/data`, so it crash-loops — forcing root avoids that.
@@ -161,8 +161,10 @@ On startup: `seaweedfs-init` waits for the S3 gateway and creates the `${S3_BUCK
 Building the `web`/`worker` images on NAS hardware is slow and memory-heavy. CI
 (`.github/workflows/publish-images.yml`) builds and pushes them to **GHCR** on
 every push to `main` (and on `vX.Y.Z` tags) as
-`ghcr.io/<owner>/photography-platform-web` and `-worker`. Add the GHCR overlay so
-the NAS **pulls** instead of building:
+`ghcr.io/t0n003c/photography-platform-web` and
+`ghcr.io/t0n003c/photography-platform-worker`. The GitHub repo is public, so
+standard GitHub-hosted Actions minutes for these public workflows should be free.
+Add the GHCR overlay so the NAS **pulls** instead of building:
 
 ```bash
 # One-time: make the two GHCR packages Public (GitHub → your profile → Packages →

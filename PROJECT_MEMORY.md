@@ -326,10 +326,14 @@ is gitignored):
   Docker image builds for both `docker/Dockerfile.web` and `docker/Dockerfile.worker` passed
   after changing Docker installs to `npm ci --foreground-scripts`. Runtime audit findings were
   patched by upgrading `nodemailer` to 9.0.1, Remotion packages to 4.0.483, Vitest to 4.1.9,
-  and pinning root `esbuild` to 0.28.1. `npm audit --audit-level=high` still reports a high
-  advisory through dev-only Lighthouse tooling (`@lhci/cli` -> `tmp`) plus moderate transitive
-  tooling advisories; npm's suggested force fixes are breaking downgrades, so do not apply them
-  blindly. CI Lighthouse is advisory and currently reports `/` SEO at 0.92 vs the 0.95 budget.
+  and pinning root `esbuild` to 0.28.1. Follow-up audit work added npm overrides for
+  dev-tool transitive packages (`tmp`, `uuid`, `js-yaml`, `esbuild`) and lifted root
+  `postcss`; `npm audit --audit-level=high` now exits clean. The remaining audit output is a
+  moderate PostCSS advisory nested inside `next`; npm's suggested force fix is a breaking
+  downgrade to Next 9, so wait for an upstream Next patch rather than applying it blindly.
+  CI Lighthouse previously reported `/` SEO at 0.92 vs the 0.95 budget because the home page
+  emitted no `<title>`; `buildMetadata()` now emits an absolute fallback title when no route
+  title is provided.
 - **Recent UI/effect scope:** gallery/mobile UI and Alternative Scroll refinements, plus a
   Pages editor fix so Gallery block grid changes update the live preview and support the newer
   grid types. Latest Pages editor work adds
@@ -457,11 +461,12 @@ is gitignored):
 - **Finish Home migration:** `/admin/pages` seeds a DRAFT "Home" page reproducing the old
   homepage; the live home stays bespoke until the owner previews and **publishes** it.
 - **Production secret:** set a dedicated `SETTINGS_ENCRYPTION_KEY` (`openssl rand -hex 32`).
-- **GHCR packages:** after a `publish-images` run, the two GHCR packages must be **Public** (or
-  `docker login`) before the NAS pull works.
+- **GHCR packages:** the public image manifests for `photography-platform-web:latest` and
+  `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
+  fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
 - **Payments:** still a stub — `PaymentProvider` interface + seams only; implement when desired.
-- **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only (or gating the
-  heavy Lighthouse CI job off `push`) to stop routine pushes burning Actions minutes.
+- **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
+  pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
@@ -490,10 +495,8 @@ is gitignored):
 
 ## 14. Future recommendations
 
-- **Push the 26 local commits plus the current uncommitted Codex changes** when the owner is
-  ready (one batch); then make GHCR packages public and pull on the NAS.
-- **Reduce CI cost:** move the Lighthouse-on-full-stack CI job off every `push` (to
-  `workflow_dispatch`/schedule); it's the biggest minute sink and unrelated to publishing images.
+- **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
+  `main` still builds/publishes images and runs the full CI/Lighthouse stack.
 - **Implement payments** when needed via the existing `PaymentProvider` stub (Stripe driver);
   the seams (`invoice`, `order` tables, checkout route) already exist.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.

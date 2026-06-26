@@ -15,7 +15,7 @@ gotchas that used to live in scattered Claude file-memories. The founding intent
 - **Git: commit directly to `main`, no PRs** (solo project, decided 2026-06-17). No feature branches, no merge step. `main` is the single source of truth; the whole CMS stack is already merged.
   - Caveat: the Claude Code auto-classifier blocks pushes to the default branch unless a Bash permission rule allows it — `Bash(git push origin main:*)` is in `.claude/settings.local.json`. If a push is denied, add the rule rather than re-attempting.
   - End commit messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
-- **Pushes are PAUSED — push only when the owner explicitly asks** (GitHub Actions minutes near quota; each push to `main` runs `Publish images` building 2 Docker images + CI). Keep committing locally. When asked to push, **batch all pending commits into one push** (one workflow run). Consider offering to switch `.github/workflows/publish-images.yml` to `workflow_dispatch`/tags-only so routine pushes stop burning minutes.
+- **Push only when the owner explicitly asks.** The repo was made public on 2026-06-26, so standard GitHub-hosted Actions minutes for these public workflows should be free, but each push to `main` still runs CI plus `Publish images` for 2 Docker images. Keep pushes intentional and batch related local commits when practical.
 - **Local test deploy = Docker, not `next dev`.** The running app is `http://localhost:3001` (`photography-platform-web-1`, `WEB_PORT`→3001). To make changes live, rebuild the web image:
   ```bash
   cd docker && docker compose -p photography-platform --env-file ../.env \

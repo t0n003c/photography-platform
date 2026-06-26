@@ -37,15 +37,16 @@ export function buildMetadata(opts: BuildMetadataOptions = {}): Metadata {
   const images = image
     ? [{ url: absoluteUrl(image) }]
     : undefined;
+  const resolvedTitle = title ?? SITE.name;
 
   return {
-    title,
+    title: title ?? { absolute: SITE.name },
     description,
     alternates: {
       canonical: url,
     },
     openGraph: {
-      title: title ?? SITE.name,
+      title: resolvedTitle,
       description,
       url,
       siteName: SITE.name,
@@ -54,7 +55,7 @@ export function buildMetadata(opts: BuildMetadataOptions = {}): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: title ?? SITE.name,
+      title: resolvedTitle,
       description,
       images: images?.map((i) => i.url),
     },

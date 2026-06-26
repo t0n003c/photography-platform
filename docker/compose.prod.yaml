@@ -50,7 +50,7 @@ services:
     image: cloudflare/cloudflared:latest
     profiles: ["tunnel"]
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:-}
     depends_on:
       web:
         condition: service_healthy

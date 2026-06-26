@@ -70,7 +70,7 @@ canonical local target is the Docker `:3001` stack above.)
 | `npm run worker` / `worker:dev` | BullMQ worker (run / watch) |
 | `npm run typecheck` / `lint` / `format` | TS check / lint / Prettier |
 | `npm test` / `test:watch` | Vitest unit tests |
-| `npm run test:e2e` | Playwright end-to-end |
+| `npm run test:e2e` | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack) |
 | `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed |
 
 ## Repository layout (short)
@@ -82,13 +82,16 @@ canonical local target is the Docker `:3001` stack above.)
 
 ## Deployment
 
-Images publish to GHCR via GitHub Actions on push to `main`; the NAS pulls them (Dockge)
-behind Cloudflare Tunnel → Nginx Proxy Manager. Volumes, backups, upgrade/rollback:
+Images publish to GHCR via GitHub Actions on push to `main`; the GitHub repo is public,
+so standard GitHub-hosted Actions minutes for these public workflows should be free. The
+NAS pulls the published images (Dockge / Container Manager) behind Cloudflare Tunnel →
+Nginx Proxy Manager. Volumes, backups, upgrade/rollback:
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Conventions
 
-Commit directly to `main` (no PRs); **push only when the owner asks** (CI minute quota).
+Commit directly to `main` (no PRs); **push only when the owner asks** so deploys stay
+intentional.
 No secrets in code (`.env` only). Layouts are data-driven, not hardcoded. Animations are
 progressive enhancement (reduced-motion + no-JS fallbacks). Full set: `AGENTS.md` and
 [`docs/DEV-WORKFLOW.md`](docs/DEV-WORKFLOW.md).
