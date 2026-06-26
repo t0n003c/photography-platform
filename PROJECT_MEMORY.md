@@ -651,6 +651,9 @@ is gitignored):
   Scroll Panels Scatter mobile follow-up: scatter now uses stronger mobile-only column drift
   (`±18%` instead of desktop `±6%`) and a larger outward scatter spread (`720` instead of `440`)
   so the intro photos separate more clearly on small screens.
+  Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
+  drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
+  `1.08`) so the intro photo movement is more visible on small screens without changing desktop.
   Scroll Panels Perspective Blur mobile follow-up: perspective assembly now starts earlier on
   mobile (`top 85%` to `top 10%` instead of waiting for `top top`) and the mobile intro grid uses
   nearly the full viewport width with tighter gaps/padding so the photos appear larger and reduce

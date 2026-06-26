@@ -211,7 +211,7 @@ export function ScrollPanelsClient({
       }
 
       const columnDrift: Record<ScrollPanelsVariant, (i: number) => number> = {
-        classic: (i) => (i % 2 ? 3 : -3),
+        classic: (i) => (i % 2 ? (isMobile ? 18 : 3) : isMobile ? -18 : -3),
         scatter: (i) => {
           return i % 2 ? (isMobile ? 18 : 6) : isMobile ? -18 : -6;
         },
@@ -231,7 +231,7 @@ export function ScrollPanelsClient({
         perspective: 0.7,
       };
       const imageScale: Record<ScrollPanelsVariant, number> = {
-        classic: 1.08,
+        classic: isMobile ? 1.22 : 1.08,
         scatter: 1.4,
         demo4: 1.08,
         perspective: 1.4,
