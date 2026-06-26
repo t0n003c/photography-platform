@@ -697,6 +697,9 @@ is gitignored):
   Pages editor follow-up: Contact form is now a real page-builder block option. It reuses the
   existing spam-protected contact submission flow and supports stacked, split, card, and minimal
   presentation styles with editable intro/heading/button text.
+  Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
+  and contact page presets. Folders are merged into the Library tab as a Folders view, and the
+  separate Folders sidebar item is removed.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

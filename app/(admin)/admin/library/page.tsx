@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Info, Loader2 } from "lucide-react";
+import { FolderTree, Images, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Label, Select, Textarea } from "@/components/ui/form";
@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { api, ApiError } from "@/src/lib/api-client";
 import type { PhotoDTO } from "@/src/db/queries/photos";
+import { FoldersManager } from "@/components/admin/folders-manager";
 
 interface PageMeta {
   nextCursor: string | null;
@@ -461,6 +462,7 @@ function AssignModal({
 
 export default function LibraryPage() {
   const { toast } = useToast();
+  const [view, setView] = useState<"photos" | "folders">("photos");
   const [photos, setPhotos] = useState<PhotoDTO[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -586,6 +588,45 @@ export default function LibraryPage() {
 
   return (
     <div className="space-y-6 pb-24">
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-xl font-semibold">Library</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Manage photos and organize them into private folders.
+          </p>
+        </div>
+        <div className="inline-flex rounded-lg border bg-[hsl(var(--background))] p-1">
+          <button
+            type="button"
+            onClick={() => setView("photos")}
+            className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition ${
+              view === "photos"
+                ? "bg-[hsl(var(--muted))] font-medium"
+                : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            }`}
+          >
+            <Images className="h-4 w-4" />
+            Photos
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("folders")}
+            className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition ${
+              view === "folders"
+                ? "bg-[hsl(var(--muted))] font-medium"
+                : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+            }`}
+          >
+            <FolderTree className="h-4 w-4" />
+            Folders
+          </button>
+        </div>
+      </div>
+
+      {view === "folders" ? (
+        <FoldersManager embedded />
+      ) : (
+        <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Media library</h1>
@@ -726,6 +767,8 @@ export default function LibraryPage() {
           onClose={() => setAssignKind(null)}
           onAssign={assign}
         />
+      )}
+        </>
       )}
     </div>
   );
