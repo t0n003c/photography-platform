@@ -63,8 +63,8 @@ Boundaries that matter:
 - **Cloudflare → cloudflared → NPM**: the *only* ingress path. Everything behind NPM must assume
   requests can be hostile despite passing the edge.
 - **App ↔ Postgres/Redis**: internal Docker network only; never published to the host/LAN.
-- **App/Worker ↔ Storage**: filesystem (default) or MinIO; never served directly by a web server
-  from a public path.
+- **App/Worker ↔ Storage**: SeaweedFS/S3-compatible storage by default, with a filesystem
+  alternate; never served directly by a web server from a public path.
 
 ### 1.4 What Cloudflare Tunnel + NPM DO protect
 
@@ -388,7 +388,7 @@ is a clean derivative, not the attacker's bytes.
   repo, or client bundles. Audit that `NEXT_PUBLIC_*` vars never carry secrets.
 - **Secrets inventory**: DB URL/password, Redis password, Better Auth secret, TOTP/encryption key,
   Cloudflare Tunnel token, SMTP/Resend creds, payment provider keys + webhook signing secret,
-  storage/MinIO creds.
+  storage/S3 creds.
 - **Rotation**: document rotation procedure per secret (auth secret rotation invalidates sessions;
   TOTP encryption key rotation requires re-encrypt; provider keys rotated at the provider then
   redeployed). Keep a rotation log; rotate on suspected compromise or staff offboarding.

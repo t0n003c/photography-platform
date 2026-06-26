@@ -124,8 +124,8 @@ photography-platform/
   once prevents producer/consumer drift.
 
 - **Drivers** (`src/storage/drivers`, `src/email/drivers`, `src/payments/drivers`) sit
-  behind their respective `provider.ts` interfaces. **MinIO (S3) is the default storage
-  driver**; switching to the filesystem alternate, or SMTP→Resend, is a config/driver swap
+  behind their respective `provider.ts` interfaces. **SeaweedFS through the S3-compatible
+  driver is the default storage path**; switching to the filesystem alternate, or SMTP→Resend, is a config/driver swap
   with no call-site changes. The payments driver is a **stub**: the interface and seams
   exist, the implementation does not.
 

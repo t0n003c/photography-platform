@@ -77,8 +77,8 @@ erDiagram
 - **Enums:** implemented as Postgres `text` columns with Drizzle-level enum + `CHECK`
   constraints (avoids painful native-enum migrations).
 - **JSON:** `jsonb` for structured config (page configs, EXIF subset, metadata).
-- **Storage keys:** opaque strings resolved by the `StorageProvider` (filesystem default,
-  MinIO drop-in). The DB never stores absolute filesystem paths or signed URLs — only keys.
+- **Storage keys:** opaque strings resolved by the `StorageProvider` (SeaweedFS/S3-compatible
+  default, filesystem alternate). The DB never stores absolute filesystem paths or signed URLs — only keys.
 
 ---
 

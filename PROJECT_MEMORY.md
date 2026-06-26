@@ -673,6 +673,10 @@ is gitignored):
   Follow-up: desktop Scatter 18-photo mode was enlarged once more (`min(14vw, 10.5rem)`) and
   its 18-only horizontal/vertical gaps were tightened slightly to keep the selected 18 photos
   bigger while preserving the 6-column no-clipping target.
+  Public-repo prep: `.env.example` now matches the documented local Docker target
+  (`localhost:3001`), while CI explicitly rewrites the copied env back to `localhost:3000`
+  for GitHub Actions. Current-state docs were also cleaned up to describe SeaweedFS/S3 as
+  the default storage path instead of stale MinIO wording.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
   drift (`±18%` instead of desktop `±3%`) plus a larger mobile image scale (`1.22` instead of
   `1.08`) so the intro photo movement is more visible on small screens without changing desktop.

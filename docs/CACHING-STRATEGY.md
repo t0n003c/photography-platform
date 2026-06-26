@@ -91,7 +91,7 @@ a shared key without scoping to the authorized principal.
 
 **Model:** originals are uploaded and **preserved** as-is; the **BullMQ + sharp worker** generates
 derivatives (thumbnails, responsive sizes, web formats) **once**, then stores them via the
-StorageProvider (filesystem default / MinIO drop-in).
+StorageProvider (SeaweedFS/S3-compatible default / filesystem alternate).
 
 **Originals vs variants:**
 - **Originals**: stored, never served raw, never publicly cached; access-controlled (may retain

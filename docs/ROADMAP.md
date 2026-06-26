@@ -12,7 +12,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Lock the stack: Next.js 15 App Router + TS, PostgreSQL 16, Drizzle, Better Auth (password + TOTP + passkeys, rate-limit, lockout, sessions), Redis/Valkey, BullMQ worker, sharp pipeline.
 - [x] Decide topology: single Next.js app (public + admin + API) + separate worker process, same codebase.
 - [x] Decide deployment target: NAS (Synology/Unraid) under Docker; NPM + Cloudflare Tunnel external; no public inbound ports.
-- [x] Define provider abstractions: `StorageProvider` (**MinIO/S3 default**, filesystem alternate driver), `EmailProvider` (SMTP/Resend), `PaymentProvider` (stub, deferred).
+- [x] Define provider abstractions: `StorageProvider` (**SeaweedFS/S3 default**, filesystem alternate driver), `EmailProvider` (SMTP/Resend), `PaymentProvider` (stub, deferred).
 - [x] Author `DEPLOYMENT.md` (topology, compose plan, volumes, env, networking, backups, upgrade, run-book).
 - [x] Author this `ROADMAP.md` (phased plan).
 - [x] Cross-reference companion docs: `MEDIA-ARCHITECTURE.md`, `SECURITY.md`, `CACHING-STRATEGY.md` (authored alongside Phase 0).
@@ -47,7 +47,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Implement account lockout + rate-limiting (Better Auth Redis rate-limit + custom login/2FA/reset rules; app-level Redis limiter for uploads/contact/downloads/unlock).
 - [~] Secure sessions (Redis), CSRF (Better Auth + SameSite), security headers, CSP. _CSP ships **Report-Only** first per SECURITY.md §5.2; flip to enforce after the Phase 3/4 UI lands._
 - [x] Build the media pipeline: chunked upload → BullMQ → sharp derivatives (AVIF/WebP/JPEG × thumb–xlarge) + LQIP + dominant color → StorageProvider → DB. Idempotent; verified end-to-end.
-- [x] `StorageProvider` (MinIO/S3 default) with originals/derivatives separation + authorized media-serving route.
+- [x] `StorageProvider` (SeaweedFS/S3 default) with originals/derivatives separation + authorized media-serving route.
 - [x] Build core REST API (public portfolio, client-gallery share-token tier, admin CRUD, contact, store stub) per `API-DESIGN.md`.
 - [x] Implement audit logging for sensitive/admin actions.
 - [x] **Summary + pause for approval.**
@@ -123,7 +123,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Finalize the Compose stack for the NAS (`compose.prod.yaml`: resource limits, log rotation, `tunnel` profile; healthchecks in base).
 - [x] Document the NPM proxy host + Cloudflare Tunnel ingress path (egress-only, no inbound ports; optional in-compose `cloudflared`).
 - [x] Finalize volumes and backups (`scripts/backup.sh` pg_dump + media volume tar + retention; `scripts/restore.sh`; offsite R2/rclone note).
-- [x] Finalize the operational run-book (start/stop, logs, health, psql, MinIO console, triage) in `DEPLOYMENT.md`.
+- [x] Finalize the operational run-book (start/stop, logs, health, psql, SeaweedFS storage triage) in `DEPLOYMENT.md`.
 - [x] Document the upgrade + rollback procedure (worker auto-migrates; forward-only migration caution + pg-backup restore fallback).
 - [x] **Summary + pause for approval.**
 

@@ -26,7 +26,7 @@ flowchart TD
             Worker[worker<br/>BullMQ + sharp<br/>runs DB migrations on boot]
             DB[(db<br/>Postgres 16)]
             Redis[(redis<br/>Redis 7 appendonly)]
-            MinIO[(seaweedfs<br/>SeaweedFS S3 object store<br/>originals + derivatives)]
+            ObjectStore[(seaweedfs<br/>SeaweedFS S3 object store<br/>originals + derivatives)]
         end
     end
 
@@ -36,10 +36,10 @@ flowchart TD
 
     Web --> DB
     Web --> Redis
-    Web --> MinIO
+    Web --> ObjectStore
     Worker --> DB
     Worker --> Redis
-    Worker --> MinIO
+    Worker --> ObjectStore
     Web -->|enqueue jobs| Redis
     Worker -->|consume jobs| Redis
 ```

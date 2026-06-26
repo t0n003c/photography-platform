@@ -37,7 +37,7 @@ jobs:
         run: npm run build
 
   # ────────────────────────────────────────────────────────────────────────
-  # Lighthouse budgets against the full Docker stack (DB + Redis + MinIO +
+  # Lighthouse budgets against the full Docker stack (DB + Redis + SeaweedFS +
   # web + worker). Aspirational for now — does not fail the pipeline.
   # ────────────────────────────────────────────────────────────────────────
   lighthouse:
@@ -65,8 +65,11 @@ jobs:
           SECRET="$(openssl rand -base64 48)"
           # Replace the BETTER_AUTH_SECRET line, keep everything else intact.
           sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${SECRET}|" .env
-          # WEB_PORT=3000 is already the template default; ensure it stays so.
-          grep -q '^WEB_PORT=3000$' .env || echo 'WEB_PORT=3000' >> .env
+          # CI serves the Docker stack on :3000; local dev uses :3001.
+          sed -i "s|^WEB_PORT=.*|WEB_PORT=3000|" .env
+          sed -i "s|^APP_BASE_URL=.*|APP_BASE_URL=http://localhost:3000|" .env
+          sed -i "s|^NEXT_PUBLIC_APP_URL=.*|NEXT_PUBLIC_APP_URL=http://localhost:3000|" .env
+          sed -i "s|^BETTER_AUTH_URL=.*|BETTER_AUTH_URL=http://localhost:3000|" .env
 
       - name: Bring up stack
         run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
@@ -134,7 +137,10 @@ jobs:
           cp .env.example .env
           SECRET="$(openssl rand -base64 48)"
           sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${SECRET}|" .env
-          grep -q '^WEB_PORT=3000$' .env || echo 'WEB_PORT=3000' >> .env
+          sed -i "s|^WEB_PORT=.*|WEB_PORT=3000|" .env
+          sed -i "s|^APP_BASE_URL=.*|APP_BASE_URL=http://localhost:3000|" .env
+          sed -i "s|^NEXT_PUBLIC_APP_URL=.*|NEXT_PUBLIC_APP_URL=http://localhost:3000|" .env
+          sed -i "s|^BETTER_AUTH_URL=.*|BETTER_AUTH_URL=http://localhost:3000|" .env
 
       - name: Bring up stack
         run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
