@@ -47,6 +47,13 @@ interface FolderDragPayload {
   folderId: string;
 }
 
+type FolderDropIntent = "inside" | "before" | "after";
+
+interface FolderDropTarget {
+  id: string;
+  intent: FolderDropIntent;
+}
+
 function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
@@ -675,7 +682,7 @@ function TreeRow({
   selectedId,
   expanded,
   dragFolderId,
-  dropFolderId,
+  dropTarget,
   onToggleExpand,
   onSelect,
   onNewSub,
@@ -693,7 +700,7 @@ function TreeRow({
   selectedId: string | null;
   expanded: Set<string>;
   dragFolderId: string | null;
-  dropFolderId: string | null;
+  dropTarget: FolderDropTarget | null;
   onToggleExpand: (id: string) => void;
   onSelect: (node: TreeNode) => void;
   onNewSub: (node: TreeNode) => void;
@@ -701,8 +708,12 @@ function TreeRow({
   onMove: (node: TreeNode) => void;
   onDelete: (node: TreeNode) => void;
   onDragStartFolder: (node: TreeNode) => void;
-  onDragEnterFolder: (node: TreeNode) => void;
-  onDropFolder: (draggedId: string, target: TreeNode) => void;
+  onDragEnterFolder: (node: TreeNode, intent: FolderDropIntent) => void;
+  onDropFolder: (
+    draggedId: string,
+    target: TreeNode,
+    intent: FolderDropIntent,
+  ) => void;
   onDropPhotos: (folder: Folder, photoIds: string[]) => void;
   onDragLeaveFolder: () => void;
   onDragEndFolder: () => void;
@@ -710,7 +721,15 @@ function TreeRow({
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
   const isSelected = selectedId === node.id;
-  const isDropTarget = dropFolderId === node.id;
+  const dropIntent = dropTarget?.id === node.id ? dropTarget.intent : null;
+
+  const folderDropIntent = (e: React.DragEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = (e.clientY - rect.top) / rect.height;
+    if (y < 0.25) return "before";
+    if (y > 0.75) return "after";
+    return "inside";
+  };
 
   return (
     <li>
@@ -739,6 +758,9 @@ function TreeRow({
             )
               ? "copy"
               : "move";
+            if (e.dataTransfer.types.includes("application/x-folder")) {
+              onDragEnterFolder(node, folderDropIntent(e));
+            }
           }
         }}
         onDragEnter={(e) => {
@@ -747,7 +769,7 @@ function TreeRow({
             e.dataTransfer.types.includes("application/x-photo-ids")
           ) {
             e.preventDefault();
-            onDragEnterFolder(node);
+            onDragEnterFolder(node, folderDropIntent(e));
           }
         }}
         onDragLeave={onDragLeaveFolder}
@@ -765,18 +787,20 @@ function TreeRow({
             e.preventDefault();
             onDragLeaveFolder();
             const payload = JSON.parse(folderRaw) as FolderDragPayload;
-            onDropFolder(payload.folderId, node);
+            onDropFolder(payload.folderId, node, folderDropIntent(e));
             onDragEndFolder();
           }
         }}
         onDragEnd={onDragEndFolder}
         className={
           "group flex items-center gap-1 rounded-md pr-1 " +
-          (isDropTarget
+          (dropIntent === "inside"
             ? "bg-[hsl(var(--primary))]/10 ring-1 ring-[hsl(var(--ring))]"
             : isSelected
               ? "bg-[hsl(var(--muted))]"
               : "hover:bg-[hsl(var(--muted))]") +
+          (dropIntent === "before" ? " border-t-2 border-[hsl(var(--ring))]" : "") +
+          (dropIntent === "after" ? " border-b-2 border-[hsl(var(--ring))]" : "") +
           (dragFolderId === node.id ? " opacity-50" : "")
         }
         style={{ paddingLeft: `${node.depth * 16}px` }}
@@ -861,7 +885,7 @@ function TreeRow({
               selectedId={selectedId}
               expanded={expanded}
               dragFolderId={dragFolderId}
-              dropFolderId={dropFolderId}
+              dropTarget={dropTarget}
               onToggleExpand={onToggleExpand}
               onSelect={onSelect}
               onNewSub={onNewSub}
@@ -1150,7 +1174,7 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [modal, setModal] = useState<ModalState>(null);
   const [dragFolderId, setDragFolderId] = useState<string | null>(null);
-  const [dropFolderId, setDropFolderId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<FolderDropTarget | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -1250,13 +1274,17 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  const reorderFolder = async (draggedId: string, target: Folder) => {
+  const dropFolderOnFolder = async (
+    draggedId: string,
+    target: Folder,
+    intent: FolderDropIntent,
+  ) => {
     if (draggedId === target.id) return;
     const dragged = folders.find((f) => f.id === draggedId);
     if (!dragged) return;
 
     const descendants = collectDescendantIds(folders, draggedId);
-    const nextParentId = target.parentId;
+    const nextParentId = intent === "inside" ? target.id : target.parentId;
     if (nextParentId && descendants.has(nextParentId)) {
       toast("Cannot move a folder into its own subfolder.", "error");
       return;
@@ -1265,11 +1293,18 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
     const siblings = folders
       .filter((f) => f.parentId === nextParentId && f.id !== draggedId)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
-    const targetIndex = siblings.findIndex((f) => f.id === target.id);
-    if (targetIndex < 0) return;
-
     const ordered = [...siblings];
-    ordered.splice(targetIndex, 0, { ...dragged, parentId: nextParentId });
+    if (intent === "inside") {
+      ordered.push({ ...dragged, parentId: nextParentId });
+    } else {
+      const targetIndex = siblings.findIndex((f) => f.id === target.id);
+      if (targetIndex < 0) return;
+      ordered.splice(
+        intent === "before" ? targetIndex : targetIndex + 1,
+        0,
+        { ...dragged, parentId: nextParentId },
+      );
+    }
     const orderById = new Map(
       ordered.map((f, index) => [f.id, { parentId: nextParentId, sortOrder: index }]),
     );
@@ -1290,8 +1325,11 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
           }),
         ),
       );
+      if (intent === "inside") {
+        setExpanded((prev) => new Set(prev).add(target.id));
+      }
       await load();
-      toast("Folder reordered", "success");
+      toast(intent === "inside" ? "Folder moved into subfolder" : "Folder reordered", "success");
     } catch (err) {
       toast(errMsg(err), "error");
       await load();
@@ -1342,7 +1380,7 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
                     selectedId={selectedId}
                     expanded={expanded}
                     dragFolderId={dragFolderId}
-                    dropFolderId={dropFolderId}
+                    dropTarget={dropTarget}
                     onToggleExpand={toggleExpand}
                     onSelect={(n) => setSelectedId(n.id)}
                     onNewSub={(n) => setModal({ kind: "new-sub", folder: n })}
@@ -1350,13 +1388,17 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
                     onMove={(n) => setModal({ kind: "move", folder: n })}
                     onDelete={(n) => void deleteFolder(n)}
                     onDragStartFolder={(n) => setDragFolderId(n.id)}
-                    onDragEnterFolder={(n) => setDropFolderId(n.id)}
-                    onDropFolder={(id, n) => void reorderFolder(id, n)}
+                    onDragEnterFolder={(n, intent) =>
+                      setDropTarget({ id: n.id, intent })
+                    }
+                    onDropFolder={(id, n, intent) =>
+                      void dropFolderOnFolder(id, n, intent)
+                    }
                     onDropPhotos={(n, ids) => void dropPhotosOnFolder(n, ids)}
-                    onDragLeaveFolder={() => setDropFolderId(null)}
+                    onDragLeaveFolder={() => setDropTarget(null)}
                     onDragEndFolder={() => {
                       setDragFolderId(null);
-                      setDropFolderId(null);
+                      setDropTarget(null);
                     }}
                   />
                 ))}
