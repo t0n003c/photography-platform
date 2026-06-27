@@ -172,12 +172,14 @@ export function ColumnScroll({
 
         if (maxTravel > 0) {
           let touchY: number | null = null;
-          const deltaScale = Math.max(visibleHeight * 1.2, maxTravel * 1.6);
+          const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+          const wheelDeltaScale = Math.max(visibleHeight * 1.2, maxTravel * 1.6);
+          const touchDeltaScale = Math.max(visibleHeight * 0.55, maxTravel * 0.72);
           const onWheel = (event: WheelEvent) => {
             if (st.open) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            applyProgress(st.scrollProgress + event.deltaY / deltaScale);
+            applyProgress(st.scrollProgress + event.deltaY / wheelDeltaScale);
           };
           const onTouchStart = (event: TouchEvent) => {
             touchY = event.touches[0]?.clientY ?? null;
@@ -187,7 +189,11 @@ export function ColumnScroll({
             const nextY = event.touches[0]?.clientY ?? touchY;
             event.preventDefault();
             event.stopImmediatePropagation();
-            applyProgress(st.scrollProgress + (touchY - nextY) / deltaScale);
+            applyProgress(
+              st.scrollProgress +
+                (touchY - nextY) /
+                  (coarsePointer ? touchDeltaScale : wheelDeltaScale),
+            );
             touchY = nextY;
           };
           root.addEventListener("wheel", onWheel, { passive: false });

@@ -722,6 +722,8 @@ is gitignored):
   Follow-up: Gallery image-trail layout no longer renders a normal photo grid below the trail
   stage; mobile uses a fixed, touch-action-none stage so touch movement drives the trail instead
   of scrolling the page, with only an in-stage fallback before enhancement/reduced motion.
+  Follow-up: Gallery Alternative scroll keeps desktop wheel speed unchanged but uses a smaller
+  touch delta scale on coarse-pointer devices, making the column motion faster on mobile swipes.
   Follow-up: the Folders tree drag/drop now supports dragging a folder onto the middle of
   another folder row to make it a subfolder; top/bottom row edges still reorder beside the target.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display
