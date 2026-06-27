@@ -726,6 +726,8 @@ is gitignored):
   touch delta scale on coarse-pointer devices, making the column motion faster on mobile swipes.
   Follow-up: Gallery Parallax 3D ring now uses a tighter mobile radius so image gutters read
   closer to desktop spacing, and mobile swipes rotate the ring faster with horizontal gesture control.
+  Follow-up: Pages Scroll Showcase cinematic wipe keeps desktop scroll timing unchanged but uses
+  a shorter mobile ScrollTrigger distance and less scrub smoothing so phone swipes advance faster.
   Follow-up: the Folders tree drag/drop now supports dragging a folder onto the middle of
   another folder row to make it a subfolder; top/bottom row edges still reorder beside the target.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display

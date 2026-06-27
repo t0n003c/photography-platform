@@ -86,6 +86,9 @@ export function ScrollShowcaseClient({
       const panelEls = gsap.utils.toArray<HTMLElement>("[data-ss-panel]");
       const n = panelEls.length;
       if (n === 0) return;
+      const isMobile = window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+      const scrollDistancePerPanel = isMobile ? 72 : 120;
+      const scrubSmoothing = isMobile ? 0.35 : 0.8;
 
       // Stack panels on top of each other; later panels sit above earlier ones so
       // they wipe over them.
@@ -106,9 +109,9 @@ export function ScrollShowcaseClient({
         scrollTrigger: {
           trigger: stage,
           start: "top top",
-          end: "+=" + n * 120 + "%",
+          end: "+=" + n * scrollDistancePerPanel + "%",
           pin: stage,
-          scrub: 0.8,
+          scrub: scrubSmoothing,
         },
       });
 
