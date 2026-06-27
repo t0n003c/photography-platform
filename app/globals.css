@@ -268,7 +268,7 @@ html.js .pr-root.is-enhanced {
   min-height: 100%;
 }
 .sp-root[data-sp-variant="demo4"] .sp-columns {
-  transform: translate(21vw, -42vh) rotate(-45deg) scale(1);
+  transform: translate(25vw, -42vh) rotate(-45deg) scale(1);
   transform-origin: 50% 50%;
   gap: clamp(1.1rem, 2vw, 2.5rem);
 }
@@ -291,7 +291,7 @@ html.js .pr-root.is-enhanced {
 
 @media (min-width: 769px) {
   .sp-root.is-enhanced[data-sp-variant="demo4"] .sp-columns {
-    transform: translate(21vw, -42vh) rotate(-45deg) scale(1);
+    transform: translate(25vw, -42vh) rotate(-45deg) scale(1);
   }
 }
 
@@ -560,7 +560,7 @@ html.js .pr-root.is-enhanced {
     width: auto;
   }
   .sp-root[data-sp-variant="demo4"] .sp-columns {
-    transform: rotate(-35deg) scale(1.12);
+    transform: translateX(8vw) rotate(-35deg) scale(1.12);
     gap: 1rem;
   }
   .sp-root[data-sp-variant="demo4"] .sp-column-wrap,

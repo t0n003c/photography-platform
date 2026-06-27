@@ -747,6 +747,10 @@ is gitignored):
   Scroll Panels Scatter mobile follow-up: phone widths now explicitly keep the scatter intro grid
   at 3 columns instead of inheriting the generic 2-column phone rule, and the scatter-out photo
   motion starts just earlier in the mobile scroll window (`top 104%` to `top 46%`).
+  Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
+  (`translateX` from `21vw` to `25vw`) and mobile (new `translateX(8vw)` before rotate/scale);
+  mobile angled-row drift now uses a faster `-62%` step so the intro photo motion advances more
+  noticeably per scroll.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
