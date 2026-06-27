@@ -748,9 +748,11 @@ is gitignored):
   at 3 columns instead of inheriting the generic 2-column phone rule, and the scatter-out photo
   motion starts just earlier in the mobile scroll window (`top 104%` to `top 46%`).
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
-  (`translateX` from `21vw` to `25vw`, then to `38vw`) and mobile (`translateX(8vw)`, then
-  `18vw`, before rotate/scale); mobile angled-row drift now uses a faster `-62%` step so the
-  intro photo motion advances more noticeably per scroll.
+  (`translateX` from `21vw` to `25vw`, then to `38vw`, then to `56vw`) and mobile
+  (`translateX(8vw)`, then `18vw`, then `translate(34vw, -15vh)`, before rotate/scale);
+  the latest desktop correction also moves the grid up to `-76vh` so the diagonal band fills the
+  top-right area while giving the bottom-left edge breathing room. Mobile angled-row drift now uses
+  a faster `-62%` step so the intro photo motion advances more noticeably per scroll.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the
