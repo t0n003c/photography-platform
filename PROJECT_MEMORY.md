@@ -751,8 +751,9 @@ is gitignored):
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);
   the latest desktop correction moves the grid up to `-70vh` so the diagonal band fills the
-  top-right area while keeping the bottom-left and top-right empty spaces closer. Mobile angled-row drift now uses
-  a faster `-62%` step so the intro photo motion advances more noticeably per scroll.
+  top-right area while keeping the bottom-left and top-right empty spaces closer. Mobile Angled Rows
+  now keeps 3 visible columns even below 480px and uses a faster `-92%` column-drift step across
+  the same scroll duration, so the columns travel farther without shortening the section.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the

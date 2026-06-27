@@ -266,7 +266,7 @@ export function ScrollPanelsClient({
         // visually lower band moves least, the middle faster, and the upper
         // band fastest once the section is rotated.
         demo4: (i) => {
-          const step = isMobile ? -62 : -15;
+          const step = isMobile ? -92 : -15;
           return i * step + step;
         },
         perspective: (i) => (i % 2 ? 8 : -8),
