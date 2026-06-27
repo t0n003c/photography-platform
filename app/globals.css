@@ -389,6 +389,16 @@ html.js .pr-root.is-enhanced {
     width: min(9vw, 7.75rem);
   }
 
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column-wrap {
+    flex: 0 0 min(16vw, 14rem);
+    width: min(16vw, 14rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-columns {
+    gap: clamp(0.25rem, 0.5vw, 0.5rem);
+    width: min(99vw, 84rem);
+  }
+
   .sp-root[data-sp-variant="scatter"] .sp-columns {
     gap: clamp(0.75rem, 1.6vw, 1.6rem);
   }

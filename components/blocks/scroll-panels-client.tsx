@@ -175,7 +175,7 @@ export function ScrollPanelsClient({
         filter: tone === "grayscale" ? "grayscale(100%)" : "grayscale(0%)",
       });
       if (variant === "perspective") {
-        const perspectiveSpread = isMobile ? 1000 : 150;
+        const perspectiveSpread = isMobile ? 1000 : 125;
         gsap.set(items, {
           rotationX: () => gsap.utils.random(isMobile ? 36 : 14, isMobile ? 56 : 24),
           rotationY: () => gsap.utils.random(isMobile ? -16 : -4, isMobile ? 16 : 4),

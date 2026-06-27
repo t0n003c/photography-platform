@@ -753,10 +753,13 @@ is gitignored):
   noticeably per scroll.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
-  (`150` instead of `340`) so high intro counts no longer push the lower rows half outside the
+  (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the
   clipped viewport. Follow-up: Perspective Blur now uses 6 real intro columns on desktop when
   the selected intro photo count is 18, while mobile keeps the existing 4-column distribution.
-  Mobile perspective sizing/spread remains unchanged.
+  Follow-up: desktop 18-photo Perspective Blur cards were enlarged with a count-specific
+  `min(16vw, 14rem)` fixed flex basis, tighter 18-only gutters, and a wider `min(99vw, 84rem)`
+  row so the six desktop columns do not shrink back down. Mobile perspective sizing/spread remains
+  unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
