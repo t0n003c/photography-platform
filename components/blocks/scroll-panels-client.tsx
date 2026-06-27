@@ -49,8 +49,23 @@ function uniquePhotos(panels: ShowcasePanel[]): PhotoDTO[] {
   return photos;
 }
 
-function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number) {
-  if (variant === "perspective") return 4;
+function subscribeDesktopViewport(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const media = window.matchMedia("(min-width: 769px)");
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
+}
+
+function getDesktopViewportSnapshot() {
+  return typeof window !== "undefined" && window.matchMedia("(min-width: 769px)").matches;
+}
+
+function getServerDesktopViewportSnapshot() {
+  return false;
+}
+
+function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number, isDesktopViewport: boolean) {
+  if (variant === "perspective") return isDesktopViewport && introCount >= 18 ? 6 : 4;
   if (variant !== "scatter") return 3;
   if (introCount >= 18) return 6;
   if (introCount >= 15) return 5;
@@ -121,7 +136,12 @@ export function ScrollPanelsClient({
     () => uniquePhotos(panels).slice(0, introCount),
     [introCount, panels],
   );
-  const columnCount = getIntroColumnCount(variant, panelPhotos.length);
+  const isDesktopViewport = React.useSyncExternalStore(
+    subscribeDesktopViewport,
+    getDesktopViewportSnapshot,
+    getServerDesktopViewportSnapshot,
+  );
+  const columnCount = getIntroColumnCount(variant, panelPhotos.length, isDesktopViewport);
   const columns = React.useMemo(
     () => distribute(panelPhotos, columnCount),
     [columnCount, panelPhotos],
@@ -339,7 +359,7 @@ export function ScrollPanelsClient({
       ctx.revert();
       root.classList.remove("is-enhanced");
     };
-  }, [panels, tone, variant]);
+  }, [columnCount, panels, tone, variant]);
 
   return (
     <section
