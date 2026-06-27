@@ -15,6 +15,7 @@ const IMAGE_UNDERLAP_PX = 72;
 const PARALLAX_REVEAL_PX = 24;
 const MASK_REVEAL_PX = GUTTER_MASK_PX;
 const PARALLAX_DRAG_FACTOR = 0.9;
+const MOBILE_DRAG_MULTIPLIER = 1.8;
 
 interface RingItem {
   photo: PhotoDTO;
@@ -145,8 +146,12 @@ export function ParallaxRing({
       return;
 
     const step = 360 / cards.length;
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const baseRadius = Math.min(Math.max(root.clientWidth * 0.31, 360), 620);
-    const radius = baseRadius;
+    const radius = coarsePointer
+      ? Math.min(Math.max(root.clientWidth * 0.48, 220), 360)
+      : baseRadius;
+    const dragMultiplier = coarsePointer ? MOBILE_DRAG_MULTIPLIER : 1;
     rotation.current = 0;
     parallaxOffset.current = 0;
     virtualStepRef.current = 0;
@@ -259,8 +264,9 @@ export function ParallaxRing({
     const drag = (clientX: number) => {
       const dx = Math.round(clientX) - dragStart.current;
       const totalDx = Math.round(clientX) - dragOrigin.current;
+      const weightedDx = dx * dragMultiplier;
       moved.current += Math.abs(dx);
-      rotation.current -= dx % 360;
+      rotation.current -= weightedDx % 360;
       parallaxOffset.current = gsap.utils.clamp(
         -PARALLAX_REVEAL_PX,
         PARALLAX_REVEAL_PX,
@@ -339,7 +345,7 @@ export function ParallaxRing({
       <StaticFallback photos={fallbackPhotos} onOpen={onOpen} className="pr-fallback" />
       <section
         ref={rootRef}
-        className={`pr-root relative h-[100svh] min-h-[620px] w-full overflow-hidden bg-black text-white [transform-style:preserve-3d] [user-select:none] ${enhanced ? "is-enhanced" : ""}`}
+        className={`pr-root relative h-[100svh] min-h-[620px] w-full touch-pan-y overflow-hidden bg-black text-white [transform-style:preserve-3d] [user-select:none] ${enhanced ? "is-enhanced" : ""}`}
       >
         <div className="pointer-events-none absolute left-5 top-5 z-10 max-w-[min(28rem,calc(100vw-2.5rem))] sm:left-8 sm:top-8">
           {title && (

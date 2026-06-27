@@ -724,6 +724,8 @@ is gitignored):
   of scrolling the page, with only an in-stage fallback before enhancement/reduced motion.
   Follow-up: Gallery Alternative scroll keeps desktop wheel speed unchanged but uses a smaller
   touch delta scale on coarse-pointer devices, making the column motion faster on mobile swipes.
+  Follow-up: Gallery Parallax 3D ring now uses a tighter mobile radius so image gutters read
+  closer to desktop spacing, and mobile swipes rotate the ring faster with horizontal gesture control.
   Follow-up: the Folders tree drag/drop now supports dragging a folder onto the middle of
   another folder row to make it a subfolder; top/bottom row edges still reorder beside the target.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display
