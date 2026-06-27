@@ -717,6 +717,8 @@ is gitignored):
   Follow-up: mobile Library now uses an explicit Select/Done flow instead of long-press to
   enter multi-select, and the selected-photo bar is compacted to Folder/More/Done so secondary
   actions live in a modal instead of crowding the phone screen.
+  Follow-up: Gallery edit sections are now collapsible too: Settings, Layout, Photos,
+  Share links, and Slideshow video all keep header actions visible while their bodies collapse.
   Follow-up: the Folders tree drag/drop now supports dragging a folder onto the middle of
   another folder row to make it a subfolder; top/bottom row edges still reorder beside the target.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display

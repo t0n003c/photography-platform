@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -8,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   Check,
+  ChevronDown,
   Copy,
   Download,
   Eye,
@@ -96,6 +98,43 @@ function localInputToIso(value: string): string | null {
   return d.toISOString();
 }
 
+function CollapsibleCard({
+  title,
+  actions,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  actions?: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 items-center gap-2 text-left"
+        >
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 transition-transform ${
+              open ? "" : "-rotate-90"
+            }`}
+            aria-hidden="true"
+          />
+          <CardTitle>{title}</CardTitle>
+        </button>
+        {actions}
+      </CardHeader>
+      {open && <CardContent>{children}</CardContent>}
+    </Card>
+  );
+}
+
 // ── Settings card ────────────────────────────────────────────────────────────
 
 function SettingsCard({
@@ -149,10 +188,10 @@ function SettingsCard({
     status === "published" && visibility === "public" && gallery.slug;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>Settings</CardTitle>
-        {showPublicLink && (
+    <CollapsibleCard
+      title="Settings"
+      actions={
+        showPublicLink ? (
           <Link
             href={`/galleries/${gallery.slug}`}
             target="_blank"
@@ -160,9 +199,10 @@ function SettingsCard({
           >
             View public page
           </Link>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
+        ) : null
+      }
+    >
+      <div className="space-y-4">
         <Field label="Title" htmlFor="g-title">
           <Input
             id="g-title"
@@ -231,8 +271,8 @@ function SettingsCard({
             Save
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }
 
@@ -323,9 +363,9 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>Photos</CardTitle>
+    <CollapsibleCard
+      title="Photos"
+      actions={
         <div className="flex items-center gap-2">
           <span className="text-sm text-[hsl(var(--muted-foreground))]">
             {selected.length} selected
@@ -335,8 +375,8 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
             Save photos
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
+      }
+    >
         {loading ? (
           <div className="flex justify-center py-10">
             <Spinner className="h-6 w-6" />
@@ -493,8 +533,7 @@ function PhotosCard({ galleryId }: { galleryId: string }) {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }
 
@@ -743,15 +782,16 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>Share links</CardTitle>
+    <>
+      <CollapsibleCard
+        title="Share links"
+        actions={
         <Button size="sm" onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4" />
           Create link
         </Button>
-      </CardHeader>
-      <CardContent>
+        }
+      >
         {loading ? (
           <div className="flex justify-center py-10">
             <Spinner className="h-6 w-6" />
@@ -828,7 +868,7 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
             })}
           </ul>
         )}
-      </CardContent>
+      </CollapsibleCard>
 
       {showCreate && (
         <CreateGrantModal
@@ -855,7 +895,7 @@ function GrantsCard({ galleryId }: { galleryId: string }) {
           </div>
         </Modal>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -1000,11 +1040,7 @@ function LayoutCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Layout</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CollapsibleCard title="Layout">
         {loading ? (
           <div className="flex justify-center py-6">
             <Spinner className="h-5 w-5" />
@@ -1167,8 +1203,7 @@ function LayoutCard({
             />
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }
 
