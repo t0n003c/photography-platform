@@ -744,6 +744,9 @@ is gitignored):
   ring sweep, while mobile/coarse-pointer viewports now use a symmetric ±180° sweep so each scene
   completes one full ring rotation as it scrolls through the viewport and still lands front-facing
   at the centered handoff point.
+  Scroll Panels Scatter mobile follow-up: phone widths now explicitly keep the scatter intro grid
+  at 3 columns instead of inheriting the generic 2-column phone rule, and the scatter-out photo
+  motion starts just earlier in the mobile scroll window (`top 104%` to `top 46%`).
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

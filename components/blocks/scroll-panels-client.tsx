@@ -297,8 +297,8 @@ export function ScrollPanelsClient({
           ease: "power2.out",
           scrollTrigger: {
             trigger: showcase,
-            start: isMobile ? "top 98%" : "top 78%",
-            end: isMobile ? "top 42%" : "top 22%",
+            start: isMobile ? "top 104%" : "top 78%",
+            end: isMobile ? "top 46%" : "top 22%",
             scrub: true,
           },
         });

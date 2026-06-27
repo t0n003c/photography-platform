@@ -636,6 +636,9 @@ html.js .pr-root.is-enhanced {
   .sp-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .sp-root[data-sp-variant="scatter"] .sp-columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .sp-root[data-sp-variant="perspective"] .sp-columns {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
