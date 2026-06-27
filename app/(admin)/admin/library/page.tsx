@@ -91,6 +91,7 @@ function PhotoTile({
   selected,
   multiSelect,
   dragEnabled,
+  longPressEnabled,
   onOpen,
   onSelect,
   onLongPress,
@@ -101,6 +102,7 @@ function PhotoTile({
   selected: boolean;
   multiSelect: boolean;
   dragEnabled: boolean;
+  longPressEnabled: boolean;
   onOpen: () => void;
   onSelect: (shiftKey: boolean) => void;
   onLongPress: () => void;
@@ -124,6 +126,7 @@ function PhotoTile({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onPointerDown={(e) => {
+        if (!longPressEnabled) return;
         if (e.button !== 0) return;
         longPressed.current = false;
         clearLongPress();
@@ -650,6 +653,86 @@ function FolderAssignModal({
   );
 }
 
+function MobilePhotoActionsModal({
+  onClose,
+  onAddCategory,
+  onAddLocation,
+  onRemoveCategory,
+  onRemoveLocation,
+  onReprocess,
+  onDelete,
+  disabled,
+}: {
+  onClose: () => void;
+  onAddCategory: () => void;
+  onAddLocation: () => void;
+  onRemoveCategory: () => void;
+  onRemoveLocation: () => void;
+  onReprocess: () => void;
+  onDelete: () => void;
+  disabled: boolean;
+}) {
+  const run = (fn: () => void) => {
+    onClose();
+    fn();
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Photo actions">
+      <div className="grid gap-2">
+        <Button
+          variant="outline"
+          onClick={() => run(onAddCategory)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Add to category...
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => run(onAddLocation)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Add to location...
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => run(onRemoveCategory)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Remove from category...
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => run(onRemoveLocation)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Remove from location...
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => run(onReprocess)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Reprocess
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={() => run(onDelete)}
+          disabled={disabled}
+          className="justify-start"
+        >
+          Delete
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function LibraryPage() {
   const { toast } = useToast();
   const [view, setView] = useState<"photos" | "folders">("photos");
@@ -664,6 +747,7 @@ export default function LibraryPage() {
   const [assignKind, setAssignKind] = useState<AssignKind>(null);
   const [assignMode, setAssignMode] = useState<"add" | "remove">("add");
   const [folderAssignOpen, setFolderAssignOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [acting, setActing] = useState(false);
   const [foldersOpen, setFoldersOpen] = useState(false);
   const [dragEnabled, setDragEnabled] = useState(false);
@@ -805,6 +889,11 @@ export default function LibraryPage() {
     }
   };
 
+  const openAssign = (mode: "add" | "remove", kind: Exclude<AssignKind, null>) => {
+    setAssignMode(mode);
+    setAssignKind(kind);
+  };
+
   const reprocessSelected = async () => {
     setActing(true);
     try {
@@ -920,7 +1009,31 @@ export default function LibraryPage() {
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <Button variant="outline" size="sm" onClick={selectAll}>
+          {!multiSelect && selected.size === 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMultiSelect(true)}
+              className="sm:hidden"
+            >
+              Select
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="sm:hidden"
+            >
+              Done
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={selectAll}
+            className="hidden sm:inline-flex"
+          >
             Select all
           </Button>
           <Button
@@ -928,6 +1041,7 @@ export default function LibraryPage() {
             size="sm"
             onClick={clearSelection}
             disabled={selected.size === 0}
+            className="hidden sm:inline-flex"
           >
             Clear
           </Button>
@@ -957,6 +1071,7 @@ export default function LibraryPage() {
                   selected={selected.has(photo.id)}
                   multiSelect={multiSelect}
                   dragEnabled={dragEnabled}
+                  longPressEnabled={dragEnabled}
                   onOpen={() => openPhoto(photo.id)}
                   onSelect={(shiftKey) => selectPhoto(photo.id, shiftKey)}
                   onLongPress={() => enterMultiSelect(photo.id)}
@@ -1011,7 +1126,33 @@ export default function LibraryPage() {
             <span className="text-sm font-medium">
               {selected.size} selected
             </span>
-            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <div className="grid w-full grid-cols-[1fr_1fr_auto] gap-2 sm:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFolderAssignOpen(true)}
+                disabled={acting}
+              >
+                Folder
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMobileActionsOpen(true)}
+                disabled={acting}
+              >
+                More
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                disabled={acting}
+              >
+                Done
+              </Button>
+            </div>
+            <div className="hidden w-full flex-wrap gap-2 sm:flex sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
@@ -1023,7 +1164,7 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setAssignMode("add"); setAssignKind("category"); }}
+                onClick={() => openAssign("add", "category")}
                 disabled={acting}
               >
                 Add to category…
@@ -1031,7 +1172,7 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setAssignMode("add"); setAssignKind("location"); }}
+                onClick={() => openAssign("add", "location")}
                 disabled={acting}
               >
                 Add to location…
@@ -1039,7 +1180,7 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setAssignMode("remove"); setAssignKind("category"); }}
+                onClick={() => openAssign("remove", "category")}
                 disabled={acting}
               >
                 Remove from category…
@@ -1047,7 +1188,7 @@ export default function LibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setAssignMode("remove"); setAssignKind("location"); }}
+                onClick={() => openAssign("remove", "location")}
                 disabled={acting}
               >
                 Remove from location…
@@ -1096,6 +1237,18 @@ export default function LibraryPage() {
           count={selected.size}
           onClose={() => setFolderAssignOpen(false)}
           onAssign={assignFolder}
+        />
+      )}
+      {mobileActionsOpen && (
+        <MobilePhotoActionsModal
+          onClose={() => setMobileActionsOpen(false)}
+          onAddCategory={() => openAssign("add", "category")}
+          onAddLocation={() => openAssign("add", "location")}
+          onRemoveCategory={() => openAssign("remove", "category")}
+          onRemoveLocation={() => openAssign("remove", "location")}
+          onReprocess={reprocessSelected}
+          onDelete={deleteSelected}
+          disabled={acting}
         />
       )}
         </div>
