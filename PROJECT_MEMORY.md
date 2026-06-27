@@ -740,6 +740,10 @@ is gitignored):
   nearly the full viewport width with tighter gaps/padding so the photos appear larger and reduce
   empty space on the left/right. The mobile perspective panel also no longer starts from the
   desktop `0.7` panel scale, which was the actual cause of the side gaps during the intro.
+  Pages Scroll Showcase 3D carousel mobile follow-up: desktop keeps the original ±90° scrubbed
+  ring sweep, while mobile/coarse-pointer viewports now use a symmetric ±180° sweep so each scene
+  completes one full ring rotation as it scrolls through the viewport and still lands front-facing
+  at the centered handoff point.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

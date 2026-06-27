@@ -78,6 +78,8 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
     root.classList.add("is-enhanced");
 
     const ctx = gsap.context(() => {
+      const mobileSpin = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+      const spinArc = mobileSpin ? 180 : 90;
       const sceneEls = gsap.utils.toArray<HTMLElement>("[data-c3d-scene]");
       sceneEls.forEach((scene, si) => {
         const carousel = scene.querySelector<HTMLElement>("[data-c3d-carousel]");
@@ -101,11 +103,13 @@ export function Carousel3DScroll({ scenes }: { scenes: CarouselScene[] }) {
           cell.style.transform = `rotateY(${(360 / n) * i}deg) translateZ(${radius}px)`;
         });
         carousel.dataset.ringRadius = String(radius);
-        // Spin the ring through a symmetric ±90° sweep so that at the scene's
+        // Spin the ring through a symmetric sweep so that at the scene's
         // CENTRE (scroll progress 0.5, where sine.inOut == 0.5) the rotation lands
-        // on 0° — a front-facing card. Alternate scenes spin the opposite way for
-        // visual variety; both pass through front-facing when centred on screen.
-        const spinFrom = si % 2 === 1 ? -90 : 90;
+        // on 0° — a front-facing card. Mobile uses a wider ±180° sweep so each
+        // scene completes a full turn while passing through the viewport.
+        // Alternate scenes spin the opposite way for visual variety; both pass
+        // through front-facing when centred on screen.
+        const spinFrom = si % 2 === 1 ? -spinArc : spinArc;
         const spinTo = -spinFrom;
         carousel.dataset.spinFrom = String(spinFrom);
         carousel.dataset.spinTo = String(spinTo);
