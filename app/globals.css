@@ -373,6 +373,22 @@ html.js .pr-root.is-enhanced {
     padding: 4vh 4vw;
   }
 
+  .sp-root.is-enhanced[data-sp-variant="perspective"] .sp-columns-panel {
+    padding: 4vh 4vw;
+  }
+
+  .sp-root[data-sp-variant="perspective"] .sp-columns {
+    gap: clamp(0.5rem, 1vw, 1rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"] .sp-column {
+    gap: clamp(0.35rem, 0.8vh, 0.65rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"] .sp-column-wrap {
+    width: min(9vw, 7.75rem);
+  }
+
   .sp-root[data-sp-variant="scatter"] .sp-columns {
     gap: clamp(0.75rem, 1.6vw, 1.6rem);
   }

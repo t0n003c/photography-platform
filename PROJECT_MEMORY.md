@@ -751,6 +751,10 @@ is gitignored):
   (`translateX` from `21vw` to `25vw`) and mobile (new `translateX(8vw)` before rotate/scale);
   mobile angled-row drift now uses a faster `-62%` step so the intro photo motion advances more
   noticeably per scroll.
+  Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
+  perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
+  (`150` instead of `340`) so high intro counts no longer push the lower rows half outside the
+  clipped viewport. Mobile perspective sizing/spread remains unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
