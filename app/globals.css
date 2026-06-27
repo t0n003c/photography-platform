@@ -390,13 +390,18 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column-wrap {
-    flex: 0 0 min(16vw, 14rem);
-    width: min(16vw, 14rem);
+    flex: 0 0 min(16vw, 13.5rem);
+    width: min(16vw, 13.5rem);
+    margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-columns {
-    gap: clamp(0.25rem, 0.5vw, 0.5rem);
+    gap: clamp(0.2rem, 0.45vw, 0.45rem);
     width: min(99vw, 84rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column {
+    gap: clamp(0.2rem, 0.55vh, 0.45rem);
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-columns {

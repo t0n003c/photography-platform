@@ -757,9 +757,12 @@ is gitignored):
   clipped viewport. Follow-up: Perspective Blur now uses 6 real intro columns on desktop when
   the selected intro photo count is 18, while mobile keeps the existing 4-column distribution.
   Follow-up: desktop 18-photo Perspective Blur cards were enlarged with a count-specific
-  `min(16vw, 14rem)` fixed flex basis, tighter 18-only gutters, and a wider `min(99vw, 84rem)`
-  row so the six desktop columns do not shrink back down. Mobile perspective sizing/spread remains
-  unchanged.
+  `min(16vw, 13.5rem)` fixed flex basis, tighter 18-only gutters, and a wider `min(99vw, 84rem)`
+  row so the six desktop columns do not shrink back down. Follow-up: the 18-photo desktop grid
+  also removes the even-column vertical drop and tightens row gaps so the enlarged lower-row photos
+  do not clip at the bottom; Perspective Blur keeps the safer desktop setup spread while increasing
+  desktop rotation and blur so the blur-to-clear finish reads more strongly. Mobile perspective
+  sizing/spread remains unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

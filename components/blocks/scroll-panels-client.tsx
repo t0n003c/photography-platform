@@ -177,11 +177,11 @@ export function ScrollPanelsClient({
       if (variant === "perspective") {
         const perspectiveSpread = isMobile ? 1000 : 125;
         gsap.set(items, {
-          rotationX: () => gsap.utils.random(isMobile ? 36 : 14, isMobile ? 56 : 24),
-          rotationY: () => gsap.utils.random(isMobile ? -16 : -4, isMobile ? 16 : 4),
+          rotationX: () => gsap.utils.random(isMobile ? 36 : 20, isMobile ? 56 : 34),
+          rotationY: () => gsap.utils.random(isMobile ? -16 : -8, isMobile ? 16 : 8),
           x: (i, target) => distanceFromCenter(target, perspectiveSpread).x,
           y: (i, target) => distanceFromCenter(target, perspectiveSpread).y,
-          filter: `blur(${isMobile ? 18 : 5}px)`,
+          filter: `blur(${isMobile ? 18 : 10}px)`,
         });
       }
 
