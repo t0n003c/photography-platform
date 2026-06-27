@@ -41,6 +41,13 @@ interface NamedEntity {
   name: string;
 }
 
+interface FolderOption {
+  id: string;
+  name: string;
+  parentId: string | null;
+  sortOrder: number;
+}
+
 type AssignKind = "category" | "location" | null;
 
 function errMsg(err: unknown): string {
@@ -83,6 +90,7 @@ function PhotoTile({
   photo,
   selected,
   multiSelect,
+  dragEnabled,
   onOpen,
   onSelect,
   onLongPress,
@@ -92,6 +100,7 @@ function PhotoTile({
   photo: PhotoDTO;
   selected: boolean;
   multiSelect: boolean;
+  dragEnabled: boolean;
   onOpen: () => void;
   onSelect: (shiftKey: boolean) => void;
   onLongPress: () => void;
@@ -111,7 +120,7 @@ function PhotoTile({
 
   return (
     <div
-      draggable
+      draggable={dragEnabled}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onPointerDown={(e) => {
@@ -532,6 +541,115 @@ function AssignModal({
   );
 }
 
+function FolderAssignModal({
+  count,
+  onClose,
+  onAssign,
+}: {
+  count: number;
+  onClose: () => void;
+  onAssign: (folderId: string) => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const [folders, setFolders] = useState<FolderOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [chosen, setChosen] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api
+      .get<{ data: FolderOption[] }>("/api/v1/admin/folders")
+      .then((res) => {
+        if (!active) return;
+        const ordered = [...res.data].sort(
+          (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+        );
+        setFolders(ordered);
+        if (ordered.length > 0) setChosen(ordered[0].id);
+      })
+      .catch((err) => {
+        if (active) toast(errMsg(err), "error");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [toast]);
+
+  const depthFor = (folder: FolderOption) => {
+    let depth = 0;
+    let parentId = folder.parentId;
+    const byId = new Map(folders.map((f) => [f.id, f]));
+    while (parentId && byId.has(parentId)) {
+      depth += 1;
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
+    return depth;
+  };
+
+  const submit = async () => {
+    if (!chosen) return;
+    setSubmitting(true);
+    try {
+      await onAssign(chosen);
+      onClose();
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Add to folder">
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Spinner className="h-6 w-6" />
+        </div>
+      ) : folders.length === 0 ? (
+        <EmptyState
+          title="No folders yet"
+          description="Switch to the Folders view to create one."
+        />
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Add {count} photo{count === 1 ? "" : "s"} to a virtual folder.
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="folder-assign-select">Folder</Label>
+            <Select
+              id="folder-assign-select"
+              value={chosen}
+              onChange={(e) => setChosen(e.target.value)}
+            >
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {"\u00a0\u00a0".repeat(depthFor(folder))}
+                  {folder.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Add
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export default function LibraryPage() {
   const { toast } = useToast();
   const [view, setView] = useState<"photos" | "folders">("photos");
@@ -545,8 +663,10 @@ export default function LibraryPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [assignKind, setAssignKind] = useState<AssignKind>(null);
   const [assignMode, setAssignMode] = useState<"add" | "remove">("add");
+  const [folderAssignOpen, setFolderAssignOpen] = useState(false);
   const [acting, setActing] = useState(false);
   const [foldersOpen, setFoldersOpen] = useState(false);
+  const [dragEnabled, setDragEnabled] = useState(false);
   const dragImageRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(
@@ -576,6 +696,14 @@ export default function LibraryPage() {
   useEffect(() => {
     void load(null);
   }, [load]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setDragEnabled(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
@@ -656,6 +784,25 @@ export default function LibraryPage() {
       toast(`Added ${n} photo${n === 1 ? "" : "s"}`, "success");
     }
     clearSelection();
+  };
+
+  const assignFolder = async (folderId: string) => {
+    setActing(true);
+    try {
+      await api.post(`/api/v1/admin/folders/${folderId}/photos`, {
+        photoIds: selectedIds,
+      });
+      toast(
+        `Added ${selectedIds.length} photo${
+          selectedIds.length === 1 ? "" : "s"
+        } to folder`,
+        "success",
+      );
+      clearSelection();
+      setFoldersOpen(false);
+    } finally {
+      setActing(false);
+    }
   };
 
   const reprocessSelected = async () => {
@@ -809,10 +956,12 @@ export default function LibraryPage() {
                   photo={photo}
                   selected={selected.has(photo.id)}
                   multiSelect={multiSelect}
+                  dragEnabled={dragEnabled}
                   onOpen={() => openPhoto(photo.id)}
                   onSelect={(shiftKey) => selectPhoto(photo.id, shiftKey)}
                   onLongPress={() => enterMultiSelect(photo.id)}
                   onDragStart={(e) => {
+                    if (!dragEnabled) return;
                     const ids = photoDragIds(photo.id);
                     e.dataTransfer.setData(
                       "application/x-photo-ids",
@@ -863,6 +1012,14 @@ export default function LibraryPage() {
               {selected.size} selected
             </span>
             <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFolderAssignOpen(true)}
+                disabled={acting}
+              >
+                Add to folder…
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -932,6 +1089,13 @@ export default function LibraryPage() {
           count={selected.size}
           onClose={() => setAssignKind(null)}
           onAssign={assign}
+        />
+      )}
+      {folderAssignOpen && (
+        <FolderAssignModal
+          count={selected.size}
+          onClose={() => setFolderAssignOpen(false)}
+          onAssign={assignFolder}
         />
       )}
         </div>

@@ -711,6 +711,9 @@ is gitignored):
   normal photo tiles hide the selection badge and info action until multi-select is active.
   Follow-up: the Library photo drag-count badge now uses an in-viewport, laid-out drag image
   before `setDragImage`, so browsers can show "1 photo" / "N photos" beside the cursor.
+  Follow-up: mobile Library no longer relies on native drag-and-drop for organizing photos;
+  selected photos now have an "Add to folder..." action that opens a folder picker, while
+  desktop pointer devices keep drag-to-folder.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display
   uses generated WebP responsive variants plus a single JPEG fallback; outdated AVIF UI wording was removed.
   Scroll Panels Classic Columns mobile follow-up: classic now uses stronger mobile-only column
