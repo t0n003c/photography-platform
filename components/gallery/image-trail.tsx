@@ -396,7 +396,7 @@ export function ImageTrail({
   return (
     <section
       ref={rootRef}
-      className="group/image-trail relative min-h-[100svh] overflow-hidden text-[hsl(var(--foreground))]"
+      className="group/image-trail relative h-[100dvh] min-h-[100svh] touch-none overflow-hidden overscroll-none text-[hsl(var(--foreground))]"
       data-image-trail="idle"
       data-image-trail-variant={safeVariant}
       style={stageStyle}
@@ -442,7 +442,7 @@ export function ImageTrail({
             />
           ),
         )}
-        <div className="grid min-h-[100svh] grid-rows-[auto_1fr_auto] px-5 py-5 md:px-8 md:py-8">
+        <div className="grid h-full min-h-[100svh] grid-rows-[auto_1fr_auto] px-5 py-5 md:px-8 md:py-8">
         <div className="relative z-30 grid gap-3 text-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
             <h1 className="text-base font-medium leading-none tracking-normal">
@@ -474,12 +474,25 @@ export function ImageTrail({
         </div>
       </div>
       </div>
-
-      <div className="relative z-20 mt-10 px-5 pt-[100svh] md:hidden">
-        <JustifiedGrid photos={photos} spacingClass="gap-2" onOpen={onOpen} />
-      </div>
-      <div className="relative z-20 mt-10 hidden px-5 pt-[100svh] group-data-[image-trail=idle]/image-trail:block md:px-8">
-        <JustifiedGrid photos={photos} spacingClass="gap-2 md:gap-3" onOpen={onOpen} />
+      <div className="absolute inset-x-5 top-1/2 z-20 grid -translate-y-1/2 grid-cols-3 gap-2 group-data-[image-trail=ready]/image-trail:hidden md:inset-x-auto md:left-1/2 md:w-[min(48rem,70vw)] md:-translate-x-1/2 md:grid-cols-6">
+        {trailItems.slice(0, 6).map(({ photo, url }, index) => (
+          <button
+            key={`fallback-${photo.id}`}
+            type="button"
+            onClick={() => onOpen(index)}
+            className="aspect-square overflow-hidden rounded-md border bg-[hsl(var(--muted))]"
+            aria-label={`Open photo ${index + 1}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt={photo.altText ?? ""}
+              className="h-full w-full object-cover"
+              decoding="async"
+              loading={index === 0 ? "eager" : "lazy"}
+            />
+          </button>
+        ))}
       </div>
     </section>
   );

@@ -719,6 +719,9 @@ is gitignored):
   actions live in a modal instead of crowding the phone screen.
   Follow-up: Gallery edit sections are now collapsible too: Settings, Layout, Photos,
   Share links, and Slideshow video all keep header actions visible while their bodies collapse.
+  Follow-up: Gallery image-trail layout no longer renders a normal photo grid below the trail
+  stage; mobile uses a fixed, touch-action-none stage so touch movement drives the trail instead
+  of scrolling the page, with only an in-stage fallback before enhancement/reduced motion.
   Follow-up: the Folders tree drag/drop now supports dragging a folder onto the middle of
   another folder row to make it a subfolder; top/bottom row edges still reorder beside the target.
   Image pipeline audit confirmed uploads preserve originals for client downloads while web display
