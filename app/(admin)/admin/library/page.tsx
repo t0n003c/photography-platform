@@ -63,8 +63,8 @@ function createPhotoDragImage(count: number): HTMLElement {
   const el = document.createElement("div");
   el.textContent = `${count} photo${count === 1 ? "" : "s"}`;
   el.style.position = "fixed";
-  el.style.top = "-1000px";
-  el.style.left = "-1000px";
+  el.style.top = "12px";
+  el.style.left = "12px";
   el.style.zIndex = "9999";
   el.style.borderRadius = "999px";
   el.style.padding = "8px 12px";
@@ -72,6 +72,9 @@ function createPhotoDragImage(count: number): HTMLElement {
   el.style.color = "hsl(var(--primary-foreground))";
   el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
   el.style.font = "600 13px system-ui, sans-serif";
+  el.style.lineHeight = "1";
+  el.style.pointerEvents = "none";
+  el.style.whiteSpace = "nowrap";
   document.body.appendChild(el);
   return el;
 }
@@ -819,7 +822,13 @@ export default function LibraryPage() {
                     cleanupDragImage();
                     const dragImage = createPhotoDragImage(ids.length);
                     dragImageRef.current = dragImage;
+                    dragImage.getBoundingClientRect();
                     e.dataTransfer.setDragImage(dragImage, 44, 18);
+                    window.requestAnimationFrame(() => {
+                      if (dragImageRef.current === dragImage) {
+                        dragImage.style.opacity = "0";
+                      }
+                    });
                     setFoldersOpen(true);
                   }}
                   onDragEnd={cleanupDragImage}
