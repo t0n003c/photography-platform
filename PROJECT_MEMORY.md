@@ -778,6 +778,9 @@ is gitignored):
   Latest Scroll Panels follow-up: Angled Rows desktop 24 was shifted up/right with a
   slightly smaller scale to restore bottom-left breathing room, and Perspective Blur
   desktop cards were enlarged another step across every intro count.
+  Latest Scroll Panels follow-up: Angled Rows desktop 24 got a stronger up/right shift
+  and smaller scale for visibly more bottom-left space; Perspective Blur desktop grids now
+  shift upward while using larger cards so bottom clipping stays avoidable.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
