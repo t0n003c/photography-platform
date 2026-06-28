@@ -67,7 +67,7 @@ function getServerDesktopViewportSnapshot() {
 function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number, isDesktopViewport: boolean) {
   if (variant === "classic") {
     if (!isDesktopViewport) {
-      if (introCount >= 12) return 4;
+      if (introCount >= 15) return 4;
       if (introCount >= 9) return 3;
       return 2;
     }
