@@ -844,6 +844,8 @@ is gitignored):
   covered all 9 desktop variants plus mobile Bento and reduced-motion Row with 0 console errors.
   Follow-up: Scroll layout morphs now has editable intro heading/supporting text in the page
   editor, and Row focus/Breakout grid use larger category-name headings above the animated layout.
+  Follow-up: Row focus and Breakout grid now hide the separate category heading outside the grid;
+  their in-grid caption/category text is the larger display element instead.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

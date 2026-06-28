@@ -1166,11 +1166,6 @@ html.js .pr-root.is-enhanced {
   font-size: clamp(2.5rem, 8vw, 7rem);
   line-height: 0.95;
 }
-.sbl-root[data-sbl-variant="row"] .sbl-project h3,
-.sbl-root[data-sbl-variant="breakout"] .sbl-project h3 {
-  font-size: clamp(4rem, 12vw, 11rem);
-  line-height: 0.84;
-}
 .sbl-gallery-wrap {
   position: relative;
   display: flex;
@@ -1250,9 +1245,16 @@ html.js .pr-root.is-enhanced {
   bottom: -50vh;
   left: 0;
   width: 100%;
-  max-width: 730px;
+  max-width: 980px;
   padding: 4.5vw;
   opacity: 0;
+}
+.sbl-root[data-sbl-variant="row"] .sbl-caption,
+.sbl-root[data-sbl-variant="breakout"] .sbl-caption {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: clamp(4rem, 12vw, 11rem);
+  line-height: 0.84;
 }
 .sbl-gallery--switch.sbl-gallery--row .sbl-caption {
   bottom: 0;
@@ -1290,7 +1292,7 @@ html.js .pr-root.is-enhanced {
   height: 100vh;
   margin-top: 50vh;
   margin-left: -50vw;
-  padding: 10vh 10vw;
+  padding: 10vh 8vw;
   opacity: 0;
 }
 .sbl-gallery--switch.sbl-gallery--grid .sbl-caption {

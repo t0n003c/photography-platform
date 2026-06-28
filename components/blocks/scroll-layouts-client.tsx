@@ -264,6 +264,7 @@ export function ScrollLayoutsClient({
       {panels.map((panel, panelIndex) => {
         const photos = photosForVariant(panel, variant, photoCount);
         const captionText = caption.trim() || panel.name;
+        const showOutsideTitle = showTitles && variant !== "row" && variant !== "breakout";
         if (photos.length === 0) return null;
 
         return (
@@ -276,7 +277,7 @@ export function ScrollLayoutsClient({
             }`}
             data-sbl-section
           >
-            {showTitles && (
+            {showOutsideTitle && (
               <div className="sbl-project">
                 <span>{String(panelIndex + 1).padStart(2, "0")}</span>
                 <h3>{panel.name}</h3>
