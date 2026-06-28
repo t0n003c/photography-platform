@@ -758,6 +758,10 @@ is gitignored):
   Latest follow-up: mobile Scatter 15/18 were changed back to 4-column grids per owner
   preference at both the CSS grid and data distribution levels, while desktop Scatter 12 was
   enlarged again with tighter inter-column gaps.
+  Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
+  (desktop 6/9/12/15/18 -> 3/3/4/5/6 columns; mobile 9/12/15/18 -> 3/4/4/4 columns) plus
+  tighter gaps and count-specific card widths so selected intro counts are not limited to the
+  first six visible photos or clipped on the bottom row.
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);
