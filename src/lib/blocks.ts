@@ -284,6 +284,11 @@ const ScrollShowcaseBlock = z.object({
     ])
     .default("row")
     .optional(),
+  scrollLayoutsHeading: z.string().default("Scroll layout morphs").optional(),
+  scrollLayoutsIntroText: z
+    .string()
+    .default("Pinned image layouts morph between editorial compositions as you scroll.")
+    .optional(),
   scrollLayoutsPhotoCount: z.number().int().min(1).max(80).default(9).optional(),
   scrollLayoutsCaption: z.string().default("").optional(),
   scrollLayoutsUseBackground: z.boolean().default(true).optional(),

@@ -146,6 +146,8 @@ export function ScrollLayoutsClient({
   showTitles,
   variant,
   photoCount,
+  heading,
+  introText,
   caption,
   useBackground,
   background,
@@ -156,6 +158,8 @@ export function ScrollLayoutsClient({
   showTitles: boolean;
   variant: ScrollLayoutsVariant;
   photoCount: number;
+  heading: string;
+  introText: string;
   caption: string;
   useBackground: boolean;
   background: string;
@@ -252,7 +256,8 @@ export function ScrollLayoutsClient({
     >
       <header className="sbl-header">
         {title && <p>{title}</p>}
-        <h2>Scroll layout morphs</h2>
+        {heading && <h2>{heading}</h2>}
+        {introText && <div className="sbl-header__copy">{introText}</div>}
         <span>{VARIANT_LABELS[variant]}</span>
       </header>
 

@@ -113,6 +113,8 @@ function makeBlock(type: BlockType): Block {
       style: "cinematic",
       scrollLayoutsVariant: "row",
       scrollLayoutsPhotoCount: 9,
+      scrollLayoutsHeading: "Scroll layout morphs",
+      scrollLayoutsIntroText: "Pinned image layouts morph between editorial compositions as you scroll.",
     };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
@@ -1403,6 +1405,38 @@ function LeafEditor({
           ) : isScrollLayouts ? (
             <>
               <SettingsGroup
+                title="Intro text"
+                description="Text shown before the pinned image layout transitions."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Top label">
+                    <Input
+                      value={block.title}
+                      onChange={(e) => set({ title: e.target.value })}
+                      placeholder="Selected work"
+                    />
+                  </Field>
+                  <Field label="Main heading">
+                    <Input
+                      value={block.scrollLayoutsHeading ?? "Scroll layout morphs"}
+                      onChange={(e) => set({ scrollLayoutsHeading: e.target.value })}
+                      placeholder="Scroll layout morphs"
+                    />
+                  </Field>
+                  <Field label="Supporting text">
+                    <Textarea
+                      rows={3}
+                      value={
+                        block.scrollLayoutsIntroText ??
+                        "Pinned image layouts morph between editorial compositions as you scroll."
+                      }
+                      onChange={(e) => set({ scrollLayoutsIntroText: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup
                 title="Layout morph"
                 description="Codrops ScrollBasedLayoutAnimations-style pinned image layout transitions."
               >
@@ -1449,13 +1483,6 @@ function LeafEditor({
                         <option key={n} value={n}>{n}</option>
                       ))}
                     </Select>
-                  </Field>
-                  <Field label="Top label">
-                    <Input
-                      value={block.title}
-                      onChange={(e) => set({ title: e.target.value })}
-                      placeholder="Selected work"
-                    />
                   </Field>
                   <Field label="Caption">
                     <Textarea

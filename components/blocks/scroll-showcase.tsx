@@ -202,6 +202,11 @@ export async function ScrollShowcaseBlock({
         showTitles={block.showTitles}
         variant={block.scrollLayoutsVariant ?? "row"}
         photoCount={scrollLayoutsPhotoCount}
+        heading={block.scrollLayoutsHeading ?? "Scroll layout morphs"}
+        introText={
+          block.scrollLayoutsIntroText ??
+          "Pinned image layouts morph between editorial compositions as you scroll."
+        }
         caption={block.scrollLayoutsCaption ?? ""}
         useBackground={block.scrollLayoutsUseBackground ?? true}
         background={block.scrollLayoutsBackground ?? "#131417"}

@@ -1136,6 +1136,12 @@ html.js .pr-root.is-enhanced {
   font-size: clamp(3rem, 10vw, 8rem);
   line-height: 0.9;
 }
+.sbl-header__copy {
+  max-width: 44rem;
+  color: color-mix(in srgb, var(--sbl-text) 62%, transparent);
+  font-size: clamp(1rem, 1.7vw, 1.35rem);
+  line-height: 1.35;
+}
 .sbl-section {
   position: relative;
   min-height: 150vh;
@@ -1159,6 +1165,11 @@ html.js .pr-root.is-enhanced {
 .sbl-project h3 {
   font-size: clamp(2.5rem, 8vw, 7rem);
   line-height: 0.95;
+}
+.sbl-root[data-sbl-variant="row"] .sbl-project h3,
+.sbl-root[data-sbl-variant="breakout"] .sbl-project h3 {
+  font-size: clamp(4rem, 12vw, 11rem);
+  line-height: 0.84;
 }
 .sbl-gallery-wrap {
   position: relative;
