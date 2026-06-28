@@ -199,21 +199,21 @@ function OverlayBanner({
   photo: PhotoDTO | undefined;
   h: string;
 }) {
-  const pos =
-    block.layout === "center"
-      ? "items-center justify-center"
-      : block.layout === "bottom-right"
-        ? "items-end justify-end"
-        : "items-end justify-start";
+  const pos = block.layout === "center" ? "items-center" : "items-end";
   const align =
     block.layout === "center" ? "center" : block.layout === "bottom-right" ? "right" : "left";
-  const pad = block.layout === "center" ? "py-12" : "pb-12";
+  const containerClass =
+    block.layout === "center"
+      ? "flex justify-center py-12"
+      : block.layout === "bottom-right"
+        ? "flex justify-end pb-12 md:pr-[8vw]"
+        : "flex justify-start pb-12 md:pl-[10vw] lg:pl-[10vw]";
   return (
     <section className={`relative ${h} w-full overflow-hidden bg-[hsl(var(--muted))]`}>
       {photo && <BannerImage photo={photo} block={block} className="absolute inset-0 h-full w-full" />}
       <Scrim block={block} />
       <div className={`absolute inset-0 flex ${pos}`}>
-        <Container className={pad}>
+        <Container className={containerClass}>
           <TextContent block={block} align={align} tone="light" />
         </Container>
       </div>
@@ -272,6 +272,7 @@ function SplitBanner({
     );
   }
   const imageFirst = block.layout === "split-left";
+  const textAlign = imageFirst ? "left" : "right";
   const imageHalf = (
     <div className="relative h-56 w-full overflow-hidden md:h-full">
       {photo ? (
@@ -282,8 +283,13 @@ function SplitBanner({
     </div>
   );
   const textHalf = (
-    <div className="flex items-center bg-[hsl(var(--background))] px-8 py-10 md:px-12">
-      <TextContent block={block} align="left" tone="dark" />
+    <div
+      className={cn(
+        "flex items-center bg-[hsl(var(--background))] px-8 py-10 md:px-12",
+        imageFirst ? "justify-start" : "justify-end",
+      )}
+    >
+      <TextContent block={block} align={textAlign} tone="dark" />
     </div>
   );
   return (

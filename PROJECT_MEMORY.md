@@ -781,6 +781,9 @@ is gitignored):
   Latest Scroll Panels follow-up: Angled Rows desktop 24 got a stronger up/right shift
   and smaller scale for visibly more bottom-left space; Perspective Blur desktop grids now
   shift upward while using larger cards so bottom clipping stays avoidable.
+  Latest Banner follow-up: desktop overlay layouts now explicitly position their
+  content within the container (bottom-left shifted right, bottom-right pinned right,
+  center truly centered), and split-image-right pins text to the image-side edge.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
