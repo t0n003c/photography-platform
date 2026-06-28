@@ -353,7 +353,7 @@ export function ScrollPanelsClient({
         .to(images, { scale: imageScale[variant] }, 0);
 
       if (variant === "scatter") {
-        const scatterSpread = isMobile ? 720 : 380;
+        const scatterSpread = isMobile ? 720 : 820;
         gsap.to(items, {
           x: (i, target) => distanceFromCenter(target, scatterSpread).x,
           y: (i, target) => distanceFromCenter(target, scatterSpread).y,

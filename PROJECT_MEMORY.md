@@ -770,6 +770,8 @@ is gitignored):
   Latest Scroll Panels follow-up: Classic desktop column drift is disabled so intro-photo
   rows stay aligned across every intro count, and Scatter desktop 21/24 cards are enlarged
   while keeping the full intro grid visible.
+  Latest Scatter follow-up: desktop Scatter Outward uses a much larger outward spread
+  (`820` vs the old `380`) across every intro photo count; mobile spread stays unchanged.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
