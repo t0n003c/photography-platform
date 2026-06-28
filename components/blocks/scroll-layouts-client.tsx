@@ -112,6 +112,13 @@ function flipOptions(variant: ScrollLayoutsVariant, isMobile: boolean) {
   if (variant === "row") {
     return {
       flip: { absoluteOnLeave: true, absolute: false, scale: false, simple: true },
+      end: isMobile ? "+=150%" : "+=300%",
+      stagger: 0,
+    };
+  }
+  if (variant === "breakout") {
+    return {
+      flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
       end: isMobile ? "+=180%" : "+=300%",
       stagger: 0,
     };
@@ -119,22 +126,47 @@ function flipOptions(variant: ScrollLayoutsVariant, isMobile: boolean) {
   if (variant === "grid10") {
     return {
       flip: { absoluteOnLeave: false, absolute: true, scale: false, simple: true },
-      end: isMobile ? "+=320%" : "+=900%",
+      end: isMobile ? "+=240%" : "+=900%",
       stagger: isMobile ? 0.025 : 0.05,
     };
   }
   if (variant === "bento") {
     return {
       flip: { absoluteOnLeave: false, absolute: false, scale: false, simple: true },
-      end: isMobile ? "+=220%" : "+=300%",
+      end: isMobile ? "+=175%" : "+=300%",
+      stagger: 0,
+    };
+  }
+  if (variant === "tiny") {
+    return {
+      flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
+      end: isMobile ? "+=185%" : "+=300%",
+      stagger: 0,
+    };
+  }
+  if (variant === "single") {
+    return {
+      flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
+      end: isMobile ? "+=160%" : "+=300%",
       stagger: 0,
     };
   }
   return {
     flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
-    end: isMobile ? "+=210%" : "+=300%",
+    end: isMobile ? "+=175%" : "+=300%",
     stagger: 0,
   };
+}
+
+function mobileInnerScale(variant: ScrollLayoutsVariant) {
+  if (variant === "single") return 1.05;
+  if (variant === "row") return 1.25;
+  if (variant === "tiny" || variant === "stackDark" || variant === "stackGlass" || variant === "stackScale") {
+    return 1.35;
+  }
+  if (variant === "grid10" || variant === "bento") return 1.45;
+  if (variant === "breakout") return 1.6;
+  return 1.5;
 }
 
 // Codrops ScrollBasedLayoutAnimations adaptation. Deviation: the reference
@@ -210,7 +242,7 @@ export function ScrollLayoutsClient({
           stagger: options.stagger,
           scrollTrigger: {
             trigger: gallery,
-            start: isMobile ? "top 54%" : "center center",
+            start: "center center",
             end: options.end,
             pin: section,
             scrub: true,
@@ -220,13 +252,13 @@ export function ScrollLayoutsClient({
         if (inners.length > 0) {
           gsap.fromTo(
             inners,
-            { scale: variant === "single" ? 1.18 : 2 },
+            { scale: isMobile ? mobileInnerScale(variant) : variant === "single" ? 1.18 : 2 },
             {
               scale: 1,
               ease: "none",
               scrollTrigger: {
                 trigger: gallery,
-                start: isMobile ? "top 54%" : "center center",
+                start: "center center",
                 end: options.end,
                 scrub: true,
               },

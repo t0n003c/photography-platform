@@ -848,6 +848,9 @@ is gitignored):
   their in-grid caption/category text is the larger display element instead.
   Follow-up: Row focus centers the in-grid category caption in the middle of the animated grid
   once the layout morph reaches its switched state.
+  Follow-up: Scroll layout morphs mobile is tuned across all nine variants: phone-specific FLIP
+  durations, centered mobile pinning, gentler image-inner scaling, corrected Long Grid column
+  geometry, tighter stack/bento/tiny layouts, and a less over-zoomed Single Image Reveal.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
