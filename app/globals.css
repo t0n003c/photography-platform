@@ -1594,9 +1594,10 @@ html.js .pr-root.is-enhanced {
   }
   .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(1) {
     z-index: 7;
-    width: 56vw;
-    height: 78vw;
-    margin-top: 11svh;
+    width: 70vw;
+    height: 96vw;
+    margin-top: 24svh;
+    margin-left: 12vw;
   }
   .sbl-gallery--stack .sbl-caption {
     bottom: 16%;

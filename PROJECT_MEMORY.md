@@ -858,6 +858,8 @@ is gitignored):
   finishes forming and shift the in-grid category name/description further left.
   Follow-up: The same mobile stack end-state now makes the cover photo larger again and offsets
   it lower so the final stack uses more of the vertical phone viewport.
+  Follow-up: The mobile stack cover end-state was strengthened again: cover is now 70vw x 96vw,
+  shifted right to center horizontally and lowered to land near the phone viewport center.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
