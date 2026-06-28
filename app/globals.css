@@ -557,11 +557,11 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-columns {
-    gap: clamp(0.75rem, 1.6vw, 1.6rem);
+    gap: clamp(0.45rem, 0.85vw, 0.85rem);
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-column {
-    gap: clamp(0.45rem, 1.15vh, 0.85rem);
+    gap: clamp(0.45rem, 0.85vw, 0.85rem);
   }
 
   .sp-root[data-sp-variant="scatter"] .sp-column-wrap {
@@ -585,7 +585,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
-    gap: clamp(0.45rem, 0.9vw, 0.9rem);
+    gap: clamp(0.25rem, 0.65vw, 0.5rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column {
@@ -597,7 +597,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
-    gap: clamp(0.25rem, 0.65vh, 0.5rem);
+    gap: clamp(0.25rem, 0.65vw, 0.5rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,
@@ -890,7 +890,7 @@ html.js .pr-root.is-enhanced {
     gap: 0.75rem;
   }
   .sp-row-imgwrap:nth-child(even) {
-    margin-top: 4vh;
+    margin-top: 0;
   }
 }
 

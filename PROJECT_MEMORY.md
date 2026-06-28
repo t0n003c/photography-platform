@@ -758,6 +758,9 @@ is gitignored):
   Latest follow-up: mobile Scatter 15/18 were changed back to 4-column grids per owner
   preference at both the CSS grid and data distribution levels, while desktop Scatter 12 was
   enlarged again with tighter inter-column gaps.
+  Scatter spacing follow-up: desktop Scatter intro columns now use the same computed gutter as
+  the photo gaps inside each column for 6/9/15/18, and mobile category grids remove the staggered
+  even-photo drop so row spacing matches the grid's photo gap.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18 -> 3/3/4/5/6 columns; mobile 9/12/15/18 -> 3/3/4/4 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
