@@ -301,7 +301,7 @@ html.js .pr-root.is-enhanced {
 
   .sp-root[data-sp-variant="demo4"][data-sp-intro-count="24"] .sp-columns,
   .sp-root.is-enhanced[data-sp-variant="demo4"][data-sp-intro-count="24"] .sp-columns {
-    transform: translate(57vw, -72vh) rotate(-45deg) scale(0.98);
+    transform: translate(60vw, -76vh) rotate(-45deg) scale(0.96);
   }
 
   .sp-root[data-sp-variant="demo4"][data-sp-intro-count="21"] .sp-columns,
@@ -338,7 +338,7 @@ html.js .pr-root.is-enhanced {
 
   .sp-root[data-sp-variant="demo4"][data-sp-intro-count="24"] .sp-columns,
   .sp-root.is-enhanced[data-sp-variant="demo4"][data-sp-intro-count="24"] .sp-columns {
-    transform: translate(54vw, -68vh) rotate(-45deg) scale(0.98);
+    transform: translate(57vw, -72vh) rotate(-45deg) scale(0.96);
   }
 
   .sp-root[data-sp-variant="demo4"][data-sp-intro-count="21"] .sp-columns,
@@ -514,44 +514,44 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="6"] .sp-column-wrap {
-    flex: 0 0 min(24vw, 17.5rem);
-    width: min(24vw, 17.5rem);
+    flex: 0 0 min(25.5vw, 18.75rem);
+    width: min(25.5vw, 18.75rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-column-wrap {
-    flex: 0 0 min(16vw, 12rem);
-    width: min(16vw, 12rem);
+    flex: 0 0 min(16.9vw, 12.75rem);
+    width: min(16.9vw, 12.75rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="12"] .sp-column-wrap {
-    flex: 0 0 min(15vw, 12rem);
-    width: min(15vw, 12rem);
+    flex: 0 0 min(16.2vw, 13rem);
+    width: min(16.2vw, 13rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="15"] .sp-column-wrap {
-    flex: 0 0 min(13.8vw, 11.5rem);
-    width: min(13.8vw, 11.5rem);
+    flex: 0 0 min(14.8vw, 12.5rem);
+    width: min(14.8vw, 12.5rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column-wrap {
-    flex: 0 0 min(12.6vw, 10.75rem);
-    width: min(12.6vw, 10.75rem);
+    flex: 0 0 min(13.3vw, 11.5rem);
+    width: min(13.3vw, 11.5rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="21"] .sp-column-wrap {
-    flex: 0 0 min(11.4vw, 9.75rem);
-    width: min(11.4vw, 9.75rem);
+    flex: 0 0 min(12vw, 10.4rem);
+    width: min(12vw, 10.4rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="24"] .sp-column-wrap {
-    flex: 0 0 min(10.2vw, 8.75rem);
-    width: min(10.2vw, 8.75rem);
+    flex: 0 0 min(10.8vw, 9.35rem);
+    width: min(10.8vw, 9.35rem);
     margin-top: 0;
   }
 
