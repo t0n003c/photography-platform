@@ -779,6 +779,9 @@ is gitignored):
   and tighter safe padding so 6/9/12/15 better use the fixed viewport without clipping the lower row.
   The capped Perspective grid box is explicitly centered with auto inline margins so the actual
   public page matches the live preview instead of sitting left on wider desktop viewports.
+  Mobile follow-up: Perspective Blur intro counts 6 and 9 now use 3 real columns on phone-sized
+  viewports with tighter horizontal padding/gaps, so those smaller counts render larger instead
+  of inheriting the 4-column mobile layout.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
