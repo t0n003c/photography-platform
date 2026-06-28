@@ -73,7 +73,11 @@ function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number, i
     return 3;
   }
   if (variant === "demo4" && !isDesktopViewport && introCount <= 6) return 2;
-  if (variant === "scatter" && !isDesktopViewport && introCount <= 6) return 2;
+  if (variant === "scatter" && !isDesktopViewport) {
+    if (introCount <= 6) return 2;
+    if (introCount >= 12) return 4;
+    return 3;
+  }
   if (variant !== "scatter") return 3;
   if (introCount >= 18) return 6;
   if (introCount >= 15) return 5;

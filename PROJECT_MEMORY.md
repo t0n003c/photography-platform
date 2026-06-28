@@ -755,6 +755,9 @@ is gitignored):
   columns into a second row, preventing bottom clipping and keeping the intro photos together;
   desktop Scatter 12 uses a smaller/tighter 4-column grid to avoid bottom clipping. Mobile
   Scatter also gets a small top buffer so the first row does not crowd under the mobile header.
+  Latest follow-up: mobile Scatter 15/18 were changed back to 4-column grids per owner
+  preference at both the CSS grid and data distribution levels, while desktop Scatter 12 was
+  enlarged again with tighter inter-column gaps.
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);

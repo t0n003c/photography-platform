@@ -531,7 +531,7 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column-wrap {
-    width: min(13.5vw, 10.25rem);
+    width: min(15.5vw, 11.75rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-column-wrap {
@@ -547,7 +547,11 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column {
-    gap: clamp(0.25rem, 0.7vh, 0.55rem);
+    gap: clamp(0.2rem, 0.55vh, 0.45rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-columns {
+    gap: clamp(0.25rem, 0.55vw, 0.55rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
@@ -736,12 +740,12 @@ html.js .pr-root.is-enhanced {
     gap: 0.25rem;
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-columns {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.22rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.2rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column,
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-column,
@@ -833,10 +837,10 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-columns {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sp-root[data-sp-variant="demo4"] .sp-columns {
     grid-template-columns: repeat(3, minmax(0, 1fr));
