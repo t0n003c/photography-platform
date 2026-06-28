@@ -318,7 +318,7 @@ export function ScrollPanelsClient({
       };
       const panelStartScale: Record<ScrollPanelsVariant, number> = {
         classic: 1,
-        scatter: isMobile ? 1 : 0.62,
+        scatter: isMobile ? 1 : panelPhotos.length >= 21 ? 0.93 : 0.62,
         demo4: 1,
         perspective: !isMobile && panelPhotos.length >= 21 ? 0.86 : 0.7,
       };

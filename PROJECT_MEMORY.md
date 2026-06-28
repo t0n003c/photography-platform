@@ -833,6 +833,9 @@ is gitignored):
   offsets so the grids fill the viewport more edge-to-edge without clipping. Mobile Scroll Panels now explicitly orders intro
   text above the intro grid across variants. Page editor category pickers show each category's
   photo count, and the desktop banner bottom-right overlay was nudged left.
+  Scatter Outward follow-up: desktop intro counts 21 and 24 now use larger high-count cards,
+  reduced panel side padding, tighter high-count gutters, and a count-aware desktop intro
+  scale so those grids read more edge-to-edge while retaining the no-clipping constraint.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
