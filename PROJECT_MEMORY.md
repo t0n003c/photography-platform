@@ -756,7 +756,11 @@ is gitignored):
   the same scroll duration, so the columns travel farther without shortening the section. Follow-up:
   mobile Angled Rows scales the intro grid up to `1.32`; latest mobile offset is
   `translate(21vw, -7vh)` so the bottom-left and top-right empty spaces around the enlarged grid
-  are closer, with a slight bias toward more top-right breathing room.
+  are closer, with a slight bias toward more top-right breathing room. Laptop-width Angled Rows
+  now has its own `769px-1440px` placement (`translate(49vw, -66vh)`) to reduce bottom-left
+  empty space while opening the top-right slightly. Classic/Angled Rows fixed intro grids are
+  guarded by an `is-panel-active` class so they stay hidden until their own Scroll Showcase section
+  is active and cannot overlap blocks above the showcase.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the

@@ -174,6 +174,18 @@ export function ScrollPanelsClient({
       gsap.set(items, {
         filter: tone === "grayscale" ? "grayscale(100%)" : "grayscale(0%)",
       });
+      if (topStackedIntro) {
+        ScrollTrigger.create({
+          trigger: root,
+          start: isMobile ? "top 82%" : "top top",
+          endTrigger: showcase,
+          end: "top top",
+          onEnter: () => root.classList.add("is-panel-active"),
+          onEnterBack: () => root.classList.add("is-panel-active"),
+          onLeave: () => root.classList.remove("is-panel-active"),
+          onLeaveBack: () => root.classList.remove("is-panel-active"),
+        });
+      }
       if (variant === "perspective") {
         const perspectiveSpread = isMobile ? 1000 : 125;
         gsap.set(items, {
@@ -357,6 +369,7 @@ export function ScrollPanelsClient({
 
     return () => {
       ctx.revert();
+      root.classList.remove("is-panel-active");
       root.classList.remove("is-enhanced");
     };
   }, [columnCount, panels, tone, variant]);
