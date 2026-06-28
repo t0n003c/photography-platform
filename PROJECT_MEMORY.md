@@ -753,7 +753,9 @@ is gitignored):
   the latest desktop correction moves the grid up to `-70vh` so the diagonal band fills the
   top-right area while keeping the bottom-left and top-right empty spaces closer. Mobile Angled Rows
   now keeps 3 visible columns even below 480px and uses a faster `-92%` column-drift step across
-  the same scroll duration, so the columns travel farther without shortening the section.
+  the same scroll duration, so the columns travel farther without shortening the section. Follow-up:
+  mobile Angled Rows scales the intro grid up to `1.32` with a small offset retune so the three
+  columns read larger on phones.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the

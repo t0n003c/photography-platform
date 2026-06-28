@@ -591,7 +591,7 @@ html.js .pr-root.is-enhanced {
     width: auto;
   }
   .sp-root[data-sp-variant="demo4"] .sp-columns {
-    transform: translate(31vw, -12vh) rotate(-35deg) scale(1.12);
+    transform: translate(28vw, -14vh) rotate(-35deg) scale(1.32);
     gap: 1rem;
   }
   .sp-root[data-sp-variant="demo4"] .sp-column-wrap,
