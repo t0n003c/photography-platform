@@ -754,8 +754,9 @@ is gitignored):
   top-right area while keeping the bottom-left and top-right empty spaces closer. Mobile Angled Rows
   now keeps 3 visible columns even below 480px and uses a faster `-92%` column-drift step across
   the same scroll duration, so the columns travel farther without shortening the section. Follow-up:
-  mobile Angled Rows scales the intro grid up to `1.32` with a small offset retune so the three
-  columns read larger on phones.
+  mobile Angled Rows scales the intro grid up to `1.32`; latest mobile offset is
+  `translate(21vw, -7vh)` so the bottom-left and top-right empty spaces around the enlarged grid
+  are closer, with a slight bias toward more top-right breathing room.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the
