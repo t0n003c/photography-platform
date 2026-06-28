@@ -764,6 +764,9 @@ is gitignored):
   Latest Scatter follow-up: desktop 9 uses a smaller column width to avoid bottom clipping, desktop
   15 uses larger columns with tighter equal gutters, and mobile Scatter visually orders the intro
   text before the intro photo grid so the copy sits on top on phones.
+  Latest Scatter follow-up: mobile scatter-out motion starts later in the scroll window
+  (`top 92%` to `top 34%`), and desktop Scatter 21/24 use 7/8 real columns with smaller
+  count-specific widths/gutters so the bottom row is not clipped.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so

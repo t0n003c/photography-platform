@@ -93,6 +93,8 @@ function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number, i
     return 3;
   }
   if (variant !== "scatter") return 3;
+  if (introCount >= 24) return 8;
+  if (introCount >= 21) return 7;
   if (introCount >= 18) return 6;
   if (introCount >= 15) return 5;
   if (introCount >= 12) return 4;
@@ -355,8 +357,8 @@ export function ScrollPanelsClient({
           ease: "power2.out",
           scrollTrigger: {
             trigger: showcase,
-            start: isMobile ? "top 104%" : "top 78%",
-            end: isMobile ? "top 46%" : "top 22%",
+            start: isMobile ? "top 92%" : "top 78%",
+            end: isMobile ? "top 34%" : "top 22%",
             scrub: true,
           },
         });

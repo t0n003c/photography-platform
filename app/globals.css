@@ -593,6 +593,14 @@ html.js .pr-root.is-enhanced {
     width: min(14vw, 10.5rem);
   }
 
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-column-wrap {
+    width: min(10.5vw, 8rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-column-wrap {
+    width: min(9.5vw, 7.5rem);
+  }
+
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
     gap: clamp(0.25rem, 0.65vw, 0.5rem);
   }
@@ -612,6 +620,13 @@ html.js .pr-root.is-enhanced {
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
     gap: clamp(0.25rem, 0.65vw, 0.5rem);
+  }
+
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-columns,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-column,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-columns,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-column {
+    gap: clamp(0.18rem, 0.35vw, 0.35rem);
   }
 
   .sp-root[data-sp-variant="classic"] .sp-title,
@@ -851,9 +866,16 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.25rem;
   }
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-columns,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.2rem;
+  }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="12"] .sp-column,
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="15"] .sp-column,
-  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column {
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-column,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-column,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-column {
     gap: 0.25rem;
   }
   .sp-root[data-sp-variant="perspective"] .sp-columns-panel,
@@ -944,6 +966,10 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-columns,
+  .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-columns {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sp-root[data-sp-variant="classic"][data-sp-intro-count="6"] .sp-columns {
