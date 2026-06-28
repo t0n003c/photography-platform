@@ -772,6 +772,9 @@ is gitignored):
   while keeping the full intro grid visible.
   Latest Scatter follow-up: desktop Scatter Outward uses a much larger outward spread
   (`820` vs the old `380`) across every intro photo count; mobile spread stays unchanged.
+  Latest Scroll Panels follow-up: Angled Rows desktop 21/24 now have count-specific
+  transforms to balance the top-right and bottom-left empty space, and Perspective Blur
+  desktop counts 6/9/12/15/18/21/24 use larger count-aware cards with tighter gutters.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
