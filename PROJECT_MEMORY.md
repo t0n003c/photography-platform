@@ -747,6 +747,10 @@ is gitignored):
   Scroll Panels Scatter mobile follow-up: phone widths now explicitly keep the scatter intro grid
   at 3 columns instead of inheriting the generic 2-column phone rule, and the scatter-out photo
   motion starts just earlier in the mobile scroll window (`top 104%` to `top 46%`).
+  Latest follow-up: Scatter Outward mobile no longer hides columns 4-6, so 12/15/18 intro counts
+  render all selected photos; scatter mobile grids now use tighter side padding/gaps, and 6-photo
+  scatter uses 2 columns for larger images. Mobile Scatter also now starts at full panel scale
+  instead of `0.7`, so the intro grid uses the available phone width before the outward motion.
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);

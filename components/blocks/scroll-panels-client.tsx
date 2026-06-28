@@ -73,6 +73,7 @@ function getIntroColumnCount(variant: ScrollPanelsVariant, introCount: number, i
     return 3;
   }
   if (variant === "demo4" && !isDesktopViewport && introCount <= 6) return 2;
+  if (variant === "scatter" && !isDesktopViewport && introCount <= 6) return 2;
   if (variant !== "scatter") return 3;
   if (introCount >= 18) return 6;
   if (introCount >= 15) return 5;
@@ -292,7 +293,7 @@ export function ScrollPanelsClient({
       };
       const panelStartScale: Record<ScrollPanelsVariant, number> = {
         classic: 1,
-        scatter: isMobile ? 0.7 : 0.62,
+        scatter: isMobile ? 1 : 0.62,
         demo4: 1,
         perspective: 0.7,
       };
