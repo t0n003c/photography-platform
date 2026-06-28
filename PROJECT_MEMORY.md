@@ -752,7 +752,7 @@ is gitignored):
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);
   the latest desktop correction moves the grid up to `-70vh` so the diagonal band fills the
   top-right area while keeping the bottom-left and top-right empty spaces closer. Mobile Angled Rows
-  now keeps 3 visible columns even below 480px and uses a faster `-92%` column-drift step across
+  now keeps 3 visible columns even below 480px and uses a faster `-150%` column-drift step across
   the same scroll duration, so the columns travel farther without shortening the section. Follow-up:
   mobile Angled Rows scales the intro grid up to `1.32`; latest mobile offset is
   `translate(21vw, -7vh)` so the bottom-left and top-right empty spaces around the enlarged grid
