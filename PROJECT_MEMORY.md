@@ -760,7 +760,9 @@ is gitignored):
   now has its own `769px-1440px` placement (`translate(49vw, -66vh)`) to reduce bottom-left
   empty space while opening the top-right slightly. Classic/Angled Rows fixed intro grids are
   guarded by an `is-panel-active` class so they stay hidden until their own Scroll Showcase section
-  is active and cannot overlap blocks above the showcase.
+  is active and cannot overlap blocks above the showcase. Desktop Angled Rows drift was nudged from
+  `-15%` to `-22%` per column step so desktop columns move a little faster while mobile remains
+  at `-150%`.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the
