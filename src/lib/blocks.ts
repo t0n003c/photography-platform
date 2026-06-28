@@ -234,7 +234,7 @@ const ScrollShowcaseBlock = z.object({
     .default("classic")
     .optional(),
   // ScrollPanels-only: number of photos in the fixed intro columns.
-  scrollPanelsIntroCount: z.number().int().min(6).max(18).default(12).optional(),
+  scrollPanelsIntroCount: z.number().int().min(6).max(24).default(12).optional(),
   // ScrollPanels-only: number of thumbnails shown in each collection row.
   scrollPanelsRowCount: z.number().int().min(1).max(6).default(5).optional(),
   // ScrollPanels-only: optional initial treatment for the intro photos.

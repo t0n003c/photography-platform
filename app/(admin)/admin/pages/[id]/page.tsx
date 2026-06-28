@@ -1217,7 +1217,7 @@ function LeafEditor({
                       value={String(block.scrollPanelsIntroCount ?? 12)}
                       onChange={(e) => set({ scrollPanelsIntroCount: Number(e.target.value) })}
                     >
-                      {[6, 9, 12, 15, 18].map((n) => <option key={n} value={n}>{n}</option>)}
+                      {[6, 9, 12, 15, 18, 21, 24].map((n) => <option key={n} value={n}>{n}</option>)}
                     </Select>
                   </Field>
                   <Field label="Photos per collection row">

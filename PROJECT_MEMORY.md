@@ -761,8 +761,11 @@ is gitignored):
   Scatter spacing follow-up: desktop Scatter intro columns now use the same computed gutter as
   the photo gaps inside each column for 6/9/15/18, and mobile category grids remove the staggered
   even-photo drop so row spacing matches the grid's photo gap.
+  Latest Scatter follow-up: desktop 9 uses a smaller column width to avoid bottom clipping, desktop
+  15 uses larger columns with tighter equal gutters, and mobile Scatter visually orders the intro
+  text before the intro photo grid so the copy sits on top on phones.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
-  (desktop 6/9/12/15/18 -> 3/3/4/5/6 columns; mobile 9/12/15/18 -> 3/3/4/4 columns) plus
+  (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
   selected intro counts are not limited to the first six visible photos or clipped on the bottom row.
   Latest tweak: desktop Classic gutters were tightened again while preserving equal horizontal and
