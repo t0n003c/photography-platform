@@ -788,10 +788,6 @@ html.js .pr-root.is-enhanced {
   .sp-root[data-sp-variant="classic"][data-sp-intro-count="18"] .sp-columns {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .sp-root[data-sp-variant="classic"][data-sp-intro-count="12"] .sp-item {
-    aspect-ratio: 1.08;
-  }
-
   .sp-root[data-sp-variant="classic"][data-sp-intro-count="18"] .sp-item {
     aspect-ratio: 0.9;
   }

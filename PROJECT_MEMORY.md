@@ -763,7 +763,8 @@ is gitignored):
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so
   selected intro counts are not limited to the first six visible photos or clipped on the bottom row.
   Latest tweak: desktop Classic gutters were tightened again while preserving equal horizontal and
-  vertical values, and mobile 12 keeps the 3-column layout with a subtle rectangular card shape.
+  vertical values, and mobile 12 keeps the 3-column layout while using the same card ratio as the
+  other Classic intro counts.
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);
