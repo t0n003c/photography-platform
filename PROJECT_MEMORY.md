@@ -851,6 +851,9 @@ is gitignored):
   Follow-up: Scroll layout morphs mobile is tuned across all nine variants: phone-specific FLIP
   durations, centered mobile pinning, gentler image-inner scaling, corrected Long Grid column
   geometry, tighter stack/bento/tiny layouts, and a less over-zoomed Single Image Reveal.
+  Follow-up: Dark Stack, Glass Stack, and Scale Stack now use an in-grid structured caption:
+  a larger category-name headline plus the category description underneath, with the outside
+  duplicate category heading hidden for those stack variants.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

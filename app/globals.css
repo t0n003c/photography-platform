@@ -1407,11 +1407,27 @@ html.js .pr-root.is-enhanced {
   bottom: 40%;
   left: 100vw;
   z-index: 0;
+  display: grid;
+  gap: 1.1rem;
   width: 60vw;
-  max-width: 800px;
+  max-width: 920px;
   padding: 5vw;
-  color: color-mix(in srgb, var(--sbl-text) 45%, transparent);
+  color: color-mix(in srgb, var(--sbl-text) 82%, transparent);
   opacity: 0;
+}
+.sbl-gallery--stack .sbl-caption__title {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: clamp(3.5rem, 9vw, 9rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: 0;
+}
+.sbl-gallery--stack .sbl-caption__description {
+  max-width: 42rem;
+  color: color-mix(in srgb, var(--sbl-text) 58%, transparent);
+  font-size: clamp(1rem, 1.55vw, 1.35rem);
+  line-height: 1.35;
 }
 .sbl-gallery--switch.sbl-gallery--stack .sbl-caption {
   left: 40vw;
@@ -1578,8 +1594,17 @@ html.js .pr-root.is-enhanced {
   }
   .sbl-gallery--stack .sbl-caption {
     bottom: 16%;
+    gap: 0.75rem;
     width: 80vw;
     padding: 0.75rem;
+  }
+  .sbl-gallery--stack .sbl-caption__title {
+    font-size: clamp(2.8rem, 15vw, 5.5rem);
+  }
+  .sbl-gallery--stack .sbl-caption__description {
+    max-width: 18rem;
+    font-size: clamp(0.9rem, 4vw, 1.05rem);
+    line-height: 1.32;
   }
   .sbl-gallery--switch.sbl-gallery--stack .sbl-caption {
     left: 12vw;

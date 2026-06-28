@@ -10,6 +10,7 @@ import { prefersReducedMotion } from "@/components/webgl/feature";
 export interface ShowcasePanel {
   slug: string;
   name: string;
+  description?: string | null;
   background: PhotoDTO;
   cluster: PhotoDTO[];
 }

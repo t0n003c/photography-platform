@@ -131,6 +131,7 @@ export async function ScrollShowcaseBlock({
         return {
           slug: c.slug,
           name: c.name,
+          description: c.description,
           background,
           // Always keep at least one image flying in.
           cluster:

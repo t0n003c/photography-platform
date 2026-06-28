@@ -108,6 +108,10 @@ function itemClass(variant: ScrollLayoutsVariant, index: number) {
   return classes.join(" ");
 }
 
+function isStackVariant(variant: ScrollLayoutsVariant) {
+  return variant === "stackDark" || variant === "stackGlass" || variant === "stackScale";
+}
+
 function flipOptions(variant: ScrollLayoutsVariant, isMobile: boolean) {
   if (variant === "row") {
     return {
@@ -296,7 +300,9 @@ export function ScrollLayoutsClient({
       {panels.map((panel, panelIndex) => {
         const photos = photosForVariant(panel, variant, photoCount);
         const captionText = caption.trim() || panel.name;
-        const showOutsideTitle = showTitles && variant !== "row" && variant !== "breakout";
+        const stackCaptionDescription = panel.description?.trim() || caption.trim();
+        const showOutsideTitle =
+          showTitles && variant !== "row" && variant !== "breakout" && !isStackVariant(variant);
         if (photos.length === 0) return null;
 
         return (
@@ -339,7 +345,16 @@ export function ScrollLayoutsClient({
                   );
                 })}
                 <div className="sbl-caption" data-sbl-caption>
-                  {captionText}
+                  {isStackVariant(variant) ? (
+                    <>
+                      <span className="sbl-caption__title">{panel.name}</span>
+                      {stackCaptionDescription && (
+                        <span className="sbl-caption__description">{stackCaptionDescription}</span>
+                      )}
+                    </>
+                  ) : (
+                    captionText
+                  )}
                 </div>
               </div>
             </div>
