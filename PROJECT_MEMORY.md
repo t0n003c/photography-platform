@@ -777,6 +777,8 @@ is gitignored):
   sizing/spread remains unchanged. Latest follow-up: desktop Perspective Blur now uses
   count-specific column layouts/sizing (6→3 columns, 9→3, 12→4, 15→5, 18→6) with larger cards
   and tighter safe padding so 6/9/12/15 better use the fixed viewport without clipping the lower row.
+  The capped Perspective grid box is explicitly centered with auto inline margins so the actual
+  public page matches the live preview instead of sitting left on wider desktop viewports.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
