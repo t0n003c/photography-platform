@@ -594,11 +594,11 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="21"] .sp-column-wrap {
-    width: min(10.5vw, 8rem);
+    width: min(12vw, 9.5rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="24"] .sp-column-wrap {
-    width: min(9.5vw, 7.5rem);
+    width: min(10.75vw, 8.5rem);
   }
 
   .sp-root[data-sp-variant="scatter"][data-sp-intro-count="18"] .sp-columns {

@@ -298,7 +298,10 @@ export function ScrollPanelsClient({
       }
 
       const columnDrift: Record<ScrollPanelsVariant, (i: number) => number> = {
-        classic: (i) => (i % 2 ? (isMobile ? 18 : 3) : isMobile ? -18 : -3),
+        classic: (i) => {
+          if (!isMobile) return 0;
+          return i % 2 ? 18 : -18;
+        },
         scatter: (i) => {
           return i % 2 ? (isMobile ? 18 : 6) : isMobile ? -18 : -6;
         },
