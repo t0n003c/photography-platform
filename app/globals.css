@@ -1592,6 +1592,11 @@ html.js .pr-root.is-enhanced {
     width: 34vw;
     height: 48vw;
   }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(1) {
+    z-index: 7;
+    width: 46vw;
+    height: 64vw;
+  }
   .sbl-gallery--stack .sbl-caption {
     bottom: 16%;
     gap: 0.75rem;
@@ -1607,7 +1612,7 @@ html.js .pr-root.is-enhanced {
     line-height: 1.32;
   }
   .sbl-gallery--switch.sbl-gallery--stack .sbl-caption {
-    left: 12vw;
+    left: 5vw;
   }
   .sbl-gallery--bento {
     grid-template-columns: repeat(3, 30vw);
