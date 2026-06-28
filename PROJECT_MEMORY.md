@@ -856,6 +856,8 @@ is gitignored):
   duplicate category heading hidden for those stack variants.
   Follow-up: On mobile only, the three stack variants enlarge the cover photo after the stack
   finishes forming and shift the in-grid category name/description further left.
+  Follow-up: The same mobile stack end-state now makes the cover photo larger again and offsets
+  it lower so the final stack uses more of the vertical phone viewport.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
