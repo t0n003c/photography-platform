@@ -836,6 +836,12 @@ is gitignored):
   Scatter Outward follow-up: desktop intro counts 21 and 24 now use larger high-count cards,
   reduced panel side padding, tighter high-count gutters, and a count-aware desktop intro
   scale so those grids read more edge-to-edge while retaining the no-clipping constraint.
+  New Scroll Showcase style: `scrollLayouts` ports Codrops ScrollBasedLayoutAnimations as a
+  GSAP Flip + ScrollTrigger FLIP morph family. Variants implemented: Row focus, Breakout grid,
+  Long grid, Dark stack, Glass stack, Scale stack, Tiny grid, Bento spread, and Single image
+  reveal. The editor exposes variant-aware photo counts, optional caption, and background/text
+  colors. It keeps the app's global Lenis rather than Codrops' local Lenis. Focused Chrome smoke
+  covered all 9 desktop variants plus mobile Bento and reduced-motion Row with 0 console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

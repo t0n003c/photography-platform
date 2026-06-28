@@ -223,10 +223,11 @@ const ScrollShowcaseBlock = z.object({
   // Show the giant category-name titles.
   showTitles: z.boolean().default(true),
   // Render style: cinematic clip-wipe panels, on-scroll 3D carousel, the
-  // Codrops ScrollPanels-inspired editorial panel/list treatment, or Codrops
-  // OnScrollLayoutFormations-style pinned image assemblies.
+  // Codrops ScrollPanels-inspired editorial panel/list treatment, Codrops
+  // OnScrollLayoutFormations-style pinned image assemblies, or Codrops
+  // ScrollBasedLayoutAnimations-style FLIP layout morphs.
   style: z
-    .enum(["cinematic", "carousel3d", "scrollPanels", "layoutFormations"])
+    .enum(["cinematic", "carousel3d", "scrollPanels", "layoutFormations", "scrollLayouts"])
     .default("cinematic"),
   // ScrollPanels-only: which Codrops demo motion family to emulate.
   scrollPanelsVariant: z
@@ -268,6 +269,26 @@ const ScrollShowcaseBlock = z.object({
   layoutFormationsHeading: z.string().default("Layout formations").optional(),
   // LayoutFormations-only: photos used in each assembled layout.
   layoutFormationsPhotoCount: z.number().int().min(6).max(24).default(12).optional(),
+  // ScrollLayouts-only: Codrops ScrollBasedLayoutAnimations variant.
+  scrollLayoutsVariant: z
+    .enum([
+      "row",
+      "breakout",
+      "grid10",
+      "stackDark",
+      "stackGlass",
+      "stackScale",
+      "tiny",
+      "bento",
+      "single",
+    ])
+    .default("row")
+    .optional(),
+  scrollLayoutsPhotoCount: z.number().int().min(1).max(80).default(9).optional(),
+  scrollLayoutsCaption: z.string().default("").optional(),
+  scrollLayoutsUseBackground: z.boolean().default(true).optional(),
+  scrollLayoutsBackground: z.string().default("#131417").optional(),
+  scrollLayoutsTextColor: z.string().default("#ffffff").optional(),
 });
 const InstagramBlock = z.object({
   ...baseBlock,

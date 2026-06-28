@@ -102,7 +102,18 @@ function makeBlock(type: BlockType): Block {
     case "divider": return { id, type };
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
-    case "scrollShowcase": return { id, type, title: "", categoryIds: [], limit: 6, clusterCount: 4, showTitles: true, style: "cinematic" };
+    case "scrollShowcase": return {
+      id,
+      type,
+      title: "",
+      categoryIds: [],
+      limit: 6,
+      clusterCount: 4,
+      showTitles: true,
+      style: "cinematic",
+      scrollLayoutsVariant: "row",
+      scrollLayoutsPhotoCount: 9,
+    };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
@@ -1104,7 +1115,9 @@ function LeafEditor({
       const auto = chosen.length === 0;
       const isScrollPanels = block.style === "scrollPanels";
       const isLayoutFormations = block.style === "layoutFormations";
+      const isScrollLayouts = block.style === "scrollLayouts";
       const useScrollPanelsBackground = block.scrollPanelsUseBackground ?? true;
+      const useScrollLayoutsBackground = block.scrollLayoutsUseBackground ?? true;
       const layoutFormationVariant = block.layoutFormationsVariant ?? "rise";
       const layoutFormationPhotoOptions =
         layoutFormationVariant === "zoomed" ? [9] : [6, 9, 12, 18, 24];
@@ -1116,6 +1129,25 @@ function LeafEditor({
         layoutFormationVariant === "zoomed"
           ? 9
           : storedLayoutFormationPhotoCount;
+      const scrollLayoutsVariant = block.scrollLayoutsVariant ?? "row";
+      const scrollLayoutsFixedCounts: Record<string, number> = {
+        row: 7,
+        breakout: 9,
+        grid10: 16,
+        stackDark: 6,
+        stackGlass: 6,
+        stackScale: 6,
+        bento: 8,
+        single: 1,
+      };
+      const scrollLayoutsPhotoOptions =
+        scrollLayoutsVariant === "tiny"
+          ? [24, 36, 60, 80]
+          : [scrollLayoutsFixedCounts[scrollLayoutsVariant] ?? 9];
+      const scrollLayoutsPhotoCount =
+        scrollLayoutsVariant === "tiny"
+          ? (block.scrollLayoutsPhotoCount ?? 80)
+          : scrollLayoutsPhotoOptions[0];
       return (
         <div className="space-y-3">
           <SettingsGroup
@@ -1129,6 +1161,7 @@ function LeafEditor({
                   <option value="carousel3d">3D carousel (on scroll)</option>
                   <option value="scrollPanels">Scroll panels</option>
                   <option value="layoutFormations">Layout formations</option>
+                  <option value="scrollLayouts">Scroll layout morphs</option>
                 </Select>
               </Field>
               <Field label="Category title display">
@@ -1364,6 +1397,111 @@ function LeafEditor({
                       ))}
                     </Select>
                   </Field>
+                </div>
+              </SettingsGroup>
+            </>
+          ) : isScrollLayouts ? (
+            <>
+              <SettingsGroup
+                title="Layout morph"
+                description="Codrops ScrollBasedLayoutAnimations-style pinned image layout transitions."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Demo variant">
+                    <Select
+                      value={scrollLayoutsVariant}
+                      onChange={(e) => {
+                        const nextVariant = e.target.value as typeof block.scrollLayoutsVariant;
+                        const fixedCounts: Record<string, number> = {
+                          row: 7,
+                          breakout: 9,
+                          grid10: 16,
+                          stackDark: 6,
+                          stackGlass: 6,
+                          stackScale: 6,
+                          bento: 8,
+                          single: 1,
+                        };
+                        set({
+                          scrollLayoutsVariant: nextVariant,
+                          scrollLayoutsPhotoCount:
+                            nextVariant === "tiny" ? 80 : fixedCounts[nextVariant ?? "row"] ?? 9,
+                        });
+                      }}
+                    >
+                      <option value="row">Row focus</option>
+                      <option value="breakout">Breakout grid</option>
+                      <option value="grid10">Long grid</option>
+                      <option value="stackDark">Dark stack</option>
+                      <option value="stackGlass">Glass stack</option>
+                      <option value="stackScale">Scale stack</option>
+                      <option value="tiny">Tiny grid</option>
+                      <option value="bento">Bento spread</option>
+                      <option value="single">Single image reveal</option>
+                    </Select>
+                  </Field>
+                  <Field label="Photos per layout">
+                    <Select
+                      value={String(scrollLayoutsPhotoCount)}
+                      onChange={(e) => set({ scrollLayoutsPhotoCount: Number(e.target.value) })}
+                    >
+                      {scrollLayoutsPhotoOptions.map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </Select>
+                  </Field>
+                  <Field label="Top label">
+                    <Input
+                      value={block.title}
+                      onChange={(e) => set({ title: e.target.value })}
+                      placeholder="Selected work"
+                    />
+                  </Field>
+                  <Field label="Caption">
+                    <Textarea
+                      rows={3}
+                      value={block.scrollLayoutsCaption ?? ""}
+                      onChange={(e) => set({ scrollLayoutsCaption: e.target.value })}
+                      placeholder="Leave blank to use the category name."
+                    />
+                  </Field>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup
+                title="Colors"
+                description="Use the dark Codrops-style background or let the page theme decide."
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Background mode">
+                    <Select
+                      value={useScrollLayoutsBackground ? "yes" : "no"}
+                      onChange={(e) => set({ scrollLayoutsUseBackground: e.target.value === "yes" })}
+                    >
+                      <option value="yes">Use custom background</option>
+                      <option value="no">Use page background</option>
+                    </Select>
+                  </Field>
+                  {useScrollLayoutsBackground && (
+                    <>
+                      <Field label="Background color">
+                        <Input
+                          type="color"
+                          value={block.scrollLayoutsBackground ?? "#131417"}
+                          onChange={(e) => set({ scrollLayoutsBackground: e.target.value })}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                      <Field label="Text color">
+                        <Input
+                          type="color"
+                          value={block.scrollLayoutsTextColor ?? "#ffffff"}
+                          onChange={(e) => set({ scrollLayoutsTextColor: e.target.value })}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                    </>
+                  )}
                 </div>
               </SettingsGroup>
             </>

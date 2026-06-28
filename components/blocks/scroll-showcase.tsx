@@ -10,9 +10,20 @@ import {
 } from "./scroll-showcase-client";
 import { Carousel3DScroll, type CarouselScene } from "./carousel-3d-scroll";
 import { LayoutFormationsClient } from "./layout-formations-client";
+import { ScrollLayoutsClient } from "./scroll-layouts-client";
 import { ScrollPanelsClient } from "./scroll-panels-client";
 
 const RING_SIZE = 10; // photos per 3D-carousel ring
+const SCROLL_LAYOUT_COUNTS: Record<string, number> = {
+  row: 7,
+  breakout: 9,
+  grid10: 16,
+  stackDark: 6,
+  stackGlass: 6,
+  stackScale: 6,
+  bento: 8,
+  single: 1,
+};
 
 // Cinematic, scroll-driven showcase. Auto-sources published categories (like the
 // Category index block); each becomes a full-screen panel: cover photo as the
@@ -60,6 +71,12 @@ export async function ScrollShowcaseBlock({
         ? 18
         : (block.layoutFormationsPhotoCount ?? 12)
       : 0;
+  const scrollLayoutsPhotoCount =
+    block.style === "scrollLayouts"
+      ? block.scrollLayoutsVariant === "tiny"
+        ? (block.scrollLayoutsPhotoCount ?? 80)
+        : (SCROLL_LAYOUT_COUNTS[block.scrollLayoutsVariant ?? "row"] ?? 9)
+      : 0;
   const photoFetchCount =
     block.style === "scrollPanels"
       ? Math.max(
@@ -69,7 +86,9 @@ export async function ScrollShowcaseBlock({
         )
       : block.style === "layoutFormations"
         ? Math.max(layoutFormationsPhotoCount + 1, 7)
-      : block.clusterCount + 2;
+        : block.style === "scrollLayouts"
+          ? Math.max(scrollLayoutsPhotoCount + 1, 9)
+          : block.clusterCount + 2;
 
   const panels = (
     await Promise.all(
@@ -122,7 +141,9 @@ export async function ScrollShowcaseBlock({
                 )
               : block.style === "layoutFormations"
                 ? pool.slice(0, layoutFormationsPhotoCount)
-              : cluster.length > 0 ? cluster : [background],
+                : block.style === "scrollLayouts"
+                  ? pool.slice(0, scrollLayoutsPhotoCount)
+                  : cluster.length > 0 ? cluster : [background],
         };
       }),
     )
@@ -169,6 +190,22 @@ export async function ScrollShowcaseBlock({
         photoCount={layoutFormationsPhotoCount}
         headerAlign={block.layoutFormationsHeaderAlign ?? "left"}
         heading={block.layoutFormationsHeading ?? "Layout formations"}
+      />
+    );
+  }
+
+  if (block.style === "scrollLayouts") {
+    return (
+      <ScrollLayoutsClient
+        panels={panels}
+        title={block.title}
+        showTitles={block.showTitles}
+        variant={block.scrollLayoutsVariant ?? "row"}
+        photoCount={scrollLayoutsPhotoCount}
+        caption={block.scrollLayoutsCaption ?? ""}
+        useBackground={block.scrollLayoutsUseBackground ?? true}
+        background={block.scrollLayoutsBackground ?? "#131417"}
+        textColor={block.scrollLayoutsTextColor ?? "#ffffff"}
       />
     );
   }
