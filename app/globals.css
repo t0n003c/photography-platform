@@ -401,15 +401,72 @@ html.js .pr-root.is-enhanced {
     width: min(9vw, 7.75rem);
   }
 
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="6"] .sp-column-wrap {
+    flex: 0 0 min(22vw, 16.5rem);
+    width: min(22vw, 16.5rem);
+    margin-top: 0;
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-column-wrap {
+    flex: 0 0 min(15vw, 11rem);
+    width: min(15vw, 11rem);
+    margin-top: 0;
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="12"] .sp-column-wrap {
+    flex: 0 0 min(14.5vw, 10.75rem);
+    width: min(14.5vw, 10.75rem);
+    margin-top: 0;
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="15"] .sp-column-wrap {
+    flex: 0 0 min(13vw, 10.25rem);
+    width: min(13vw, 10.25rem);
+    margin-top: 0;
+  }
+
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column-wrap {
     flex: 0 0 min(16vw, 13.5rem);
     width: min(16vw, 13.5rem);
     margin-top: 0;
   }
 
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="6"] .sp-columns-panel,
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-columns-panel,
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="12"] .sp-columns-panel,
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="15"] .sp-columns-panel {
+    padding-block: 3vh;
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="6"] .sp-columns {
+    gap: clamp(0.5rem, 1vw, 1rem);
+    width: min(92vw, 64rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-columns {
+    gap: clamp(0.4rem, 0.8vw, 0.8rem);
+    width: min(90vw, 58rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="12"] .sp-columns {
+    gap: clamp(0.35rem, 0.7vw, 0.75rem);
+    width: min(94vw, 68rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="15"] .sp-columns {
+    gap: clamp(0.3rem, 0.65vw, 0.65rem);
+    width: min(96vw, 74rem);
+  }
+
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-columns {
     gap: clamp(0.2rem, 0.45vw, 0.45rem);
     width: min(99vw, 84rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-column,
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="12"] .sp-column,
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="15"] .sp-column {
+    gap: clamp(0.25rem, 0.6vh, 0.5rem);
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-column {

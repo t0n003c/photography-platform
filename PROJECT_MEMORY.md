@@ -774,7 +774,9 @@ is gitignored):
   also removes the even-column vertical drop and tightens row gaps so the enlarged lower-row photos
   do not clip at the bottom; Perspective Blur keeps the safer desktop setup spread while increasing
   desktop rotation and blur so the blur-to-clear finish reads more strongly. Mobile perspective
-  sizing/spread remains unchanged.
+  sizing/spread remains unchanged. Latest follow-up: desktop Perspective Blur now uses
+  count-specific column layouts/sizing (6→3 columns, 9→3, 12→4, 15→5, 18→6) with larger cards
+  and tighter safe padding so 6/9/12/15 better use the fixed viewport without clipping the lower row.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
