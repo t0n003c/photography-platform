@@ -206,7 +206,7 @@ function OverlayBanner({
     block.layout === "center"
       ? "flex justify-center py-12"
       : block.layout === "bottom-right"
-        ? "flex justify-end pb-12 md:pr-[8vw]"
+        ? "flex justify-end pb-12 md:pr-[14vw] lg:pr-[14vw]"
         : "flex justify-start pb-12 md:pl-[10vw] lg:pl-[10vw]";
   return (
     <section className={`relative ${h} w-full overflow-hidden bg-[hsl(var(--muted))]`}>

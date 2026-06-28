@@ -320,7 +320,7 @@ export function ScrollPanelsClient({
         classic: 1,
         scatter: isMobile ? 1 : 0.62,
         demo4: 1,
-        perspective: 0.7,
+        perspective: !isMobile && panelPhotos.length >= 21 ? 0.86 : 0.7,
       };
       const imageScale: Record<ScrollPanelsVariant, number> = {
         classic: isMobile ? 1.22 : 1.08,

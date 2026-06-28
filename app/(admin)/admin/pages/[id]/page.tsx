@@ -47,6 +47,7 @@ interface PageRow {
 interface Opt {
   id: string;
   label: string;
+  photoCount?: number;
 }
 
 function errMsg(err: unknown): string {
@@ -126,7 +127,9 @@ export default function PageEditor() {
     Promise.all([
       api.get<{ data: PageRow }>(`/api/v1/admin/pages/${id}`),
       api.get<{ data: PhotoDTO[] }>("/api/v1/admin/photos?limit=80").catch(() => ({ data: [] as PhotoDTO[] })),
-      api.get<{ data: { id: string; name: string }[] }>("/api/v1/admin/categories").catch(() => ({ data: [] })),
+      api
+        .get<{ data: { id: string; name: string; photoCount?: number }[] }>("/api/v1/admin/categories")
+        .catch(() => ({ data: [] })),
       api.get<{ data: { id: string; name: string }[] }>("/api/v1/admin/locations").catch(() => ({ data: [] })),
       api.get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries").catch(() => ({ data: [] })),
     ])
@@ -151,7 +154,7 @@ export default function PageEditor() {
           }),
         );
         setTargets({
-          category: cats.data.map((c) => ({ id: c.id, label: c.name })),
+          category: cats.data.map((c) => ({ id: c.id, label: c.name, photoCount: c.photoCount ?? 0 })),
           location: locs.data.map((l) => ({ id: l.id, label: l.name })),
           gallery: gals.data.map((g) => ({ id: g.id, label: g.title })),
         });
@@ -1095,6 +1098,9 @@ function LeafEditor({
       const chosen = block.categoryIds ?? [];
       const unchosen = cats.filter((c) => !chosen.includes(c.id));
       const labelOf = (cid: string) => cats.find((c) => c.id === cid)?.label ?? "(removed)";
+      const photoCountOf = (cid: string) => cats.find((c) => c.id === cid)?.photoCount ?? 0;
+      const categoryOptionLabel = (c: Opt) =>
+        `${c.label} (${c.photoCount ?? 0} ${(c.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
       const auto = chosen.length === 0;
       const isScrollPanels = block.style === "scrollPanels";
       const isLayoutFormations = block.style === "layoutFormations";
@@ -1396,7 +1402,12 @@ function LeafEditor({
                 ) : (
                   chosen.map((cid, i) => (
                     <div key={cid} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
-                      <span className="truncate text-sm">{i + 1}. {labelOf(cid)}</span>
+                      <span className="truncate text-sm">
+                        {i + 1}. {labelOf(cid)}
+                        <span className="ml-1 text-xs text-[hsl(var(--muted-foreground))]">
+                          ({photoCountOf(cid)} {photoCountOf(cid) === 1 ? "photo" : "photos"})
+                        </span>
+                      </span>
                       <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
                         <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
                         <button type="button" aria-label="Move down" disabled={i === chosen.length - 1} onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
@@ -1408,7 +1419,7 @@ function LeafEditor({
                 {unchosen.length > 0 && (
                   <Select value="" onChange={(e) => e.target.value && set({ categoryIds: [...chosen, e.target.value] })}>
                     <option value="">＋ Add category…</option>
-                    {unchosen.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    {unchosen.map((c) => <option key={c.id} value={c.id}>{categoryOptionLabel(c)}</option>)}
                   </Select>
                 )}
               </div>

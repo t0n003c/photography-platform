@@ -828,6 +828,11 @@ is gitignored):
   Mobile follow-up: Perspective Blur intro counts 6 and 9 now use 3 real columns on phone-sized
   viewports with tighter horizontal padding/gaps, so those smaller counts render larger instead
   of inheriting the 4-column mobile layout.
+  Latest follow-up: desktop Perspective Blur intro counts 21 and 24 were widened again with
+  tighter gutters, reduced side padding, a count-aware intro scale, and safer high-count vertical
+  offsets so the grids fill the viewport more edge-to-edge without clipping. Mobile Scroll Panels now explicitly orders intro
+  text above the intro grid across variants. Page editor category pickers show each category's
+  photo count, and the desktop banner bottom-right overlay was nudged left.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

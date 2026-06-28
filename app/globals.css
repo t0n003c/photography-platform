@@ -500,6 +500,11 @@ html.js .pr-root.is-enhanced {
     padding: 2.5vh 3vw;
   }
 
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="21"] .sp-columns-panel,
+  .sp-root.is-enhanced[data-sp-variant="perspective"][data-sp-intro-count="24"] .sp-columns-panel {
+    padding: 2vh 0.5vw;
+  }
+
   .sp-root[data-sp-variant="perspective"] .sp-columns {
     gap: clamp(0.5rem, 1vw, 1rem);
     margin-inline: auto;
@@ -545,14 +550,14 @@ html.js .pr-root.is-enhanced {
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="21"] .sp-column-wrap {
-    flex: 0 0 min(12.7vw, 11rem);
-    width: min(12.7vw, 11rem);
+    flex: 0 0 min(13.2vw, 11.75rem);
+    width: min(13.2vw, 11.75rem);
     margin-top: 0;
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="24"] .sp-column-wrap {
-    flex: 0 0 min(11.4vw, 9.95rem);
-    width: min(11.4vw, 9.95rem);
+    flex: 0 0 min(11.7vw, 10.25rem);
+    width: min(11.7vw, 10.25rem);
     margin-top: 0;
   }
 
@@ -586,8 +591,16 @@ html.js .pr-root.is-enhanced {
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="18"] .sp-columns,
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="21"] .sp-columns,
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="24"] .sp-columns {
-    gap: clamp(0.16rem, 0.35vw, 0.35rem);
-    width: min(99vw, 88rem);
+    gap: clamp(0.12rem, 0.25vw, 0.28rem);
+    width: min(99.5vw, 92rem);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="21"] .sp-columns {
+    transform: translateY(0);
+  }
+
+  .sp-root[data-sp-variant="perspective"][data-sp-intro-count="24"] .sp-columns {
+    transform: translateY(-2.5vh);
   }
 
   .sp-root[data-sp-variant="perspective"][data-sp-intro-count="9"] .sp-column,
@@ -800,6 +813,20 @@ html.js .pr-root.is-enhanced {
 }
 
 @media (max-width: 768px) {
+  .sp-root {
+    display: flex;
+    flex-direction: column;
+  }
+  .sp-root .sp-intro {
+    order: 1;
+  }
+  .sp-root .sp-columns-panel,
+  .sp-root.is-enhanced .sp-columns-panel {
+    order: 2;
+  }
+  .sp-root .sp-showcase {
+    order: 3;
+  }
   .sp-columns-panel {
     padding: 6vh 5vw 0;
   }
