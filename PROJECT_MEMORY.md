@@ -762,7 +762,9 @@ is gitignored):
   guarded by an `is-panel-active` class so they stay hidden until their own Scroll Showcase section
   is active and cannot overlap blocks above the showcase. Desktop Angled Rows drift was nudged from
   `-15%` to `-22%` per column step so desktop columns move a little faster while mobile remains
-  at `-150%`.
+  at `-150%`. Latest follow-up: desktop Angled Rows keeps the 18-photo placement unchanged, while
+  15/12/9/6 get count-specific down-left placement and smaller scale so the top-right corner has
+  breathing room; mobile 6-photo Angled Rows uses 2 columns for larger photos.
   Scroll Panels Perspective Blur desktop follow-up: the desktop intro grid now uses much smaller
   perspective cards/gaps inside the fixed viewport panel and a reduced desktop setup spread
   (`125` instead of `340`) so high intro counts no longer push the lower rows half outside the
