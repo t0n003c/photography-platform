@@ -1242,11 +1242,15 @@ html.js .pr-root.is-enhanced {
 }
 .sbl-gallery--row .sbl-caption {
   position: absolute;
-  bottom: -50vh;
+  top: 0;
   left: 0;
-  width: 100%;
-  max-width: 980px;
-  padding: 4.5vw;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  padding: 8vw;
+  text-align: center;
   opacity: 0;
 }
 .sbl-root[data-sbl-variant="row"] .sbl-caption,
@@ -1257,7 +1261,8 @@ html.js .pr-root.is-enhanced {
   line-height: 0.84;
 }
 .sbl-gallery--switch.sbl-gallery--row .sbl-caption {
-  bottom: 0;
+  top: 0;
+  max-width: none;
   opacity: 1;
 }
 

@@ -846,6 +846,8 @@ is gitignored):
   editor, and Row focus/Breakout grid use larger category-name headings above the animated layout.
   Follow-up: Row focus and Breakout grid now hide the separate category heading outside the grid;
   their in-grid caption/category text is the larger display element instead.
+  Follow-up: Row focus centers the in-grid category caption in the middle of the animated grid
+  once the layout morph reaches its switched state.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
