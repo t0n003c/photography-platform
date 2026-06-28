@@ -751,6 +751,10 @@ is gitignored):
   render all selected photos; scatter mobile grids now use tighter side padding/gaps, and 6-photo
   scatter uses 2 columns for larger images. Mobile Scatter also now starts at full panel scale
   instead of `0.7`, so the intro grid uses the available phone width before the outward motion.
+  Follow-up: mobile Scatter 12/15/18 now use real 4/5/6-column templates instead of wrapping
+  columns into a second row, preventing bottom clipping and keeping the intro photos together;
+  desktop Scatter 12 uses a smaller/tighter 4-column grid to avoid bottom clipping. Mobile
+  Scatter also gets a small top buffer so the first row does not crowd under the mobile header.
   Scroll Panels Angled Rows follow-up: the demo4 intro grid is shifted further right on desktop
   (`translateX` from `21vw` to `25vw`, then to `38vw`, then balanced back to `52vw`) and mobile
   (`translateX(8vw)`, then `18vw`, then `translate(31vw, -12vh)`, before rotate/scale);
