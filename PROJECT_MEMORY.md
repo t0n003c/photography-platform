@@ -873,6 +873,9 @@ is gitignored):
   name/description before the caption begins moving; focused mobile smoke measured the later
   cover-to-caption gap stabilizing around 86-90px across all three stack variants with 0 console
   errors.
+  Follow-up: The caption now has a second delayed mobile catch-up lift (`-14svh` beginning at
+  timeline `0.72`) so the late stack frame visually stays close to the cover. Focused smoke
+  measured late gaps around 28-30px across Dark/Glass/Scale Stack with 0 console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
