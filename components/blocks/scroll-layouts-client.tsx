@@ -264,7 +264,7 @@ export function ScrollLayoutsClient({
             },
           });
           timeline.add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0);
-          timeline.to(items, { y: "-29svh", duration: 0.28, ease: "none" }, 0.72);
+          timeline.to(items, { y: "-26svh", duration: 0.28, ease: "none" }, 0.72);
           if (captionEl) {
             timeline.to(captionEl, { y: "-14svh", duration: 0.28, ease: "none" }, 0.72);
           }

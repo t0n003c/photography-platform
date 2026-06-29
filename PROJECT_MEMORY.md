@@ -880,6 +880,9 @@ is gitignored):
   Follow-up: Mobile Dark/Glass/Scale Stack now use a shorter ScrollTrigger range (`+=125%`
   instead of the default mobile `+=175%`), so the same stack-and-lift animation completes with
   less phone scrolling while desktop remains unchanged.
+  Follow-up: Mobile stack end-state cover/card lift was reduced from `-29svh` to `-26svh`,
+  tightening the final cover-to-caption gap to about 10px while keeping the same smooth single
+  handoff and faster mobile scroll range.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
