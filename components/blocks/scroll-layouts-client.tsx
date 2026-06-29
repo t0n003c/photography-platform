@@ -237,21 +237,40 @@ export function ScrollLayoutsClient({
         gallery.classList.remove("sbl-gallery--switch");
 
         const options = flipOptions(variant, isMobile);
-        Flip.to(state, {
+        const flipVars = {
           ease: "none",
           absoluteOnLeave: options.flip.absoluteOnLeave,
           absolute: options.flip.absolute,
           scale: options.flip.scale,
           simple: options.flip.simple,
           stagger: options.stagger,
-          scrollTrigger: {
-            trigger: gallery,
-            start: "center center",
-            end: options.end,
-            pin: section,
-            scrub: true,
-          },
-        });
+        };
+
+        if (isMobile && isStackVariant(variant)) {
+          gsap
+            .timeline({
+              scrollTrigger: {
+                trigger: gallery,
+                start: "center center",
+                end: options.end,
+                pin: section,
+                scrub: true,
+              },
+            })
+            .add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0)
+            .to(items, { y: "-36svh", duration: 0.42, ease: "none" }, 0.58);
+        } else {
+          Flip.to(state, {
+            ...flipVars,
+            scrollTrigger: {
+              trigger: gallery,
+              start: "center center",
+              end: options.end,
+              pin: section,
+              scrub: true,
+            },
+          });
+        }
 
         if (inners.length > 0) {
           gsap.fromTo(

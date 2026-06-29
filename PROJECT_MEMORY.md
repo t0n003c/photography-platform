@@ -860,6 +860,12 @@ is gitignored):
   it lower so the final stack uses more of the vertical phone viewport.
   Follow-up: The mobile stack cover end-state was strengthened again: cover is now 70vw x 96vw,
   shifted right to center horizontally and lowered to land near the phone viewport center.
+  Follow-up: Mobile Dark Stack, Glass Stack, and Scale Stack now split the morph into two beats:
+  the grid first forms the stack, then the finished stack lifts upward together. The rear cards
+  share the cover's mobile destination/offsets so they travel with the cover, while the cover
+  clears the in-grid category name/description instead of covering it. Focused Chrome smoke
+  covered all three mobile stack variants plus desktop and reduced-motion fallback with 0 console
+  errors and no horizontal overflow.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -1592,6 +1592,9 @@ html.js .pr-root.is-enhanced {
     width: 34vw;
     height: 48vw;
   }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item {
+    margin-top: 24svh;
+  }
   .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(1) {
     z-index: 7;
     width: 70vw;
@@ -1599,11 +1602,27 @@ html.js .pr-root.is-enhanced {
     margin-top: 24svh;
     margin-left: 12vw;
   }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(2) {
+    margin-left: calc(12vw + var(--sbl-offset));
+  }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(3) {
+    margin-left: calc(12vw + var(--sbl-offset) * 2);
+  }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(4) {
+    margin-left: calc(12vw + var(--sbl-offset) * 3);
+  }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(5) {
+    margin-left: calc(12vw + var(--sbl-offset) * 4);
+  }
+  .sbl-gallery--switch.sbl-gallery--stack .sbl-gallery__item:nth-child(6) {
+    margin-left: calc(12vw + var(--sbl-offset) * 5);
+  }
   .sbl-gallery--stack .sbl-caption {
     bottom: 16%;
     gap: 0.75rem;
     width: 80vw;
     padding: 0.75rem;
+    z-index: 8;
   }
   .sbl-gallery--stack .sbl-caption__title {
     font-size: clamp(2.8rem, 15vw, 5.5rem);
