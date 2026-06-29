@@ -52,13 +52,12 @@ function subtitleFor(photo: PhotoDTO, fallback?: string | null) {
   return photo.subhead?.trim() || fallback?.trim() || "";
 }
 
-function captionFor(photo: PhotoDTO) {
-  return (
-    photo.caption?.trim() ||
-    photo.subhead?.trim() ||
-    photo.altText?.trim() ||
-    "No caption has been added for this photograph yet."
-  );
+function photoDetailText(photo: PhotoDTO) {
+  return {
+    headline: photo.headline?.trim() || "Untitled photograph",
+    subhead: photo.subhead?.trim() || "",
+    caption: photo.caption?.trim() || "",
+  };
 }
 
 function sideFor(photo: PhotoDTO, fallback: string, index: number) {
@@ -195,6 +194,7 @@ export function DiagonalSlideshow({
   );
   const active = items[current] ?? items[0];
   const activeId = active?.photo.id;
+  const activeDetail = active ? photoDetailText(active.photo) : null;
   const bg = useBackground ? backgroundColor : "transparent";
 
   const navigate = React.useCallback(
@@ -518,22 +518,24 @@ export function DiagonalSlideshow({
               data-diagonal-content-part
               className="mt-4 text-[clamp(3rem,8vw,8rem)] font-medium leading-none opacity-0"
             >
-              {titleFor(active.photo, title || "Gallery")}
+              {activeDetail?.headline}
             </h2>
-            {subtitleFor(active.photo, subtitle) && (
+            {activeDetail?.subhead && (
               <p
                 data-diagonal-content-part
                 className="mt-4 max-w-xl text-lg opacity-0"
               >
-                {subtitleFor(active.photo, subtitle)}
+                {activeDetail.subhead}
               </p>
             )}
-            <p
-              data-diagonal-content-part
-              className="mt-8 max-w-3xl text-sm leading-7 opacity-0 md:columns-2 md:gap-8 md:text-justify"
-            >
-              {captionFor(active.photo)}
-            </p>
+            {activeDetail?.caption && (
+              <p
+                data-diagonal-content-part
+                className="mt-8 max-w-3xl text-sm leading-7 opacity-0 md:columns-2 md:gap-8 md:text-justify"
+              >
+                {activeDetail.caption}
+              </p>
+            )}
           </div>
         )}
       </div>
