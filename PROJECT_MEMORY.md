@@ -866,6 +866,8 @@ is gitignored):
   clears the in-grid category name/description instead of covering it. Focused Chrome smoke
   covered all three mobile stack variants plus desktop and reduced-motion fallback with 0 console
   errors and no horizontal overflow.
+  Follow-up: The mobile stack lift was reduced from `-36svh` to `-31svh`, tightening the final
+  cover-to-caption gap to roughly 41-43px across Dark/Glass/Scale Stack while keeping no overlap.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

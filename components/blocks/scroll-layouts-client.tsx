@@ -258,7 +258,7 @@ export function ScrollLayoutsClient({
               },
             })
             .add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0)
-            .to(items, { y: "-36svh", duration: 0.42, ease: "none" }, 0.58);
+            .to(items, { y: "-31svh", duration: 0.42, ease: "none" }, 0.58);
         } else {
           Flip.to(state, {
             ...flipVars,
