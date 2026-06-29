@@ -868,6 +868,11 @@ is gitignored):
   errors and no horizontal overflow.
   Follow-up: The mobile stack lift was reduced from `-36svh` to `-31svh`, tightening the final
   cover-to-caption gap to roughly 41-43px across Dark/Glass/Scale Stack while keeping no overlap.
+  Follow-up: The mobile stack late beat now gives the caption a small synchronized lift while the
+  cover/cards do the larger lift. This prevents the cover from drifting far away from the category
+  name/description before the caption begins moving; focused mobile smoke measured the later
+  cover-to-caption gap stabilizing around 86-90px across all three stack variants with 0 console
+  errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

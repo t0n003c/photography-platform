@@ -247,18 +247,20 @@ export function ScrollLayoutsClient({
         };
 
         if (isMobile && isStackVariant(variant)) {
-          gsap
-            .timeline({
-              scrollTrigger: {
-                trigger: gallery,
-                start: "center center",
-                end: options.end,
-                pin: section,
-                scrub: true,
-              },
-            })
-            .add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0)
-            .to(items, { y: "-31svh", duration: 0.42, ease: "none" }, 0.58);
+          const timeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: gallery,
+              start: "center center",
+              end: options.end,
+              pin: section,
+              scrub: true,
+            },
+          });
+          timeline.add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0);
+          timeline.to(items, { y: "-29svh", duration: 0.46, ease: "none" }, 0.5);
+          if (captionEl) {
+            timeline.to(captionEl, { y: "-5svh", duration: 0.46, ease: "none" }, 0.5);
+          }
         } else {
           Flip.to(state, {
             ...flipVars,
