@@ -257,10 +257,9 @@ export function ScrollLayoutsClient({
             },
           });
           timeline.add(Flip.to(state, { ...flipVars, duration: 0.72 }), 0);
-          timeline.to(items, { y: "-29svh", duration: 0.46, ease: "none" }, 0.5);
+          timeline.to(items, { y: "-29svh", duration: 0.28, ease: "none" }, 0.72);
           if (captionEl) {
-            timeline.to(captionEl, { y: "-5svh", duration: 0.46, ease: "none" }, 0.5);
-            timeline.to(captionEl, { y: "-14svh", duration: 0.24, ease: "none" }, 0.72);
+            timeline.to(captionEl, { y: "-14svh", duration: 0.28, ease: "none" }, 0.72);
           }
         } else {
           Flip.to(state, {
