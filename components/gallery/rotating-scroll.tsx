@@ -45,7 +45,12 @@ interface VariantTheme {
   aspectRatio: string;
   marginBottom: string;
   borderRadius: string;
-  fontSize: string;
+  mobileFontSize: string;
+  desktopFontSize: string;
+  fontFamily: string;
+  fontWeight: number;
+  fontVariationSettings?: string;
+  fontStretch?: string;
 }
 
 const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
@@ -58,7 +63,12 @@ const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
     aspectRatio: "14 / 9",
     marginBottom: "-5rem",
     borderRadius: "0px",
-    fontSize: "clamp(2rem, 16vw, 8rem)",
+    mobileFontSize: "clamp(2rem, 16vw, 8rem)",
+    desktopFontSize: "clamp(2rem, 8.5vw, 5.75rem)",
+    fontFamily: '"scale-variable", var(--font-space-grotesk), var(--font-montserrat), system-ui, sans-serif',
+    fontWeight: 800,
+    fontVariationSettings: '"wght" 772, "wdth" 60',
+    fontStretch: "condensed",
   },
   demo2: {
     bg: "#11150b",
@@ -69,7 +79,11 @@ const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
     aspectRatio: "4 / 5",
     marginBottom: "-5rem",
     borderRadius: "0px",
-    fontSize: "clamp(2rem, 16vw, 8rem)",
+    mobileFontSize: "clamp(2rem, 16vw, 8rem)",
+    desktopFontSize: "clamp(2rem, 9vw, 6rem)",
+    fontFamily: '"totalblack-variable", "Arial Black", var(--font-montserrat), system-ui, sans-serif',
+    fontWeight: 900,
+    fontVariationSettings: '"wght" 800',
   },
   demo3: {
     bg: "#000000",
@@ -80,7 +94,10 @@ const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
     aspectRatio: "4 / 5",
     marginBottom: "-7rem",
     borderRadius: "7px",
-    fontSize: "clamp(2rem, 16vw, 5rem)",
+    mobileFontSize: "clamp(2rem, 16vw, 5rem)",
+    desktopFontSize: "clamp(2rem, 16vw, 5rem)",
+    fontFamily: 'var(--font-space-grotesk), var(--font-montserrat), system-ui, sans-serif',
+    fontWeight: 800,
   },
   demo4: {
     bg: "#ffffff",
@@ -91,7 +108,12 @@ const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
     aspectRatio: "4 / 5",
     marginBottom: "5rem",
     borderRadius: "7px",
-    fontSize: "clamp(2rem, 16vw, 14rem)",
+    mobileFontSize: "clamp(2rem, 16vw, 14rem)",
+    desktopFontSize: "clamp(2rem, 8vw, 7rem)",
+    fontFamily: '"scale-variable", var(--font-space-grotesk), var(--font-montserrat), system-ui, sans-serif',
+    fontWeight: 800,
+    fontVariationSettings: '"wght" 772, "wdth" 60',
+    fontStretch: "condensed",
   },
   demo5: {
     bg: "#141414",
@@ -102,7 +124,10 @@ const VARIANT_THEME: Record<RotatingScrollVariant, VariantTheme> = {
     aspectRatio: "4 / 5",
     marginBottom: "-10rem",
     borderRadius: "0px",
-    fontSize: "clamp(2rem, 16vw, 3rem)",
+    mobileFontSize: "clamp(2rem, 16vw, 3rem)",
+    desktopFontSize: "clamp(2rem, 16vw, 3rem)",
+    fontFamily: 'var(--font-space-grotesk), var(--font-montserrat), system-ui, sans-serif',
+    fontWeight: 800,
   },
 };
 
@@ -340,7 +365,12 @@ export function RotatingScroll({
           "--rotating-ar": theme.aspectRatio,
           "--rotating-gap": theme.marginBottom,
           "--rotating-radius": theme.borderRadius,
-          "--rotating-marquee-size": theme.fontSize,
+          "--rotating-marquee-mobile-size": theme.mobileFontSize,
+          "--rotating-marquee-desktop-size": theme.desktopFontSize,
+          "--rotating-marquee-font": theme.fontFamily,
+          "--rotating-marquee-weight": theme.fontWeight,
+          "--rotating-marquee-variation": theme.fontVariationSettings ?? "normal",
+          "--rotating-marquee-stretch": theme.fontStretch ?? "normal",
         } as React.CSSProperties
       }
     >
@@ -357,13 +387,25 @@ export function RotatingScroll({
             words.flatMap((word, i) => [
               <span
                 key={`${repeat}-${i}-word`}
-                className="text-[length:var(--rotating-marquee-size)] font-bold uppercase leading-none text-[var(--rotating-marquee)]"
+                className="text-[length:var(--rotating-marquee-mobile-size)] uppercase leading-none text-[var(--rotating-marquee)] md:text-[length:var(--rotating-marquee-desktop-size)]"
+                style={{
+                  fontFamily: "var(--rotating-marquee-font)",
+                  fontVariationSettings: "var(--rotating-marquee-variation)",
+                  fontStretch: "var(--rotating-marquee-stretch)",
+                  fontWeight: "var(--rotating-marquee-weight)",
+                }}
               >
                 {word}
               </span>,
               <span
                 key={`${repeat}-${i}-sep`}
-                className="text-[length:var(--rotating-marquee-size)] font-bold uppercase leading-none text-[var(--rotating-marquee)]"
+                className="text-[length:var(--rotating-marquee-mobile-size)] uppercase leading-none text-[var(--rotating-marquee)] md:text-[length:var(--rotating-marquee-desktop-size)]"
+                style={{
+                  fontFamily: "var(--rotating-marquee-font)",
+                  fontVariationSettings: "var(--rotating-marquee-variation)",
+                  fontStretch: "var(--rotating-marquee-stretch)",
+                  fontWeight: "var(--rotating-marquee-weight)",
+                }}
               >
                 /
               </span>,
