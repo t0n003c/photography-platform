@@ -883,6 +883,9 @@ is gitignored):
   Follow-up: Mobile stack end-state cover/card lift was reduced from `-29svh` to `-26svh`,
   tightening the final cover-to-caption gap to about 10px while keeping the same smooth single
   handoff and faster mobile scroll range.
+  Follow-up: Mobile stack end-state cover/card lift was reduced again from `-26svh` to
+  `-25.25svh`, halving the finished cover-to-caption gap to about 5px across Dark/Glass/Scale
+  Stack without overlap in focused iPhone 13 Chrome smoke.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
