@@ -939,6 +939,14 @@ function LayoutCard({
   const [diagonalSideText, setDiagonalSideText] = useState("");
   const [diagonalShowSideText, setDiagonalShowSideText] = useState(true);
   const [diagonalShowDetail, setDiagonalShowDetail] = useState(true);
+  const [depthUseMoodBackground, setDepthUseMoodBackground] = useState(true);
+  const [depthShowTrail, setDepthShowTrail] = useState(true);
+  const [depthShowParticles, setDepthShowParticles] = useState(true);
+  const [depthLabelStyle, setDepthLabelStyle] =
+    useState<"color-chip" | "metadata" | "minimal">("color-chip");
+  const [depthScrollSpeed, setDepthScrollSpeed] =
+    useState<"slow" | "normal" | "fast">("normal");
+  const [depthBackgroundColor, setDepthBackgroundColor] = useState("#fffaf0");
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -965,6 +973,7 @@ function LayoutCard({
           cfg.gridType === "image-trail" ||
           cfg.gridType === "rotating-scroll" ||
           cfg.gridType === "diagonal-slideshow" ||
+          cfg.gridType === "depth-gallery" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1045,6 +1054,32 @@ function LayoutCard({
         if (typeof c.diagonalShowDetail === "boolean") {
           setDiagonalShowDetail(c.diagonalShowDetail);
         }
+        if (typeof c.depthUseMoodBackground === "boolean") {
+          setDepthUseMoodBackground(c.depthUseMoodBackground);
+        }
+        if (typeof c.depthShowTrail === "boolean") {
+          setDepthShowTrail(c.depthShowTrail);
+        }
+        if (typeof c.depthShowParticles === "boolean") {
+          setDepthShowParticles(c.depthShowParticles);
+        }
+        if (
+          c.depthLabelStyle === "color-chip" ||
+          c.depthLabelStyle === "metadata" ||
+          c.depthLabelStyle === "minimal"
+        ) {
+          setDepthLabelStyle(c.depthLabelStyle);
+        }
+        if (
+          c.depthScrollSpeed === "slow" ||
+          c.depthScrollSpeed === "normal" ||
+          c.depthScrollSpeed === "fast"
+        ) {
+          setDepthScrollSpeed(c.depthScrollSpeed);
+        }
+        if (typeof c.depthBackgroundColor === "string") {
+          setDepthBackgroundColor(c.depthBackgroundColor);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1079,6 +1114,12 @@ function LayoutCard({
         diagonalSideText,
         diagonalShowSideText,
         diagonalShowDetail,
+        depthUseMoodBackground,
+        depthShowTrail,
+        depthShowParticles,
+        depthLabelStyle,
+        depthScrollSpeed,
+        depthBackgroundColor,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1124,6 +1165,7 @@ function LayoutCard({
                   <option value="image-trail">Image trail cursor</option>
                   <option value="rotating-scroll">Rotating on scroll</option>
                   <option value="diagonal-slideshow">Diagonal slideshow</option>
+                  <option value="depth-gallery">Depth gallery</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1133,6 +1175,7 @@ function LayoutCard({
                 gridType !== "image-trail" &&
                 gridType !== "rotating-scroll" &&
                 gridType !== "diagonal-slideshow" &&
+                gridType !== "depth-gallery" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1316,6 +1359,79 @@ function LayoutCard({
                   </div>
                 </div>
               )}
+              {gridType === "depth-gallery" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Label style">
+                      <Select
+                        value={depthLabelStyle}
+                        onChange={(e) =>
+                          setDepthLabelStyle(
+                            e.target.value as "color-chip" | "metadata" | "minimal",
+                          )
+                        }
+                      >
+                        <option value="color-chip">Color chip - reference layout</option>
+                        <option value="metadata">Photo metadata</option>
+                        <option value="minimal">Minimal</option>
+                      </Select>
+                    </Field>
+                    <Field label="Scroll speed">
+                      <Select
+                        value={depthScrollSpeed}
+                        onChange={(e) =>
+                          setDepthScrollSpeed(
+                            e.target.value as "slow" | "normal" | "fast",
+                          )
+                        }
+                      >
+                        <option value="slow">Slow</option>
+                        <option value="normal">Normal</option>
+                        <option value="fast">Fast</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Fallback background" htmlFor="depth-bg-color">
+                    <Input
+                      id="depth-bg-color"
+                      type="color"
+                      value={depthBackgroundColor}
+                      onChange={(e) => setDepthBackgroundColor(e.target.value)}
+                      disabled={depthUseMoodBackground}
+                      className="h-10 p-1"
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={depthUseMoodBackground}
+                        onChange={(e) => setDepthUseMoodBackground(e.target.checked)}
+                      />
+                      Use photo mood background
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={depthShowTrail}
+                        onChange={(e) => setDepthShowTrail(e.target.checked)}
+                      />
+                      Show trail
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={depthShowParticles}
+                        onChange={(e) => setDepthShowParticles(e.target.checked)}
+                      />
+                      Show particles
+                    </label>
+                  </div>
+                </div>
+              )}
               {gridType === "alternative-scroll" && (
                 <div className="space-y-3 rounded-md border p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1397,6 +1513,12 @@ function LayoutCard({
                 diagonalSideText,
                 diagonalShowSideText,
                 diagonalShowDetail,
+                depthUseMoodBackground,
+                depthShowTrail,
+                depthShowParticles,
+                depthLabelStyle,
+                depthScrollSpeed,
+                depthBackgroundColor,
               }}
               height={560}
             />

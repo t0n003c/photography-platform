@@ -11,6 +11,7 @@ export type GridType =
   | "image-trail"
   | "rotating-scroll"
   | "diagonal-slideshow"
+  | "depth-gallery"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

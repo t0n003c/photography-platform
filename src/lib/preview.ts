@@ -14,6 +14,7 @@ export interface PreviewConfig {
     | "image-trail"
     | "rotating-scroll"
     | "diagonal-slideshow"
+    | "depth-gallery"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -44,6 +45,12 @@ export interface PreviewConfig {
   diagonalSideText?: string;
   diagonalShowSideText?: boolean;
   diagonalShowDetail?: boolean;
+  depthUseMoodBackground?: boolean;
+  depthShowTrail?: boolean;
+  depthShowParticles?: boolean;
+  depthLabelStyle?: "color-chip" | "metadata" | "minimal";
+  depthScrollSpeed?: "slow" | "normal" | "fast";
+  depthBackgroundColor?: string;
 }
 
 export const PREVIEW_PARAM = "__pc";

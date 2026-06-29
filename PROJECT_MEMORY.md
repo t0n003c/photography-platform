@@ -920,6 +920,13 @@ is gitignored):
   Mobile uses smaller diagonal geometry with no hover tilt; reduced motion falls back to the
   existing justified grid. Focused Chrome smoke covered desktop navigation/detail open-close,
   iPhone 13 rendering, reduced-motion fallback, and 0 page/console errors.
+  Gallery-tab follow-up: `depth-gallery` ports the Houmahani/Codrops DepthGallery reference as
+  a Gallery-only grid type. It uses selected gallery photos as WebGL depth planes, scroll-driven
+  camera movement, per-photo mood colors from `dominantColor`, Codrops-style color-chip/metadata
+  labels, optional trail/particles, editable fallback background, label style, and scroll speed.
+  Intentional deviation: the reference uses a raw Three.js engine and custom GLSL background;
+  this app uses React Three Fiber plus CSS mood blobs to fit SSR/reduced-motion requirements.
+  Reduced motion/WebGL-gated fallback renders the existing justified grid.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -13,6 +13,7 @@ export type PreviewGrid =
   | "image-trail"
   | "rotating-scroll"
   | "diagonal-slideshow"
+  | "depth-gallery"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -57,6 +58,12 @@ export interface PreviewDraft {
   diagonalSideText?: string;
   diagonalShowSideText?: boolean;
   diagonalShowDetail?: boolean;
+  depthUseMoodBackground?: boolean;
+  depthShowTrail?: boolean;
+  depthShowParticles?: boolean;
+  depthLabelStyle?: "color-chip" | "metadata" | "minimal";
+  depthScrollSpeed?: "slow" | "normal" | "fast";
+  depthBackgroundColor?: string;
 }
 
 type PreviewDevice = "desktop" | "mobile";

@@ -16,6 +16,7 @@ import { ParallaxRing } from "./parallax-ring";
 import { ImageTrail } from "./image-trail";
 import { RotatingScroll } from "./rotating-scroll";
 import { DiagonalSlideshow } from "./diagonal-slideshow";
+import { DepthGallery } from "./depth-gallery";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -35,6 +36,7 @@ interface GalleryLayout {
     | "image-trail"
     | "rotating-scroll"
     | "diagonal-slideshow"
+    | "depth-gallery"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -79,6 +81,15 @@ interface GalleryLayout {
     sideText?: string;
     showSideText?: boolean;
     showDetail?: boolean;
+  };
+  /** Depth-gallery only: WebGL depth planes, mood background, and label controls. */
+  depthGallery?: {
+    useMoodBackground?: boolean;
+    showTrail?: boolean;
+    showParticles?: boolean;
+    labelStyle?: "color-chip" | "metadata" | "minimal";
+    scrollSpeed?: "slow" | "normal" | "fast";
+    backgroundColor?: string;
   };
 }
 
@@ -296,6 +307,32 @@ export function Gallery({
           sideText={layout.diagonalSlideshow?.sideText}
           showSideText={layout.diagonalSlideshow?.showSideText}
           showDetail={layout.diagonalSlideshow?.showDetail}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "depth-gallery") {
+    return (
+      <div>
+        <DepthGallery
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          useMoodBackground={layout.depthGallery?.useMoodBackground}
+          showTrail={layout.depthGallery?.showTrail}
+          showParticles={layout.depthGallery?.showParticles}
+          labelStyle={layout.depthGallery?.labelStyle}
+          scrollSpeed={layout.depthGallery?.scrollSpeed}
+          backgroundColor={layout.depthGallery?.backgroundColor}
           onOpen={openAt}
         />
         <Lightbox

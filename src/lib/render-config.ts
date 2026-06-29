@@ -11,6 +11,7 @@ export type GridType =
   | "image-trail"
   | "rotating-scroll"
   | "diagonal-slideshow"
+  | "depth-gallery"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -68,6 +69,18 @@ export interface DiagonalSlideshowConfig {
   showDetail: boolean;
 }
 
+export type DepthGalleryLabelStyle = "color-chip" | "metadata" | "minimal";
+export type DepthGalleryScrollSpeed = "slow" | "normal" | "fast";
+
+export interface DepthGalleryConfig {
+  useMoodBackground: boolean;
+  showTrail: boolean;
+  showParticles: boolean;
+  labelStyle: DepthGalleryLabelStyle;
+  scrollSpeed: DepthGalleryScrollSpeed;
+  backgroundColor: string;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -79,6 +92,7 @@ export interface RenderConfig {
   imageTrail: ImageTrailConfig;
   rotatingScroll: RotatingScrollConfig;
   diagonalSlideshow: DiagonalSlideshowConfig;
+  depthGallery: DepthGalleryConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -106,6 +120,20 @@ function rotatingScrollVariant(value: unknown): RotatingScrollVariant {
     return value;
   }
   return "demo5";
+}
+
+function depthLabelStyle(value: unknown): DepthGalleryLabelStyle {
+  if (value === "metadata" || value === "minimal" || value === "color-chip") {
+    return value;
+  }
+  return "color-chip";
+}
+
+function depthScrollSpeed(value: unknown): DepthGalleryScrollSpeed {
+  if (value === "slow" || value === "fast" || value === "normal") {
+    return value;
+  }
+  return "normal";
 }
 
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
@@ -140,6 +168,12 @@ export async function resolveRenderConfig(
     diagonalSideText?: string;
     diagonalShowSideText?: boolean;
     diagonalShowDetail?: boolean;
+    depthUseMoodBackground?: boolean;
+    depthShowTrail?: boolean;
+    depthShowParticles?: boolean;
+    depthLabelStyle?: DepthGalleryLabelStyle;
+    depthScrollSpeed?: DepthGalleryScrollSpeed;
+    depthBackgroundColor?: string;
   };
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
@@ -178,6 +212,14 @@ export async function resolveRenderConfig(
           : "",
       showSideText: cfgJson.diagonalShowSideText ?? true,
       showDetail: cfgJson.diagonalShowDetail ?? true,
+    },
+    depthGallery: {
+      useMoodBackground: cfgJson.depthUseMoodBackground ?? true,
+      showTrail: cfgJson.depthShowTrail ?? true,
+      showParticles: cfgJson.depthShowParticles ?? true,
+      labelStyle: depthLabelStyle(cfgJson.depthLabelStyle),
+      scrollSpeed: depthScrollSpeed(cfgJson.depthScrollSpeed),
+      backgroundColor: cfgJson.depthBackgroundColor ?? "#fffaf0",
     },
   };
 
@@ -252,6 +294,24 @@ export async function resolveRenderConfig(
         config.diagonalSlideshow.showSideText,
       showDetail:
         draft.diagonalShowDetail ?? config.diagonalSlideshow.showDetail,
+    },
+    depthGallery: {
+      useMoodBackground:
+        draft.depthUseMoodBackground ??
+        config.depthGallery.useMoodBackground,
+      showTrail: draft.depthShowTrail ?? config.depthGallery.showTrail,
+      showParticles:
+        draft.depthShowParticles ?? config.depthGallery.showParticles,
+      labelStyle:
+        draft.depthLabelStyle !== undefined
+          ? depthLabelStyle(draft.depthLabelStyle)
+          : config.depthGallery.labelStyle,
+      scrollSpeed:
+        draft.depthScrollSpeed !== undefined
+          ? depthScrollSpeed(draft.depthScrollSpeed)
+          : config.depthGallery.scrollSpeed,
+      backgroundColor:
+        draft.depthBackgroundColor ?? config.depthGallery.backgroundColor,
     },
   };
 }

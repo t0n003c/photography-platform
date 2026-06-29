@@ -26,6 +26,7 @@ const CreateSchema = z.object({
       "image-trail",
       "rotating-scroll",
       "diagonal-slideshow",
+      "depth-gallery",
       "carousel-3d-scroll",
       "alternative-scroll",
     ])

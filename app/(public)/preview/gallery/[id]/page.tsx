@@ -48,7 +48,8 @@ export default async function GalleryPreview({
     layout.gridType === "parallax-ring" ||
     layout.gridType === "image-trail" ||
     layout.gridType === "rotating-scroll" ||
-    layout.gridType === "diagonal-slideshow";
+    layout.gridType === "diagonal-slideshow" ||
+    layout.gridType === "depth-gallery";
 
   return (
     <Container
