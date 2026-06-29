@@ -889,6 +889,10 @@ is gitignored):
   Follow-up: The actual mobile stack card-to-card separation was then corrected by halving the
   mobile `--sbl-offset` from `0.72rem` to `0.36rem`; focused iPhone 13 Chrome smoke measured
   finished stack card offsets around 5-8px across Dark/Glass/Scale Stack with 0 console errors.
+  Follow-up: The visible mobile stack end placement was corrected by moving the finished
+  photo-and-caption pair down together (`items -15.75svh`, caption `-4.5svh`). This keeps the
+  cover image substantially visible at the end of the animation while preserving a tight ~5px
+  cover-to-caption gap across Dark/Glass/Scale Stack in focused iPhone 13 Chrome smoke.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
