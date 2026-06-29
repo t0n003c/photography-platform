@@ -71,7 +71,7 @@ function hexToRgb(hex: string) {
   };
 }
 
-function rgbToCmyk(hex: string) {
+function rgbToApproxCmyk(hex: string) {
   const { r, g, b } = hexToRgb(hex);
   if (r === 0 && g === 0 && b === 0) return "0 0 0 100";
   const rp = r / 255;
@@ -328,27 +328,27 @@ function DepthLabels({
           aria-hidden="true"
         />
       </div>
-      <article className="absolute bottom-8 right-4 grid w-[min(64vw,24rem)] gap-2 text-right leading-tight md:right-[7vw] md:top-1/2 md:w-[min(28vw,23rem)]">
+      <article className="absolute bottom-8 right-4 grid w-auto max-w-[min(72vw,24rem)] justify-items-end text-right leading-tight md:right-[7vw] md:top-1/2 md:-translate-y-1/2">
         {labelStyle === "metadata" ? (
           <>
             <p className="m-0 text-[11px]">{subhead || title}</p>
             {caption && <p className="m-0 normal-case tracking-normal opacity-80">{caption}</p>}
           </>
         ) : (
-          <dl className="m-0 grid gap-1">
-            <div className="grid grid-cols-[4rem_1fr] gap-3">
+          <dl className="m-0 inline-grid gap-1">
+            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">CMYK</dt>
-              <dd className="m-0">{rgbToCmyk(item.color)}</dd>
+              <dd className="m-0">{rgbToApproxCmyk(item.color)}</dd>
             </div>
-            <div className="grid grid-cols-[4rem_1fr] gap-3">
+            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">RGB</dt>
               <dd className="m-0">{rgb.r} {rgb.g} {rgb.b}</dd>
             </div>
-            <div className="grid grid-cols-[4rem_1fr] gap-3">
+            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">HEX</dt>
               <dd className="m-0">{item.color.toUpperCase()}</dd>
             </div>
-            <div className="grid grid-cols-[4rem_1fr] gap-3">
+            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">TEXT</dt>
               <dd className="m-0">{subhead || "PHOTO TONE"}</dd>
             </div>
