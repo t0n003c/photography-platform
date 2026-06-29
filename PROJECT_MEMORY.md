@@ -877,6 +877,9 @@ is gitignored):
   the FLIP stack morph now finishes first, then cover/cards (`-29svh`) and caption (`-14svh`)
   lift together from timeline `0.72`. Focused mobile smoke confirmed monotonic cover/caption
   movement across Dark/Glass/Scale Stack with 0 console errors.
+  Follow-up: Mobile Dark/Glass/Scale Stack now use a shorter ScrollTrigger range (`+=125%`
+  instead of the default mobile `+=175%`), so the same stack-and-lift animation completes with
+  less phone scrolling while desktop remains unchanged.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -155,6 +155,13 @@ function flipOptions(variant: ScrollLayoutsVariant, isMobile: boolean) {
       stagger: 0,
     };
   }
+  if (isStackVariant(variant)) {
+    return {
+      flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
+      end: isMobile ? "+=125%" : "+=300%",
+      stagger: 0,
+    };
+  }
   return {
     flip: { absoluteOnLeave: false, absolute: false, scale: true, simple: true },
     end: isMobile ? "+=175%" : "+=300%",
