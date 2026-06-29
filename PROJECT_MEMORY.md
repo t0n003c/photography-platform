@@ -898,6 +898,9 @@ is gitignored):
   lift is larger (`-15.5svh`), so the category name/description travels with the cover during
   the end beat. Focused iPhone 13 Chrome smoke measured the visible title nearly flush with
   the cover edge across Dark/Glass/Scale Stack with 0 console errors.
+  Follow-up: The mobile stack caption was tucked closer again by increasing the end caption
+  lift from `-15.5svh` to `-17.5svh`; focused iPhone 13 Chrome smoke measured the title about
+  16px into the cover edge across Dark/Glass/Scale Stack with 0 console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
