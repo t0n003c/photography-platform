@@ -112,9 +112,23 @@ function captionFor(photo: PhotoDTO) {
   return photo.caption?.trim() || photo.altText?.trim() || "";
 }
 
-function speedToHeight(speed: DepthGalleryScrollSpeed, count: number) {
-  const multiplier = speed === "slow" ? 76 : speed === "fast" ? 46 : 60;
-  return 115 + count * multiplier;
+function speedToHeight(
+  speed: DepthGalleryScrollSpeed,
+  count: number,
+  isMobile: boolean,
+) {
+  const multiplier = isMobile
+    ? speed === "slow"
+      ? 48
+      : speed === "fast"
+        ? 28
+        : 36
+    : speed === "slow"
+      ? 76
+      : speed === "fast"
+        ? 46
+        : 60;
+  return (isMobile ? 92 : 115) + count * multiplier;
 }
 
 function StaticFallback({
@@ -282,6 +296,46 @@ function ParticleField({
   );
 }
 
+function DepthTrail({
+  progress,
+  count,
+  color,
+}: {
+  progress: number;
+  count: number;
+  color: string;
+}) {
+  const depth = progress * Math.max(1, count - 1);
+  const phase = depth * 1.35;
+  const startX = 43 + Math.sin(phase) * 4.5;
+  const midX = 52 + Math.cos(phase * 0.85) * 7;
+  const endX = 47 + Math.sin(phase + 1.2) * 5;
+  const startY = 24 + Math.sin(phase * 0.7) * 4;
+  const endY = 76 + Math.cos(phase * 0.65) * 4;
+  const d = `M ${startX.toFixed(2)} ${startY.toFixed(2)} C ${(startX + 10).toFixed(2)} ${(startY + 15).toFixed(2)}, ${(midX - 11).toFixed(2)} 50, ${midX.toFixed(2)} 50 S ${(endX + 8).toFixed(2)} ${(endY - 14).toFixed(2)}, ${endX.toFixed(2)} ${endY.toFixed(2)}`;
+  const dashOffset = 44 - progress * 72;
+
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 z-20 h-full w-full opacity-70"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d={d}
+        fill="none"
+        stroke={color}
+        strokeWidth="0.16"
+        strokeLinecap="round"
+        opacity="0.46"
+        strokeDasharray="28 18"
+        strokeDashoffset={dashOffset}
+      />
+    </svg>
+  );
+}
+
 function DepthLabels({
   item,
   index,
@@ -381,6 +435,8 @@ export function DepthGallery({
   const pointer = React.useRef(new THREE.Vector2(0, 0));
   const enhanced = useWebGLEnhancement();
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [visualProgress, setVisualProgress] = React.useState(0);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   const items = React.useMemo<DepthItem[]>(
     () =>
@@ -409,6 +465,7 @@ export function DepthGallery({
       const range = Math.max(1, rect.height - window.innerHeight);
       const nextProgress = THREE.MathUtils.clamp(-rect.top / range, 0, 1);
       progress.current = nextProgress;
+      setVisualProgress(nextProgress);
       setActiveIndex((prev) => {
         const next = Math.round(progress.current * Math.max(0, items.length - 1));
         return next === prev ? prev : next;
@@ -422,6 +479,14 @@ export function DepthGallery({
       window.removeEventListener("resize", onScroll);
     };
   }, [items.length]);
+
+  React.useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   React.useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -451,7 +516,7 @@ export function DepthGallery({
     ? blendHex(active.color, next.color, Math.max(0, blend))
     : backgroundColor;
   const textColor = readableTextColor(moodColor);
-  const scrollHeight = speedToHeight(scrollSpeed, items.length);
+  const scrollHeight = speedToHeight(scrollSpeed, items.length, isMobile);
   const heroTitle = title || "Depth Gallery";
   const heroSubtitle = subtitle || "Atmospheric photo sequence";
 
@@ -484,21 +549,11 @@ export function DepthGallery({
           <DepthScene items={items} progress={progress} pointer={pointer} />
         </Canvas>
         {showTrail && (
-          <svg
-            className="pointer-events-none absolute inset-0 z-20 h-full w-full opacity-70"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M46 102 C 57 82, 35 66, 47 50 C 60 33, 43 21, 51 -2"
-              fill="none"
-              stroke={textColor}
-              strokeWidth="0.18"
-              strokeLinecap="round"
-              opacity="0.48"
-            />
-          </svg>
+          <DepthTrail
+            progress={visualProgress}
+            count={items.length}
+            color={textColor}
+          />
         )}
         {showParticles && <ParticleField activeColor={textColor} hidden={!showTrail} />}
         <div
