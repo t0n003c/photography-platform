@@ -305,19 +305,39 @@ function DepthTrail({
   count: number;
   color: string;
 }) {
-  const depth = progress * Math.max(1, count - 1);
-  const phase = depth * 1.35;
-  const startX = 43 + Math.sin(phase) * 4.5;
-  const midX = 52 + Math.cos(phase * 0.85) * 7;
-  const endX = 47 + Math.sin(phase + 1.2) * 5;
-  const startY = 24 + Math.sin(phase * 0.7) * 4;
-  const endY = 76 + Math.cos(phase * 0.65) * 4;
-  const d = `M ${startX.toFixed(2)} ${startY.toFixed(2)} C ${(startX + 10).toFixed(2)} ${(startY + 15).toFixed(2)}, ${(midX - 11).toFixed(2)} 50, ${midX.toFixed(2)} 50 S ${(endX + 8).toFixed(2)} ${(endY - 14).toFixed(2)}, ${endX.toFixed(2)} ${endY.toFixed(2)}`;
-  const dashOffset = 44 - progress * 72;
+  const span = 0.24;
+  const center = THREE.MathUtils.clamp(progress, span / 2, 1 - span / 2);
+  const phase = center * Math.max(1, count - 1);
+  const pointAt = (t: number) => {
+    const clamped = THREE.MathUtils.clamp(t, 0, 1);
+    const wave = clamped * Math.PI * 2;
+    return {
+      x:
+        50 +
+        Math.sin(wave * 1.18 + count * 0.11) * 8.5 +
+        Math.sin(wave * 2.1 + phase * 0.42) * 2.2,
+      y:
+        18 +
+        clamped * 64 +
+        Math.sin(wave * 0.72 + phase * 0.22) * 3.4,
+    };
+  };
+  const points = Array.from({ length: 9 }, (_, index) =>
+    pointAt(center - span / 2 + (span * index) / 8),
+  );
+  const d = points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    if (index % 2 === 1 && points[index + 1]) {
+      const next = points[index + 1];
+      return `${path} Q ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
+    }
+    return path;
+  }, "");
+  const head = points[points.length - 1];
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-20 h-full w-full opacity-70"
+      className="pointer-events-none absolute inset-0 z-20 h-full w-full opacity-75"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -326,12 +346,27 @@ function DepthTrail({
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth="0.16"
+        strokeWidth="0.5"
         strokeLinecap="round"
-        opacity="0.46"
-        strokeDasharray="28 18"
-        strokeDashoffset={dashOffset}
+        strokeLinejoin="round"
+        opacity="0.12"
+        filter="url(#depthTrailBlur)"
       />
+      <path
+        d={d}
+        fill="none"
+        stroke={color}
+        strokeWidth="0.18"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.52"
+      />
+      <circle cx={head.x} cy={head.y} r="0.46" fill={color} opacity="0.55" />
+      <defs>
+        <filter id="depthTrailBlur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="0.7" />
+        </filter>
+      </defs>
     </svg>
   );
 }
@@ -382,14 +417,14 @@ function DepthLabels({
           aria-hidden="true"
         />
       </div>
-      <article className="absolute bottom-8 right-4 grid w-auto max-w-[min(72vw,24rem)] justify-items-end text-right leading-tight md:right-[7vw] md:top-1/2 md:-translate-y-1/2">
+      <article className="absolute bottom-8 right-4 grid w-auto max-w-[min(72vw,24rem)] justify-items-end text-right leading-tight md:bottom-auto md:right-[7vw] md:top-1/2 md:-translate-y-1/2">
         {labelStyle === "metadata" ? (
           <>
             <p className="m-0 text-[11px]">{subhead || title}</p>
             {caption && <p className="m-0 normal-case tracking-normal opacity-80">{caption}</p>}
           </>
         ) : (
-          <dl className="m-0 inline-grid gap-1">
+          <dl className="m-0 inline-grid gap-0 leading-none">
             <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">CMYK</dt>
               <dd className="m-0">{rgbToApproxCmyk(item.color)}</dd>
