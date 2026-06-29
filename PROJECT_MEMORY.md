@@ -893,6 +893,11 @@ is gitignored):
   photo-and-caption pair down together (`items -15.75svh`, caption `-4.5svh`). This keeps the
   cover image substantially visible at the end of the animation while preserving a tight ~5px
   cover-to-caption gap across Dark/Glass/Scale Stack in focused iPhone 13 Chrome smoke.
+  Follow-up: The mobile stack end handoff was retuned so the caption no longer feels pinned
+  while the cover card lifts away. Mobile caption base is lower (`bottom: 8%`) and its end
+  lift is larger (`-15.5svh`), so the category name/description travels with the cover during
+  the end beat. Focused iPhone 13 Chrome smoke measured the visible title nearly flush with
+  the cover edge across Dark/Glass/Scale Stack with 0 console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
