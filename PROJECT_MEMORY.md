@@ -912,6 +912,14 @@ is gitignored):
   reduced-motion fallback via the existing justified grid/lightbox path. Focused Chrome smoke
   covered all five desktop demo variants plus iPhone 13 and reduced-motion fallback with 10
   rendered cards and 0 page/console errors.
+  Gallery-tab follow-up: `diagonal-slideshow` ports Codrops DiagonalSlideshow as a Gallery-only
+  grid type. It uses selected gallery photos, per-photo headline/subhead/caption text, diagonal
+  previous/current/next slide positions, reference-style diagonal arrow buttons, desktop hover
+  tilt, randomized title/side-text reveal, and click-to-open detail preview. Settings expose
+  background/text/deco colors, side text, side text visibility, and detail preview visibility.
+  Mobile uses smaller diagonal geometry with no hover tilt; reduced motion falls back to the
+  existing justified grid. Focused Chrome smoke covered desktop navigation/detail open-close,
+  iPhone 13 rendering, reduced-motion fallback, and 0 page/console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

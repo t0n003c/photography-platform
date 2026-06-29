@@ -10,6 +10,7 @@ export type GridType =
   | "parallax-ring"
   | "image-trail"
   | "rotating-scroll"
+  | "diagonal-slideshow"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -57,6 +58,16 @@ export interface RotatingScrollConfig {
   marqueeText: string;
 }
 
+export interface DiagonalSlideshowConfig {
+  useBackground: boolean;
+  backgroundColor: string;
+  textColor: string;
+  decoColor: string;
+  sideText: string;
+  showSideText: boolean;
+  showDetail: boolean;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -67,6 +78,7 @@ export interface RenderConfig {
   alternativeScroll: AlternativeScrollConfig;
   imageTrail: ImageTrailConfig;
   rotatingScroll: RotatingScrollConfig;
+  diagonalSlideshow: DiagonalSlideshowConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -121,6 +133,13 @@ export async function resolveRenderConfig(
     rotatingScrollUseBackground?: boolean;
     rotatingScrollBackgroundColor?: string;
     rotatingScrollMarqueeText?: string;
+    diagonalUseBackground?: boolean;
+    diagonalBackgroundColor?: string;
+    diagonalTextColor?: string;
+    diagonalDecoColor?: string;
+    diagonalSideText?: string;
+    diagonalShowSideText?: boolean;
+    diagonalShowDetail?: boolean;
   };
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
@@ -147,6 +166,18 @@ export async function resolveRenderConfig(
         typeof cfgJson.rotatingScrollMarqueeText === "string"
           ? cfgJson.rotatingScrollMarqueeText
           : "",
+    },
+    diagonalSlideshow: {
+      useBackground: cfgJson.diagonalUseBackground ?? true,
+      backgroundColor: cfgJson.diagonalBackgroundColor ?? "#0c0c0c",
+      textColor: cfgJson.diagonalTextColor ?? "#f1f1f1",
+      decoColor: cfgJson.diagonalDecoColor ?? "#141414",
+      sideText:
+        typeof cfgJson.diagonalSideText === "string"
+          ? cfgJson.diagonalSideText
+          : "",
+      showSideText: cfgJson.diagonalShowSideText ?? true,
+      showDetail: cfgJson.diagonalShowDetail ?? true,
     },
   };
 
@@ -202,6 +233,25 @@ export async function resolveRenderConfig(
       marqueeText:
         draft.rotatingScrollMarqueeText ??
         config.rotatingScroll.marqueeText,
+    },
+    diagonalSlideshow: {
+      useBackground:
+        draft.diagonalUseBackground ??
+        config.diagonalSlideshow.useBackground,
+      backgroundColor:
+        draft.diagonalBackgroundColor ??
+        config.diagonalSlideshow.backgroundColor,
+      textColor:
+        draft.diagonalTextColor ?? config.diagonalSlideshow.textColor,
+      decoColor:
+        draft.diagonalDecoColor ?? config.diagonalSlideshow.decoColor,
+      sideText:
+        draft.diagonalSideText ?? config.diagonalSlideshow.sideText,
+      showSideText:
+        draft.diagonalShowSideText ??
+        config.diagonalSlideshow.showSideText,
+      showDetail:
+        draft.diagonalShowDetail ?? config.diagonalSlideshow.showDetail,
     },
   };
 }

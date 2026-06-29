@@ -10,6 +10,7 @@ export type GridType =
   | "parallax-ring"
   | "image-trail"
   | "rotating-scroll"
+  | "diagonal-slideshow"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

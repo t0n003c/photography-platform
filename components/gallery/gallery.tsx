@@ -15,6 +15,7 @@ import { Carousel3D } from "./carousel-3d";
 import { ParallaxRing } from "./parallax-ring";
 import { ImageTrail } from "./image-trail";
 import { RotatingScroll } from "./rotating-scroll";
+import { DiagonalSlideshow } from "./diagonal-slideshow";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -33,6 +34,7 @@ interface GalleryLayout {
     | "parallax-ring"
     | "image-trail"
     | "rotating-scroll"
+    | "diagonal-slideshow"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -67,6 +69,16 @@ interface GalleryLayout {
     useBackground?: boolean;
     backgroundColor?: string;
     marqueeText?: string;
+  };
+  /** Diagonal slideshow only: Codrops-inspired stage colors and text toggles. */
+  diagonalSlideshow?: {
+    useBackground?: boolean;
+    backgroundColor?: string;
+    textColor?: string;
+    decoColor?: string;
+    sideText?: string;
+    showSideText?: boolean;
+    showDetail?: boolean;
   };
 }
 
@@ -257,6 +269,33 @@ export function Gallery({
           useBackground={layout.rotatingScroll?.useBackground}
           backgroundColor={layout.rotatingScroll?.backgroundColor}
           marqueeText={layout.rotatingScroll?.marqueeText}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "diagonal-slideshow") {
+    return (
+      <div>
+        <DiagonalSlideshow
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          useBackground={layout.diagonalSlideshow?.useBackground}
+          backgroundColor={layout.diagonalSlideshow?.backgroundColor}
+          textColor={layout.diagonalSlideshow?.textColor}
+          decoColor={layout.diagonalSlideshow?.decoColor}
+          sideText={layout.diagonalSlideshow?.sideText}
+          showSideText={layout.diagonalSlideshow?.showSideText}
+          showDetail={layout.diagonalSlideshow?.showDetail}
           onOpen={openAt}
         />
         <Lightbox

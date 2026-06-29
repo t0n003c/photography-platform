@@ -12,6 +12,7 @@ export type PreviewGrid =
   | "parallax-ring"
   | "image-trail"
   | "rotating-scroll"
+  | "diagonal-slideshow"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -49,6 +50,13 @@ export interface PreviewDraft {
   rotatingScrollUseBackground?: boolean;
   rotatingScrollBackgroundColor?: string;
   rotatingScrollMarqueeText?: string;
+  diagonalUseBackground?: boolean;
+  diagonalBackgroundColor?: string;
+  diagonalTextColor?: string;
+  diagonalDecoColor?: string;
+  diagonalSideText?: string;
+  diagonalShowSideText?: boolean;
+  diagonalShowDetail?: boolean;
 }
 
 type PreviewDevice = "desktop" | "mobile";

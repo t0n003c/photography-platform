@@ -45,7 +45,8 @@ export default async function GalleryPage({
     layout.gridType === "alternative-scroll" ||
     layout.gridType === "parallax-ring" ||
     layout.gridType === "image-trail" ||
-    layout.gridType === "rotating-scroll";
+    layout.gridType === "rotating-scroll" ||
+    layout.gridType === "diagonal-slideshow";
 
   return (
     <Container

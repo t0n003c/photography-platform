@@ -13,6 +13,7 @@ export interface PreviewConfig {
     | "parallax-ring"
     | "image-trail"
     | "rotating-scroll"
+    | "diagonal-slideshow"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -36,6 +37,13 @@ export interface PreviewConfig {
   rotatingScrollUseBackground?: boolean;
   rotatingScrollBackgroundColor?: string;
   rotatingScrollMarqueeText?: string;
+  diagonalUseBackground?: boolean;
+  diagonalBackgroundColor?: string;
+  diagonalTextColor?: string;
+  diagonalDecoColor?: string;
+  diagonalSideText?: string;
+  diagonalShowSideText?: boolean;
+  diagonalShowDetail?: boolean;
 }
 
 export const PREVIEW_PARAM = "__pc";

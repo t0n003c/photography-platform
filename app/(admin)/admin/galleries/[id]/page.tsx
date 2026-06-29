@@ -932,6 +932,13 @@ function LayoutCard({
   const [rotatingUseBackground, setRotatingUseBackground] = useState(true);
   const [rotatingBackgroundColor, setRotatingBackgroundColor] = useState("#141414");
   const [rotatingMarqueeText, setRotatingMarqueeText] = useState("");
+  const [diagonalUseBackground, setDiagonalUseBackground] = useState(true);
+  const [diagonalBackgroundColor, setDiagonalBackgroundColor] = useState("#0c0c0c");
+  const [diagonalTextColor, setDiagonalTextColor] = useState("#f1f1f1");
+  const [diagonalDecoColor, setDiagonalDecoColor] = useState("#141414");
+  const [diagonalSideText, setDiagonalSideText] = useState("");
+  const [diagonalShowSideText, setDiagonalShowSideText] = useState(true);
+  const [diagonalShowDetail, setDiagonalShowDetail] = useState(true);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -957,6 +964,7 @@ function LayoutCard({
           cfg.gridType === "parallax-ring" ||
           cfg.gridType === "image-trail" ||
           cfg.gridType === "rotating-scroll" ||
+          cfg.gridType === "diagonal-slideshow" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1016,6 +1024,27 @@ function LayoutCard({
         if (typeof c.rotatingScrollMarqueeText === "string") {
           setRotatingMarqueeText(c.rotatingScrollMarqueeText);
         }
+        if (typeof c.diagonalUseBackground === "boolean") {
+          setDiagonalUseBackground(c.diagonalUseBackground);
+        }
+        if (typeof c.diagonalBackgroundColor === "string") {
+          setDiagonalBackgroundColor(c.diagonalBackgroundColor);
+        }
+        if (typeof c.diagonalTextColor === "string") {
+          setDiagonalTextColor(c.diagonalTextColor);
+        }
+        if (typeof c.diagonalDecoColor === "string") {
+          setDiagonalDecoColor(c.diagonalDecoColor);
+        }
+        if (typeof c.diagonalSideText === "string") {
+          setDiagonalSideText(c.diagonalSideText);
+        }
+        if (typeof c.diagonalShowSideText === "boolean") {
+          setDiagonalShowSideText(c.diagonalShowSideText);
+        }
+        if (typeof c.diagonalShowDetail === "boolean") {
+          setDiagonalShowDetail(c.diagonalShowDetail);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1043,6 +1072,13 @@ function LayoutCard({
         rotatingScrollUseBackground: rotatingUseBackground,
         rotatingScrollBackgroundColor: rotatingBackgroundColor,
         rotatingScrollMarqueeText: rotatingMarqueeText,
+        diagonalUseBackground,
+        diagonalBackgroundColor,
+        diagonalTextColor,
+        diagonalDecoColor,
+        diagonalSideText,
+        diagonalShowSideText,
+        diagonalShowDetail,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1087,6 +1123,7 @@ function LayoutCard({
                   <option value="parallax-ring">Parallax 3D ring</option>
                   <option value="image-trail">Image trail cursor</option>
                   <option value="rotating-scroll">Rotating on scroll</option>
+                  <option value="diagonal-slideshow">Diagonal slideshow</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1095,6 +1132,7 @@ function LayoutCard({
                 gridType !== "parallax-ring" &&
                 gridType !== "image-trail" &&
                 gridType !== "rotating-scroll" &&
+                gridType !== "diagonal-slideshow" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1207,6 +1245,77 @@ function LayoutCard({
                   </div>
                 </div>
               )}
+              {gridType === "diagonal-slideshow" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Background color" htmlFor="diagonal-bg-color">
+                      <Input
+                        id="diagonal-bg-color"
+                        type="color"
+                        value={diagonalBackgroundColor}
+                        onChange={(e) => setDiagonalBackgroundColor(e.target.value)}
+                        disabled={!diagonalUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Text color" htmlFor="diagonal-text-color">
+                      <Input
+                        id="diagonal-text-color"
+                        type="color"
+                        value={diagonalTextColor}
+                        onChange={(e) => setDiagonalTextColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Panel color" htmlFor="diagonal-deco-color">
+                      <Input
+                        id="diagonal-deco-color"
+                        type="color"
+                        value={diagonalDecoColor}
+                        onChange={(e) => setDiagonalDecoColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Side text" htmlFor="diagonal-side-text">
+                    <Input
+                      id="diagonal-side-text"
+                      value={diagonalSideText}
+                      onChange={(e) => setDiagonalSideText(e.target.value)}
+                      placeholder="Leave blank to use photo text"
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={diagonalUseBackground}
+                        onChange={(e) => setDiagonalUseBackground(e.target.checked)}
+                      />
+                      Use background color
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={diagonalShowSideText}
+                        onChange={(e) => setDiagonalShowSideText(e.target.checked)}
+                      />
+                      Show side text
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={diagonalShowDetail}
+                        onChange={(e) => setDiagonalShowDetail(e.target.checked)}
+                      />
+                      Show detail preview
+                    </label>
+                  </div>
+                </div>
+              )}
               {gridType === "alternative-scroll" && (
                 <div className="space-y-3 rounded-md border p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1281,6 +1390,13 @@ function LayoutCard({
                 rotatingScrollUseBackground: rotatingUseBackground,
                 rotatingScrollBackgroundColor: rotatingBackgroundColor,
                 rotatingScrollMarqueeText: rotatingMarqueeText,
+                diagonalUseBackground,
+                diagonalBackgroundColor,
+                diagonalTextColor,
+                diagonalDecoColor,
+                diagonalSideText,
+                diagonalShowSideText,
+                diagonalShowDetail,
               }}
               height={560}
             />
