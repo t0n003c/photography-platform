@@ -904,6 +904,14 @@ is gitignored):
   Follow-up: The mobile stack caption was tucked closer once more by increasing the end caption
   lift to `-19.5svh`; focused iPhone 13 Chrome smoke measured the title about 29px into the
   cover edge across Dark/Glass/Scale Stack with 0 console errors.
+  Gallery-tab follow-up: `rotating-scroll` ports Codrops RotatingOnScrollAnimations as a gallery
+  grid type, scoped only to the Gallery tab/public gallery renderer. It supports demo variants
+  `demo1`-`demo5`, selected-gallery photos, editable marquee text, and optional background color.
+  The renderer lives in `components/gallery/rotating-scroll.tsx` and intentionally reuses the
+  app's global Lenis/ScrollTrigger setup rather than Codrops' local Lenis. It includes SSR and
+  reduced-motion fallback via the existing justified grid/lightbox path. Focused Chrome smoke
+  covered all five desktop demo variants plus iPhone 13 and reduced-motion fallback with 10
+  rendered cards and 0 page/console errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -14,6 +14,7 @@ import {
 import { Carousel3D } from "./carousel-3d";
 import { ParallaxRing } from "./parallax-ring";
 import { ImageTrail } from "./image-trail";
+import { RotatingScroll } from "./rotating-scroll";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -31,6 +32,7 @@ interface GalleryLayout {
     | "horizontal-lenis"
     | "parallax-ring"
     | "image-trail"
+    | "rotating-scroll"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -58,6 +60,13 @@ interface GalleryLayout {
       | "full-frame";
     useBackground?: boolean;
     backgroundColor?: string;
+  };
+  /** Rotating-on-scroll only: Codrops demo variant, background, and marquee. */
+  rotatingScroll?: {
+    variant?: "demo1" | "demo2" | "demo3" | "demo4" | "demo5";
+    useBackground?: boolean;
+    backgroundColor?: string;
+    marqueeText?: string;
   };
 }
 
@@ -224,6 +233,30 @@ export function Gallery({
           variant={layout.imageTrail?.variant}
           useBackground={layout.imageTrail?.useBackground}
           backgroundColor={layout.imageTrail?.backgroundColor}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "rotating-scroll") {
+    return (
+      <div>
+        <RotatingScroll
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          variant={layout.rotatingScroll?.variant}
+          useBackground={layout.rotatingScroll?.useBackground}
+          backgroundColor={layout.rotatingScroll?.backgroundColor}
+          marqueeText={layout.rotatingScroll?.marqueeText}
           onOpen={openAt}
         />
         <Lightbox

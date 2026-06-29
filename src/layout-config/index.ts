@@ -9,6 +9,7 @@ export type GridType =
   | "horizontal-lenis"
   | "parallax-ring"
   | "image-trail"
+  | "rotating-scroll"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

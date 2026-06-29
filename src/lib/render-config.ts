@@ -9,6 +9,7 @@ export type GridType =
   | "horizontal-lenis"
   | "parallax-ring"
   | "image-trail"
+  | "rotating-scroll"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -42,6 +43,20 @@ export interface ImageTrailConfig {
   backgroundColor: string;
 }
 
+export type RotatingScrollVariant =
+  | "demo1"
+  | "demo2"
+  | "demo3"
+  | "demo4"
+  | "demo5";
+
+export interface RotatingScrollConfig {
+  variant: RotatingScrollVariant;
+  useBackground: boolean;
+  backgroundColor: string;
+  marqueeText: string;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -51,6 +66,7 @@ export interface RenderConfig {
   overlay: HlOverlay;
   alternativeScroll: AlternativeScrollConfig;
   imageTrail: ImageTrailConfig;
+  rotatingScroll: RotatingScrollConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -65,6 +81,19 @@ function imageTrailVariant(value: unknown): ImageTrailVariant {
     return value;
   }
   return "fade-shrink";
+}
+
+function rotatingScrollVariant(value: unknown): RotatingScrollVariant {
+  if (
+    value === "demo1" ||
+    value === "demo2" ||
+    value === "demo3" ||
+    value === "demo4" ||
+    value === "demo5"
+  ) {
+    return value;
+  }
+  return "demo5";
 }
 
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
@@ -88,6 +117,10 @@ export async function resolveRenderConfig(
     imgTrailVariant?: ImageTrailVariant;
     imgTrailUseBackground?: boolean;
     imgTrailBackgroundColor?: string;
+    rotatingScrollVariant?: RotatingScrollVariant;
+    rotatingScrollUseBackground?: boolean;
+    rotatingScrollBackgroundColor?: string;
+    rotatingScrollMarqueeText?: string;
   };
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
@@ -105,6 +138,15 @@ export async function resolveRenderConfig(
       variant: imageTrailVariant(cfgJson.imgTrailVariant),
       useBackground: cfgJson.imgTrailUseBackground ?? true,
       backgroundColor: cfgJson.imgTrailBackgroundColor ?? "#efece5",
+    },
+    rotatingScroll: {
+      variant: rotatingScrollVariant(cfgJson.rotatingScrollVariant),
+      useBackground: cfgJson.rotatingScrollUseBackground ?? true,
+      backgroundColor: cfgJson.rotatingScrollBackgroundColor ?? "#141414",
+      marqueeText:
+        typeof cfgJson.rotatingScrollMarqueeText === "string"
+          ? cfgJson.rotatingScrollMarqueeText
+          : "",
     },
   };
 
@@ -145,6 +187,21 @@ export async function resolveRenderConfig(
         draft.imgTrailUseBackground ?? config.imageTrail.useBackground,
       backgroundColor:
         draft.imgTrailBackgroundColor ?? config.imageTrail.backgroundColor,
+    },
+    rotatingScroll: {
+      variant:
+        draft.rotatingScrollVariant !== undefined
+          ? rotatingScrollVariant(draft.rotatingScrollVariant)
+          : config.rotatingScroll.variant,
+      useBackground:
+        draft.rotatingScrollUseBackground ??
+        config.rotatingScroll.useBackground,
+      backgroundColor:
+        draft.rotatingScrollBackgroundColor ??
+        config.rotatingScroll.backgroundColor,
+      marqueeText:
+        draft.rotatingScrollMarqueeText ??
+        config.rotatingScroll.marqueeText,
     },
   };
 }

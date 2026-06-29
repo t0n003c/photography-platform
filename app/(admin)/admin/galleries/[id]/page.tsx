@@ -29,6 +29,7 @@ import {
   LivePreview,
   type PreviewGrid,
   type PreviewImageTrailVariant,
+  type PreviewRotatingScrollVariant,
   type PreviewSpacing,
   type PreviewTheme,
   type PreviewOverlay,
@@ -926,6 +927,11 @@ function LayoutCard({
     useState<PreviewImageTrailVariant>("fade-shrink");
   const [imgTrailUseBackground, setImgTrailUseBackground] = useState(true);
   const [imgTrailBackgroundColor, setImgTrailBackgroundColor] = useState("#efece5");
+  const [rotatingVariant, setRotatingVariant] =
+    useState<PreviewRotatingScrollVariant>("demo5");
+  const [rotatingUseBackground, setRotatingUseBackground] = useState(true);
+  const [rotatingBackgroundColor, setRotatingBackgroundColor] = useState("#141414");
+  const [rotatingMarqueeText, setRotatingMarqueeText] = useState("");
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -950,6 +956,7 @@ function LayoutCard({
           cfg.gridType === "horizontal-lenis" ||
           cfg.gridType === "parallax-ring" ||
           cfg.gridType === "image-trail" ||
+          cfg.gridType === "rotating-scroll" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -990,6 +997,25 @@ function LayoutCard({
         if (typeof c.imgTrailBackgroundColor === "string") {
           setImgTrailBackgroundColor(c.imgTrailBackgroundColor);
         }
+        const rotatingScrollVariant = c.rotatingScrollVariant;
+        if (
+          rotatingScrollVariant === "demo1" ||
+          rotatingScrollVariant === "demo2" ||
+          rotatingScrollVariant === "demo3" ||
+          rotatingScrollVariant === "demo4" ||
+          rotatingScrollVariant === "demo5"
+        ) {
+          setRotatingVariant(rotatingScrollVariant);
+        }
+        if (typeof c.rotatingScrollUseBackground === "boolean") {
+          setRotatingUseBackground(c.rotatingScrollUseBackground);
+        }
+        if (typeof c.rotatingScrollBackgroundColor === "string") {
+          setRotatingBackgroundColor(c.rotatingScrollBackgroundColor);
+        }
+        if (typeof c.rotatingScrollMarqueeText === "string") {
+          setRotatingMarqueeText(c.rotatingScrollMarqueeText);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1013,6 +1039,10 @@ function LayoutCard({
         imgTrailVariant,
         imgTrailUseBackground,
         imgTrailBackgroundColor,
+        rotatingScrollVariant: rotatingVariant,
+        rotatingScrollUseBackground: rotatingUseBackground,
+        rotatingScrollBackgroundColor: rotatingBackgroundColor,
+        rotatingScrollMarqueeText: rotatingMarqueeText,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1056,6 +1086,7 @@ function LayoutCard({
                   <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
                   <option value="parallax-ring">Parallax 3D ring</option>
                   <option value="image-trail">Image trail cursor</option>
+                  <option value="rotating-scroll">Rotating on scroll</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1063,6 +1094,7 @@ function LayoutCard({
               {gridType !== "horizontal-lenis" &&
                 gridType !== "parallax-ring" &&
                 gridType !== "image-trail" &&
+                gridType !== "rotating-scroll" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1122,6 +1154,53 @@ function LayoutCard({
                         className="h-4 w-4"
                         checked={imgTrailUseBackground}
                         onChange={(e) => setImgTrailUseBackground(e.target.checked)}
+                      />
+                      Use background
+                    </label>
+                  </div>
+                </div>
+              )}
+              {gridType === "rotating-scroll" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <Field label="Demo style">
+                    <Select
+                      value={rotatingVariant}
+                      onChange={(e) =>
+                        setRotatingVariant(e.target.value as PreviewRotatingScrollVariant)
+                      }
+                    >
+                      <option value="demo1">Demo 1 - wide rolling cards</option>
+                      <option value="demo2">Demo 2 - deep flip</option>
+                      <option value="demo3">Demo 3 - tonal reveal</option>
+                      <option value="demo4">Demo 4 - velocity blur</option>
+                      <option value="demo5">Demo 5 - stacked blur marquee</option>
+                    </Select>
+                  </Field>
+                  <Field label="Marquee text" htmlFor="rotating-marquee-text">
+                    <Input
+                      id="rotating-marquee-text"
+                      value={rotatingMarqueeText}
+                      onChange={(e) => setRotatingMarqueeText(e.target.value)}
+                      placeholder="Leave blank to use gallery title"
+                    />
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    <Field label="Background color" htmlFor="rotating-bg-color">
+                      <Input
+                        id="rotating-bg-color"
+                        type="color"
+                        value={rotatingBackgroundColor}
+                        onChange={(e) => setRotatingBackgroundColor(e.target.value)}
+                        disabled={!rotatingUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <label className="flex items-center gap-2 pb-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={rotatingUseBackground}
+                        onChange={(e) => setRotatingUseBackground(e.target.checked)}
                       />
                       Use background
                     </label>
@@ -1198,6 +1277,10 @@ function LayoutCard({
                 imgTrailVariant,
                 imgTrailUseBackground,
                 imgTrailBackgroundColor,
+                rotatingScrollVariant: rotatingVariant,
+                rotatingScrollUseBackground: rotatingUseBackground,
+                rotatingScrollBackgroundColor: rotatingBackgroundColor,
+                rotatingScrollMarqueeText: rotatingMarqueeText,
               }}
               height={560}
             />

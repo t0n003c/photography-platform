@@ -19,6 +19,7 @@ const PatchSchema = z.object({
       "horizontal-lenis",
       "parallax-ring",
       "image-trail",
+      "rotating-scroll",
       "carousel-3d-scroll",
       "alternative-scroll",
     ])

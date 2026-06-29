@@ -11,6 +11,7 @@ export type PreviewGrid =
   | "horizontal-lenis"
   | "parallax-ring"
   | "image-trail"
+  | "rotating-scroll"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -24,6 +25,12 @@ export type PreviewImageTrailVariant =
   | "scatter"
   | "stretch-drop"
   | "full-frame";
+export type PreviewRotatingScrollVariant =
+  | "demo1"
+  | "demo2"
+  | "demo3"
+  | "demo4"
+  | "demo5";
 
 export interface PreviewDraft {
   gridType: PreviewGrid;
@@ -38,6 +45,10 @@ export interface PreviewDraft {
   imgTrailVariant?: PreviewImageTrailVariant;
   imgTrailUseBackground?: boolean;
   imgTrailBackgroundColor?: string;
+  rotatingScrollVariant?: PreviewRotatingScrollVariant;
+  rotatingScrollUseBackground?: boolean;
+  rotatingScrollBackgroundColor?: string;
+  rotatingScrollMarqueeText?: string;
 }
 
 type PreviewDevice = "desktop" | "mobile";

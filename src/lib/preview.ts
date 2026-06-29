@@ -12,6 +12,7 @@ export interface PreviewConfig {
     | "horizontal-lenis"
     | "parallax-ring"
     | "image-trail"
+    | "rotating-scroll"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -31,6 +32,10 @@ export interface PreviewConfig {
     | "full-frame";
   imgTrailUseBackground?: boolean;
   imgTrailBackgroundColor?: string;
+  rotatingScrollVariant?: "demo1" | "demo2" | "demo3" | "demo4" | "demo5";
+  rotatingScrollUseBackground?: boolean;
+  rotatingScrollBackgroundColor?: string;
+  rotatingScrollMarqueeText?: string;
 }
 
 export const PREVIEW_PARAM = "__pc";

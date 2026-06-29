@@ -44,7 +44,8 @@ export default async function GalleryPage({
   const isImmersiveLayout =
     layout.gridType === "alternative-scroll" ||
     layout.gridType === "parallax-ring" ||
-    layout.gridType === "image-trail";
+    layout.gridType === "image-trail" ||
+    layout.gridType === "rotating-scroll";
 
   return (
     <Container

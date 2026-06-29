@@ -46,7 +46,8 @@ export default async function GalleryPreview({
   const isImmersiveLayout =
     layout.gridType === "alternative-scroll" ||
     layout.gridType === "parallax-ring" ||
-    layout.gridType === "image-trail";
+    layout.gridType === "image-trail" ||
+    layout.gridType === "rotating-scroll";
 
   return (
     <Container

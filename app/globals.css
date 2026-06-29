@@ -2335,3 +2335,12 @@ html.js .pr-root.is-enhanced {
   width: 8vw; height: 10vh; border: 0; padding: 0; border-radius: 6px; cursor: pointer; opacity: 0;
   background-size: cover; background-position: 50% 50%;
 }
+
+.rotating-scroll.is-reduced-motion > [data-rotating-gallery],
+.rotating-scroll.is-reduced-motion > .pointer-events-none {
+  display: none;
+}
+
+.rotating-scroll.is-reduced-motion .rotating-scroll-fallback {
+  display: block;
+}
