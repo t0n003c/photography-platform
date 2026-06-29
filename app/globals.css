@@ -1586,7 +1586,7 @@ html.js .pr-root.is-enhanced {
     grid-template-columns: repeat(6, 1fr);
     gap: 0.5rem;
     padding: 0.75rem;
-    --sbl-offset: 0.72rem;
+    --sbl-offset: 0.36rem;
   }
   .sbl-gallery--stack .sbl-gallery__item {
     width: 34vw;
