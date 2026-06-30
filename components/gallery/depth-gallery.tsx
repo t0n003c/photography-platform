@@ -244,11 +244,13 @@ function DepthPlane({
   item,
   index,
   count,
+  progress,
   pointer,
 }: {
   item: DepthItem;
   index: number;
   count: number;
+  progress: React.MutableRefObject<number>;
   pointer: React.MutableRefObject<THREE.Vector2>;
 }) {
   const texture = useLoader(THREE.TextureLoader, item.url);
@@ -270,23 +272,27 @@ function DepthPlane({
     const xSpread = mobile ? 0.28 : 1;
     const baseX = (index % 2 === 0 ? -0.9 : 0.9) * xSpread;
     const baseY = index % 3 === 0 ? 0.22 : index % 3 === 1 ? -0.18 : 0.04;
-    const planeZ = -index * PLANE_GAP;
-    const cameraDepth = THREE.MathUtils.clamp(
-      (6 - state.camera.position.z) / PLANE_GAP,
-      0,
-      Math.max(0, count - 1),
-    );
-    const depthInfluence = THREE.MathUtils.clamp(
-      1 - Math.abs(index - cameraDepth) / 2.15,
+    const localProgress = progress.current * count - index;
+    const travel = THREE.MathUtils.smoothstep(
+      THREE.MathUtils.clamp(localProgress, 0, 1),
       0,
       1,
     );
-    const blend = THREE.MathUtils.clamp(cameraDepth - Math.floor(cameraDepth), 0, 1);
-    const currentIndex = Math.floor(cameraDepth);
-    const nextIndex = Math.min(currentIndex + 1, count - 1);
-    let targetOpacity = 0;
-    if (index === currentIndex) targetOpacity = 1 - blend;
-    if (index === nextIndex) targetOpacity = Math.max(targetOpacity, blend);
+    const planeZ = THREE.MathUtils.lerp(-12, 1.35, travel);
+    const incomingOpacity = THREE.MathUtils.smoothstep(localProgress, -0.08, 0.16);
+    const outgoingOpacity =
+      index === count - 1 ? 1 : 1 - THREE.MathUtils.smoothstep(localProgress, 0.88, 1);
+    const targetOpacity = THREE.MathUtils.clamp(incomingOpacity * outgoingOpacity, 0, 1);
+    mesh.visible = localProgress > -0.12 && localProgress < 1.02;
+    if (!mesh.visible) {
+      material.opacity = 0;
+      return;
+    }
+    const depthInfluence = THREE.MathUtils.clamp(
+      1 - Math.abs(localProgress - 0.72) / 1.25,
+      0,
+      1,
+    );
     const velocityBreath = Math.sin(state.clock.elapsedTime * 0.8 + index) * 0.025;
     const parallaxX = pointer.current.x * 0.16 * depthInfluence * xSpread;
     const parallaxY = pointer.current.y * 0.08 * depthInfluence;
@@ -329,11 +335,11 @@ function DepthScene({
   pointer: React.MutableRefObject<THREE.Vector2>;
 }) {
   useFrame((state) => {
-    const targetZ = 6 - progress.current * Math.max(0, items.length - 1) * PLANE_GAP;
+    const targetZ = 6;
     state.camera.position.z += (targetZ - state.camera.position.z) * 0.08;
     state.camera.position.x += (pointer.current.x * 0.18 - state.camera.position.x) * 0.08;
     state.camera.position.y += (pointer.current.y * 0.08 - state.camera.position.y) * 0.08;
-    state.camera.lookAt(0, 0, state.camera.position.z - 6);
+    state.camera.lookAt(0, 0, -4);
   });
 
   return (
@@ -344,6 +350,7 @@ function DepthScene({
           item={item}
           index={index}
           count={items.length}
+          progress={progress}
           pointer={pointer}
         />
       ))}
@@ -649,7 +656,10 @@ export function DepthGallery({
       progress.current = nextProgress;
       setVisualProgress(nextProgress);
       setActiveIndex((prev) => {
-        const next = Math.round(progress.current * Math.max(0, items.length - 1));
+        const next = Math.min(
+          Math.max(0, items.length - 1),
+          Math.max(0, Math.floor(progress.current * items.length)),
+        );
         return next === prev ? prev : next;
       });
     };
@@ -693,7 +703,7 @@ export function DepthGallery({
 
   const active = items[activeIndex] ?? items[0];
   const next = items[Math.min(items.length - 1, activeIndex + 1)] ?? active;
-  const blend = progress.current * Math.max(0, items.length - 1) - activeIndex;
+  const blend = progress.current * items.length - activeIndex;
   const mood = useMoodBackground
     ? blendMood(active.mood, next.mood, Math.max(0, blend))
     : {
