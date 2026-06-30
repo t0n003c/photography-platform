@@ -18,6 +18,13 @@ interface DepthItem {
   aspect: number;
   originalIndex: number;
   color: string;
+  mood: DepthMood;
+}
+
+interface DepthMood {
+  background: string;
+  blob1: string;
+  blob2: string;
 }
 
 export type DepthGalleryLabelStyle = "color-chip" | "metadata" | "minimal";
@@ -71,6 +78,82 @@ function hexToRgb(hex: string) {
   };
 }
 
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rp = r / 255;
+  const gp = g / 255;
+  const bp = b / 255;
+  const max = Math.max(rp, gp, bp);
+  const min = Math.min(rp, gp, bp);
+  const delta = max - min;
+  const lightness = (max + min) / 2;
+  let hue = 0;
+  let saturation = 0;
+
+  if (delta > 0) {
+    saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    if (max === rp) hue = ((gp - bp) / delta) % 6;
+    else if (max === gp) hue = (bp - rp) / delta + 2;
+    else hue = (rp - gp) / delta + 4;
+    hue *= 60;
+    if (hue < 0) hue += 360;
+  }
+
+  return { h: hue, s: saturation, l: lightness };
+}
+
+function hslToHex(hue: number, saturation: number, lightness: number) {
+  const h = ((hue % 360) + 360) % 360;
+  const s = THREE.MathUtils.clamp(saturation, 0, 1);
+  const l = THREE.MathUtils.clamp(lightness, 0, 1);
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let rp = 0;
+  let gp = 0;
+  let bp = 0;
+
+  if (h < 60) [rp, gp, bp] = [c, x, 0];
+  else if (h < 120) [rp, gp, bp] = [x, c, 0];
+  else if (h < 180) [rp, gp, bp] = [0, c, x];
+  else if (h < 240) [rp, gp, bp] = [0, x, c];
+  else if (h < 300) [rp, gp, bp] = [x, 0, c];
+  else [rp, gp, bp] = [c, 0, x];
+
+  const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, "0");
+  return `#${toHex(rp)}${toHex(gp)}${toHex(bp)}`;
+}
+
+function moodFromAccent(hex: string): DepthMood {
+  const rgb = hexToRgb(hex);
+  const hsl = rgbToHsl(rgb);
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  const isLightAccent = luminance > 0.62;
+  const isMutedAccent = hsl.s < 0.18;
+  const backgroundLightness = isLightAccent
+    ? 0.96
+    : isMutedAccent
+      ? THREE.MathUtils.clamp(hsl.l + 0.24, 0.52, 0.78)
+      : THREE.MathUtils.clamp(hsl.l + 0.18, 0.54, 0.72);
+
+  return {
+    background: hslToHex(
+      hsl.h,
+      isLightAccent ? hsl.s * 0.16 : THREE.MathUtils.clamp(hsl.s * 0.34, 0.2, 0.44),
+      backgroundLightness,
+    ),
+    blob1: hslToHex(
+      hsl.h + 12,
+      THREE.MathUtils.clamp(hsl.s * 0.78, 0.34, 0.86),
+      THREE.MathUtils.clamp(hsl.l + 0.18, 0.56, 0.82),
+    ),
+    blob2: hslToHex(
+      hsl.h + 48,
+      THREE.MathUtils.clamp(hsl.s * 0.58, 0.28, 0.76),
+      THREE.MathUtils.clamp(hsl.l + 0.26, 0.62, 0.86),
+    ),
+  };
+}
+
 function rgbToApproxCmyk(hex: string) {
   const { r, g, b } = hexToRgb(hex);
   if (r === 0 && g === 0 && b === 0) return "0 0 0 100";
@@ -98,6 +181,14 @@ function blendHex(a: string, b: string, amount: number) {
   return `#${toHex(THREE.MathUtils.lerp(ca.r, cb.r, t))}${toHex(
     THREE.MathUtils.lerp(ca.g, cb.g, t),
   )}${toHex(THREE.MathUtils.lerp(ca.b, cb.b, t))}`;
+}
+
+function blendMood(a: DepthMood, b: DepthMood, amount: number): DepthMood {
+  return {
+    background: blendHex(a.background, b.background, amount),
+    blob1: blendHex(a.blob1, b.blob1, amount),
+    blob2: blendHex(a.blob2, b.blob2, amount),
+  };
 }
 
 function titleFor(photo: PhotoDTO, fallback: string) {
@@ -527,12 +618,14 @@ export function DepthGallery({
         .map((photo, originalIndex) => {
           const variant = pickVariant(photo);
           if (!variant) return null;
+          const color = normalizeHex(photo.dominantColor, "#fffaf0");
           return {
             photo,
             url: variant.url,
             aspect: variant.aspect,
             originalIndex,
-            color: normalizeHex(photo.dominantColor, "#fffaf0"),
+            color,
+            mood: moodFromAccent(color),
           };
         })
         .filter((item): item is DepthItem => Boolean(item))
@@ -595,9 +688,14 @@ export function DepthGallery({
   const active = items[activeIndex] ?? items[0];
   const next = items[Math.min(items.length - 1, activeIndex + 1)] ?? active;
   const blend = progress.current * Math.max(0, items.length - 1) - activeIndex;
-  const moodColor = useMoodBackground
-    ? blendHex(active.color, next.color, Math.max(0, blend))
-    : backgroundColor;
+  const mood = useMoodBackground
+    ? blendMood(active.mood, next.mood, Math.max(0, blend))
+    : {
+        background: backgroundColor,
+        blob1: backgroundColor,
+        blob2: backgroundColor,
+      };
+  const moodColor = mood.background;
   const textColor = readableTextColor(moodColor);
   const scrollHeight = speedToHeight(scrollSpeed, items.length, isMobile);
   const heroTitle = title || "Depth Gallery";
@@ -612,14 +710,16 @@ export function DepthGallery({
     >
       <div className="sticky top-0 h-[100svh] min-h-[640px] overflow-hidden">
         <div
+          data-depth-mood-background="true"
           className="absolute inset-0 transition-colors duration-700"
-          style={{ backgroundColor: moodColor }}
+          style={{ backgroundColor: mood.background }}
         />
         <div
+          data-depth-mood-blob="true"
           className="absolute inset-0 opacity-80 transition duration-700"
           style={{
-            backgroundImage: `radial-gradient(circle at 30% 38%, ${active.color} 0, transparent 32%), radial-gradient(circle at 68% 62%, ${next.color} 0, transparent 34%)`,
-            filter: "blur(36px) saturate(1.1)",
+            backgroundImage: `radial-gradient(circle at 30% 38%, ${mood.blob1} 0, transparent 34%), radial-gradient(circle at 68% 62%, ${mood.blob2} 0, transparent 36%)`,
+            filter: "blur(38px) saturate(1.12)",
           }}
         />
         <div className="absolute inset-0 opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(115deg,transparent_0,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:13px_13px]" />
