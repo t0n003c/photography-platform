@@ -18,7 +18,6 @@ interface DepthItem {
   aspect: number;
   originalIndex: number;
   color: string;
-  mood: DepthMood;
 }
 
 interface DepthMood {
@@ -26,6 +25,8 @@ interface DepthMood {
   blob1: string;
   blob2: string;
 }
+
+type DepthColorMode = "light" | "dark";
 
 export type DepthGalleryLabelStyle = "color-chip" | "metadata" | "minimal";
 export type DepthGalleryScrollSpeed = "slow" | "normal" | "fast";
@@ -123,12 +124,35 @@ function hslToHex(hue: number, saturation: number, lightness: number) {
   return `#${toHex(rp)}${toHex(gp)}${toHex(bp)}`;
 }
 
-function moodFromAccent(hex: string): DepthMood {
+function moodFromAccent(hex: string, mode: DepthColorMode): DepthMood {
   const rgb = hexToRgb(hex);
   const hsl = rgbToHsl(rgb);
   const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
   const isLightAccent = luminance > 0.62;
   const isMutedAccent = hsl.s < 0.18;
+
+  if (mode === "dark") {
+    return {
+      background: hslToHex(
+        hsl.h,
+        isMutedAccent
+          ? THREE.MathUtils.clamp(hsl.s * 0.18, 0.04, 0.16)
+          : THREE.MathUtils.clamp(hsl.s * 0.36, 0.16, 0.42),
+        isLightAccent ? 0.12 : THREE.MathUtils.clamp(hsl.l * 0.34, 0.08, 0.2),
+      ),
+      blob1: hslToHex(
+        hsl.h + 10,
+        THREE.MathUtils.clamp(hsl.s * 0.72, 0.22, 0.76),
+        THREE.MathUtils.clamp(hsl.l * 0.62 + 0.12, 0.18, 0.42),
+      ),
+      blob2: hslToHex(
+        hsl.h + 46,
+        THREE.MathUtils.clamp(hsl.s * 0.58, 0.18, 0.64),
+        THREE.MathUtils.clamp(hsl.l * 0.52 + 0.1, 0.16, 0.36),
+      ),
+    };
+  }
+
   const backgroundLightness = isLightAccent
     ? 0.96
     : isMutedAccent
@@ -201,6 +225,27 @@ function subheadFor(photo: PhotoDTO, fallback?: string | null) {
 
 function captionFor(photo: PhotoDTO) {
   return photo.caption?.trim() || photo.altText?.trim() || "";
+}
+
+function useDepthColorMode(): DepthColorMode {
+  const [mode, setMode] = React.useState<DepthColorMode>("light");
+
+  React.useEffect(() => {
+    const update = () => {
+      setMode(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    };
+    update();
+
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return mode;
 }
 
 function speedToHeight(
@@ -617,6 +662,7 @@ export function DepthGallery({
   backgroundColor = "#fffaf0",
   onOpen,
 }: DepthGalleryProps) {
+  const colorMode = useDepthColorMode();
   const rootRef = React.useRef<HTMLDivElement>(null);
   const progress = React.useRef(0);
   const pointer = React.useRef(new THREE.Vector2(0, 0));
@@ -638,7 +684,6 @@ export function DepthGallery({
             aspect: variant.aspect,
             originalIndex,
             color,
-            mood: moodFromAccent(color),
           };
         })
         .filter((item): item is DepthItem => Boolean(item))
@@ -704,8 +749,10 @@ export function DepthGallery({
   const active = items[activeIndex] ?? items[0];
   const next = items[Math.min(items.length - 1, activeIndex + 1)] ?? active;
   const blend = progress.current * items.length - activeIndex;
+  const activeMood = moodFromAccent(active.color, colorMode);
+  const nextMood = moodFromAccent(next.color, colorMode);
   const mood = useMoodBackground
-    ? blendMood(active.mood, next.mood, Math.max(0, blend))
+    ? blendMood(activeMood, nextMood, Math.max(0, blend))
     : {
         background: backgroundColor,
         blob1: backgroundColor,
