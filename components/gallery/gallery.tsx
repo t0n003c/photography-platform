@@ -17,6 +17,7 @@ import { ImageTrail } from "./image-trail";
 import { RotatingScroll } from "./rotating-scroll";
 import { DiagonalSlideshow } from "./diagonal-slideshow";
 import { DepthGallery } from "./depth-gallery";
+import { InfiniteCanvasGallery } from "./infinite-canvas";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -37,6 +38,7 @@ interface GalleryLayout {
     | "rotating-scroll"
     | "diagonal-slideshow"
     | "depth-gallery"
+    | "infinite-canvas"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -90,6 +92,16 @@ interface GalleryLayout {
     labelStyle?: "color-chip" | "metadata" | "minimal";
     scrollSpeed?: "slow" | "normal" | "fast";
     backgroundColor?: string;
+  };
+  /** Infinite-canvas only: immersive R3F image field controls. */
+  infiniteCanvas?: {
+    backgroundColor?: string;
+    fogColor?: string;
+    density?: "sparse" | "normal" | "dense";
+    imageSize?: "small" | "medium" | "large";
+    movement?: "slow" | "normal" | "fast";
+    showControls?: boolean;
+    enableKeyboard?: boolean;
   };
 }
 
@@ -333,6 +345,33 @@ export function Gallery({
           labelStyle={layout.depthGallery?.labelStyle}
           scrollSpeed={layout.depthGallery?.scrollSpeed}
           backgroundColor={layout.depthGallery?.backgroundColor}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "infinite-canvas") {
+    return (
+      <div>
+        <InfiniteCanvasGallery
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          backgroundColor={layout.infiniteCanvas?.backgroundColor}
+          fogColor={layout.infiniteCanvas?.fogColor}
+          density={layout.infiniteCanvas?.density}
+          imageSize={layout.infiniteCanvas?.imageSize}
+          movement={layout.infiniteCanvas?.movement}
+          showControls={layout.infiniteCanvas?.showControls}
+          enableKeyboard={layout.infiniteCanvas?.enableKeyboard}
           onOpen={openAt}
         />
         <Lightbox

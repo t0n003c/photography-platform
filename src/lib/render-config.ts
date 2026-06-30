@@ -12,6 +12,7 @@ export type GridType =
   | "rotating-scroll"
   | "diagonal-slideshow"
   | "depth-gallery"
+  | "infinite-canvas"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -81,6 +82,20 @@ export interface DepthGalleryConfig {
   backgroundColor: string;
 }
 
+export type InfiniteCanvasDensity = "sparse" | "normal" | "dense";
+export type InfiniteCanvasImageSize = "small" | "medium" | "large";
+export type InfiniteCanvasMovement = "slow" | "normal" | "fast";
+
+export interface InfiniteCanvasConfig {
+  backgroundColor: string;
+  fogColor: string;
+  density: InfiniteCanvasDensity;
+  imageSize: InfiniteCanvasImageSize;
+  movement: InfiniteCanvasMovement;
+  showControls: boolean;
+  enableKeyboard: boolean;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -93,6 +108,7 @@ export interface RenderConfig {
   rotatingScroll: RotatingScrollConfig;
   diagonalSlideshow: DiagonalSlideshowConfig;
   depthGallery: DepthGalleryConfig;
+  infiniteCanvas: InfiniteCanvasConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -130,6 +146,27 @@ function depthLabelStyle(value: unknown): DepthGalleryLabelStyle {
 }
 
 function depthScrollSpeed(value: unknown): DepthGalleryScrollSpeed {
+  if (value === "slow" || value === "fast" || value === "normal") {
+    return value;
+  }
+  return "normal";
+}
+
+function infiniteDensity(value: unknown): InfiniteCanvasDensity {
+  if (value === "sparse" || value === "dense" || value === "normal") {
+    return value;
+  }
+  return "normal";
+}
+
+function infiniteImageSize(value: unknown): InfiniteCanvasImageSize {
+  if (value === "small" || value === "large" || value === "medium") {
+    return value;
+  }
+  return "medium";
+}
+
+function infiniteMovement(value: unknown): InfiniteCanvasMovement {
   if (value === "slow" || value === "fast" || value === "normal") {
     return value;
   }
@@ -174,6 +211,13 @@ export async function resolveRenderConfig(
     depthLabelStyle?: DepthGalleryLabelStyle;
     depthScrollSpeed?: DepthGalleryScrollSpeed;
     depthBackgroundColor?: string;
+    infiniteBackgroundColor?: string;
+    infiniteFogColor?: string;
+    infiniteDensity?: InfiniteCanvasDensity;
+    infiniteImageSize?: InfiniteCanvasImageSize;
+    infiniteMovement?: InfiniteCanvasMovement;
+    infiniteShowControls?: boolean;
+    infiniteEnableKeyboard?: boolean;
   };
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
@@ -220,6 +264,15 @@ export async function resolveRenderConfig(
       labelStyle: depthLabelStyle(cfgJson.depthLabelStyle),
       scrollSpeed: depthScrollSpeed(cfgJson.depthScrollSpeed),
       backgroundColor: cfgJson.depthBackgroundColor ?? "#fffaf0",
+    },
+    infiniteCanvas: {
+      backgroundColor: cfgJson.infiniteBackgroundColor ?? "#f4f1ea",
+      fogColor: cfgJson.infiniteFogColor ?? "#f4f1ea",
+      density: infiniteDensity(cfgJson.infiniteDensity),
+      imageSize: infiniteImageSize(cfgJson.infiniteImageSize),
+      movement: infiniteMovement(cfgJson.infiniteMovement),
+      showControls: cfgJson.infiniteShowControls ?? true,
+      enableKeyboard: cfgJson.infiniteEnableKeyboard ?? true,
     },
   };
 
@@ -312,6 +365,28 @@ export async function resolveRenderConfig(
           : config.depthGallery.scrollSpeed,
       backgroundColor:
         draft.depthBackgroundColor ?? config.depthGallery.backgroundColor,
+    },
+    infiniteCanvas: {
+      backgroundColor:
+        draft.infiniteBackgroundColor ??
+        config.infiniteCanvas.backgroundColor,
+      fogColor: draft.infiniteFogColor ?? config.infiniteCanvas.fogColor,
+      density:
+        draft.infiniteDensity !== undefined
+          ? infiniteDensity(draft.infiniteDensity)
+          : config.infiniteCanvas.density,
+      imageSize:
+        draft.infiniteImageSize !== undefined
+          ? infiniteImageSize(draft.infiniteImageSize)
+          : config.infiniteCanvas.imageSize,
+      movement:
+        draft.infiniteMovement !== undefined
+          ? infiniteMovement(draft.infiniteMovement)
+          : config.infiniteCanvas.movement,
+      showControls:
+        draft.infiniteShowControls ?? config.infiniteCanvas.showControls,
+      enableKeyboard:
+        draft.infiniteEnableKeyboard ?? config.infiniteCanvas.enableKeyboard,
     },
   };
 }

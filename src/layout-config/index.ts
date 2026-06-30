@@ -12,6 +12,7 @@ export type GridType =
   | "rotating-scroll"
   | "diagonal-slideshow"
   | "depth-gallery"
+  | "infinite-canvas"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

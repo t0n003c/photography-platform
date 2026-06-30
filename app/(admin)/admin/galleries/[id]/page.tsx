@@ -947,6 +947,16 @@ function LayoutCard({
   const [depthScrollSpeed, setDepthScrollSpeed] =
     useState<"slow" | "normal" | "fast">("normal");
   const [depthBackgroundColor, setDepthBackgroundColor] = useState("#fffaf0");
+  const [infiniteBackgroundColor, setInfiniteBackgroundColor] = useState("#f4f1ea");
+  const [infiniteFogColor, setInfiniteFogColor] = useState("#f4f1ea");
+  const [infiniteDensity, setInfiniteDensity] =
+    useState<"sparse" | "normal" | "dense">("normal");
+  const [infiniteImageSize, setInfiniteImageSize] =
+    useState<"small" | "medium" | "large">("medium");
+  const [infiniteMovement, setInfiniteMovement] =
+    useState<"slow" | "normal" | "fast">("normal");
+  const [infiniteShowControls, setInfiniteShowControls] = useState(true);
+  const [infiniteEnableKeyboard, setInfiniteEnableKeyboard] = useState(true);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -974,6 +984,7 @@ function LayoutCard({
           cfg.gridType === "rotating-scroll" ||
           cfg.gridType === "diagonal-slideshow" ||
           cfg.gridType === "depth-gallery" ||
+          cfg.gridType === "infinite-canvas" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1080,6 +1091,39 @@ function LayoutCard({
         if (typeof c.depthBackgroundColor === "string") {
           setDepthBackgroundColor(c.depthBackgroundColor);
         }
+        if (typeof c.infiniteBackgroundColor === "string") {
+          setInfiniteBackgroundColor(c.infiniteBackgroundColor);
+        }
+        if (typeof c.infiniteFogColor === "string") {
+          setInfiniteFogColor(c.infiniteFogColor);
+        }
+        if (
+          c.infiniteDensity === "sparse" ||
+          c.infiniteDensity === "normal" ||
+          c.infiniteDensity === "dense"
+        ) {
+          setInfiniteDensity(c.infiniteDensity);
+        }
+        if (
+          c.infiniteImageSize === "small" ||
+          c.infiniteImageSize === "medium" ||
+          c.infiniteImageSize === "large"
+        ) {
+          setInfiniteImageSize(c.infiniteImageSize);
+        }
+        if (
+          c.infiniteMovement === "slow" ||
+          c.infiniteMovement === "normal" ||
+          c.infiniteMovement === "fast"
+        ) {
+          setInfiniteMovement(c.infiniteMovement);
+        }
+        if (typeof c.infiniteShowControls === "boolean") {
+          setInfiniteShowControls(c.infiniteShowControls);
+        }
+        if (typeof c.infiniteEnableKeyboard === "boolean") {
+          setInfiniteEnableKeyboard(c.infiniteEnableKeyboard);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1120,6 +1164,13 @@ function LayoutCard({
         depthLabelStyle,
         depthScrollSpeed,
         depthBackgroundColor,
+        infiniteBackgroundColor,
+        infiniteFogColor,
+        infiniteDensity,
+        infiniteImageSize,
+        infiniteMovement,
+        infiniteShowControls,
+        infiniteEnableKeyboard,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1166,6 +1217,7 @@ function LayoutCard({
                   <option value="rotating-scroll">Rotating on scroll</option>
                   <option value="diagonal-slideshow">Diagonal slideshow</option>
                   <option value="depth-gallery">Depth gallery</option>
+                  <option value="infinite-canvas">Infinite canvas</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1176,6 +1228,7 @@ function LayoutCard({
                 gridType !== "rotating-scroll" &&
                 gridType !== "diagonal-slideshow" &&
                 gridType !== "depth-gallery" &&
+                gridType !== "infinite-canvas" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1432,6 +1485,94 @@ function LayoutCard({
                   </div>
                 </div>
               )}
+              {gridType === "infinite-canvas" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Image density">
+                      <Select
+                        value={infiniteDensity}
+                        onChange={(e) =>
+                          setInfiniteDensity(
+                            e.target.value as "sparse" | "normal" | "dense",
+                          )
+                        }
+                      >
+                        <option value="sparse">Sparse</option>
+                        <option value="normal">Normal</option>
+                        <option value="dense">Dense</option>
+                      </Select>
+                    </Field>
+                    <Field label="Image size">
+                      <Select
+                        value={infiniteImageSize}
+                        onChange={(e) =>
+                          setInfiniteImageSize(
+                            e.target.value as "small" | "medium" | "large",
+                          )
+                        }
+                      >
+                        <option value="small">Small</option>
+                        <option value="medium">Medium</option>
+                        <option value="large">Large</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Movement speed">
+                    <Select
+                      value={infiniteMovement}
+                      onChange={(e) =>
+                        setInfiniteMovement(
+                          e.target.value as "slow" | "normal" | "fast",
+                        )
+                      }
+                    >
+                      <option value="slow">Slow</option>
+                      <option value="normal">Normal</option>
+                      <option value="fast">Fast</option>
+                    </Select>
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Background color" htmlFor="infinite-bg-color">
+                      <Input
+                        id="infinite-bg-color"
+                        type="color"
+                        value={infiniteBackgroundColor}
+                        onChange={(e) => setInfiniteBackgroundColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Fog color" htmlFor="infinite-fog-color">
+                      <Input
+                        id="infinite-fog-color"
+                        type="color"
+                        value={infiniteFogColor}
+                        onChange={(e) => setInfiniteFogColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={infiniteShowControls}
+                        onChange={(e) => setInfiniteShowControls(e.target.checked)}
+                      />
+                      Show controls hint
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={infiniteEnableKeyboard}
+                        onChange={(e) => setInfiniteEnableKeyboard(e.target.checked)}
+                      />
+                      Enable keyboard movement
+                    </label>
+                  </div>
+                </div>
+              )}
               {gridType === "alternative-scroll" && (
                 <div className="space-y-3 rounded-md border p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1519,6 +1660,13 @@ function LayoutCard({
                 depthLabelStyle,
                 depthScrollSpeed,
                 depthBackgroundColor,
+                infiniteBackgroundColor,
+                infiniteFogColor,
+                infiniteDensity,
+                infiniteImageSize,
+                infiniteMovement,
+                infiniteShowControls,
+                infiniteEnableKeyboard,
               }}
               height={560}
             />

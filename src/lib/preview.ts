@@ -15,6 +15,7 @@ export interface PreviewConfig {
     | "rotating-scroll"
     | "diagonal-slideshow"
     | "depth-gallery"
+    | "infinite-canvas"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -51,6 +52,13 @@ export interface PreviewConfig {
   depthLabelStyle?: "color-chip" | "metadata" | "minimal";
   depthScrollSpeed?: "slow" | "normal" | "fast";
   depthBackgroundColor?: string;
+  infiniteBackgroundColor?: string;
+  infiniteFogColor?: string;
+  infiniteDensity?: "sparse" | "normal" | "dense";
+  infiniteImageSize?: "small" | "medium" | "large";
+  infiniteMovement?: "slow" | "normal" | "fast";
+  infiniteShowControls?: boolean;
+  infiniteEnableKeyboard?: boolean;
 }
 
 export const PREVIEW_PARAM = "__pc";

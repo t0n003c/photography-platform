@@ -441,6 +441,7 @@ export const pageConfig = pgTable(
         "rotating-scroll",
         "diagonal-slideshow",
         "depth-gallery",
+        "infinite-canvas",
         "carousel-3d-scroll",
         "alternative-scroll",
       ],

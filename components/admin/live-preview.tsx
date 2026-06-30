@@ -14,6 +14,7 @@ export type PreviewGrid =
   | "rotating-scroll"
   | "diagonal-slideshow"
   | "depth-gallery"
+  | "infinite-canvas"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -64,6 +65,13 @@ export interface PreviewDraft {
   depthLabelStyle?: "color-chip" | "metadata" | "minimal";
   depthScrollSpeed?: "slow" | "normal" | "fast";
   depthBackgroundColor?: string;
+  infiniteBackgroundColor?: string;
+  infiniteFogColor?: string;
+  infiniteDensity?: "sparse" | "normal" | "dense";
+  infiniteImageSize?: "small" | "medium" | "large";
+  infiniteMovement?: "slow" | "normal" | "fast";
+  infiniteShowControls?: boolean;
+  infiniteEnableKeyboard?: boolean;
 }
 
 type PreviewDevice = "desktop" | "mobile";
