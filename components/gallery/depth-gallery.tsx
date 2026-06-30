@@ -244,13 +244,11 @@ function DepthPlane({
   item,
   index,
   count,
-  progress,
   pointer,
 }: {
   item: DepthItem;
   index: number;
   count: number;
-  progress: React.MutableRefObject<number>;
   pointer: React.MutableRefObject<THREE.Vector2>;
 }) {
   const texture = useLoader(THREE.TextureLoader, item.url);
@@ -273,12 +271,22 @@ function DepthPlane({
     const baseX = (index % 2 === 0 ? -0.9 : 0.9) * xSpread;
     const baseY = index % 3 === 0 ? 0.22 : index % 3 === 1 ? -0.18 : 0.04;
     const planeZ = -index * PLANE_GAP;
-    const activeDepth = progress.current * Math.max(0, count - 1);
+    const cameraDepth = THREE.MathUtils.clamp(
+      (6 - state.camera.position.z) / PLANE_GAP,
+      0,
+      Math.max(0, count - 1),
+    );
     const depthInfluence = THREE.MathUtils.clamp(
-      1 - Math.abs(index - activeDepth) / 3,
+      1 - Math.abs(index - cameraDepth) / 2.15,
       0,
       1,
     );
+    const blend = THREE.MathUtils.clamp(cameraDepth - Math.floor(cameraDepth), 0, 1);
+    const currentIndex = Math.floor(cameraDepth);
+    const nextIndex = Math.min(currentIndex + 1, count - 1);
+    let targetOpacity = 0;
+    if (index === currentIndex) targetOpacity = 1 - blend;
+    if (index === nextIndex) targetOpacity = Math.max(targetOpacity, blend);
     const velocityBreath = Math.sin(state.clock.elapsedTime * 0.8 + index) * 0.025;
     const parallaxX = pointer.current.x * 0.16 * depthInfluence * xSpread;
     const parallaxY = pointer.current.y * 0.08 * depthInfluence;
@@ -288,8 +296,7 @@ function DepthPlane({
       -pointer.current.x * 0.055 * depthInfluence,
       0,
     );
-    const opacity = THREE.MathUtils.smoothstep(depthInfluence, 0.05, 0.92);
-    material.opacity += (opacity - material.opacity) * 0.12;
+    material.opacity += (targetOpacity - material.opacity) * 0.18;
     const scale = mobile ? 0.68 : 1;
     const width = Math.min(viewport.width * (mobile ? 0.72 : 0.34), 3.6) * scale;
     const height = width / Math.max(0.45, item.aspect);
@@ -337,7 +344,6 @@ function DepthScene({
           item={item}
           index={index}
           count={items.length}
-          progress={progress}
           pointer={pointer}
         />
       ))}
