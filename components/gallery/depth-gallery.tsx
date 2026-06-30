@@ -305,21 +305,21 @@ function DepthTrail({
   count: number;
   color: string;
 }) {
-  const span = 0.24;
+  const span = 0.34;
   const center = THREE.MathUtils.clamp(progress, span / 2, 1 - span / 2);
-  const phase = center * Math.max(1, count - 1);
+  const phase = center * Math.max(1, count - 1) * 1.32;
   const pointAt = (t: number) => {
     const clamped = THREE.MathUtils.clamp(t, 0, 1);
     const wave = clamped * Math.PI * 2;
     return {
       x:
         50 +
-        Math.sin(wave * 1.18 + count * 0.11) * 8.5 +
-        Math.sin(wave * 2.1 + phase * 0.42) * 2.2,
+        Math.sin(wave * 1.18 + count * 0.11 + phase * 0.2) * 12 +
+        Math.sin(wave * 2.1 + phase * 0.62) * 4.2,
       y:
         18 +
-        clamped * 64 +
-        Math.sin(wave * 0.72 + phase * 0.22) * 3.4,
+        clamped * 68 +
+        Math.sin(wave * 0.72 + phase * 0.34) * 5.2,
     };
   };
   const points = Array.from({ length: 9 }, (_, index) =>
@@ -424,7 +424,7 @@ function DepthLabels({
             {caption && <p className="m-0 normal-case tracking-normal opacity-80">{caption}</p>}
           </>
         ) : (
-          <dl className="m-0 inline-grid gap-0 leading-none">
+          <dl className="m-0 inline-grid gap-0.5 leading-none">
             <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">CMYK</dt>
               <dd className="m-0">{rgbToApproxCmyk(item.color)}</dd>
