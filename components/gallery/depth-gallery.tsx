@@ -296,44 +296,91 @@ function ParticleField({
   );
 }
 
+type DepthTrailPoint = {
+  x: number;
+  y: number;
+};
+
+const TRAIL_TAU = Math.PI * 2;
+
+function depthTrailHead(progress: number, isMobile: boolean, clampProgress = true): DepthTrailPoint {
+  const clamped = clampProgress ? THREE.MathUtils.clamp(progress, 0, 1) : progress;
+  const horizontalWidth = isMobile ? 13 : 31;
+  const startXOffset = isMobile ? 4 : 0;
+  return {
+    x:
+      50 +
+      startXOffset +
+      Math.sin(clamped * TRAIL_TAU * 1.85) * horizontalWidth +
+      Math.sin(clamped * TRAIL_TAU * 0.42 + 0.8) * (isMobile ? 2 : 4),
+    y:
+      50 +
+      Math.sin(clamped * TRAIL_TAU * 2.1) * (isMobile ? 19 : 27) +
+      Math.sin(clamped * TRAIL_TAU * 0.7 + 1.4) * (isMobile ? 3 : 5),
+  };
+}
+
+function smoothTrailPath(points: DepthTrailPoint[]) {
+  if (points.length < 2) return "";
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} L ${points[1].x.toFixed(2)} ${points[1].y.toFixed(2)}`;
+  }
+
+  const tension = 0.67;
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] ?? previous;
+    const next = points[index + 1] ?? point;
+    const cp1 = {
+      x: previous.x + ((point.x - beforePrevious.x) / 6) * tension,
+      y: previous.y + ((point.y - beforePrevious.y) / 6) * tension,
+    };
+    const cp2 = {
+      x: point.x - ((next.x - previous.x) / 6) * tension,
+      y: point.y - ((next.y - previous.y) / 6) * tension,
+    };
+    return `${path} C ${cp1.x.toFixed(2)} ${cp1.y.toFixed(2)} ${cp2.x.toFixed(2)} ${cp2.y.toFixed(2)} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }, "");
+}
+
 function DepthTrail({
   progress,
-  count,
   color,
+  isMobile,
 }: {
   progress: number;
-  count: number;
   color: string;
+  isMobile: boolean;
 }) {
-  const span = 0.72;
-  const center = THREE.MathUtils.clamp(progress, 0, 1);
-  const depth = center * Math.max(1, count - 1);
-  const pointAt = (t: number) => {
-    const wave = t * Math.PI * 2;
-    const headLead = depth * 0.46;
-    return {
-      x:
-        50 +
-        Math.sin(wave * 1.85 + headLead + count * 0.11) * 23 +
-        Math.sin(wave * 0.62 + depth * 0.28) * 6.5,
-      y:
-        8 +
-        t * 84 +
-        Math.sin(wave * 2.1 + depth * 0.22) * 10,
-    };
-  };
-  const points = Array.from({ length: 19 }, (_, index) =>
-    pointAt(center - span / 2 + (span * index) / 18),
-  );
-  const d = points.reduce((path, point, index) => {
-    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-    if (index % 2 === 1 && points[index + 1]) {
-      const next = points[index + 1];
-      return `${path} Q ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
-    }
-    return path;
-  }, "");
+  const points = React.useMemo(() => {
+    const pointCount = isMobile ? 34 : 42;
+    const span = isMobile ? 0.34 : 0.42;
+    const sampled = Array.from({ length: pointCount }, (_, index) => {
+      const amount = index / Math.max(1, pointCount - 1);
+      const easedAmount = 1 - Math.pow(1 - amount, 1.35);
+      return depthTrailHead(progress - span + span * easedAmount, isMobile, false);
+    });
+
+    return sampled.reduce<DepthTrailPoint[]>((smoothedPoints, point, index) => {
+      if (index === 0) return [point];
+      const previous = smoothedPoints[smoothedPoints.length - 1];
+      smoothedPoints.push({
+        x: previous.x + (point.x - previous.x) * 0.53,
+        y: previous.y + (point.y - previous.y) * 0.53,
+      });
+      return smoothedPoints;
+    }, []);
+  }, [progress, isMobile]);
+
+  const d = smoothTrailPath(points);
   const head = points[points.length - 1];
+  const edgeVisibility = THREE.MathUtils.smoothstep(
+    Math.min(progress + 0.1, 1 - progress),
+    0.04,
+    0.2,
+  );
+  const opacity = 0.36 + edgeVisibility * 0.28;
 
   return (
     <svg
@@ -347,25 +394,25 @@ function DepthTrail({
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth="0.72"
+        strokeWidth="0.86"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.13"
+        opacity={opacity * 0.22}
         filter="url(#depthTrailBlur)"
       />
       <path
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth="0.2"
+        strokeWidth="0.24"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.58"
+        opacity={opacity}
       />
-      <circle cx={head.x} cy={head.y} r="0.56" fill={color} opacity="0.62" />
+      {head && <circle cx={head.x} cy={head.y} r="0.48" fill={color} opacity={opacity} />}
       <defs>
         <filter id="depthTrailBlur" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur stdDeviation="0.95" />
+          <feGaussianBlur stdDeviation="1.15" />
         </filter>
       </defs>
     </svg>
@@ -425,20 +472,20 @@ function DepthLabels({
             {caption && <p className="m-0 normal-case tracking-normal opacity-80">{caption}</p>}
           </>
         ) : (
-          <dl className="m-0 inline-grid gap-1 leading-none">
-            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
+          <dl className="m-0 inline-grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-left leading-none">
+            <div className="contents">
               <dt className="opacity-70">CMYK</dt>
               <dd className="m-0">{rgbToApproxCmyk(item.color)}</dd>
             </div>
-            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
+            <div className="contents">
               <dt className="opacity-70">RGB</dt>
               <dd className="m-0">{rgb.r} {rgb.g} {rgb.b}</dd>
             </div>
-            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
+            <div className="contents">
               <dt className="opacity-70">HEX</dt>
               <dd className="m-0">{item.color.toUpperCase()}</dd>
             </div>
-            <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
+            <div className="contents">
               <dt className="opacity-70">TEXT</dt>
               <dd className="m-0">{subhead || "PHOTO TONE"}</dd>
             </div>
@@ -587,8 +634,8 @@ export function DepthGallery({
         {showTrail && (
           <DepthTrail
             progress={visualProgress}
-            count={items.length}
             color={textColor}
+            isMobile={isMobile}
           />
         )}
         {showParticles && <ParticleField activeColor={textColor} hidden={!showTrail} />}
