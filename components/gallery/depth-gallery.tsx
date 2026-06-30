@@ -305,25 +305,25 @@ function DepthTrail({
   count: number;
   color: string;
 }) {
-  const span = 0.34;
-  const center = THREE.MathUtils.clamp(progress, span / 2, 1 - span / 2);
-  const phase = center * Math.max(1, count - 1) * 1.32;
+  const span = 0.72;
+  const center = THREE.MathUtils.clamp(progress, 0, 1);
+  const depth = center * Math.max(1, count - 1);
   const pointAt = (t: number) => {
-    const clamped = THREE.MathUtils.clamp(t, 0, 1);
-    const wave = clamped * Math.PI * 2;
+    const wave = t * Math.PI * 2;
+    const headLead = depth * 0.46;
     return {
       x:
         50 +
-        Math.sin(wave * 1.18 + count * 0.11 + phase * 0.2) * 12 +
-        Math.sin(wave * 2.1 + phase * 0.62) * 4.2,
+        Math.sin(wave * 1.85 + headLead + count * 0.11) * 23 +
+        Math.sin(wave * 0.62 + depth * 0.28) * 6.5,
       y:
-        18 +
-        clamped * 68 +
-        Math.sin(wave * 0.72 + phase * 0.34) * 5.2,
+        8 +
+        t * 84 +
+        Math.sin(wave * 2.1 + depth * 0.22) * 10,
     };
   };
-  const points = Array.from({ length: 9 }, (_, index) =>
-    pointAt(center - span / 2 + (span * index) / 8),
+  const points = Array.from({ length: 19 }, (_, index) =>
+    pointAt(center - span / 2 + (span * index) / 18),
   );
   const d = points.reduce((path, point, index) => {
     if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
@@ -337,6 +337,7 @@ function DepthTrail({
 
   return (
     <svg
+      data-depth-trail="true"
       className="pointer-events-none absolute inset-0 z-20 h-full w-full opacity-75"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
@@ -346,25 +347,25 @@ function DepthTrail({
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth="0.5"
+        strokeWidth="0.72"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.12"
+        opacity="0.13"
         filter="url(#depthTrailBlur)"
       />
       <path
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth="0.18"
+        strokeWidth="0.2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.52"
+        opacity="0.58"
       />
-      <circle cx={head.x} cy={head.y} r="0.46" fill={color} opacity="0.55" />
+      <circle cx={head.x} cy={head.y} r="0.56" fill={color} opacity="0.62" />
       <defs>
-        <filter id="depthTrailBlur" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="0.7" />
+        <filter id="depthTrailBlur" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="0.95" />
         </filter>
       </defs>
     </svg>
@@ -424,7 +425,7 @@ function DepthLabels({
             {caption && <p className="m-0 normal-case tracking-normal opacity-80">{caption}</p>}
           </>
         ) : (
-          <dl className="m-0 inline-grid gap-0.5 leading-none">
+          <dl className="m-0 inline-grid gap-1 leading-none">
             <div className="grid grid-cols-[auto_auto] items-baseline justify-end gap-4">
               <dt className="opacity-70">CMYK</dt>
               <dd className="m-0">{rgbToApproxCmyk(item.color)}</dd>
