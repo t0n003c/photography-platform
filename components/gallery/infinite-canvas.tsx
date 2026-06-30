@@ -20,10 +20,14 @@ const VELOCITY_LERP = 0.16;
 const VELOCITY_DECAY = 0.9;
 const KEYBOARD_SPEED = 0.18;
 const GEOMETRY = new THREE.PlaneGeometry(1, 1);
+const DEFAULT_LIGHT_BACKGROUND = "#f4f1ea";
+const DEFAULT_DARK_BACKGROUND = "#0d0d0c";
+const DEFAULT_DARK_FOG = "#11110f";
 
 export type InfiniteCanvasDensity = "sparse" | "normal" | "dense";
 export type InfiniteCanvasImageSize = "small" | "medium" | "large";
 export type InfiniteCanvasMovement = "slow" | "normal" | "fast";
+type InfiniteCanvasColorMode = "light" | "dark";
 
 interface InfiniteCanvasProps {
   photos: PhotoDTO[];
@@ -164,6 +168,40 @@ function movementScale(movement: InfiniteCanvasMovement) {
   if (movement === "slow") return 0.72;
   if (movement === "fast") return 1.28;
   return 1;
+}
+
+function normalizeColor(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function resolveThemeColor(
+  value: string,
+  mode: InfiniteCanvasColorMode,
+  darkValue: string,
+) {
+  if (mode !== "dark") return value;
+  return normalizeColor(value) === DEFAULT_LIGHT_BACKGROUND ? darkValue : value;
+}
+
+function useInfiniteCanvasColorMode(): InfiniteCanvasColorMode {
+  const [mode, setMode] = React.useState<InfiniteCanvasColorMode>("light");
+
+  React.useEffect(() => {
+    const update = () => {
+      setMode(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    };
+    update();
+
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return mode;
 }
 
 function generateChunkPlanes(
@@ -630,8 +668,8 @@ export function InfiniteCanvasGallery({
   photos,
   title,
   subtitle,
-  backgroundColor = "#f4f1ea",
-  fogColor = "#f4f1ea",
+  backgroundColor = DEFAULT_LIGHT_BACKGROUND,
+  fogColor = DEFAULT_LIGHT_BACKGROUND,
   density = "normal",
   imageSize = "medium",
   movement = "normal",
@@ -640,6 +678,13 @@ export function InfiniteCanvasGallery({
   onOpen,
 }: InfiniteCanvasProps) {
   const enhanced = useWebGLEnhancement();
+  const colorMode = useInfiniteCanvasColorMode();
+  const resolvedBackgroundColor = resolveThemeColor(
+    backgroundColor,
+    colorMode,
+    DEFAULT_DARK_BACKGROUND,
+  );
+  const resolvedFogColor = resolveThemeColor(fogColor, colorMode, DEFAULT_DARK_FOG);
   const items = React.useMemo(
     () =>
       photos
@@ -652,15 +697,23 @@ export function InfiniteCanvasGallery({
   );
   const settings = React.useMemo<SceneSettings>(
     () => ({
-      backgroundColor,
-      fogColor,
+      backgroundColor: resolvedBackgroundColor,
+      fogColor: resolvedFogColor,
       density,
       imageSize,
       movement,
       showControls,
       enableKeyboard,
     }),
-    [backgroundColor, density, enableKeyboard, fogColor, imageSize, movement, showControls],
+    [
+      density,
+      enableKeyboard,
+      imageSize,
+      movement,
+      resolvedBackgroundColor,
+      resolvedFogColor,
+      showControls,
+    ],
   );
 
   React.useEffect(() => {
@@ -681,8 +734,9 @@ export function InfiniteCanvasGallery({
       data-infinite-canvas
       style={
         {
-          "--infinite-bg": backgroundColor,
-          "--infinite-fog": fogColor,
+          "--infinite-bg": resolvedBackgroundColor,
+          "--infinite-fog": resolvedFogColor,
+          backgroundColor: resolvedBackgroundColor,
         } as React.CSSProperties
       }
     >
