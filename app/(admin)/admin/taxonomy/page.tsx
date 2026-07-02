@@ -304,10 +304,10 @@ function TaxonomyCard<T extends Category | Location>({
   });
 
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between gap-2">
+    <Card className="min-w-0">
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>{title}</CardTitle>
-        <Button size="sm" onClick={() => setCreating(true)}>
+        <Button size="sm" onClick={() => setCreating(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           New {kind === "category" ? "category" : "location"}
         </Button>
@@ -329,7 +329,7 @@ function TaxonomyCard<T extends Category | Location>({
             {items.filter(Boolean).map((item, i) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between gap-3 py-3"
+                className="flex min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{item.name}</p>
@@ -337,7 +337,7 @@ function TaxonomyCard<T extends Category | Location>({
                     {item.slug}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-1">
                   <Badge tone={item.isPublished ? "green" : "neutral"}>
                     {item.isPublished ? "Published" : "Hidden"}
                   </Badge>
@@ -364,6 +364,7 @@ function TaxonomyCard<T extends Category | Location>({
                     variant="outline"
                     aria-label={`Manage photos (${item.photoCount ?? 0})`}
                     onClick={() => setManaging(item)}
+                    className="min-w-0"
                   >
                     <Images className="h-4 w-4" />
                     {item.photoCount ?? 0}
@@ -439,14 +440,14 @@ function TaxonomyCard<T extends Category | Location>({
 
 export default function TaxonomyPage() {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Taxonomy</h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
           Organize your work into categories and locations.
         </p>
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <TaxonomyCard<Category> title="Categories" kind="category" />
         <TaxonomyCard<Location> title="Locations" kind="location" />
       </div>
