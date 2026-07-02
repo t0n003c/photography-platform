@@ -331,7 +331,7 @@ function TaxonomyCard<T extends Category | Location>({
                 key={item.id}
                 className="flex min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 sm:flex-1">
                   <div className="flex min-w-0 items-center gap-2">
                     <p className="min-w-0 truncate font-medium">{item.name}</p>
                     <Badge
@@ -345,7 +345,7 @@ function TaxonomyCard<T extends Category | Location>({
                     {item.slug}
                   </p>
                 </div>
-                <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:shrink-0 sm:justify-end sm:gap-1">
                   <Button
                     size="icon"
                     variant="ghost"

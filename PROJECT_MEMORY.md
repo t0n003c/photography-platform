@@ -989,7 +989,9 @@ is gitignored):
   and row actions wrap below the category/location name so the admin shell's overflow clipping
   does not cut off the right side. Follow-up: the Published/Hidden badge now sits inline with
   the category/location name instead of in the action row, keeping the controls tighter on
-  narrow mobile screens.
+  narrow mobile screens. Desktop follow-up: the name/slug area is `sm:flex-1` while the action
+  group is `sm:shrink-0`, so long category/location names truncate cleanly without squeezing
+  the desktop controls into an awkward layout.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
