@@ -204,6 +204,24 @@ const TestimonialsBlock = z.object({
   showThumbnails: z.boolean().default(true),
   items: z.array(TestimonialItem).default([]),
 });
+const TeamMember = z.object({
+  id: z.string().min(1),
+  name: z.string().default("Team member"),
+  role: z.string().default("Role"),
+  photoId: z.string().nullable().default(null),
+  twitterUrl: z.string().default(""),
+  linkedinUrl: z.string().default(""),
+  instagramUrl: z.string().default(""),
+  behanceUrl: z.string().default(""),
+});
+const TeamBlock = z.object({
+  ...baseBlock,
+  type: z.literal("team"),
+  title: z.string().default(""),
+  grayscale: z.boolean().default(true),
+  showSocials: z.boolean().default(true),
+  members: z.array(TeamMember).default([]),
+});
 export const CtaButtonStyleEnum = z.enum([
   "solid",
   "pill",
@@ -389,6 +407,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   BannerBlock,
   QuoteBlock,
   TestimonialsBlock,
+  TeamBlock,
   CtaBlock,
   ContactFormBlock,
   SpacerBlock,
@@ -446,6 +465,11 @@ export function collectPhotoIds(blocks: Block[]): string[] {
         if (item.photoId) ids.push(item.photoId);
       }
     }
+    if (b.type === "team") {
+      for (const member of b.members) {
+        if (member.photoId) ids.push(member.photoId);
+      }
+    }
     if (b.type === "logos") ids.push(...b.photoIds);
     if (b.type === "gallery" && b.filterMode === "custom") {
       for (const filter of b.customFilters) ids.push(...filter.photoIds);
@@ -472,6 +496,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   banner: "Banner",
   quote: "Quote",
   testimonials: "Testimonials",
+  team: "Team",
   cta: "Call to action",
   contactForm: "Contact form",
   spacer: "Spacer",

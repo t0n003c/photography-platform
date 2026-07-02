@@ -5,6 +5,7 @@ import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { GalleryBlock } from "@/components/blocks/gallery-block";
 import { BannerBlock } from "@/components/blocks/banner-block";
 import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-block";
+import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
 import {
   CategoryIndexBlock,
   LocationIndexBlock,
@@ -344,6 +345,8 @@ function LeafView({
       return <GalleryBlock block={block} photoMap={photoMap} preview={preview} />;
     case "testimonials":
       return <TestimonialSliderBlock block={block} photoMap={photoMap} />;
+    case "team":
+      return <TeamShowcaseBlock block={block} photoMap={photoMap} />;
     case "categoryIndex":
       return <CategoryIndexBlock block={block} />;
     case "locationIndex":
@@ -433,6 +436,7 @@ const FULL_BLEED = new Set([
   "banner",
   "gallery",
   "testimonials",
+  "team",
   "categoryIndex",
   "locationIndex",
   "scrollShowcase",

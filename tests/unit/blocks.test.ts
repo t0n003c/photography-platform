@@ -58,4 +58,31 @@ describe("page builder blocks", () => {
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-1"]);
   });
+
+  it("keeps team blocks and collects member portraits", () => {
+    const blocks = parseBlocks([
+      {
+        id: "team",
+        type: "team",
+        members: [
+          {
+            id: "member-1",
+            name: "Mak VieSAinte",
+            role: "Founder",
+            photoId: "photo-team-1",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "team",
+      type: "team",
+      title: "",
+      grayscale: true,
+      showSocials: true,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-team-1"]);
+  });
 });

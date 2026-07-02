@@ -999,6 +999,15 @@ is gitignored):
   `components/blocks/testimonial-slider-block.tsx` renders the reference-style desktop layout:
   counter + vertical label rail, portrait, quote/name/company, thumbnail rail, and circular
   previous/next controls with reduced-motion-safe CSS transitions.
+  Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
+  Team Showcase reference. The block stores an optional section title, grayscale/social
+  toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/
+  Instagram/Behance URLs). `collectPhotoIds` preloads member portraits, the admin editor
+  supports portrait picking and member reorder/remove/add, and
+  `components/blocks/team-showcase-block.tsx` renders the staggered three-column portrait
+  layout with reference-style active member markers, grayscale hover/tap transitions,
+  reveal-on-active social links, mobile horizontal portrait scroll, and theme-aware
+  light/dark colors.
   Pre-push docs audit follow-up: `.env.example` and Docker Compose files were reviewed and
   did not need config changes for the recent page/admin updates; real `.env` stayed untouched.
   README and docs were refreshed so the current SeaweedFS Compose stack, `render-config`

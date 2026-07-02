@@ -82,7 +82,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "testimonials", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "testimonials", "team", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
 
@@ -94,6 +94,28 @@ function makeTestimonialItem() {
     quote:
       "Professionals in their craft. Every image felt intentional, polished, and completely true to the day.",
     photoId: null,
+  };
+}
+
+function makeTeamMember(index = 0) {
+  const examples = [
+    ["Chadrack", "director of photography"],
+    ["Mak VieSAinte", "FOUNDER"],
+    ["Osiris Balonga", "LEAD FRONT-END"],
+    ["Jacques", "PRODUCT OWNER"],
+    ["Riche Makso", "CTO - PRODUCT DESIGNER"],
+    ["Jemima", "MAKE-UP ARTISTE"],
+  ] as const;
+  const [name, role] = examples[index % examples.length];
+  return {
+    id: newBlockId(),
+    name,
+    role,
+    photoId: null,
+    twitterUrl: "",
+    linkedinUrl: "",
+    instagramUrl: "",
+    behanceUrl: "",
   };
 }
 
@@ -130,6 +152,14 @@ function makeBlock(type: BlockType): Block {
           photoId: null,
         },
       ],
+    };
+    case "team": return {
+      id,
+      type,
+      title: "",
+      grayscale: true,
+      showSocials: true,
+      members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
     };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
@@ -514,6 +544,8 @@ function blockSummary(block: Block): string {
       return block.headline || block.source;
     case "testimonials":
       return `${block.items.length} reviews`;
+    case "team":
+      return `${block.members.length} members`;
     case "cta":
       return block.headline || block.buttonLabel;
     case "contactForm":
@@ -1075,6 +1107,168 @@ function LeafEditor({
           >
             <Plus className="h-4 w-4" />
             Add testimonial
+          </Button>
+        </div>
+      );
+    }
+    case "team": {
+      const members = block.members ?? [];
+      const updateMember = (
+        index: number,
+        patch: Partial<(typeof members)[number]>,
+      ) => {
+        set({
+          members: members.map((member, i) =>
+            i === index ? { ...member, ...patch } : member,
+          ),
+        });
+      };
+      return (
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field
+              label="Optional title"
+              hint="Leave empty to match the reference layout."
+            >
+              <Input
+                value={block.title ?? ""}
+                onChange={(e) => set({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="Portrait treatment">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.grayscale ?? true}
+                  onChange={(e) => set({ grayscale: e.target.checked })}
+                />
+                Grayscale until active
+              </label>
+            </Field>
+            <Field label="Social links">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showSocials ?? true}
+                  onChange={(e) => set({ showSocials: e.target.checked })}
+                />
+                Show on active member
+              </label>
+            </Field>
+          </div>
+          <div className="space-y-3">
+            {members.map((member, index) => (
+              <div key={member.id} className="rounded-lg border p-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                    Member {index + 1}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() => set({ members: swapAt(members, index, index - 1) })}
+                      aria-label="Move member up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === members.length - 1}
+                      onClick={() => set({ members: swapAt(members, index, index + 1) })}
+                      aria-label="Move member down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({ members: members.filter((_, i) => i !== index) })
+                      }
+                      aria-label="Remove member"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[13rem_1fr]">
+                  <Field label="Portrait">
+                    <PhotoPicker
+                      photos={photos}
+                      value={member.photoId ?? null}
+                      onChange={(photoId) => updateMember(index, { photoId })}
+                      containerClassName="max-h-48"
+                    />
+                  </Field>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label="Name">
+                      <Input
+                        value={member.name}
+                        onChange={(e) => updateMember(index, { name: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Role">
+                      <Input
+                        value={member.role}
+                        onChange={(e) => updateMember(index, { role: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="X / Twitter URL">
+                      <Input
+                        value={member.twitterUrl ?? ""}
+                        onChange={(e) =>
+                          updateMember(index, { twitterUrl: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="LinkedIn URL">
+                      <Input
+                        value={member.linkedinUrl ?? ""}
+                        onChange={(e) =>
+                          updateMember(index, { linkedinUrl: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Instagram URL">
+                      <Input
+                        value={member.instagramUrl ?? ""}
+                        onChange={(e) =>
+                          updateMember(index, { instagramUrl: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Behance URL">
+                      <Input
+                        value={member.behanceUrl ?? ""}
+                        onChange={(e) =>
+                          updateMember(index, { behanceUrl: e.target.value })
+                        }
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              set({ members: [...members, makeTeamMember(members.length)] })
+            }
+          >
+            <Plus className="h-4 w-4" />
+            Add member
           </Button>
         </div>
       );
