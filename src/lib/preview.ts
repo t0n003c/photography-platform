@@ -16,6 +16,8 @@ export interface PreviewConfig {
     | "diagonal-slideshow"
     | "depth-gallery"
     | "infinite-canvas"
+    | "css-glitch"
+    | "palmer-draggable"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -59,6 +61,12 @@ export interface PreviewConfig {
   infiniteMovement?: "slow" | "normal" | "fast";
   infiniteShowControls?: boolean;
   infiniteEnableKeyboard?: boolean;
+  palmerDensity?: "compact" | "normal" | "wide";
+  palmerItemSize?: "small" | "medium" | "large";
+  palmerShowDetails?: boolean;
+  palmerUseCustomColors?: boolean;
+  palmerBackgroundColor?: string;
+  palmerTextColor?: string;
 }
 
 export const PREVIEW_PARAM = "__pc";

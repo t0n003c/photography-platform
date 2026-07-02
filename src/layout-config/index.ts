@@ -13,6 +13,8 @@ export type GridType =
   | "diagonal-slideshow"
   | "depth-gallery"
   | "infinite-canvas"
+  | "css-glitch"
+  | "palmer-draggable"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

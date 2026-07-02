@@ -1046,6 +1046,8 @@ function LeafEditor({
               <option value="none">None</option>
               <option value="ken-burns">Ken Burns (slow zoom)</option>
               <option value="reveal">Load reveal</option>
+              <option value="css-glitch-1">CSS glitch - haunted</option>
+              <option value="css-glitch-2">CSS glitch - ethereal</option>
               <option value="webgl-distortion">WebGL distortion</option>
             </Select>
           </Field>

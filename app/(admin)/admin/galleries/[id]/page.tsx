@@ -43,6 +43,8 @@ import type { PhotoDTO } from "@/src/db/queries/photos";
 
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
+const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
+const DEFAULT_PALMER_TEXT = "#313131";
 
 interface Gallery {
   id: string;
@@ -957,6 +959,16 @@ function LayoutCard({
     useState<"slow" | "normal" | "fast">("normal");
   const [infiniteShowControls, setInfiniteShowControls] = useState(true);
   const [infiniteEnableKeyboard, setInfiniteEnableKeyboard] = useState(true);
+  const [palmerDensity, setPalmerDensity] =
+    useState<"compact" | "normal" | "wide">("normal");
+  const [palmerItemSize, setPalmerItemSize] =
+    useState<"small" | "medium" | "large">("medium");
+  const [palmerShowDetails, setPalmerShowDetails] = useState(true);
+  const [palmerUseCustomColors, setPalmerUseCustomColors] = useState(false);
+  const [palmerBackgroundColor, setPalmerBackgroundColor] = useState(
+    DEFAULT_PALMER_BACKGROUND,
+  );
+  const [palmerTextColor, setPalmerTextColor] = useState(DEFAULT_PALMER_TEXT);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -985,6 +997,8 @@ function LayoutCard({
           cfg.gridType === "diagonal-slideshow" ||
           cfg.gridType === "depth-gallery" ||
           cfg.gridType === "infinite-canvas" ||
+          cfg.gridType === "css-glitch" ||
+          cfg.gridType === "palmer-draggable" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1124,6 +1138,47 @@ function LayoutCard({
         if (typeof c.infiniteEnableKeyboard === "boolean") {
           setInfiniteEnableKeyboard(c.infiniteEnableKeyboard);
         }
+        const palmerDensityValue = c.palmerDensity;
+        if (
+          palmerDensityValue === "compact" ||
+          palmerDensityValue === "normal" ||
+          palmerDensityValue === "wide"
+        ) {
+          setPalmerDensity(palmerDensityValue);
+        }
+        const palmerItemSizeValue = c.palmerItemSize;
+        if (
+          palmerItemSizeValue === "small" ||
+          palmerItemSizeValue === "medium" ||
+          palmerItemSizeValue === "large"
+        ) {
+          setPalmerItemSize(palmerItemSizeValue);
+        }
+        if (typeof c.palmerShowDetails === "boolean") {
+          setPalmerShowDetails(c.palmerShowDetails);
+        }
+        if (typeof c.palmerUseCustomColors === "boolean") {
+          setPalmerUseCustomColors(c.palmerUseCustomColors);
+        } else {
+          const savedBackground =
+            typeof c.palmerBackgroundColor === "string"
+              ? c.palmerBackgroundColor
+              : DEFAULT_PALMER_BACKGROUND;
+          const savedText =
+            typeof c.palmerTextColor === "string"
+              ? c.palmerTextColor
+              : DEFAULT_PALMER_TEXT;
+          setPalmerUseCustomColors(
+            savedBackground.toLowerCase() !== DEFAULT_PALMER_BACKGROUND ||
+              savedText.toLowerCase() !== DEFAULT_PALMER_TEXT,
+          );
+        }
+        if (typeof c.palmerBackgroundColor === "string") {
+          setPalmerBackgroundColor(c.palmerBackgroundColor);
+        }
+        if (typeof c.palmerTextColor === "string") {
+          setPalmerTextColor(c.palmerTextColor);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1171,6 +1226,12 @@ function LayoutCard({
         infiniteMovement,
         infiniteShowControls,
         infiniteEnableKeyboard,
+        palmerDensity,
+        palmerItemSize,
+        palmerShowDetails,
+        palmerUseCustomColors,
+        palmerBackgroundColor,
+        palmerTextColor,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1218,6 +1279,8 @@ function LayoutCard({
                   <option value="diagonal-slideshow">Diagonal slideshow</option>
                   <option value="depth-gallery">Depth gallery</option>
                   <option value="infinite-canvas">Infinite canvas</option>
+                  <option value="css-glitch">Glitch hover grid</option>
+                  <option value="palmer-draggable">Palmer draggable grid</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1229,6 +1292,8 @@ function LayoutCard({
                 gridType !== "diagonal-slideshow" &&
                 gridType !== "depth-gallery" &&
                 gridType !== "infinite-canvas" &&
+                gridType !== "css-glitch" &&
+                gridType !== "palmer-draggable" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1618,6 +1683,80 @@ function LayoutCard({
                   </div>
                 </div>
               )}
+              {gridType === "palmer-draggable" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Grid density">
+                      <Select
+                        value={palmerDensity}
+                        onChange={(e) =>
+                          setPalmerDensity(
+                            e.target.value as "compact" | "normal" | "wide",
+                          )
+                        }
+                      >
+                        <option value="compact">Compact</option>
+                        <option value="normal">Normal</option>
+                        <option value="wide">Wide</option>
+                      </Select>
+                    </Field>
+                    <Field label="Photo size">
+                      <Select
+                        value={palmerItemSize}
+                        onChange={(e) =>
+                          setPalmerItemSize(
+                            e.target.value as "small" | "medium" | "large",
+                          )
+                        }
+                      >
+                        <option value="small">Small</option>
+                        <option value="medium">Medium</option>
+                        <option value="large">Large</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={palmerUseCustomColors}
+                      onChange={(e) => setPalmerUseCustomColors(e.target.checked)}
+                    />
+                    Use custom colors
+                  </label>
+                  {palmerUseCustomColors && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Background color" htmlFor="palmer-bg-color">
+                        <Input
+                          id="palmer-bg-color"
+                          type="color"
+                          value={palmerBackgroundColor}
+                          onChange={(e) => setPalmerBackgroundColor(e.target.value)}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                      <Field label="Text color" htmlFor="palmer-text-color">
+                        <Input
+                          id="palmer-text-color"
+                          type="color"
+                          value={palmerTextColor}
+                          onChange={(e) => setPalmerTextColor(e.target.value)}
+                          className="h-10 p-1"
+                        />
+                      </Field>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 text-sm">
+                    <Input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={palmerShowDetails}
+                      onChange={(e) => setPalmerShowDetails(e.target.checked)}
+                    />
+                    Show detail panel
+                  </label>
+                </div>
+              )}
               <div className="pt-1">
                 <Button onClick={save} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1667,6 +1806,12 @@ function LayoutCard({
                 infiniteMovement,
                 infiniteShowControls,
                 infiniteEnableKeyboard,
+                palmerDensity,
+                palmerItemSize,
+                palmerShowDetails,
+                palmerUseCustomColors,
+                palmerBackgroundColor,
+                palmerTextColor,
               }}
               height={560}
             />

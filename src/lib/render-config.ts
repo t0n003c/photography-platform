@@ -13,6 +13,8 @@ export type GridType =
   | "diagonal-slideshow"
   | "depth-gallery"
   | "infinite-canvas"
+  | "css-glitch"
+  | "palmer-draggable"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -96,6 +98,18 @@ export interface InfiniteCanvasConfig {
   enableKeyboard: boolean;
 }
 
+export type PalmerDensity = "compact" | "normal" | "wide";
+export type PalmerItemSize = "small" | "medium" | "large";
+
+export interface PalmerDraggableConfig {
+  density: PalmerDensity;
+  itemSize: PalmerItemSize;
+  showDetails: boolean;
+  useCustomColors: boolean;
+  backgroundColor: string;
+  textColor: string;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -109,6 +123,7 @@ export interface RenderConfig {
   diagonalSlideshow: DiagonalSlideshowConfig;
   depthGallery: DepthGalleryConfig;
   infiniteCanvas: InfiniteCanvasConfig;
+  palmerDraggable: PalmerDraggableConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -173,6 +188,26 @@ function infiniteMovement(value: unknown): InfiniteCanvasMovement {
   return "normal";
 }
 
+function palmerDensity(value: unknown): PalmerDensity {
+  if (value === "compact" || value === "wide" || value === "normal") return value;
+  return "normal";
+}
+
+function palmerItemSize(value: unknown): PalmerItemSize {
+  if (value === "small" || value === "large" || value === "medium") return value;
+  return "medium";
+}
+
+const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
+const DEFAULT_PALMER_TEXT = "#313131";
+
+function isDefaultPalmerColor(value: unknown, defaultValue: string) {
+  return (
+    typeof value !== "string" ||
+    value.trim().toLowerCase() === defaultValue.toLowerCase()
+  );
+}
+
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
 
 // Resolves the page-config a public page should render with, applying an
@@ -218,7 +253,19 @@ export async function resolveRenderConfig(
     infiniteMovement?: InfiniteCanvasMovement;
     infiniteShowControls?: boolean;
     infiniteEnableKeyboard?: boolean;
+    palmerDensity?: PalmerDensity;
+    palmerItemSize?: PalmerItemSize;
+    palmerShowDetails?: boolean;
+    palmerUseCustomColors?: boolean;
+    palmerBackgroundColor?: string;
+    palmerTextColor?: string;
   };
+  const palmerUsesCustomColors =
+    cfgJson.palmerUseCustomColors ??
+    !(
+      isDefaultPalmerColor(cfgJson.palmerBackgroundColor, DEFAULT_PALMER_BACKGROUND) &&
+      isDefaultPalmerColor(cfgJson.palmerTextColor, DEFAULT_PALMER_TEXT)
+    );
   const config: RenderConfig = {
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
     spacing: base?.spacing ?? "normal",
@@ -273,6 +320,14 @@ export async function resolveRenderConfig(
       movement: infiniteMovement(cfgJson.infiniteMovement),
       showControls: cfgJson.infiniteShowControls ?? true,
       enableKeyboard: cfgJson.infiniteEnableKeyboard ?? true,
+    },
+    palmerDraggable: {
+      density: palmerDensity(cfgJson.palmerDensity),
+      itemSize: palmerItemSize(cfgJson.palmerItemSize),
+      showDetails: cfgJson.palmerShowDetails ?? true,
+      useCustomColors: palmerUsesCustomColors,
+      backgroundColor: cfgJson.palmerBackgroundColor ?? DEFAULT_PALMER_BACKGROUND,
+      textColor: cfgJson.palmerTextColor ?? DEFAULT_PALMER_TEXT,
     },
   };
 
@@ -387,6 +442,24 @@ export async function resolveRenderConfig(
         draft.infiniteShowControls ?? config.infiniteCanvas.showControls,
       enableKeyboard:
         draft.infiniteEnableKeyboard ?? config.infiniteCanvas.enableKeyboard,
+    },
+    palmerDraggable: {
+      density:
+        draft.palmerDensity !== undefined
+          ? palmerDensity(draft.palmerDensity)
+          : config.palmerDraggable.density,
+      itemSize:
+        draft.palmerItemSize !== undefined
+          ? palmerItemSize(draft.palmerItemSize)
+          : config.palmerDraggable.itemSize,
+      showDetails:
+        draft.palmerShowDetails ?? config.palmerDraggable.showDetails,
+      useCustomColors:
+        draft.palmerUseCustomColors ??
+        config.palmerDraggable.useCustomColors,
+      backgroundColor:
+        draft.palmerBackgroundColor ?? config.palmerDraggable.backgroundColor,
+      textColor: draft.palmerTextColor ?? config.palmerDraggable.textColor,
     },
   };
 }

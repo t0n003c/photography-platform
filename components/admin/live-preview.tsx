@@ -15,6 +15,8 @@ export type PreviewGrid =
   | "diagonal-slideshow"
   | "depth-gallery"
   | "infinite-canvas"
+  | "css-glitch"
+  | "palmer-draggable"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -72,6 +74,12 @@ export interface PreviewDraft {
   infiniteMovement?: "slow" | "normal" | "fast";
   infiniteShowControls?: boolean;
   infiniteEnableKeyboard?: boolean;
+  palmerDensity?: "compact" | "normal" | "wide";
+  palmerItemSize?: "small" | "medium" | "large";
+  palmerShowDetails?: boolean;
+  palmerUseCustomColors?: boolean;
+  palmerBackgroundColor?: string;
+  palmerTextColor?: string;
 }
 
 type PreviewDevice = "desktop" | "mobile";

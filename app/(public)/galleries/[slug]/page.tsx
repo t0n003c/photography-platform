@@ -48,7 +48,9 @@ export default async function GalleryPage({
     layout.gridType === "rotating-scroll" ||
     layout.gridType === "diagonal-slideshow" ||
     layout.gridType === "depth-gallery" ||
-    layout.gridType === "infinite-canvas";
+    layout.gridType === "infinite-canvas" ||
+    layout.gridType === "css-glitch" ||
+    layout.gridType === "palmer-draggable";
 
   return (
     <Container

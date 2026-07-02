@@ -66,7 +66,9 @@ export async function Footer() {
         <Container className="flex flex-col gap-8 py-12 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-base font-semibold tracking-tight">{settings.siteTitle}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{copyright}</p>
+            <p className="footer-copyright mt-1 text-sm text-muted-foreground">
+              {copyright}
+            </p>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
             {flat.map((item) => (
@@ -111,7 +113,9 @@ export async function Footer() {
         {body}
         <div className="flex flex-col items-center gap-3">
           {footer.showSocial && <Social />}
-          <p className="text-xs text-muted-foreground">{copyright}</p>
+          <p className="footer-copyright text-xs text-muted-foreground">
+            {copyright}
+          </p>
         </div>
       </Container>
     </footer>

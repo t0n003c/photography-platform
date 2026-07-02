@@ -107,6 +107,8 @@ export const BannerEffectEnum = z.enum([
   "none",
   "ken-burns",
   "reveal",
+  "css-glitch-1",
+  "css-glitch-2",
   "webgl-distortion",
 ]);
 export const BannerLayoutEnum = z.enum([

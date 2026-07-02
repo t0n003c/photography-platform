@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
+import { CssGlitchImage } from "@/components/gallery/css-glitch";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -145,6 +146,19 @@ function BannerImage({
         focalY={fy2 / 100}
         zoom={zoom}
       />
+    );
+  }
+  if (block.effect === "css-glitch-1" || block.effect === "css-glitch-2") {
+    return (
+      <div className={cn("relative overflow-hidden", className)}>
+        <CssGlitchImage
+          photo={photo}
+          mode="hero"
+          variant={block.effect === "css-glitch-2" ? "hero-ethereal" : "hero-haunted"}
+          objectPosition={`${fx2}% ${fy2}%`}
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
     );
   }
   const fx =

@@ -18,6 +18,8 @@ import { RotatingScroll } from "./rotating-scroll";
 import { DiagonalSlideshow } from "./diagonal-slideshow";
 import { DepthGallery } from "./depth-gallery";
 import { InfiniteCanvasGallery } from "./infinite-canvas";
+import { GlitchHoverGrid } from "./glitch-hover-grid";
+import { PalmerDraggableGrid } from "./palmer-draggable-grid";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
 import { Lightbox } from "./lightbox";
@@ -39,6 +41,8 @@ interface GalleryLayout {
     | "diagonal-slideshow"
     | "depth-gallery"
     | "infinite-canvas"
+    | "css-glitch"
+    | "palmer-draggable"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -102,6 +106,15 @@ interface GalleryLayout {
     movement?: "slow" | "normal" | "fast";
     showControls?: boolean;
     enableKeyboard?: boolean;
+  };
+  /** Palmer draggable grid only: density, sizing, details, and colors. */
+  palmerDraggable?: {
+    density?: "compact" | "normal" | "wide";
+    itemSize?: "small" | "medium" | "large";
+    showDetails?: boolean;
+    useCustomColors?: boolean;
+    backgroundColor?: string;
+    textColor?: string;
   };
 }
 
@@ -372,6 +385,52 @@ export function Gallery({
           movement={layout.infiniteCanvas?.movement}
           showControls={layout.infiniteCanvas?.showControls}
           enableKeyboard={layout.infiniteCanvas?.enableKeyboard}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "css-glitch") {
+    return (
+      <div>
+        <GlitchHoverGrid
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "palmer-draggable") {
+    return (
+      <div>
+        <PalmerDraggableGrid
+          photos={photos}
+          title={collection?.name}
+          subtitle={collection?.subtitle}
+          density={layout.palmerDraggable?.density}
+          itemSize={layout.palmerDraggable?.itemSize}
+          showDetails={layout.palmerDraggable?.showDetails}
+          useCustomColors={layout.palmerDraggable?.useCustomColors}
+          backgroundColor={layout.palmerDraggable?.backgroundColor}
+          textColor={layout.palmerDraggable?.textColor}
           onOpen={openAt}
         />
         <Lightbox

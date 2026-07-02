@@ -50,7 +50,9 @@ export default async function GalleryPreview({
     layout.gridType === "rotating-scroll" ||
     layout.gridType === "diagonal-slideshow" ||
     layout.gridType === "depth-gallery" ||
-    layout.gridType === "infinite-canvas";
+    layout.gridType === "infinite-canvas" ||
+    layout.gridType === "css-glitch" ||
+    layout.gridType === "palmer-draggable";
 
   return (
     <Container

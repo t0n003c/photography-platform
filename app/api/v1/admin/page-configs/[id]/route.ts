@@ -23,6 +23,8 @@ const PatchSchema = z.object({
       "diagonal-slideshow",
       "depth-gallery",
       "infinite-canvas",
+      "css-glitch",
+      "palmer-draggable",
       "carousel-3d-scroll",
       "alternative-scroll",
     ])

@@ -927,6 +927,40 @@ is gitignored):
   Intentional deviation: the reference uses a raw Three.js engine and custom GLSL background;
   this app uses React Three Fiber plus CSS mood blobs to fit SSR/reduced-motion requirements.
   Reduced motion/WebGL-gated fallback renders the existing justified grid.
+  Gallery/Page follow-up: `css-glitch` adds the Codrops CSSGlitchEffect source in two scoped
+  places: Banner block effects `css-glitch-1`/`css-glitch-2` for the full-hero demos, and a
+  Gallery-only `css-glitch` grid type for the six hover-card styles. The shared layer renderer
+  is `components/gallery/css-glitch.tsx`; the gallery grid is
+  `components/gallery/glitch-hover-grid.tsx`. Mobile uses touch-friendly continuous card
+  animation, and reduced motion keeps only the base image layer.
+  Gallery-tab follow-up: `palmer-draggable` ports the Palmer Draggable Grid reference as a
+  Gallery-only immersive grid type. It uses selected gallery photos repeated into a large
+  draggable x/y field, random intro reveal, whole-field scale-up, wheel panning, viewport
+  fade/scale, right-side detail drawer, and a Flip-style cloned image transition into the
+  detail panel. Settings expose density, photo size, detail panel toggle, background color,
+  and text color. Mobile keeps the interaction inside a fixed 100dvh touch-drag stage;
+  reduced motion renders a static responsive grid.
+  Follow-up: The Palmer detail drawer handoff now keeps the drawer thumbnail target fully
+  transparent until the flying clone lands, avoiding both duplicate imagery and the darker
+  placeholder square. Public pages that contain the Palmer grid also remove the default
+  footer top margin to reduce the footer area directly below the immersive grid.
+  Follow-up: Palmer pages now collapse the public footer to a compact copyright strip only,
+  and the right detail drawer title uses a slightly looser visible line box so descenders are
+  no longer clipped at the bottom of the photo name.
+  Follow-up: Palmer open/close now matches the reference container choreography more closely:
+  when a photo opens, the draggable image field shifts left by `50vw` over the same 1.2s
+  `power3.inOut` beat as the right drawer; on close it restores the exact pre-open drag
+  position after the reference-style 0.3s delay.
+  Follow-up: The Palmer detail transition now hides the clicked source tile while the clone
+  flies into the drawer, then creates a reverse clone on close that flies back to that tile
+  while the grid returns. The source tile is revealed only after the return flight completes,
+  matching the reference's "same product moves out and back" feel without moving React-owned
+  DOM nodes between parents.
+  Follow-up: Palmer now supports dark mode by default. Its normal palette is theme-aware
+  (`.dark` uses a dark stage/drawer and light text), while a new Gallery-tab "Use custom
+  colors" toggle preserves exact background/text colors when desired. Older configs with
+  non-default Palmer colors are inferred as custom; default light colors are treated as
+  theme-following.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
