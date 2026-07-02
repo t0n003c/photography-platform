@@ -332,18 +332,20 @@ function TaxonomyCard<T extends Category | Location>({
                 className="flex min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{item.name}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="min-w-0 truncate font-medium">{item.name}</p>
+                    <Badge
+                      tone={item.isPublished ? "green" : "neutral"}
+                      className="shrink-0 px-1.5 text-[11px] sm:px-2 sm:text-xs"
+                    >
+                      {item.isPublished ? "Published" : "Hidden"}
+                    </Badge>
+                  </div>
                   <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
                     {item.slug}
                   </p>
                 </div>
                 <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
-                  <Badge
-                    tone={item.isPublished ? "green" : "neutral"}
-                    className="px-1.5 text-[11px] sm:px-2 sm:text-xs"
-                  >
-                    {item.isPublished ? "Published" : "Hidden"}
-                  </Badge>
                   <Button
                     size="icon"
                     variant="ghost"

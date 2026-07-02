@@ -987,7 +987,9 @@ is gitignored):
   status/reorder/manage/edit/delete controls in a single non-wrapping strip. Taxonomy cards and
   rows are `min-w-0`, headers stack on phones, the create button becomes full-width on mobile,
   and row actions wrap below the category/location name so the admin shell's overflow clipping
-  does not cut off the right side.
+  does not cut off the right side. Follow-up: the Published/Hidden badge now sits inline with
+  the category/location name instead of in the action row, keeping the controls tighter on
+  narrow mobile screens.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
