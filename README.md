@@ -15,7 +15,9 @@ Core platform is **built and running**: auth (password + TOTP 2FA + passkeys), t
 upload→`sharp`→derivatives media pipeline, the public portfolio (categories + locations)
 with multiple gallery layouts, private client galleries with expiring share links, and a
 full admin **CMS** (upload, library, galleries, page builder, layout/design editor,
-settings, menus). Payments remain a **stub behind an interface**. See
+settings, menus). The page builder includes curated blocks such as galleries, banners,
+contact forms, scroll showcases, logos/FAQs, and testimonials. Payments remain a **stub
+behind an interface**. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 
 ## Stack

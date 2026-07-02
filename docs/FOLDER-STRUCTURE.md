@@ -10,8 +10,9 @@
   the same `src/` domain code; they differ only at the entry point.
 - **Drivers behind interfaces.** Storage, email, and payments are swappable drivers;
   call sites depend on the interface, never the concrete driver.
-- **Config-driven layouts.** Gallery/portfolio layouts are data in `src/layout-config/`,
-  not hardcoded JSX, so new arrangements are config edits.
+- **Data-driven presentation.** Gallery render config lives in `src/lib/render-config.ts`
+  and page-builder block schemas live in `src/lib/blocks.ts`; new layouts/blocks are
+  added through those typed contracts rather than ad hoc route JSX.
 - **Realistic, not over-engineered.** A single `src/` domain folder — no premature
   package/workspace split. Promote to a monorepo only if a second app appears.
 
@@ -50,7 +51,7 @@ photography-platform/
 │   ├── auth/                     # Better Auth config, MFA policy, session helpers
 │   ├── storage/                  # StorageProvider abstraction
 │   │   ├── provider.ts          # StorageProvider interface
-│   │   └── drivers/             # minio.ts (S3, default) + filesystem.ts (alternate)
+│   │   └── drivers/             # minio.ts (S3-compatible; SeaweedFS default) + filesystem.ts
 │   ├── image/                    # sharp pipeline: derivatives, LQIP, EXIF normalize
 │   │   ├── derivatives.ts       # AVIF/WebP responsive variant generation
 │   │   ├── lqip.ts              # Blur placeholder generation
@@ -64,13 +65,14 @@ photography-platform/
 │   ├── payments/                 # PaymentProvider STUB (Stripe likely later)
 │   │   ├── provider.ts          # PaymentProvider interface — seams only
 │   │   └── drivers/            # stripe.ts (stub, not implemented)
-│   ├── layout-config/            # Config-driven gallery/portfolio layout definitions
+│   ├── layout-config/            # Legacy descriptor type; new work uses src/lib/render-config.ts
 │   ├── validation/               # Shared Zod schemas (client/server/worker)
 │   ├── redis/                    # Redis/Valkey client (sessions, cache, rate limit)
 │   └── lib/                      # Cross-cutting utils (logging, env parse, helpers)
 │
 ├── components/                   # React components (presentation)
 │   ├── ui/                       # shadcn/ui primitives (headless layer)
+│   ├── blocks/                   # Page-builder block renderers (gallery, banner, testimonials, etc.)
 │   ├── gallery/                  # Gallery, grid, lightbox, favorites, downloads
 │   ├── webgl/                    # WebGL/shader enhancement layer (degrades gracefully)
 │   ├── layout/                   # Header, footer, nav, theme toggle (next-themes)
@@ -86,8 +88,12 @@ photography-platform/
 ├── docker/                       # Container + orchestration definitions
 │   ├── Dockerfile.web            # Build/run image for the Next.js web process
 │   ├── Dockerfile.worker         # Build/run image for the BullMQ worker process
-│   ├── compose.yaml              # Services: web, worker, db, redis, minio (core/default)
-│   └── compose.override.example  # Local/dev overrides template
+│   ├── compose.yaml              # Base services: web, worker, db, redis, SeaweedFS
+│   ├── compose.dev.yaml          # Local dev overlay: publishes db/redis, WEB_PORT defaults to 3001
+│   ├── compose.prod.yaml         # NAS/prod overlay: limits, logs, optional tunnel profile
+│   ├── compose.ghcr.yaml         # Pull pre-built GHCR web/worker images
+│   ├── compose.nas.yaml          # Single-file Synology/Container Manager compose
+│   └── compose.override.example  # Optional local conveniences template
 │
 ├── scripts/                      # Ops/dev scripts (seed, backup, migrate, healthcheck)
 │
@@ -114,10 +120,14 @@ photography-platform/
 
 ## Notes on key locations
 
-- **Config-driven gallery layouts** live in `src/layout-config/`. These are typed
-  layout descriptors (grid styles, masonry/justified arrangements, cover behavior,
-  ordering) consumed by `components/gallery/`. Adding a layout = adding config, not
-  rewriting components.
+- **Gallery render config** lives in `src/lib/render-config.ts`. The older
+  `src/layout-config/` descriptor remains in the tree for compatibility, but new grid
+  types and preview/public rendering behavior should be wired through `render-config`
+  and the gallery components.
+
+- **Page-builder blocks** are validated in `src/lib/blocks.ts`, edited from the Pages
+  tab, and rendered by `components/blocks/*`. Current examples include banners,
+  galleries, contact forms, scroll showcases, logos, FAQs, columns, and testimonials.
 
 - **Shared job contracts** in `src/queue/jobs/` are imported by both the API (producer,
   in `app/api/uploads`) and the worker (consumer, in `worker/index.ts`). Typing them
@@ -133,10 +143,10 @@ photography-platform/
   Components call into `src/` modules. This keeps the worker able to reuse the exact
   same domain code without dragging in Next.js routing.
 
-- **`docker/compose.yaml`** defines `web`, `worker`, `db` (Postgres 16), `redis`
-  (Redis/Valkey), and `minio` — all **core, always-on** services (`minio` is the default
-  media-storage backend, not profile-gated). NPM and the Cloudflare Tunnel are
-  infrastructure external to this application stack (see ARCHITECTURE.md §6).
+- **`docker/compose.yaml`** defines `web`, `worker`, `db` (Postgres 16), `redis`,
+  `seaweedfs`, and `seaweedfs-init` — all **core, always-on** services. SeaweedFS is the
+  default S3-compatible media backend; NPM and the Cloudflare Tunnel are infrastructure
+  external to this application stack (see ARCHITECTURE.md §6).
 
 - **`.env.example` is committed and documented**; the real `.env` is gitignored. Both
   `web` and `worker` read the same env (DB URL, Redis URL, storage driver + path/S3

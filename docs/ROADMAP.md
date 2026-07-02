@@ -26,8 +26,8 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Configure TypeScript (strict), ESLint, Prettier. _(editorconfig + commit hooks deferred to Phase 2.)_
 - [x] Stand up base Next.js 15 App Router project (TS) with a hello-world home route and `/api/health` route.
 - [x] Author Dockerfiles (`Dockerfile.web` standalone + `Dockerfile.worker`).
-- [x] Author Compose stack: `web`, `db` (postgres 16), `redis`, `worker`, and `minio` (+ `minio-init` bucket bootstrap) — all **core, always-on** services.
-- [x] Add internal network and volumes (`pgdata`, `redisdata`, `miniodata`).
+- [x] Author Compose stack: `web`, `db` (postgres 16), `redis`, `worker`, and an S3-compatible media store. The original MinIO plan has since been superseded by SeaweedFS (`seaweedfs` + `seaweedfs-init`) per ADR-0024.
+- [x] Add internal network and volumes (`pgdata`, `redisdata`, media storage volume; current stack uses `seaweeddata`).
 - [x] Create `.env.example` with all variable names (no secrets) per `DEPLOYMENT.md` §5.
 - [x] Implement `/api/health` and per-service healthchecks (`pg_isready`, `redis-cli ping`, web HTTP, worker HTTP heartbeat).
 - [x] Wire `depends_on` with `service_healthy` conditions and restart policies.

@@ -999,6 +999,11 @@ is gitignored):
   `components/blocks/testimonial-slider-block.tsx` renders the reference-style desktop layout:
   counter + vertical label rail, portrait, quote/name/company, thumbnail rail, and circular
   previous/next controls with reduced-motion-safe CSS transitions.
+  Pre-push docs audit follow-up: `.env.example` and Docker Compose files were reviewed and
+  did not need config changes for the recent page/admin updates; real `.env` stayed untouched.
+  README and docs were refreshed so the current SeaweedFS Compose stack, `render-config`
+  gallery contract, `components/blocks/*` renderers, and Testimonials page block are reflected
+  instead of the older MinIO/layout-config wording.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

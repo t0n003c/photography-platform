@@ -253,7 +253,10 @@ they are logically separated:
 - `payments/` — `PaymentProvider` **stub**.
 - `auth/` — Better Auth config + policy.
 - `validation/` — Zod schemas shared client/server/worker.
-- `layout-config/` — config-driven gallery/portfolio layout definitions.
+- `lib/render-config.ts` — active gallery render/preview config contract. The older
+  `layout-config/` descriptor remains legacy-only.
+- `lib/blocks.ts` + `components/blocks/*` — curated page-builder block contract and
+  renderers, including galleries, scroll showcases, contact forms, and testimonials.
 
 The boundary rule: **UI never imports drivers directly; it goes through the domain
 module interface.** Swapping SeaweedFS→filesystem or SMTP→Resend touches only a driver, never a
