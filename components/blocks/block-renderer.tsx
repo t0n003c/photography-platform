@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/container";
@@ -15,6 +16,7 @@ import { ScrollShowcaseBlock } from "@/components/blocks/scroll-showcase";
 import { ContactForm } from "@/components/forms/contact-form";
 import { collectPhotoIds, type Block, type LeafBlock } from "@/src/lib/blocks";
 import { getPhotosByIds } from "@/src/db/queries/pages";
+import { cn } from "@/src/lib/utils";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 
 const ALIGN: Record<string, string> = {
@@ -22,7 +24,13 @@ const ALIGN: Record<string, string> = {
   center: "text-center",
   right: "text-right",
 };
-const SPACER: Record<string, string> = { sm: "h-6", md: "h-12", lg: "h-24" };
+const SPACER_HEIGHT: Record<string, number> = {
+  xs: 48,
+  sm: 88,
+  md: 112,
+  lg: 160,
+  xl: 224,
+};
 const GAP: Record<string, string> = {
   tight: "gap-2",
   normal: "gap-4 md:gap-6",
@@ -113,8 +121,106 @@ const CONTACT_ALIGN: Record<string, string> = {
   center: "items-center text-center",
   right: "items-end text-right",
 };
+const DIVIDER_THICKNESS: Record<string, number> = {
+  hairline: 1,
+  thin: 2,
+  medium: 4,
+  thick: 8,
+};
+const DIVIDER_SPACING: Record<string, [number, number]> = {
+  tight: [12, 12],
+  normal: [32, 32],
+  airy: [56, 56],
+};
+const DIVIDER_WIDTH: Record<string, string> = {
+  full: "w-full",
+  content: "w-full max-w-2xl",
+  narrow: "w-full max-w-xs",
+};
+const DIVIDER_ALIGN: Record<string, string> = {
+  left: "mr-auto",
+  center: "mx-auto",
+  right: "ml-auto",
+};
 
 type PhotoMap = Map<string, PhotoDTO>;
+
+function clampPx(value: number | undefined, fallback: number, max: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(Math.round(value), 0), max);
+}
+
+function bandBackground(mode: string | undefined, color: string | undefined) {
+  if (mode === "muted") return "hsl(var(--muted))";
+  if (mode === "custom") return color || "#f4f4f5";
+  return undefined;
+}
+
+function dividerColor(mode: string | undefined, color: string | undefined) {
+  if (mode === "foreground") return "hsl(var(--foreground))";
+  if (mode === "muted") return "hsl(var(--muted-foreground))";
+  if (mode === "custom") return color || "#d4d4d8";
+  return "hsl(var(--border))";
+}
+
+function spacerHeight(
+  size: string | undefined,
+  customHeight: number | undefined,
+) {
+  if (size === "custom") return clampPx(customHeight, SPACER_HEIGHT.md, 640);
+  return SPACER_HEIGHT[size ?? "md"] ?? SPACER_HEIGHT.md;
+}
+
+function dividerSpacing(
+  spacing: string | undefined,
+  customTop: number | undefined,
+  customBottom: number | undefined,
+) {
+  if (spacing === "custom") {
+    return [
+      clampPx(customTop, DIVIDER_SPACING.normal[0], 240),
+      clampPx(customBottom, DIVIDER_SPACING.normal[1], 240),
+    ] as const;
+  }
+  return DIVIDER_SPACING[spacing ?? "normal"] ?? DIVIDER_SPACING.normal;
+}
+
+function dividerLineStyle({
+  style,
+  thickness,
+  color,
+}: {
+  style: string | undefined;
+  thickness: string | undefined;
+  color: string;
+}): CSSProperties {
+  const px = DIVIDER_THICKNESS[thickness ?? "hairline"] ?? 1;
+  if (style === "fade") {
+    return {
+      height: `${px}px`,
+      backgroundImage: `linear-gradient(90deg, transparent, ${color} 50%, transparent)`,
+    };
+  }
+  if (style === "gradient") {
+    return {
+      height: `${px}px`,
+      backgroundImage: `linear-gradient(90deg, transparent 0%, ${color} 18%, ${color} 82%, transparent 100%)`,
+    };
+  }
+  const borderTopStyle: CSSProperties["borderTopStyle"] =
+    style === "dashed" ||
+    style === "dotted" ||
+    style === "double" ||
+    style === "solid"
+      ? style
+      : "solid";
+  return {
+    borderTopColor: color,
+    borderTopStyle,
+    borderTopWidth:
+      style === "double" ? `${Math.max(3, px * 3)}px` : `${px}px`,
+  };
+}
 
 function Paragraphs({ text, className }: { text: string; className?: string }) {
   const parts = text.split(/\n{2,}/).filter((p) => p.trim());
@@ -276,8 +382,45 @@ function LeafView({
         </figure>
       );
     }
-    case "spacer":
-      return <div className={SPACER[block.size]} aria-hidden />;
+    case "spacer": {
+      const desktopHeight = spacerHeight(block.size, block.customHeight);
+      const mobileHeight =
+        block.mobileSize && block.mobileSize !== "same"
+          ? spacerHeight(block.mobileSize, block.mobileCustomHeight)
+          : desktopHeight;
+      const backgroundColor = bandBackground(
+        block.backgroundMode,
+        block.backgroundColor,
+      );
+      const heightStyle = {
+        "--spacer-mobile-height": `${mobileHeight}px`,
+        "--spacer-desktop-height": `${desktopHeight}px`,
+        backgroundColor,
+      } as CSSProperties;
+      const heightClass =
+        "h-[var(--spacer-mobile-height)] sm:h-[var(--spacer-desktop-height)]";
+
+      if (backgroundColor && block.backgroundWidth === "content") {
+        return (
+          <section className="spacer-block" aria-hidden>
+            <Container>
+              <div
+                className={cn("mx-auto max-w-2xl", heightClass)}
+                style={heightStyle}
+              />
+            </Container>
+          </section>
+        );
+      }
+
+      return (
+        <div
+          className={cn("spacer-block", heightClass)}
+          style={heightStyle}
+          aria-hidden
+        />
+      );
+    }
     case "logos": {
       const logos = (block.photoIds ?? [])
         .map((pid) => photoMap.get(pid))
@@ -337,8 +480,74 @@ function LeafView({
         </Container>
       );
     }
-    case "divider":
-      return <hr className="border-[hsl(var(--border))]" />;
+    case "divider": {
+      const [paddingTop, paddingBottom] = dividerSpacing(
+        block.spacing,
+        block.customSpacingTop,
+        block.customSpacingBottom,
+      );
+      const color = dividerColor(block.colorMode, block.color);
+      const backgroundColor = bandBackground(
+        block.backgroundMode,
+        block.backgroundColor,
+      );
+      const label = block.label.trim();
+      const lineStyle = dividerLineStyle({
+        style: block.style,
+        thickness: block.thickness,
+        color,
+      });
+      const sectionStyle: CSSProperties = {
+        paddingTop,
+        paddingBottom,
+        backgroundColor,
+      };
+      const widthClass = DIVIDER_WIDTH[block.width ?? "content"] ?? DIVIDER_WIDTH.content;
+      const alignClass =
+        block.width === "full"
+          ? ""
+          : DIVIDER_ALIGN[block.align ?? "center"] ?? DIVIDER_ALIGN.center;
+      const divider = (
+        <div className={cn(widthClass, alignClass)}>
+          {label ? (
+            <div
+              className="flex items-center gap-3"
+              role="separator"
+              aria-label={label}
+            >
+              <span className="min-h-px flex-1 border-0" style={lineStyle} />
+              <span
+                className="shrink-0 text-xs font-medium uppercase tracking-[0.22em]"
+                style={{ color }}
+              >
+                {label}
+              </span>
+              <span className="min-h-px flex-1 border-0" style={lineStyle} />
+            </div>
+          ) : (
+            <div
+              className="min-h-px w-full border-0"
+              style={lineStyle}
+              role="separator"
+            />
+          )}
+        </div>
+      );
+
+      if (block.width === "full") {
+        return (
+          <section className="divider-block" style={sectionStyle}>
+            {divider}
+          </section>
+        );
+      }
+
+      return (
+        <section className="divider-block" style={sectionStyle}>
+          <Container>{divider}</Container>
+        </section>
+      );
+    }
     case "banner":
       return <BannerBlock block={block} photo={block.photoId ? photoMap.get(block.photoId) : undefined} />;
     case "gallery":
@@ -437,6 +646,8 @@ const FULL_BLEED = new Set([
   "gallery",
   "testimonials",
   "team",
+  "spacer",
+  "divider",
   "categoryIndex",
   "locationIndex",
   "scrollShowcase",

@@ -1008,6 +1008,15 @@ is gitignored):
   layout with reference-style active member markers, grayscale hover/tap transitions,
   reveal-on-active social links, mobile horizontal portrait scroll, and theme-aware
   light/dark colors.
+  Page block follow-up: Spacer and Divider blocks are now configurable instead of fixed.
+  Spacer keeps legacy `md` visual spacing by default but supports XS/SM/MD/LG/XL/custom
+  desktop heights, same-or-overridden mobile heights, full-band or content-width
+  backgrounds, and theme-muted/custom background colors. Divider now supports solid,
+  dashed, dotted, double, fade, and gradient styles; hairline/thin/medium/thick
+  thickness; full/content/narrow widths with alignment; preset or custom vertical
+  spacing; theme/custom line color; optional background bands; and optional centered
+  label text. Both blocks render as self-managed full-bleed page blocks so background
+  bands can span the page while default rendering remains backward compatible.
   Pre-push docs audit follow-up: `.env.example` and Docker Compose files were reviewed and
   did not need config changes for the recent page/admin updates; real `.env` stayed untouched.
   README and docs were refreshed so the current SeaweedFS Compose stack, `render-config`

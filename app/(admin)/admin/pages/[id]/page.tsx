@@ -61,6 +61,11 @@ function swapAt<T>(arr: T[], i: number, j: number): T[] {
   return next;
 }
 
+function pxInput(value: string): number {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : 0;
+}
+
 // Scroll the live-preview iframe to a block and briefly highlight it. The iframe
 // is same-origin, so we can reach into its document by the block's data-id.
 function locateInPreview(blockId: string) {
@@ -119,6 +124,25 @@ function makeTeamMember(index = 0) {
   };
 }
 
+function makeDividerBlock(id: string): Extract<Block, { type: "divider" }> {
+  return {
+    id,
+    type: "divider",
+    style: "solid",
+    thickness: "hairline",
+    width: "content",
+    align: "center",
+    spacing: "normal",
+    customSpacingTop: 32,
+    customSpacingBottom: 32,
+    colorMode: "border",
+    color: "#d4d4d8",
+    backgroundMode: "none",
+    backgroundColor: "#f4f4f5",
+    label: "",
+  };
+}
+
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
@@ -163,8 +187,18 @@ function makeBlock(type: BlockType): Block {
     };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
-    case "spacer": return { id, type, size: "md" };
-    case "divider": return { id, type };
+    case "spacer": return {
+      id,
+      type,
+      size: "md",
+      mobileSize: "same",
+      customHeight: 112,
+      mobileCustomHeight: 112,
+      backgroundMode: "none",
+      backgroundColor: "#f4f4f5",
+      backgroundWidth: "full",
+    };
+    case "divider": return makeDividerBlock(id);
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
     case "scrollShowcase": return {
@@ -185,7 +219,7 @@ function makeBlock(type: BlockType): Block {
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
     case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
     case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"], justify: "fill" };
-    default: return { id, type: "divider" };
+    default: return makeDividerBlock(id);
   }
 }
 
@@ -556,6 +590,14 @@ function blockSummary(block: Block): string {
       return `${block.style} · ${block.items.length} questions`;
     case "logos":
       return `${block.style} · ${block.photoIds.length} logos`;
+    case "spacer":
+      return block.backgroundMode === "none"
+        ? `${block.size} height`
+        : `${block.size} height · ${block.backgroundMode} background`;
+    case "divider":
+      return block.label
+        ? `${block.style} · "${block.label}"`
+        : `${block.style} · ${block.width}`;
     case "scrollShowcase":
       return `${block.style ?? "cinematic"} · up to ${block.limit} categories`;
     default:
@@ -1890,11 +1932,107 @@ function LeafEditor({
     }
     case "spacer":
       return (
-        <Field label="Size">
-          <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
-            <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
-          </Select>
-        </Field>
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Desktop height">
+              <Select
+                value={block.size}
+                onChange={(e) =>
+                  set({ size: e.target.value as typeof block.size })
+                }
+              >
+                <option value="xs">Extra small</option>
+                <option value="sm">Small</option>
+                <option value="md">Medium</option>
+                <option value="lg">Large</option>
+                <option value="xl">Extra large</option>
+                <option value="custom">Custom</option>
+              </Select>
+            </Field>
+            <Field label="Mobile height">
+              <Select
+                value={block.mobileSize ?? "same"}
+                onChange={(e) =>
+                  set({ mobileSize: e.target.value as typeof block.mobileSize })
+                }
+              >
+                <option value="same">Same as desktop</option>
+                <option value="xs">Extra small</option>
+                <option value="sm">Small</option>
+                <option value="md">Medium</option>
+                <option value="lg">Large</option>
+                <option value="xl">Extra large</option>
+                <option value="custom">Custom</option>
+              </Select>
+            </Field>
+            {block.size === "custom" && (
+              <Field label="Desktop custom height">
+                <Input
+                  type="number"
+                  min={0}
+                  max={640}
+                  value={block.customHeight ?? 112}
+                  onChange={(e) =>
+                    set({ customHeight: pxInput(e.target.value) })
+                  }
+                />
+              </Field>
+            )}
+            {block.mobileSize === "custom" && (
+              <Field label="Mobile custom height">
+                <Input
+                  type="number"
+                  min={0}
+                  max={640}
+                  value={block.mobileCustomHeight ?? 112}
+                  onChange={(e) =>
+                    set({ mobileCustomHeight: pxInput(e.target.value) })
+                  }
+                />
+              </Field>
+            )}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Background">
+              <Select
+                value={block.backgroundMode ?? "none"}
+                onChange={(e) =>
+                  set({
+                    backgroundMode: e.target.value as typeof block.backgroundMode,
+                  })
+                }
+              >
+                <option value="none">No background</option>
+                <option value="muted">Theme muted</option>
+                <option value="custom">Custom color</option>
+              </Select>
+            </Field>
+            {(block.backgroundMode ?? "none") !== "none" && (
+              <Field label="Background width">
+                <Select
+                  value={block.backgroundWidth ?? "full"}
+                  onChange={(e) =>
+                    set({
+                      backgroundWidth: e.target.value as typeof block.backgroundWidth,
+                    })
+                  }
+                >
+                  <option value="full">Full page band</option>
+                  <option value="content">Content width</option>
+                </Select>
+              </Field>
+            )}
+            {(block.backgroundMode ?? "none") === "custom" && (
+              <Field label="Background color">
+                <Input
+                  type="color"
+                  value={block.backgroundColor ?? "#f4f4f5"}
+                  onChange={(e) => set({ backgroundColor: e.target.value })}
+                />
+              </Field>
+            )}
+          </div>
+        </div>
       );
     case "categoryIndex":
     case "locationIndex":
@@ -2482,7 +2620,151 @@ function LeafEditor({
         </div>
       );
     case "divider":
-      return <p className="text-xs text-[hsl(var(--muted-foreground))]">A horizontal rule. No settings.</p>;
+      return (
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Style">
+              <Select
+                value={block.style ?? "solid"}
+                onChange={(e) =>
+                  set({ style: e.target.value as typeof block.style })
+                }
+              >
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+                <option value="double">Double</option>
+                <option value="fade">Fade</option>
+                <option value="gradient">Gradient</option>
+              </Select>
+            </Field>
+            <Field label="Thickness">
+              <Select
+                value={block.thickness ?? "hairline"}
+                onChange={(e) =>
+                  set({ thickness: e.target.value as typeof block.thickness })
+                }
+              >
+                <option value="hairline">Hairline</option>
+                <option value="thin">Thin</option>
+                <option value="medium">Medium</option>
+                <option value="thick">Thick</option>
+              </Select>
+            </Field>
+            <Field label="Width">
+              <Select
+                value={block.width ?? "content"}
+                onChange={(e) =>
+                  set({ width: e.target.value as typeof block.width })
+                }
+              >
+                <option value="content">Content</option>
+                <option value="narrow">Narrow</option>
+                <option value="full">Full page</option>
+              </Select>
+            </Field>
+            {(block.width ?? "content") !== "full" && (
+              <AlignField
+                value={block.align ?? "center"}
+                onChange={(align) => set({ align })}
+              />
+            )}
+            <Field label="Spacing">
+              <Select
+                value={block.spacing ?? "normal"}
+                onChange={(e) =>
+                  set({ spacing: e.target.value as typeof block.spacing })
+                }
+              >
+                <option value="tight">Tight</option>
+                <option value="normal">Normal</option>
+                <option value="airy">Airy</option>
+                <option value="custom">Custom</option>
+              </Select>
+            </Field>
+            {(block.spacing ?? "normal") === "custom" && (
+              <>
+                <Field label="Space above">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={240}
+                    value={block.customSpacingTop ?? 32}
+                    onChange={(e) =>
+                      set({ customSpacingTop: pxInput(e.target.value) })
+                    }
+                  />
+                </Field>
+                <Field label="Space below">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={240}
+                    value={block.customSpacingBottom ?? 32}
+                    onChange={(e) =>
+                      set({ customSpacingBottom: pxInput(e.target.value) })
+                    }
+                  />
+                </Field>
+              </>
+            )}
+          </div>
+          <Field label="Label text">
+            <Input
+              value={block.label ?? ""}
+              onChange={(e) => set({ label: e.target.value })}
+              placeholder="Optional"
+            />
+          </Field>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Line color">
+              <Select
+                value={block.colorMode ?? "border"}
+                onChange={(e) =>
+                  set({ colorMode: e.target.value as typeof block.colorMode })
+                }
+              >
+                <option value="border">Theme border</option>
+                <option value="muted">Theme muted text</option>
+                <option value="foreground">Theme foreground</option>
+                <option value="custom">Custom color</option>
+              </Select>
+            </Field>
+            {(block.colorMode ?? "border") === "custom" && (
+              <Field label="Custom line color">
+                <Input
+                  type="color"
+                  value={block.color ?? "#d4d4d8"}
+                  onChange={(e) => set({ color: e.target.value })}
+                />
+              </Field>
+            )}
+            <Field label="Background">
+              <Select
+                value={block.backgroundMode ?? "none"}
+                onChange={(e) =>
+                  set({
+                    backgroundMode: e.target.value as typeof block.backgroundMode,
+                  })
+                }
+              >
+                <option value="none">No background</option>
+                <option value="muted">Theme muted</option>
+                <option value="custom">Custom color</option>
+              </Select>
+            </Field>
+            {(block.backgroundMode ?? "none") === "custom" && (
+              <Field label="Background color">
+                <Input
+                  type="color"
+                  value={block.backgroundColor ?? "#f4f4f5"}
+                  onChange={(e) => set({ backgroundColor: e.target.value })}
+                />
+              </Field>
+            )}
+          </div>
+        </div>
+      );
     default:
       return null;
   }

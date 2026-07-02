@@ -254,9 +254,34 @@ const ContactFormBlock = z.object({
 const SpacerBlock = z.object({
   ...baseBlock,
   type: z.literal("spacer"),
-  size: z.enum(["sm", "md", "lg"]).default("md"),
+  size: z.enum(["xs", "sm", "md", "lg", "xl", "custom"]).default("md"),
+  mobileSize: z
+    .enum(["same", "xs", "sm", "md", "lg", "xl", "custom"])
+    .default("same"),
+  customHeight: z.number().min(0).max(640).default(112),
+  mobileCustomHeight: z.number().min(0).max(640).default(112),
+  backgroundMode: z.enum(["none", "muted", "custom"]).default("none"),
+  backgroundColor: z.string().default("#f4f4f5"),
+  backgroundWidth: z.enum(["full", "content"]).default("full"),
 });
-const DividerBlock = z.object({ ...baseBlock, type: z.literal("divider") });
+const DividerBlock = z.object({
+  ...baseBlock,
+  type: z.literal("divider"),
+  style: z
+    .enum(["solid", "dashed", "dotted", "double", "fade", "gradient"])
+    .default("solid"),
+  thickness: z.enum(["hairline", "thin", "medium", "thick"]).default("hairline"),
+  width: z.enum(["full", "content", "narrow"]).default("content"),
+  align: AlignEnum.default("center"),
+  spacing: z.enum(["tight", "normal", "airy", "custom"]).default("normal"),
+  customSpacingTop: z.number().min(0).max(240).default(32),
+  customSpacingBottom: z.number().min(0).max(240).default(32),
+  colorMode: z.enum(["border", "foreground", "muted", "custom"]).default("border"),
+  color: z.string().default("#d4d4d8"),
+  backgroundMode: z.enum(["none", "muted", "custom"]).default("none"),
+  backgroundColor: z.string().default("#f4f4f5"),
+  label: z.string().default(""),
+});
 // Home-style index sections (cover grids of published categories/locations).
 const CategoryIndexBlock = z.object({
   ...baseBlock,

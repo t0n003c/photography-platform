@@ -85,4 +85,38 @@ describe("page builder blocks", () => {
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-team-1"]);
   });
+
+  it("defaults enhanced spacer settings for old spacer blocks", () => {
+    const blocks = parseBlocks([{ id: "space", type: "spacer", size: "md" }]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "space",
+      type: "spacer",
+      size: "md",
+      mobileSize: "same",
+      customHeight: 112,
+      mobileCustomHeight: 112,
+      backgroundMode: "none",
+      backgroundWidth: "full",
+    });
+  });
+
+  it("defaults enhanced divider settings for old divider blocks", () => {
+    const blocks = parseBlocks([{ id: "rule", type: "divider" }]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "rule",
+      type: "divider",
+      style: "solid",
+      thickness: "hairline",
+      width: "content",
+      align: "center",
+      spacing: "normal",
+      colorMode: "border",
+      backgroundMode: "none",
+      label: "",
+    });
+  });
 });
