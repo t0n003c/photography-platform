@@ -31,6 +31,7 @@ interface FlipRevealGalleryProps {
   photos: PhotoDTO[];
   tabs: FlipRevealFilterTab[];
   photoFilters: Record<string, string[]>;
+  showOverlayText?: boolean;
   sort?: FlipRevealSortConfig;
 }
 
@@ -98,6 +99,7 @@ export function FlipRevealGallery({
   photos,
   tabs,
   photoFilters,
+  showOverlayText = true,
   sort,
 }: FlipRevealGalleryProps) {
   const [activeKey, setActiveKey] = React.useState("all");
@@ -196,15 +198,19 @@ export function FlipRevealGallery({
                   priority={index < 4}
                   className="h-full w-full"
                 />
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-85 transition-opacity duration-300 group-hover:opacity-95" />
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 block p-3 text-white sm:p-4">
-                  <span className="block text-sm font-semibold leading-tight sm:text-base">
-                    {photoTitle(photo)}
-                  </span>
-                  <span className="mt-1 line-clamp-2 block text-xs leading-snug text-white/75">
-                    {photoSubtitle(photo)}
-                  </span>
-                </span>
+                {showOverlayText && (
+                  <>
+                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-85 transition-opacity duration-300 group-hover:opacity-95" />
+                    <span className="pointer-events-none absolute inset-x-0 bottom-0 block p-3 text-white sm:p-4">
+                      <span className="block text-sm font-semibold leading-tight sm:text-base">
+                        {photoTitle(photo)}
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-xs leading-snug text-white/75">
+                        {photoSubtitle(photo)}
+                      </span>
+                    </span>
+                  </>
+                )}
               </button>
             </FlipRevealItem>
           );

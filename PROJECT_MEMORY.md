@@ -978,6 +978,11 @@ is gitignored):
   `order` inside the GSAP Flip state transition, so sort changes animate with the same reveal
   motion. Focused Chrome smoke verified reversed custom All order and per-People custom order
   on desktop, iPhone 13, and reduced-motion with 0 console/page errors.
+  Follow-up: Flip Reveal page-gallery filters now include an "Image overlay text" toggle for
+  category, location, and custom filter modes. `showOverlayText` defaults to true for existing
+  blocks; disabling it removes both the per-card title/subtitle overlay and its gradient scrim
+  so the cards render as clean photos. Focused Chrome smoke verified no visible overlay title
+  nodes on desktop, iPhone 13, and reduced-motion with 0 console/page errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

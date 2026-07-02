@@ -93,7 +93,7 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
@@ -1154,6 +1154,16 @@ function LeafEditor({
                       </option>
                     ))}
                   </Select>
+                </Field>
+                <Field label="Image overlay text">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showOverlayText ?? true}
+                      onChange={(e) => set({ showOverlayText: e.target.checked })}
+                    />
+                    Show text over photos
+                  </label>
                 </Field>
               </div>
               {sortMode === "custom" && (

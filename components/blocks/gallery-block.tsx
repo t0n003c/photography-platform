@@ -186,6 +186,7 @@ export async function GalleryBlock({
             photos={photos}
             tabs={config.tabs}
             photoFilters={config.photoFilters}
+            showOverlayText={block.showOverlayText ?? true}
             sort={flipRevealSortConfig(block)}
           />
         </Container>

@@ -116,6 +116,7 @@ const GalleryBlock = z.object({
   // Flip Reveal filter tabs for page gallery blocks. Category/location derive
   // tabs from taxonomy memberships; custom tabs carry their own photo choices.
   filterMode: z.enum(["none", "category", "location", "custom"]).default("none"),
+  showOverlayText: z.boolean().default(true),
   sortMode: GallerySortEnum.default("source"),
   manualOrderPhotoIds: z.array(z.string()).default([]),
   filterSorts: z.array(GalleryFilterSort).default([]),
