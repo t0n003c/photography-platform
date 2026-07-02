@@ -100,6 +100,18 @@ const GalleryBlock = z.object({
   // For the cinematic-3d-scroll effect: scroll-speed multiplier. Higher = the
   // fly-through happens over less scrolling (faster); lower = more scroll (slower).
   effectSpeed: z.number().min(0.2).max(2).default(1),
+  // Flip Reveal filter tabs for page gallery blocks. Category/location derive
+  // tabs from taxonomy memberships; custom tabs carry their own photo choices.
+  filterMode: z.enum(["none", "category", "location", "custom"]).default("none"),
+  customFilters: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        label: z.string().default("Filter"),
+        photoIds: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
 });
 // Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
 // WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.
@@ -397,6 +409,9 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
     if (b.type === "logos") ids.push(...b.photoIds);
+    if (b.type === "gallery" && b.filterMode === "custom") {
+      for (const filter of b.customFilters) ids.push(...filter.photoIds);
+    }
   };
   for (const b of blocks) {
     if (b.hidden) continue;

@@ -961,6 +961,15 @@ is gitignored):
   colors" toggle preserves exact background/text colors when desired. Older configs with
   non-default Palmer colors are inferred as custom; default light colors are treated as
   theme-following.
+  Page Gallery follow-up: Gallery blocks now support a 21st.dev/PaceUI-style Flip Reveal
+  filter treatment. `filterMode` can be `none`, `category`, `location`, or `custom`; category
+  and location tabs are derived from published memberships for the loaded photo set, while
+  custom tabs store their own labels and selected photo IDs. The shared helper lives in
+  `components/ui/flip-reveal.tsx`; the public block renderer uses
+  `components/gallery/flip-reveal-gallery.tsx` with reference-style pill tabs, image overlays,
+  GSAP Flip enter/leave motion, and reduced-motion visibility fallback. Focused Chrome smoke
+  covered a temporary public page on desktop, iPhone 13, and reduced-motion with 0 console/page
+  errors and correct All/People/Events visible counts.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

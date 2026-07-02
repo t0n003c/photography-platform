@@ -93,7 +93,7 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1 };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
@@ -865,89 +865,191 @@ function LeafEditor({
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
         </div>
       );
-    case "gallery":
+    case "gallery": {
+      const filterMode = block.filterMode ?? "none";
+      const customFilters = block.customFilters ?? [];
+      const updateFilter = (
+        index: number,
+        patch: Partial<(typeof customFilters)[number]>,
+      ) => {
+        set({
+          customFilters: customFilters.map((filter, i) =>
+            i === index ? { ...filter, ...patch } : filter,
+          ),
+        });
+      };
+      const toggleFilterPhoto = (index: number, photoId: string) => {
+        const filter = customFilters[index];
+        if (!filter) return;
+        const current = filter.photoIds ?? [];
+        updateFilter(index, {
+          photoIds: current.includes(photoId)
+            ? current.filter((id) => id !== photoId)
+            : [...current, photoId],
+        });
+      };
       return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Source">
-            <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source, targetId: null })}>
-              <option value="featured">Featured</option><option value="category">Category</option>
-              <option value="location">Location</option><option value="gallery">Gallery</option>
-            </Select>
-          </Field>
-          {block.source !== "featured" && (
-            <Field label="Target">
-              <Select value={block.targetId ?? ""} onChange={(e) => set({ targetId: e.target.value || null })}>
-                <option value="">Select…</option>
-                {(targets[block.source] ?? []).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {filterMode !== "custom" && (
+              <Field label="Source">
+                <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source, targetId: null })}>
+                  <option value="featured">Featured</option><option value="category">Category</option>
+                  <option value="location">Location</option><option value="gallery">Gallery</option>
+                </Select>
+              </Field>
+            )}
+            {filterMode !== "custom" && block.source !== "featured" && (
+              <Field label="Target">
+                <Select value={block.targetId ?? ""} onChange={(e) => set({ targetId: e.target.value || null })}>
+                  <option value="">Select…</option>
+                  {(targets[block.source] ?? []).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </Select>
+              </Field>
+            )}
+            <Field label="Filter tabs">
+              <Select
+                value={filterMode}
+                onChange={(e) => set({ filterMode: e.target.value as typeof block.filterMode })}
+              >
+                <option value="none">Off</option>
+                <option value="category">By category</option>
+                <option value="location">By location</option>
+                <option value="custom">Custom</option>
               </Select>
             </Field>
-          )}
-          <Field label="Grid">
-            <Select
-              value={block.gridType}
-              onChange={(e) => {
-                const gridType = e.target.value as typeof block.gridType;
-                set({
-                  gridType,
-                  effect: "none",
-                });
-              }}
-            >
-              <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option>
-            </Select>
-          </Field>
-          {/* The 3D infinite carousel and cinematic 3D scroll manage their own
-              layout, so the tight/normal/airy spacing control doesn't apply. */}
-          {block.gridType !== "carousel3d" && block.gridType !== "cinematic" && (
-            <Field label="Spacing">
-              <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
-                <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
-              </Select>
-            </Field>
-          )}
-          {block.gridType === "carousel3d" && (
-            <Field label="Backdrop">
-              <Select value={block.backdrop ?? "color"} onChange={(e) => set({ backdrop: e.target.value as typeof block.backdrop })}>
-                <option value="color">Color (from photo)</option>
-                <option value="neutral">Neutral (no color)</option>
-              </Select>
-            </Field>
-          )}
-          {block.gridType === "carousel" && (
-            <Field label="Auto-roll">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.autoplay ?? false}
-                  onChange={(e) => set({ autoplay: e.target.checked })}
-                />
-                Advance slides automatically
-              </label>
-            </Field>
-          )}
-          <Field label="Max photos">
-            <Input type="number" value={block.limit} onChange={(e) => set({ limit: Number(e.target.value) })} />
-          </Field>
-          {block.gridType === "cinematic" && (
-            <Field label="Scroll speed">
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={0.2}
-                  max={2}
-                  step={0.05}
-                  value={block.effectSpeed ?? 1}
-                  onChange={(e) => set({ effectSpeed: Number(e.target.value) })}
-                  className="w-full accent-[hsl(var(--primary))]"
-                />
-                <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
-                  {(block.effectSpeed ?? 1).toFixed(1)}×
-                </span>
-              </div>
-            </Field>
+            {filterMode !== "custom" && (
+              <Field label="Max photos">
+                <Input type="number" value={block.limit} onChange={(e) => set({ limit: Number(e.target.value) })} />
+              </Field>
+            )}
+            {filterMode === "none" && (
+              <>
+                <Field label="Grid">
+                  <Select
+                    value={block.gridType}
+                    onChange={(e) => {
+                      const gridType = e.target.value as typeof block.gridType;
+                      set({
+                        gridType,
+                        effect: "none",
+                      });
+                    }}
+                  >
+                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option>
+                  </Select>
+                </Field>
+                {/* The 3D infinite carousel and cinematic 3D scroll manage their own
+                    layout, so the tight/normal/airy spacing control doesn't apply. */}
+                {block.gridType !== "carousel3d" && block.gridType !== "cinematic" && (
+                  <Field label="Spacing">
+                    <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
+                      <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+                    </Select>
+                  </Field>
+                )}
+                {block.gridType === "carousel3d" && (
+                  <Field label="Backdrop">
+                    <Select value={block.backdrop ?? "color"} onChange={(e) => set({ backdrop: e.target.value as typeof block.backdrop })}>
+                      <option value="color">Color (from photo)</option>
+                      <option value="neutral">Neutral (no color)</option>
+                    </Select>
+                  </Field>
+                )}
+                {block.gridType === "carousel" && (
+                  <Field label="Auto-roll">
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.autoplay ?? false}
+                        onChange={(e) => set({ autoplay: e.target.checked })}
+                      />
+                      Advance slides automatically
+                    </label>
+                  </Field>
+                )}
+                {block.gridType === "cinematic" && (
+                  <Field label="Scroll speed">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min={0.2}
+                        max={2}
+                        step={0.05}
+                        value={block.effectSpeed ?? 1}
+                        onChange={(e) => set({ effectSpeed: Number(e.target.value) })}
+                        className="w-full accent-[hsl(var(--primary))]"
+                      />
+                      <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                        {(block.effectSpeed ?? 1).toFixed(1)}×
+                      </span>
+                    </div>
+                  </Field>
+                )}
+              </>
+            )}
+          </div>
+          {filterMode === "custom" && (
+            <div className="space-y-3">
+              {customFilters.map((filter, index) => (
+                <div key={filter.id} className="rounded-lg border p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Field label={`Custom tab ${index + 1}`}>
+                        <Input
+                          value={filter.label ?? ""}
+                          onChange={(e) => updateFilter(index, { label: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({
+                          customFilters: customFilters.filter((_, i) => i !== index),
+                        })
+                      }
+                      aria-label="Remove custom filter"
+                      className="mt-6 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <PhotoPicker
+                    photos={photos}
+                    selectedIds={filter.photoIds ?? []}
+                    onToggle={(photoId) => toggleFilterPhoto(index, photoId)}
+                    containerClassName="max-h-60"
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  set({
+                    customFilters: [
+                      ...customFilters,
+                      {
+                        id: newBlockId(),
+                        label: `Filter ${customFilters.length + 1}`,
+                        photoIds: [],
+                      },
+                    ],
+                  })
+                }
+                className="w-full justify-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add custom filter
+              </Button>
+            </div>
           )}
         </div>
       );
+    }
     case "banner": {
       // Source / darken / layout trio (top-left in both source modes).
       const cfg = (

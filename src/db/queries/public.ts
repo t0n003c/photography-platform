@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import {
   collection,
@@ -42,6 +42,12 @@ export interface GallerySummary {
 export interface PhotoPage {
   photos: PhotoDTO[];
   nextCursor: string | null;
+}
+export type PhotoFilterMode = "category" | "location";
+export interface PhotoFilterMembership {
+  photoId: string;
+  key: string;
+  label: string;
 }
 
 interface MembershipCursor {
@@ -173,6 +179,50 @@ export async function getLocationPhotos(
     .orderBy(asc(photoLocation.sortOrder), asc(photo.id))
     .limit(limit + 1);
   return pageFromRows(rows, limit);
+}
+
+// Filter labels for page-builder gallery blocks. The page block already chooses
+// the photo set; this only derives tabs from published category/location links.
+export async function getPhotoFilterMemberships(
+  photoIds: string[],
+  mode: PhotoFilterMode,
+): Promise<PhotoFilterMembership[]> {
+  if (photoIds.length === 0) return [];
+  const ids = [...new Set(photoIds)];
+
+  if (mode === "category") {
+    return db
+      .select({
+        photoId: collectionPhoto.photoId,
+        key: collection.id,
+        label: collection.name,
+      })
+      .from(collectionPhoto)
+      .innerJoin(collection, eq(collectionPhoto.collectionId, collection.id))
+      .where(
+        and(
+          inArray(collectionPhoto.photoId, ids),
+          eq(collection.isPublished, true),
+        ),
+      )
+      .orderBy(asc(collection.sortOrder), asc(collection.name));
+  }
+
+  return db
+    .select({
+      photoId: photoLocation.photoId,
+      key: location.id,
+      label: location.name,
+    })
+    .from(photoLocation)
+    .innerJoin(location, eq(photoLocation.locationId, location.id))
+    .where(
+      and(
+        inArray(photoLocation.photoId, ids),
+        eq(location.isPublished, true),
+      ),
+    )
+    .orderBy(asc(location.sortOrder), asc(location.name));
 }
 
 // ── Public galleries ─────────────────────────────────────────────────────────
