@@ -83,6 +83,19 @@ const ImageBlock = z.object({
   width: z.enum(["normal", "wide", "full"]).default("normal"),
   rounded: z.boolean().default(true),
 });
+const GallerySortEnum = z.enum([
+  "source",
+  "newest",
+  "oldest",
+  "title-asc",
+  "title-desc",
+  "custom",
+]);
+const GalleryFilterSort = z.object({
+  key: z.string().min(1),
+  sortMode: GallerySortEnum.default("source"),
+  photoIds: z.array(z.string()).default([]),
+});
 const GalleryBlock = z.object({
   ...baseBlock,
   type: z.literal("gallery"),
@@ -103,6 +116,9 @@ const GalleryBlock = z.object({
   // Flip Reveal filter tabs for page gallery blocks. Category/location derive
   // tabs from taxonomy memberships; custom tabs carry their own photo choices.
   filterMode: z.enum(["none", "category", "location", "custom"]).default("none"),
+  sortMode: GallerySortEnum.default("source"),
+  manualOrderPhotoIds: z.array(z.string()).default([]),
+  filterSorts: z.array(GalleryFilterSort).default([]),
   customFilters: z
     .array(
       z.object({
@@ -411,6 +427,10 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.type === "logos") ids.push(...b.photoIds);
     if (b.type === "gallery" && b.filterMode === "custom") {
       for (const filter of b.customFilters) ids.push(...filter.photoIds);
+    }
+    if (b.type === "gallery") {
+      ids.push(...b.manualOrderPhotoIds);
+      for (const sort of b.filterSorts) ids.push(...sort.photoIds);
     }
   };
   for (const b of blocks) {

@@ -9,16 +9,18 @@ gsap.registerPlugin(Flip);
 
 type FlipRevealItemProps = {
   flipKey: string;
+  flipId?: string;
 } & React.ComponentProps<"div">;
 
-export function FlipRevealItem({ flipKey, ...props }: FlipRevealItemProps) {
-  return <div data-flip={flipKey} {...props} />;
+export function FlipRevealItem({ flipKey, flipId, ...props }: FlipRevealItemProps) {
+  return <div data-flip={flipKey} data-flip-id={flipId ?? flipKey} {...props} />;
 }
 
 type FlipRevealProps = {
   keys: string[];
   showClass?: string;
   hideClass?: string;
+  itemOrder?: Record<string, number>;
 } & React.ComponentProps<"div">;
 
 function classTokens(value: string) {
@@ -28,6 +30,7 @@ function classTokens(value: string) {
 export function FlipReveal({
   keys,
   hideClass = "",
+  itemOrder,
   showClass = "",
   className,
   ...props
@@ -50,6 +53,13 @@ export function FlipReveal({
     };
     const applyVisibility = () => {
       items.forEach((item) => {
+        const itemId = item.getAttribute("data-flip-id");
+        const order = itemId ? itemOrder?.[itemId] : undefined;
+        if (typeof order === "number") {
+          item.style.order = String(order);
+        } else {
+          item.style.removeProperty("order");
+        }
         if (isShow(item.getAttribute("data-flip"))) {
           if (showTokens.length) item.classList.add(...showTokens);
           if (hideTokens.length) item.classList.remove(...hideTokens);
@@ -91,7 +101,7 @@ export function FlipReveal({
     return () => {
       tween.kill();
     };
-  }, [hideClass, keysKey, showClass]);
+  }, [hideClass, itemOrder, keysKey, showClass]);
 
   return <div {...props} ref={wrapperRef} className={cn(className)} />;
 }

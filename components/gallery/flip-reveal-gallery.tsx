@@ -10,12 +10,28 @@ import { Lightbox } from "./lightbox";
 export interface FlipRevealFilterTab {
   key: string;
   label: string;
+  photoIds?: string[];
+}
+
+export type FlipRevealSortMode =
+  | "source"
+  | "newest"
+  | "oldest"
+  | "title-asc"
+  | "title-desc"
+  | "custom";
+
+export interface FlipRevealSortConfig {
+  mode: FlipRevealSortMode;
+  photoIds?: string[];
+  overrides?: Record<string, { mode: FlipRevealSortMode; photoIds?: string[] }>;
 }
 
 interface FlipRevealGalleryProps {
   photos: PhotoDTO[];
   tabs: FlipRevealFilterTab[];
   photoFilters: Record<string, string[]>;
+  sort?: FlipRevealSortConfig;
 }
 
 function photoTitle(photo: PhotoDTO): string {
@@ -34,18 +50,89 @@ function photoSubtitle(photo: PhotoDTO): string {
   return photo.subhead?.trim() || "Portfolio image";
 }
 
+function photoDate(photo: PhotoDTO): number | null {
+  if (!photo.capturedAt) return null;
+  const value = Date.parse(photo.capturedAt);
+  return Number.isFinite(value) ? value : null;
+}
+
+function sortPhotos(
+  photos: PhotoDTO[],
+  sourceIndex: Map<string, number>,
+  mode: FlipRevealSortMode,
+  customIds: string[] = [],
+): PhotoDTO[] {
+  const customIndex = new Map(customIds.map((id, index) => [id, index]));
+  const sourceRank = (photo: PhotoDTO) => sourceIndex.get(photo.id) ?? 0;
+  const customRank = (photo: PhotoDTO) =>
+    customIndex.has(photo.id) ? customIndex.get(photo.id)! : Number.POSITIVE_INFINITY;
+  return [...photos].sort((a, b) => {
+    if (mode === "custom") {
+      const custom = customRank(a) - customRank(b);
+      if (custom !== 0) return custom;
+      return sourceRank(a) - sourceRank(b);
+    }
+    if (mode === "newest" || mode === "oldest") {
+      const da = photoDate(a);
+      const db = photoDate(b);
+      if (da != null && db != null && da !== db) {
+        return mode === "newest" ? db - da : da - db;
+      }
+      if (da != null && db == null) return -1;
+      if (da == null && db != null) return 1;
+      return sourceRank(a) - sourceRank(b);
+    }
+    if (mode === "title-asc" || mode === "title-desc") {
+      const value = photoTitle(a).localeCompare(photoTitle(b), undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+      if (value !== 0) return mode === "title-asc" ? value : -value;
+      return sourceRank(a) - sourceRank(b);
+    }
+    return sourceRank(a) - sourceRank(b);
+  });
+}
+
 export function FlipRevealGallery({
   photos,
   tabs,
   photoFilters,
+  sort,
 }: FlipRevealGalleryProps) {
   const [activeKey, setActiveKey] = React.useState("all");
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const sourceIndex = React.useMemo(
+    () => new Map(photos.map((photo, index) => [photo.id, index])),
+    [photos],
+  );
   const activePhotos = React.useMemo(() => {
     if (activeKey === "all") return photos;
     return photos.filter((photo) => photoFilters[photo.id]?.includes(activeKey));
   }, [activeKey, photoFilters, photos]);
+  const itemOrder = React.useMemo(() => {
+    const tab = tabs.find((item) => item.key === activeKey);
+    const override = sort?.overrides?.[activeKey];
+    const mode = override?.mode ?? sort?.mode ?? "source";
+    const customIds =
+      override?.photoIds && override.photoIds.length > 0
+        ? override.photoIds
+        : activeKey !== "all" && tab?.photoIds?.length
+        ? tab.photoIds
+        : sort?.photoIds ?? [];
+    const ordered = sortPhotos(activePhotos, sourceIndex, mode, customIds);
+    const order: Record<string, number> = {};
+    ordered.forEach((photo, index) => {
+      order[photo.id] = index;
+    });
+    photos.forEach((photo) => {
+      if (order[photo.id] == null) {
+        order[photo.id] = ordered.length + (sourceIndex.get(photo.id) ?? 0);
+      }
+    });
+    return order;
+  }, [activeKey, activePhotos, photos, sort, sourceIndex, tabs]);
 
   const openAt = React.useCallback((photoId: string) => {
     const index = photos.findIndex((photo) => photo.id === photoId);
@@ -84,6 +171,7 @@ export function FlipRevealGallery({
 
       <FlipReveal
         keys={[activeKey]}
+        itemOrder={itemOrder}
         showClass="block"
         hideClass="hidden"
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4"
@@ -93,6 +181,7 @@ export function FlipRevealGallery({
           return (
             <FlipRevealItem
               key={photo.id}
+              flipId={photo.id}
               flipKey={keys.join("|")}
               className="group block"
             >

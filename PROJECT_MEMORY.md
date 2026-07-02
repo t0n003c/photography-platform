@@ -970,6 +970,14 @@ is gitignored):
   GSAP Flip enter/leave motion, and reduced-motion visibility fallback. Focused Chrome smoke
   covered a temporary public page on desktop, iPhone 13, and reduced-motion with 0 console/page
   errors and correct All/People/Events visible counts.
+  Follow-up: Flip Reveal page-gallery filters now have sorting. Each block has a default sort
+  (`source`, newest/oldest by capture date, title A-Z/Z-A, or custom manual order), category
+  and location filter modes can add per-tab sort overrides, and custom tabs expose their own
+  per-tab sort selector. Manual order is edited with selected-photo thumbnail rows plus
+  up/down/remove controls so it works on desktop and mobile. The Flip helper now mutates CSS
+  `order` inside the GSAP Flip state transition, so sort changes animate with the same reveal
+  motion. Focused Chrome smoke verified reversed custom All order and per-People custom order
+  on desktop, iPhone 13, and reduced-motion with 0 console/page errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

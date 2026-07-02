@@ -2,6 +2,7 @@ import { Container } from "@/components/ui/container";
 import { Gallery } from "@/components/gallery/gallery";
 import {
   FlipRevealGallery,
+  type FlipRevealSortConfig,
   type FlipRevealFilterTab,
 } from "@/components/gallery/flip-reveal-gallery";
 import { CinematicGallery } from "@/components/webgl/cinematic-gallery";
@@ -68,12 +69,38 @@ function customFilterConfig(block: GalleryBlockData): {
   for (const filter of block.customFilters ?? []) {
     const key = filter.id;
     if (!key) continue;
-    tabs.push({ key, label: filter.label?.trim() || "Filter" });
+    tabs.push({
+      key,
+      label: filter.label?.trim() || "Filter",
+      photoIds: filter.photoIds ?? [],
+    });
     for (const photoId of filter.photoIds ?? []) {
       photoFilters[photoId] = [...(photoFilters[photoId] ?? []), key];
     }
   }
   return { tabs, photoFilters };
+}
+
+function flipRevealSortConfig(block: GalleryBlockData): FlipRevealSortConfig {
+  const customOrders = new Map(
+    (block.customFilters ?? []).map((filter) => [
+      filter.id,
+      filter.photoIds ?? [],
+    ]),
+  );
+  const overrides: FlipRevealSortConfig["overrides"] = {};
+  for (const sort of block.filterSorts ?? []) {
+    overrides[sort.key] = {
+      mode: sort.sortMode ?? "source",
+      photoIds:
+        sort.photoIds?.length ? sort.photoIds : customOrders.get(sort.key) ?? [],
+    };
+  }
+  return {
+    mode: block.sortMode ?? "source",
+    photoIds: block.manualOrderPhotoIds ?? [],
+    overrides,
+  };
 }
 
 async function taxonomyFilterConfig(
@@ -159,6 +186,7 @@ export async function GalleryBlock({
             photos={photos}
             tabs={config.tabs}
             photoFilters={config.photoFilters}
+            sort={flipRevealSortConfig(block)}
           />
         </Container>
       );

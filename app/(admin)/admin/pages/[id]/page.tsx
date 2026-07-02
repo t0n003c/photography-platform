@@ -93,7 +93,7 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", customFilters: [] };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
@@ -737,6 +737,109 @@ function ColumnsEditor({
   );
 }
 
+type GallerySortMode =
+  | "source"
+  | "newest"
+  | "oldest"
+  | "title-asc"
+  | "title-desc"
+  | "custom";
+
+const GALLERY_SORT_OPTIONS: { value: GallerySortMode; label: string }[] = [
+  { value: "source", label: "Source order" },
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "title-asc", label: "Title A-Z" },
+  { value: "title-desc", label: "Title Z-A" },
+  { value: "custom", label: "Custom order" },
+];
+
+function moveId(ids: string[], index: number, delta: number): string[] {
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= ids.length) return ids;
+  const next = [...ids];
+  [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+  return next;
+}
+
+function PhotoOrderList({
+  photos,
+  ids,
+  onChange,
+}: {
+  photos: PhotoOption[];
+  ids: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  if (ids.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">
+        No photos selected for manual order.
+      </p>
+    );
+  }
+  const byId = new Map(photos.map((photo) => [photo.id, photo]));
+  return (
+    <div className="space-y-1.5">
+      {ids.map((id, index) => {
+        const photo = byId.get(id);
+        return (
+          <div
+            key={`${id}-${index}`}
+            className="flex items-center gap-2 rounded-md border p-1.5"
+          >
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-[hsl(var(--muted))]">
+              {photo?.thumbUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photo.thumbUrl}
+                  alt={photo.label}
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
+            <span className="min-w-0 flex-1 truncate text-xs">
+              {photo?.label ?? id}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={index === 0}
+              onClick={() => onChange(moveId(ids, index, -1))}
+              aria-label="Move photo up"
+              className="h-8 w-8"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={index === ids.length - 1}
+              onClick={() => onChange(moveId(ids, index, 1))}
+              aria-label="Move photo down"
+              className="h-8 w-8"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onChange(ids.filter((_, i) => i !== index))}
+              aria-label="Remove from manual order"
+              className="h-8 w-8"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function LeafEditor({
   block,
   photos,
@@ -868,6 +971,52 @@ function LeafEditor({
     case "gallery": {
       const filterMode = block.filterMode ?? "none";
       const customFilters = block.customFilters ?? [];
+      const sortMode = (block.sortMode ?? "source") as GallerySortMode;
+      const manualOrderPhotoIds = block.manualOrderPhotoIds ?? [];
+      const filterSorts = block.filterSorts ?? [];
+      const automaticFilterOptions =
+        filterMode === "category"
+          ? targets.category ?? []
+          : filterMode === "location"
+          ? targets.location ?? []
+          : [];
+      const automaticFilterKeys = new Set(automaticFilterOptions.map((option) => option.id));
+      const automaticFilterSorts = filterSorts.filter((sort) =>
+        automaticFilterKeys.has(sort.key),
+      );
+      const filterSortFor = (key: string) =>
+        filterSorts.find((sort) => sort.key === key);
+      const setFilterSorts = (next: typeof filterSorts) =>
+        set({ filterSorts: next });
+      const updateFilterSort = (
+        key: string,
+        patch: Partial<(typeof filterSorts)[number]>,
+      ) => {
+        const existing = filterSortFor(key);
+        if (existing) {
+          setFilterSorts(
+            filterSorts.map((sort) =>
+              sort.key === key ? { ...sort, ...patch } : sort,
+            ),
+          );
+        } else {
+          setFilterSorts([
+            ...filterSorts,
+            { key, sortMode: "source", photoIds: [], ...patch },
+          ]);
+        }
+      };
+      const removeFilterSort = (key: string) =>
+        setFilterSorts(filterSorts.filter((sort) => sort.key !== key));
+      const toggleManualPhoto = (ids: string[], photoId: string) =>
+        ids.includes(photoId) ? ids.filter((id) => id !== photoId) : [...ids, photoId];
+      const selectFilterSort = (key: string, value: string) => {
+        if (value === "inherit") {
+          removeFilterSort(key);
+        } else {
+          updateFilterSort(key, { sortMode: value as GallerySortMode });
+        }
+      };
       const updateFilter = (
         index: number,
         patch: Partial<(typeof customFilters)[number]>,
@@ -989,6 +1138,145 @@ function LeafEditor({
               </>
             )}
           </div>
+          {filterMode !== "none" && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Default sort">
+                  <Select
+                    value={sortMode}
+                    onChange={(e) =>
+                      set({ sortMode: e.target.value as GallerySortMode })
+                    }
+                  >
+                    {GALLERY_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+              {sortMode === "custom" && (
+                <div className="space-y-2">
+                  <PhotoPicker
+                    photos={photos}
+                    selectedIds={manualOrderPhotoIds}
+                    onToggle={(photoId) =>
+                      set({
+                        manualOrderPhotoIds: toggleManualPhoto(
+                          manualOrderPhotoIds,
+                          photoId,
+                        ),
+                      })
+                    }
+                    containerClassName="max-h-48"
+                  />
+                  <PhotoOrderList
+                    photos={photos}
+                    ids={manualOrderPhotoIds}
+                    onChange={(ids) => set({ manualOrderPhotoIds: ids })}
+                  />
+                </div>
+              )}
+              {(filterMode === "category" || filterMode === "location") && (
+                <div className="space-y-2">
+                  {automaticFilterSorts.map((sort, index) => (
+                    <div key={`${sort.key}-${index}`} className="rounded-md border p-2">
+                      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                        <Field label="Filter">
+                          <Select
+                            value={sort.key}
+                            onChange={(e) =>
+                              setFilterSorts(
+                                filterSorts.map((item) =>
+                                  item.key === sort.key
+                                    ? { ...item, key: e.target.value }
+                                    : item,
+                                ),
+                              )
+                            }
+                          >
+                            {automaticFilterOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </Field>
+                        <Field label="Sort">
+                          <Select
+                            value={sort.sortMode}
+                            onChange={(e) =>
+                              updateFilterSort(sort.key, {
+                                sortMode: e.target.value as GallerySortMode,
+                              })
+                            }
+                          >
+                            {GALLERY_SORT_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </Field>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFilterSort(sort.key)}
+                          aria-label="Remove filter sort"
+                          className="self-end"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {sort.sortMode === "custom" && (
+                        <div className="mt-2 space-y-2">
+                          <PhotoPicker
+                            photos={photos}
+                            selectedIds={sort.photoIds ?? []}
+                            onToggle={(photoId) =>
+                              updateFilterSort(sort.key, {
+                                photoIds: toggleManualPhoto(
+                                  sort.photoIds ?? [],
+                                  photoId,
+                                ),
+                              })
+                            }
+                            containerClassName="max-h-48"
+                          />
+                          <PhotoOrderList
+                            photos={photos}
+                            ids={sort.photoIds ?? []}
+                            onChange={(ids) =>
+                              updateFilterSort(sort.key, { photoIds: ids })
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={automaticFilterOptions.length === 0}
+                    onClick={() => {
+                      const available =
+                        automaticFilterOptions.find(
+                          (option) => !filterSorts.some((sort) => sort.key === option.id),
+                        ) ?? automaticFilterOptions[0];
+                      if (!available) return;
+                      updateFilterSort(available.id, { sortMode: "source" });
+                    }}
+                    className="w-full justify-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add filter sort
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {filterMode === "custom" && (
             <div className="space-y-3">
               {customFilters.map((filter, index) => (
@@ -1023,6 +1311,30 @@ function LeafEditor({
                     onToggle={(photoId) => toggleFilterPhoto(index, photoId)}
                     containerClassName="max-h-60"
                   />
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <Field label="Tab sort">
+                      <Select
+                        value={filterSortFor(filter.id)?.sortMode ?? "inherit"}
+                        onChange={(e) => selectFilterSort(filter.id, e.target.value)}
+                      >
+                        <option value="inherit">Use default sort</option>
+                        {GALLERY_SORT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                  {((filterSortFor(filter.id)?.sortMode ?? sortMode) === "custom") && (
+                    <div className="mt-2">
+                      <PhotoOrderList
+                        photos={photos}
+                        ids={filter.photoIds ?? []}
+                        onChange={(photoIds) => updateFilter(index, { photoIds })}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
               <Button
