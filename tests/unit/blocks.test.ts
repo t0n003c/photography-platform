@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBlocks } from "@/src/lib/blocks";
+import { collectPhotoIds, parseBlocks } from "@/src/lib/blocks";
 import { presetBlocks } from "@/src/lib/page-presets";
 
 describe("page builder blocks", () => {
@@ -29,5 +29,33 @@ describe("page builder blocks", () => {
     const blocks = presetBlocks("contact", () => "id");
 
     expect(blocks.some((block) => block.type === "contactForm")).toBe(true);
+  });
+
+  it("keeps testimonial blocks and collects portrait photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "reviews",
+        type: "testimonials",
+        items: [
+          {
+            id: "review-1",
+            name: "Ashley",
+            affiliation: "Client",
+            quote: "Wonderful work.",
+            photoId: "photo-1",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "reviews",
+      type: "testimonials",
+      label: "Reviews",
+      autoplay: false,
+      showThumbnails: true,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-1"]);
   });
 });

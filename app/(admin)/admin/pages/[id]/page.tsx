@@ -82,9 +82,20 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "testimonials", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
+
+function makeTestimonialItem() {
+  return {
+    id: newBlockId(),
+    name: "Ashley Right",
+    affiliation: "Pinterest",
+    quote:
+      "Professionals in their craft. Every image felt intentional, polished, and completely true to the day.",
+    photoId: null,
+  };
+}
 
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
@@ -96,6 +107,30 @@ function makeBlock(type: BlockType): Block {
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
     case "quote": return { id, type, text: "" };
+    case "testimonials": return {
+      id,
+      type,
+      label: "Reviews",
+      autoplay: false,
+      showThumbnails: true,
+      items: [
+        makeTestimonialItem(),
+        {
+          id: newBlockId(),
+          name: "Jacob Jose",
+          affiliation: "New York Times",
+          quote: "The delivery was thoughtful, fast, and beautifully edited. It felt effortless from start to finish.",
+          photoId: null,
+        },
+        {
+          id: newBlockId(),
+          name: "Elara Sands",
+          affiliation: "Behance",
+          quote: "The attention to detail was immaculate. Every frame carried the mood we hoped for.",
+          photoId: null,
+        },
+      ],
+    };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
     case "spacer": return { id, type, size: "md" };
@@ -477,6 +512,8 @@ function blockSummary(block: Block): string {
       return `${block.source} · ${block.gridType}`;
     case "banner":
       return block.headline || block.source;
+    case "testimonials":
+      return `${block.items.length} reviews`;
     case "cta":
       return block.headline || block.buttonLabel;
     case "contactForm":
@@ -904,6 +941,144 @@ function LeafEditor({
           <Field label="Attribution"><Input value={block.cite ?? ""} onChange={(e) => set({ cite: e.target.value })} /></Field>
         </div>
       );
+    case "testimonials": {
+      const items = block.items ?? [];
+      const updateItem = (
+        index: number,
+        patch: Partial<(typeof items)[number]>,
+      ) => {
+        set({
+          items: items.map((item, i) =>
+            i === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
+      return (
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Side label">
+              <Input
+                value={block.label}
+                onChange={(e) => set({ label: e.target.value })}
+              />
+            </Field>
+            <Field label="Thumbnail rail">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showThumbnails ?? true}
+                  onChange={(e) => set({ showThumbnails: e.target.checked })}
+                />
+                Show thumbnails
+              </label>
+            </Field>
+            <Field label="Auto-roll">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.autoplay ?? false}
+                  onChange={(e) => set({ autoplay: e.target.checked })}
+                />
+                Advance slides
+              </label>
+            </Field>
+          </div>
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div key={item.id} className="rounded-lg border p-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                    Review {index + 1}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() => set({ items: swapAt(items, index, index - 1) })}
+                      aria-label="Move testimonial up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === items.length - 1}
+                      onClick={() => set({ items: swapAt(items, index, index + 1) })}
+                      aria-label="Move testimonial down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({ items: items.filter((_, i) => i !== index) })
+                      }
+                      aria-label="Remove testimonial"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[13rem_1fr]">
+                  <Field label="Portrait">
+                    <PhotoPicker
+                      photos={photos}
+                      value={item.photoId ?? null}
+                      onChange={(photoId) => updateItem(index, { photoId })}
+                      containerClassName="max-h-48"
+                    />
+                  </Field>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label="Name">
+                      <Input
+                        value={item.name}
+                        onChange={(e) => updateItem(index, { name: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Affiliation">
+                      <Input
+                        value={item.affiliation}
+                        onChange={(e) =>
+                          updateItem(index, { affiliation: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Quote">
+                        <Textarea
+                          rows={4}
+                          value={item.quote}
+                          onChange={(e) =>
+                            updateItem(index, { quote: e.target.value })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => set({ items: [...items, makeTestimonialItem()] })}
+          >
+            <Plus className="h-4 w-4" />
+            Add testimonial
+          </Button>
+        </div>
+      );
+    }
     case "cta":
       return (
         <div className="grid gap-2 sm:grid-cols-2">

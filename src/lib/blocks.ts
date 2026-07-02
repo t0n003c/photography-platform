@@ -189,6 +189,21 @@ const QuoteBlock = z.object({
   text: z.string().default(""),
   cite: z.string().optional(),
 });
+const TestimonialItem = z.object({
+  id: z.string().min(1),
+  name: z.string().default("Client name"),
+  affiliation: z.string().default("Studio client"),
+  quote: z.string().default("Share what this client said about the experience."),
+  photoId: z.string().nullable().default(null),
+});
+const TestimonialsBlock = z.object({
+  ...baseBlock,
+  type: z.literal("testimonials"),
+  label: z.string().default("Reviews"),
+  autoplay: z.boolean().default(false),
+  showThumbnails: z.boolean().default(true),
+  items: z.array(TestimonialItem).default([]),
+});
 export const CtaButtonStyleEnum = z.enum([
   "solid",
   "pill",
@@ -373,6 +388,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   GalleryBlock,
   BannerBlock,
   QuoteBlock,
+  TestimonialsBlock,
   CtaBlock,
   ContactFormBlock,
   SpacerBlock,
@@ -425,6 +441,11 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
+    if (b.type === "testimonials") {
+      for (const item of b.items) {
+        if (item.photoId) ids.push(item.photoId);
+      }
+    }
     if (b.type === "logos") ids.push(...b.photoIds);
     if (b.type === "gallery" && b.filterMode === "custom") {
       for (const filter of b.customFilters) ids.push(...filter.photoIds);
@@ -450,6 +471,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   gallery: "Gallery",
   banner: "Banner",
   quote: "Quote",
+  testimonials: "Testimonials",
   cta: "Call to action",
   contactForm: "Contact form",
   spacer: "Spacer",

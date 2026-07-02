@@ -177,6 +177,57 @@ html.js .pr-root.is-enhanced {
   .logo-marquee { animation: none; }
 }
 
+/* ── Page testimonial slider (21st.dev-inspired) ──────────────────────────── */
+@keyframes testimonial-portrait-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0) scale(0.985);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes testimonial-copy-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.testimonial-slider-portrait {
+  animation: testimonial-portrait-in 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.testimonial-slider-copy {
+  animation: testimonial-copy-in 620ms 90ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.testimonial-slider-thumbs {
+  scrollbar-width: none;
+}
+
+.testimonial-slider-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-slider-portrait,
+  .testimonial-slider-copy {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 /* Editor "locate in preview" highlight (applied inside the preview iframe). */
 @keyframes preview-locate-pulse {
   0%, 100% { outline-color: hsl(var(--ring) / 0); }

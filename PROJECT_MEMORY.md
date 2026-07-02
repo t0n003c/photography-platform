@@ -992,6 +992,13 @@ is gitignored):
   narrow mobile screens. Desktop follow-up: the name/slug area is `sm:flex-1` while the action
   group is `sm:shrink-0`, so long category/location names truncate cleanly without squeezing
   the desktop controls into an awkward layout.
+  Page block follow-up: Pages now have a `testimonials` block for a 21st.dev-inspired
+  testimonial slider. The block stores a side label, autoplay/thumbnail toggles, and an
+  ordered `items` array (`name`, `affiliation`, `quote`, optional `photoId`) directly in page
+  JSON. `collectPhotoIds` preloads selected portrait photos, and
+  `components/blocks/testimonial-slider-block.tsx` renders the reference-style desktop layout:
+  counter + vertical label rail, portrait, quote/name/company, thumbnail rail, and circular
+  previous/next controls with reduced-motion-safe CSS transitions.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
