@@ -337,8 +337,11 @@ function TaxonomyCard<T extends Category | Location>({
                     {item.slug}
                   </p>
                 </div>
-                <div className="flex min-w-0 flex-wrap items-center gap-1">
-                  <Badge tone={item.isPublished ? "green" : "neutral"}>
+                <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
+                  <Badge
+                    tone={item.isPublished ? "green" : "neutral"}
+                    className="px-1.5 text-[11px] sm:px-2 sm:text-xs"
+                  >
                     {item.isPublished ? "Published" : "Hidden"}
                   </Badge>
                   <Button
@@ -347,6 +350,7 @@ function TaxonomyCard<T extends Category | Location>({
                     aria-label="Move up"
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
+                    className="h-7 w-7 sm:h-9 sm:w-9"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </Button>
@@ -356,6 +360,7 @@ function TaxonomyCard<T extends Category | Location>({
                     aria-label="Move down"
                     disabled={i === items.length - 1}
                     onClick={() => move(i, 1)}
+                    className="h-7 w-7 sm:h-9 sm:w-9"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -364,7 +369,7 @@ function TaxonomyCard<T extends Category | Location>({
                     variant="outline"
                     aria-label={`Manage photos (${item.photoCount ?? 0})`}
                     onClick={() => setManaging(item)}
-                    className="min-w-0"
+                    className="h-7 min-w-0 gap-1 px-1.5 text-xs sm:h-8 sm:px-3"
                   >
                     <Images className="h-4 w-4" />
                     {item.photoCount ?? 0}
@@ -373,6 +378,7 @@ function TaxonomyCard<T extends Category | Location>({
                     size="sm"
                     variant="outline"
                     onClick={() => setEditing(item)}
+                    className="h-7 px-2 text-xs sm:h-8 sm:px-3"
                   >
                     Edit
                   </Button>
@@ -380,6 +386,7 @@ function TaxonomyCard<T extends Category | Location>({
                     size="sm"
                     variant="destructive"
                     onClick={() => remove(item.id)}
+                    className="h-7 px-2 text-xs sm:h-8 sm:px-3"
                   >
                     Delete
                   </Button>
