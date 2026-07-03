@@ -223,9 +223,29 @@ const TeamBlock = z.object({
   ...baseBlock,
   type: z.literal("team"),
   title: z.string().default(""),
-  layout: z.enum(["showcase", "memberCards", "marqueeCards"]).default("showcase"),
+  layout: z
+    .enum(["showcase", "memberCards", "marqueeCards", "creativeSection"])
+    .default("showcase"),
   cardPosition: z.enum(["alternate", "left", "right"]).default("alternate"),
   showCardArrow: z.boolean().default(true),
+  creativeEyebrow: z.string().default("O U R"),
+  creativeDescription: z
+    .string()
+    .default(
+      "Meet the people behind the images, edits, and client experience.",
+    ),
+  creativeLogo: z.string().default("RAVI"),
+  creativeColumns: z.enum(["3", "4"]).default("3"),
+  creativeShowCardOutline: z.boolean().default(true),
+  creativeCtaLabel: z.string().default("REGISTER NOW"),
+  creativeCtaHref: z.string().default("#"),
+  creativeShowMainSocials: z.boolean().default(true),
+  creativeTwitterUrl: z.string().default("#"),
+  creativeFacebookUrl: z.string().default("#"),
+  creativeInstagramUrl: z.string().default("#"),
+  creativeYoutubeUrl: z.string().default("#"),
+  creativeWebsiteLabel: z.string().default("www.website.com"),
+  creativeWebsiteHref: z.string().default("#"),
   marqueeSubtitle: z
     .string()
     .default(

@@ -1034,6 +1034,27 @@ is gitignored):
   frosted bottom name/role overlays, CSS marquee motion, light/dark styling, and a reduced-motion
   horizontal-scroll fallback. Focused Chrome smoke verified desktop, iPhone 13 dark mode, and
   reduced motion with 0 console/page errors and no horizontal overflow.
+  Follow-up: The Team block now also has a "Creative team section" layout based on
+  `21st.dev/@ravikatiyar/components/team-section-1`. It stores reference-specific header
+  settings (`creativeEyebrow`, intro description, logo text, CTA label/link, main social row
+  toggle, X/Facebook/Instagram/YouTube URLs, and website label/link) while reusing the existing
+  ordered team members and portrait/social fields. The renderer follows the source preview's
+  large uppercase `OUR`/team title composition, right-side logo/CTA,
+  centered icon/website row, and three-column member cards with circular portraits, soft card
+  lift/shadow, primary-tinted bottom reveal, portrait scale, hover/focus social reveal, mobile
+  stacked layout, and light/dark/reduced-motion-safe styling.
+  Follow-up: The Creative team section grid-paper background was removed at owner request.
+  Optional logo, CTA, website, and main social row pieces are now truly optional in the
+  renderer: clearing logo text hides it, clearing either CTA label or CTA link hides the
+  button, clearing either website label or website link hides the website item, and clearing
+  an individual social URL hides that icon.
+  Follow-up: Creative team section now stores `creativeColumns` with a 3-column default and
+  an editor option for 4 desktop columns. Mobile remains single-column stacked; desktop 4-column
+  mode uses a wider grid and tighter gutters so the member cards stay balanced.
+  Follow-up: Creative team section now stores `creativeShowCardOutline` with a default of
+  `true`. The editor exposes a "Card outline" toggle; turning it off removes the rectangular
+  border around each member card while preserving the card shape, shadow, hover/focus motion,
+  and portrait/social behavior.
   Page block follow-up: Spacer and Divider blocks are now configurable instead of fixed.
   Spacer keeps legacy `md` visual spacing by default but supports XS/SM/MD/LG/XL/custom
   desktop heights, same-or-overridden mobile heights, full-band or content-width

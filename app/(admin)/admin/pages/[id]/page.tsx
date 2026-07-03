@@ -209,6 +209,20 @@ function makeBlock(type: BlockType): Block {
       layout: "showcase",
       cardPosition: "alternate",
       showCardArrow: true,
+      creativeEyebrow: "O U R",
+      creativeDescription: "Meet the people behind the images, edits, and client experience.",
+      creativeLogo: "RAVI",
+      creativeColumns: "3",
+      creativeShowCardOutline: true,
+      creativeCtaLabel: "REGISTER NOW",
+      creativeCtaHref: "#",
+      creativeShowMainSocials: true,
+      creativeTwitterUrl: "#",
+      creativeFacebookUrl: "#",
+      creativeInstagramUrl: "#",
+      creativeYoutubeUrl: "#",
+      creativeWebsiteLabel: "www.website.com",
+      creativeWebsiteHref: "#",
       marqueeSubtitle: "Meet the people behind the images, edits, and client experience.",
       marqueeSpeed: 32,
       marqueePauseOnHover: true,
@@ -1196,6 +1210,7 @@ function LeafEditor({
       const teamLayout = block.layout ?? "showcase";
       const isEditorial = teamLayout === "memberCards";
       const isMarquee = teamLayout === "marqueeCards";
+      const isCreative = teamLayout === "creativeSection";
       const isShowcase = teamLayout === "showcase";
       const updateMember = (
         index: number,
@@ -1229,6 +1244,7 @@ function LeafEditor({
                 <option value="showcase">Showcase list</option>
                 <option value="memberCards">Editorial member cards</option>
                 <option value="marqueeCards">Marquee team cards</option>
+                <option value="creativeSection">Creative team section</option>
               </Select>
             </Field>
             {isEditorial ? (
@@ -1255,6 +1271,19 @@ function LeafEditor({
                   value={block.marqueeSpeed ?? 32}
                   onChange={(e) => set({ marqueeSpeed: Number(e.target.value) })}
                 />
+              </Field>
+            ) : isCreative ? (
+              <Field label="Main social row">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.creativeShowMainSocials ?? true}
+                    onChange={(e) =>
+                      set({ creativeShowMainSocials: e.target.checked })
+                    }
+                  />
+                  Show website and icons
+                </label>
               </Field>
             ) : (
               <Field label="Portrait treatment">
@@ -1290,6 +1319,17 @@ function LeafEditor({
                   Pause on hover
                 </label>
               </Field>
+            ) : isCreative ? (
+              <Field label="Member social links">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showSocials ?? true}
+                    onChange={(e) => set({ showSocials: e.target.checked })}
+                  />
+                  Show on cards
+                </label>
+              </Field>
             ) : (
               <Field label="Social links">
                 <label className="flex h-9 items-center gap-2 text-sm">
@@ -1322,6 +1362,113 @@ function LeafEditor({
               </Field>
             )}
           </div>
+          {isCreative && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Eyebrow">
+                  <Input
+                    value={block.creativeEyebrow ?? ""}
+                    onChange={(e) => set({ creativeEyebrow: e.target.value })}
+                  />
+                </Field>
+                <Field label="Logo text">
+                  <Input
+                    value={block.creativeLogo ?? ""}
+                    onChange={(e) => set({ creativeLogo: e.target.value })}
+                  />
+                </Field>
+                <Field label="Desktop columns">
+                  <Select
+                    value={block.creativeColumns ?? "3"}
+                    onChange={(e) =>
+                      set({
+                        creativeColumns: e.target
+                          .value as typeof block.creativeColumns,
+                      })
+                    }
+                  >
+                    <option value="3">3 columns</option>
+                    <option value="4">4 columns</option>
+                  </Select>
+                </Field>
+                <Field label="Card outline">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.creativeShowCardOutline ?? true}
+                      onChange={(e) =>
+                        set({ creativeShowCardOutline: e.target.checked })
+                      }
+                    />
+                    Show rectangle outline
+                  </label>
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Intro text">
+                    <Textarea
+                      rows={3}
+                      value={block.creativeDescription ?? ""}
+                      onChange={(e) =>
+                        set({ creativeDescription: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Button label">
+                  <Input
+                    value={block.creativeCtaLabel ?? ""}
+                    onChange={(e) => set({ creativeCtaLabel: e.target.value })}
+                  />
+                </Field>
+                <Field label="Button link">
+                  <Input
+                    value={block.creativeCtaHref ?? ""}
+                    onChange={(e) => set({ creativeCtaHref: e.target.value })}
+                  />
+                </Field>
+                <Field label="Website label">
+                  <Input
+                    value={block.creativeWebsiteLabel ?? ""}
+                    onChange={(e) =>
+                      set({ creativeWebsiteLabel: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Website link">
+                  <Input
+                    value={block.creativeWebsiteHref ?? ""}
+                    onChange={(e) => set({ creativeWebsiteHref: e.target.value })}
+                  />
+                </Field>
+                <Field label="X / Twitter URL">
+                  <Input
+                    value={block.creativeTwitterUrl ?? ""}
+                    onChange={(e) => set({ creativeTwitterUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Facebook URL">
+                  <Input
+                    value={block.creativeFacebookUrl ?? ""}
+                    onChange={(e) => set({ creativeFacebookUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Instagram URL">
+                  <Input
+                    value={block.creativeInstagramUrl ?? ""}
+                    onChange={(e) =>
+                      set({ creativeInstagramUrl: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="YouTube URL">
+                  <Input
+                    value={block.creativeYoutubeUrl ?? ""}
+                    onChange={(e) => set({ creativeYoutubeUrl: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
           {isMarquee && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="grid gap-2 sm:grid-cols-2">

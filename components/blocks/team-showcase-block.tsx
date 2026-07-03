@@ -6,7 +6,15 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from "react";
-import { ArrowRight, UsersRound } from "lucide-react";
+import {
+  ArrowRight,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  UsersRound,
+  Youtube,
+} from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { cn } from "@/src/lib/utils";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -105,6 +113,32 @@ function socialLinks(member: TeamMember) {
     { label: "in", url: member.linkedinUrl },
     { label: "ig", url: member.instagramUrl },
     { label: "be", url: member.behanceUrl },
+  ].filter((link) => link.url.trim());
+}
+
+function linkAttrs(href: string) {
+  const clean = href.trim() || "#";
+  if (/^(https?:)?\/\//i.test(clean)) {
+    return { href: clean, target: "_blank", rel: "noreferrer" };
+  }
+  return { href: clean };
+}
+
+function creativeMainLinks(block: TeamBlockData) {
+  return [
+    { label: "X / Twitter", icon: Twitter, url: block.creativeTwitterUrl },
+    { label: "Facebook", icon: Facebook, url: block.creativeFacebookUrl },
+    { label: "Instagram", icon: Instagram, url: block.creativeInstagramUrl },
+    { label: "YouTube", icon: Youtube, url: block.creativeYoutubeUrl },
+  ].filter((link) => Boolean(link.url?.trim()));
+}
+
+function creativeMemberLinks(member: TeamMember) {
+  return [
+    { label: "X / Twitter", icon: Twitter, url: member.twitterUrl },
+    { label: "LinkedIn", icon: Linkedin, url: member.linkedinUrl },
+    { label: "Instagram", icon: Instagram, url: member.instagramUrl },
+    { label: "Behance", text: "Be", url: member.behanceUrl },
   ].filter((link) => link.url.trim());
 }
 
@@ -596,6 +630,196 @@ function MarqueeTeamCards({
   );
 }
 
+function CreativeTeamCard({
+  member,
+  photo,
+  priority,
+  showSocials,
+  showOutline,
+}: {
+  member: TeamMember;
+  photo?: PhotoDTO;
+  priority: boolean;
+  showSocials: boolean;
+  showOutline: boolean;
+}) {
+  const links = creativeMemberLinks(member);
+
+  return (
+    <article
+      className={cn(
+        "group relative flex min-h-[19.5rem] flex-col items-center justify-end overflow-hidden rounded-xl bg-[hsl(var(--card))] p-6 text-center shadow-lg transition-[box-shadow,transform] duration-300 ease-in-out hover:scale-[1.02] hover:shadow-2xl focus-within:scale-[1.02] focus-within:shadow-2xl motion-reduce:transition-none",
+        showOutline && "border border-[hsl(var(--border))]/70",
+      )}
+    >
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 right-0 h-1/2 origin-bottom scale-y-0 rounded-t-full transition-transform duration-500 ease-out group-hover:scale-y-100 group-focus-within:scale-y-100 motion-reduce:transition-none"
+        style={{
+          background:
+            "linear-gradient(to top, hsl(var(--primary) / 0.2), transparent)",
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 h-36 w-36 overflow-hidden rounded-full border-4 border-transparent bg-[hsl(var(--background))]/20 transition-[border-color,transform] duration-500 ease-out group-hover:scale-105 group-hover:border-[hsl(var(--primary))] group-focus-within:scale-105 group-focus-within:border-[hsl(var(--primary))] motion-reduce:transition-none">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 144px, 144px"
+            priority={priority}
+            className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-110 group-focus-within:scale-110 motion-reduce:transition-none"
+          />
+        ) : (
+          <PlaceholderPortrait
+            member={member}
+            className="transition-transform duration-500 ease-out group-hover:scale-110 group-focus-within:scale-110 motion-reduce:transition-none"
+          />
+        )}
+      </div>
+      <h3 className="relative z-10 mt-4 text-xl font-semibold uppercase tracking-normal text-[hsl(var(--foreground))]">
+        {member.name || "Team member"}
+      </h3>
+      <p className="relative z-10 text-sm text-[hsl(var(--muted-foreground))]">
+        {member.role || "Role"}
+      </p>
+      {showSocials && links.length > 0 && (
+        <div className="relative z-10 mt-4 flex gap-3 opacity-100 transition-opacity duration-300 ease-in-out md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none">
+          {links.map((link) => {
+            const Icon = "icon" in link ? link.icon : null;
+            return (
+              <a
+                key={link.label}
+                {...linkAttrs(link.url)}
+                aria-label={`${member.name || "Team member"} ${link.label}`}
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-full text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              >
+                {Icon ? (
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <span className="px-1 text-[11px] font-semibold" aria-hidden="true">
+                    {link.text}
+                  </span>
+                )}
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function CreativeTeamSection({
+  block,
+  members,
+  photoMap,
+}: {
+  block: TeamBlockData;
+  members: TeamMember[];
+  photoMap: Map<string, PhotoDTO>;
+}) {
+  const eyebrow = block.creativeEyebrow?.trim() || "O U R";
+  const headline = block.title.trim() || "CREATIVE TEAM";
+  const description =
+    block.creativeDescription?.trim() ||
+    "Meet the people behind the images, edits, and client experience.";
+  const logo = block.creativeLogo?.trim();
+  const ctaLabel = block.creativeCtaLabel?.trim();
+  const ctaHref = block.creativeCtaHref?.trim();
+  const websiteLabel = block.creativeWebsiteLabel?.trim();
+  const websiteHref = block.creativeWebsiteHref?.trim();
+  const mainLinks = creativeMainLinks(block);
+  const showWebsite = Boolean(websiteLabel && websiteHref);
+  const showMainRow =
+    block.creativeShowMainSocials !== false &&
+    (mainLinks.length > 0 || showWebsite);
+  const creativeColumns = block.creativeColumns === "4" ? "4" : "3";
+
+  return (
+    <section className="team-showcase-block team-creative-section relative w-full overflow-hidden bg-[hsl(var(--background))] py-12 text-[hsl(var(--foreground))] md:py-24 lg:py-32">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center justify-center gap-8 px-4 text-center md:px-6">
+        <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:items-start md:text-left lg:gap-8">
+          <div className="grid gap-2 text-center md:text-left">
+            <h2 className="text-4xl font-bold uppercase leading-none tracking-normal text-[hsl(var(--muted-foreground))] sm:text-5xl md:text-6xl">
+              <span className="block text-xl font-medium leading-tight text-[hsl(var(--primary))] sm:text-2xl md:text-3xl">
+                {eyebrow}
+              </span>
+              {headline}
+            </h2>
+            <p className="max-w-[700px] text-base leading-relaxed text-[hsl(var(--muted-foreground))] md:text-xl lg:text-base xl:text-xl">
+              {description}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-4 md:items-end">
+            {logo && (
+              <p className="text-2xl font-bold uppercase tracking-normal text-[hsl(var(--foreground))]">
+                {logo}
+              </p>
+            )}
+            {ctaLabel && ctaHref && (
+              <a
+                {...linkAttrs(ctaHref)}
+                className="inline-flex min-h-10 items-center justify-center rounded-md bg-[hsl(var(--primary))] px-8 py-2 text-center text-sm font-medium uppercase leading-tight text-[hsl(var(--primary-foreground))] shadow transition-colors hover:bg-[hsl(var(--primary))]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              >
+                {ctaLabel}
+              </a>
+            )}
+          </div>
+        </div>
+
+        {showMainRow && (
+          <div className="flex w-full flex-wrap items-center justify-center gap-4 py-4">
+            {mainLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <a
+                  key={link.label}
+                  {...linkAttrs(link.url ?? "#")}
+                  aria-label={link.label}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                >
+                  <Icon className="h-6 w-6" aria-hidden="true" />
+                </a>
+              );
+            })}
+            {websiteLabel && websiteHref && (
+              <a
+                {...linkAttrs(websiteHref)}
+                className="text-sm text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              >
+                {websiteLabel}
+              </a>
+            )}
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "mx-auto grid w-full grid-cols-1 gap-8",
+            creativeColumns === "4"
+              ? "max-w-6xl md:grid-cols-4 lg:gap-8"
+              : "max-w-5xl md:grid-cols-3 lg:gap-12",
+          )}
+        >
+          {members.map((member, index) => {
+            const photo = member.photoId ? photoMap.get(member.photoId) : undefined;
+            return (
+              <CreativeTeamCard
+                key={member.id}
+                member={member}
+                photo={photo}
+                priority={index < 3}
+                showSocials={block.showSocials !== false}
+                showOutline={block.creativeShowCardOutline !== false}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   const members = useMemo(
     () => (block.members ?? []).filter((member) => !memberIsEmpty(member)),
@@ -635,6 +859,16 @@ export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   if ((block.layout ?? "showcase") === "marqueeCards") {
     return (
       <MarqueeTeamCards
+        block={block}
+        members={members}
+        photoMap={photoMap}
+      />
+    );
+  }
+
+  if ((block.layout ?? "showcase") === "creativeSection") {
+    return (
+      <CreativeTeamSection
         block={block}
         members={members}
         photoMap={photoMap}

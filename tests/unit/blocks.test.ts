@@ -83,6 +83,13 @@ describe("page builder blocks", () => {
       layout: "showcase",
       cardPosition: "alternate",
       showCardArrow: true,
+      creativeEyebrow: "O U R",
+      creativeLogo: "RAVI",
+      creativeColumns: "3",
+      creativeShowCardOutline: true,
+      creativeCtaLabel: "REGISTER NOW",
+      creativeShowMainSocials: true,
+      creativeWebsiteLabel: "www.website.com",
       marqueeSpeed: 32,
       marqueePauseOnHover: true,
       marqueeShowDecorations: true,
@@ -176,6 +183,61 @@ describe("page builder blocks", () => {
       marqueeQuotePhotoId: "quote-photo",
     });
     expect(collectPhotoIds(blocks)).toEqual(["quote-photo", "member-photo"]);
+  });
+
+  it("keeps creative team section settings", () => {
+    const blocks = parseBlocks([
+      {
+        id: "team",
+        type: "team",
+        layout: "creativeSection",
+        title: "Creative Team",
+        creativeEyebrow: "OUR",
+        creativeDescription: "People who shape the client experience.",
+        creativeLogo: "Studio",
+        creativeColumns: "4",
+        creativeShowCardOutline: false,
+        creativeCtaLabel: "Book now",
+        creativeCtaHref: "/contact",
+        creativeShowMainSocials: false,
+        creativeTwitterUrl: "https://example.com/x",
+        creativeFacebookUrl: "https://example.com/facebook",
+        creativeInstagramUrl: "https://example.com/instagram",
+        creativeYoutubeUrl: "https://example.com/youtube",
+        creativeWebsiteLabel: "studio.example",
+        creativeWebsiteHref: "https://studio.example",
+        members: [
+          {
+            id: "member-1",
+            name: "Emma Stone",
+            role: "Product Designer",
+            photoId: "creative-member-photo",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "team",
+      type: "team",
+      layout: "creativeSection",
+      title: "Creative Team",
+      creativeEyebrow: "OUR",
+      creativeDescription: "People who shape the client experience.",
+      creativeLogo: "Studio",
+      creativeColumns: "4",
+      creativeShowCardOutline: false,
+      creativeCtaLabel: "Book now",
+      creativeCtaHref: "/contact",
+      creativeShowMainSocials: false,
+      creativeTwitterUrl: "https://example.com/x",
+      creativeFacebookUrl: "https://example.com/facebook",
+      creativeInstagramUrl: "https://example.com/instagram",
+      creativeYoutubeUrl: "https://example.com/youtube",
+      creativeWebsiteLabel: "studio.example",
+      creativeWebsiteHref: "https://studio.example",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["creative-member-photo"]);
   });
 
   it("defaults enhanced spacer settings for old spacer blocks", () => {
