@@ -86,7 +86,7 @@ const newBlockId = () =>
 
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "gallery", "banner",
+  "heading", "subheading", "richtext", "image", "featureCarousel", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
@@ -260,6 +260,25 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
+    case "featureCarousel": return {
+      id,
+      type,
+      headline: "Edit Your Photos on the Go",
+      highlightText: "Photos",
+      highlightFrom: "#3b82f6",
+      highlightTo: "#a855f7",
+      subtitle: "Use all our AI-powered photo editing tools on your phone, available for all iOS and Android.",
+      photoIds: [],
+      autoplay: false,
+      autoplayMs: 4500,
+      showArrows: true,
+      desktopVisibleCount: "3",
+      imageRadius: "xl",
+      primaryLabel: "",
+      primaryHref: "",
+      secondaryLabel: "",
+      secondaryHref: "",
+    };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
@@ -729,6 +748,8 @@ function blockSummary(block: Block): string {
     case "richtext":
     case "quote":
       return block.text.slice(0, 40);
+    case "featureCarousel":
+      return `${block.photoIds.length} photos`;
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
@@ -2320,6 +2341,220 @@ function LeafEditor({
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
         </div>
       );
+    case "featureCarousel": {
+      const selectedPhotos = block.photoIds
+        .map((photoId) => photos.find((photo) => photo.id === photoId))
+        .filter((photo): photo is PhotoOption => Boolean(photo));
+      const togglePhoto = (photoId: string) =>
+        set({
+          photoIds: block.photoIds.includes(photoId)
+            ? block.photoIds.filter((id) => id !== photoId)
+            : [...block.photoIds, photoId],
+        });
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="sm:col-span-2">
+              <Field label="Headline">
+                <Input
+                  value={block.headline}
+                  onChange={(e) => set({ headline: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Highlight text">
+              <Input
+                value={block.highlightText}
+                onChange={(e) => set({ highlightText: e.target.value })}
+              />
+            </Field>
+            <Field label="Image corners">
+              <Select
+                value={block.imageRadius ?? "xl"}
+                onChange={(e) =>
+                  set({ imageRadius: e.target.value as typeof block.imageRadius })
+                }
+              >
+                <option value="lg">Soft</option>
+                <option value="xl">Rounded</option>
+                <option value="full">Pill</option>
+              </Select>
+            </Field>
+            <Field label="Desktop visible images">
+              <Select
+                value={block.desktopVisibleCount ?? "3"}
+                onChange={(e) =>
+                  set({
+                    desktopVisibleCount: e.target
+                      .value as typeof block.desktopVisibleCount,
+                  })
+                }
+              >
+                <option value="3">3 images</option>
+                <option value="5">5 images</option>
+                <option value="7">7 images</option>
+              </Select>
+            </Field>
+            <Field label="Gradient from">
+              <Input
+                type="color"
+                value={block.highlightFrom ?? "#3b82f6"}
+                onChange={(e) => set({ highlightFrom: e.target.value })}
+              />
+            </Field>
+            <Field label="Gradient to">
+              <Input
+                type="color"
+                value={block.highlightTo ?? "#a855f7"}
+                onChange={(e) => set({ highlightTo: e.target.value })}
+              />
+            </Field>
+            <Field label="Autoplay">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.autoplay ?? false}
+                  onChange={(e) => set({ autoplay: e.target.checked })}
+                />
+                Auto advance
+              </label>
+            </Field>
+            <Field label="Autoplay speed">
+              <Input
+                type="number"
+                min={1200}
+                max={12000}
+                step={100}
+                value={block.autoplayMs ?? 4500}
+                onChange={(e) =>
+                  set({ autoplayMs: Math.max(1200, Math.min(12000, pxInput(e.target.value))) })
+                }
+              />
+            </Field>
+            <Field label="Arrows">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showArrows ?? true}
+                  onChange={(e) => set({ showArrows: e.target.checked })}
+                />
+                Show controls
+              </label>
+            </Field>
+          </div>
+          <Field label="Subtitle">
+            <Textarea
+              rows={2}
+              value={block.subtitle}
+              onChange={(e) => set({ subtitle: e.target.value })}
+            />
+          </Field>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Primary button label">
+              <Input
+                value={block.primaryLabel ?? ""}
+                onChange={(e) => set({ primaryLabel: e.target.value })}
+              />
+            </Field>
+            <Field label="Primary button link">
+              <Input
+                value={block.primaryHref ?? ""}
+                onChange={(e) => set({ primaryHref: e.target.value })}
+              />
+            </Field>
+            <Field label="Secondary button label">
+              <Input
+                value={block.secondaryLabel ?? ""}
+                onChange={(e) => set({ secondaryLabel: e.target.value })}
+              />
+            </Field>
+            <Field label="Secondary button link">
+              <Input
+                value={block.secondaryHref ?? ""}
+                onChange={(e) => set({ secondaryHref: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Carousel photos — click to add/remove">
+            <PhotoPicker
+              photos={photos}
+              selectedIds={block.photoIds}
+              onToggle={togglePhoto}
+              containerClassName="max-h-72"
+            />
+          </Field>
+          {selectedPhotos.length > 0 && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <p className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                Selected order
+              </p>
+              <div className="space-y-2">
+                {selectedPhotos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className="flex items-center gap-2 rounded-md border p-2"
+                  >
+                    <div className="h-10 w-10 overflow-hidden rounded bg-[hsl(var(--muted))]">
+                      {photo.thumbUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photo.thumbUrl}
+                          alt={photo.label}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {photo.label}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() =>
+                        set({ photoIds: swapAt(block.photoIds, index, index - 1) })
+                      }
+                      aria-label="Move photo up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === selectedPhotos.length - 1}
+                      onClick={() =>
+                        set({ photoIds: swapAt(block.photoIds, index, index + 1) })
+                      }
+                      aria-label="Move photo down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({
+                          photoIds: block.photoIds.filter((id) => id !== photo.id),
+                        })
+                      }
+                      aria-label="Remove photo"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     case "gallery": {
       const filterMode = block.filterMode ?? "none";
       const customFilters = block.customFilters ?? [];

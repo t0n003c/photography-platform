@@ -534,6 +534,32 @@ html.js .pr-root.is-enhanced {
   will-change: transform, opacity, filter;
 }
 
+.feature-carousel-card {
+  z-index: var(--feature-carousel-z-mobile, 1);
+  opacity: var(--feature-carousel-opacity-mobile, 1);
+  filter: blur(var(--feature-carousel-blur-mobile, 0px));
+  pointer-events: var(--feature-carousel-pointer-mobile, auto);
+  transform:
+    translate(-50%, -50%)
+    translateX(var(--feature-carousel-x-mobile, 0%))
+    rotateY(var(--feature-carousel-rotate-mobile, 0deg))
+    scale(var(--feature-carousel-scale-mobile, 1));
+}
+
+@media (min-width: 768px) {
+  .feature-carousel-card {
+    z-index: var(--feature-carousel-z-desktop, 1);
+    opacity: var(--feature-carousel-opacity-desktop, 1);
+    filter: blur(var(--feature-carousel-blur-desktop, 0px));
+    pointer-events: var(--feature-carousel-pointer-desktop, auto);
+    transform:
+      translate(-50%, -50%)
+      translateX(var(--feature-carousel-x-desktop, 0%))
+      rotateY(var(--feature-carousel-rotate-desktop, 0deg))
+      scale(var(--feature-carousel-scale-desktop, 1));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .testimonial-slider-portrait,
   .testimonial-slider-copy,
@@ -565,6 +591,10 @@ html.js .pr-root.is-enhanced {
 
   .pricing-border-trail::before {
     animation: none;
+  }
+
+  .feature-carousel-card {
+    transition: none;
   }
 }
 

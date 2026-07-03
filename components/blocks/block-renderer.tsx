@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/container";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { GalleryBlock } from "@/components/blocks/gallery-block";
 import { BannerBlock } from "@/components/blocks/banner-block";
+import { FeatureCarouselBlock } from "@/components/blocks/feature-carousel-block";
 import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-block";
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
 import { PricingBlock } from "@/components/blocks/pricing-block";
@@ -553,6 +554,8 @@ function LeafView({
       return <BannerBlock block={block} photo={block.photoId ? photoMap.get(block.photoId) : undefined} />;
     case "gallery":
       return <GalleryBlock block={block} photoMap={photoMap} preview={preview} />;
+    case "featureCarousel":
+      return <FeatureCarouselBlock block={block} photoMap={photoMap} />;
     case "testimonials":
       return <TestimonialSliderBlock block={block} photoMap={photoMap} />;
     case "team":
@@ -646,6 +649,7 @@ function LeafView({
 // rest are wrapped in a centered container with vertical rhythm.
 const FULL_BLEED = new Set([
   "banner",
+  "featureCarousel",
   "gallery",
   "testimonials",
   "team",

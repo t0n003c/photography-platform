@@ -1074,6 +1074,17 @@ is gitignored):
   resolver as the standard style. Plans can now store an optional `priceLabel` such as
   "Contact us"; feature rows store `included` so unavailable benefits can render with
   muted x icons.
+  Page block follow-up: Pages now include a `featureCarousel` block based on
+  `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
+  highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,
+  arrow visibility, desktop visible image count (3/5/7), image corner style, and
+  optional primary/secondary CTA links.
+  `components/blocks/feature-carousel-block.tsx` renders a reference-style centered
+  hero with a configurable 3/5/7-image desktop 3D coverflow: center card sharp and
+  largest, side cards rotated/blurred/faded, circular previous/next controls, click-to-focus side
+  cards, swipe gesture support, mobile scaling, light/dark-safe colors, autoplay pause
+  on hover/focus, and a reduced-motion static fallback. `collectPhotoIds` preloads
+  selected carousel images.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

@@ -83,6 +83,29 @@ const ImageBlock = z.object({
   width: z.enum(["normal", "wide", "full"]).default("normal"),
   rounded: z.boolean().default(true),
 });
+const FeatureCarouselBlock = z.object({
+  ...baseBlock,
+  type: z.literal("featureCarousel"),
+  headline: z.string().default("Edit Your Photos on the Go"),
+  highlightText: z.string().default("Photos"),
+  highlightFrom: z.string().default("#3b82f6"),
+  highlightTo: z.string().default("#a855f7"),
+  subtitle: z
+    .string()
+    .default(
+      "Use all our AI-powered photo editing tools on your phone, available for all iOS and Android.",
+    ),
+  photoIds: z.array(z.string()).default([]),
+  autoplay: z.boolean().default(false),
+  autoplayMs: z.number().int().min(1200).max(12000).default(4500),
+  showArrows: z.boolean().default(true),
+  desktopVisibleCount: z.enum(["3", "5", "7"]).default("3"),
+  imageRadius: z.enum(["lg", "xl", "full"]).default("xl"),
+  primaryLabel: z.string().default(""),
+  primaryHref: z.string().default(""),
+  secondaryLabel: z.string().default(""),
+  secondaryHref: z.string().default(""),
+});
 const GallerySortEnum = z.enum([
   "source",
   "newest",
@@ -527,6 +550,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   SubheadingBlock,
   RichTextBlock,
   ImageBlock,
+  FeatureCarouselBlock,
   GalleryBlock,
   BannerBlock,
   QuoteBlock,
@@ -584,6 +608,7 @@ export function collectPhotoIds(blocks: Block[]): string[] {
   const visitLeaf = (b: LeafBlock) => {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
+    if (b.type === "featureCarousel") ids.push(...b.photoIds);
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
     if (b.type === "testimonials") {
       for (const item of b.items) {
@@ -618,6 +643,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   subheading: "Subheading",
   richtext: "Text",
   image: "Image",
+  featureCarousel: "Feature carousel",
   gallery: "Gallery",
   banner: "Banner",
   quote: "Quote",

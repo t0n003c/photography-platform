@@ -131,6 +131,46 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["photo-1"]);
   });
 
+  it("keeps feature carousel blocks and collects selected photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "feature-carousel",
+        type: "featureCarousel",
+        headline: "Edit Your Photos on the Go",
+        highlightText: "Photos",
+        highlightFrom: "#3b82f6",
+        highlightTo: "#a855f7",
+        subtitle: "Swipe through selected work.",
+        photoIds: ["photo-a", "photo-b", "photo-c"],
+        autoplay: true,
+        autoplayMs: 3200,
+        showArrows: true,
+        desktopVisibleCount: "7",
+        imageRadius: "full",
+        primaryLabel: "Book now",
+        primaryHref: "/contact",
+        secondaryLabel: "View galleries",
+        secondaryHref: "/galleries",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "feature-carousel",
+      type: "featureCarousel",
+      headline: "Edit Your Photos on the Go",
+      highlightText: "Photos",
+      autoplay: true,
+      autoplayMs: 3200,
+      showArrows: true,
+      desktopVisibleCount: "7",
+      imageRadius: "full",
+      primaryHref: "/contact",
+      secondaryHref: "/galleries",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-a", "photo-b", "photo-c"]);
+  });
+
   it("keeps retro testimonial carousel blocks", () => {
     const blocks = parseBlocks([
       {
