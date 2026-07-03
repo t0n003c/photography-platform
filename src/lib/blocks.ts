@@ -223,9 +223,26 @@ const TeamBlock = z.object({
   ...baseBlock,
   type: z.literal("team"),
   title: z.string().default(""),
-  layout: z.enum(["showcase", "memberCards"]).default("showcase"),
+  layout: z.enum(["showcase", "memberCards", "marqueeCards"]).default("showcase"),
   cardPosition: z.enum(["alternate", "left", "right"]).default("alternate"),
   showCardArrow: z.boolean().default(true),
+  marqueeSubtitle: z
+    .string()
+    .default(
+      "Meet the people behind the images, edits, and client experience.",
+    ),
+  marqueeSpeed: z.number().default(32),
+  marqueePauseOnHover: z.boolean().default(true),
+  marqueeShowDecorations: z.boolean().default(true),
+  marqueeShowQuote: z.boolean().default(true),
+  marqueeQuote: z
+    .string()
+    .default(
+      "The care, communication, and delivery from this team made the entire experience feel effortless.",
+    ),
+  marqueeQuoteAuthor: z.string().default("Natalia Kara"),
+  marqueeQuoteRole: z.string().default("Studio client"),
+  marqueeQuotePhotoId: z.string().nullable().default(null),
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),
@@ -499,6 +516,7 @@ export function collectPhotoIds(blocks: Block[]): string[] {
       }
     }
     if (b.type === "team") {
+      if (b.marqueeQuotePhotoId) ids.push(b.marqueeQuotePhotoId);
       for (const member of b.members) {
         if (member.photoId) ids.push(member.photoId);
       }

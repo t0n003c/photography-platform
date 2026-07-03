@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, UsersRound } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { cn } from "@/src/lib/utils";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -72,6 +72,12 @@ function editorialPosition(
     return block.cardPosition;
   }
   return index % 2 === 0 ? "left" : "right";
+}
+
+function marqueeDuration(speed?: number) {
+  const next = Number(speed);
+  if (!Number.isFinite(next)) return 32;
+  return Math.max(12, Math.min(80, next));
 }
 
 function PlaceholderPortrait({
@@ -385,6 +391,211 @@ function EditorialTeamCards({
   );
 }
 
+function MarqueeTeamCard({
+  member,
+  photo,
+  priority,
+  grayscale,
+}: {
+  member: TeamMember;
+  photo?: PhotoDTO;
+  priority: boolean;
+  grayscale: boolean;
+}) {
+  return (
+    <div className="group flex w-56 shrink-0 flex-col sm:w-64">
+      <div className="relative h-80 w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800 sm:h-[23rem]">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 224px, 256px"
+            priority={priority}
+            className={cn(
+              "h-full w-full transition-[filter] duration-300 motion-reduce:transition-none",
+              grayscale && "grayscale group-hover:grayscale-0",
+            )}
+          />
+        ) : (
+          <PlaceholderPortrait
+            member={member}
+            className={cn(
+              "transition-[filter] duration-300 motion-reduce:transition-none",
+              grayscale && "grayscale group-hover:grayscale-0",
+            )}
+          />
+        )}
+        <div className="absolute bottom-0 w-full rounded-lg bg-neutral-100/85 p-2 backdrop-blur-md dark:bg-neutral-800/80">
+          <h3 className="truncate font-semibold text-neutral-900 dark:text-neutral-100">
+            {member.name || "Team member"}
+          </h3>
+          <p className="truncate text-sm text-neutral-600 dark:text-neutral-400">
+            {member.role || "Role"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarqueeTeamCards({
+  block,
+  members,
+  photoMap,
+}: {
+  block: TeamBlockData;
+  members: TeamMember[];
+  photoMap: Map<string, PhotoDTO>;
+}) {
+  const headline = block.title.trim() || "Creative Team Members";
+  const subtitle =
+    block.marqueeSubtitle?.trim() ||
+    "Meet the people behind the images, edits, and client experience.";
+  const quote =
+    block.marqueeQuote?.trim() ||
+    "The care, communication, and delivery from this team made the entire experience feel effortless.";
+  const quoteAuthor = block.marqueeQuoteAuthor?.trim() || "Natalia Kara";
+  const quoteRole = block.marqueeQuoteRole?.trim() || "Studio client";
+  const quotePhoto =
+    (block.marqueeQuotePhotoId
+      ? photoMap.get(block.marqueeQuotePhotoId)
+      : undefined) ??
+    members
+      .map((member) => (member.photoId ? photoMap.get(member.photoId) : undefined))
+      .find(Boolean);
+  const marqueeMembers = members.length > 1 ? [...members, ...members] : members;
+  const duration = `${marqueeDuration(block.marqueeSpeed)}s`;
+
+  return (
+    <section className="team-showcase-block team-marquee-block relative w-full overflow-hidden bg-white py-12 text-neutral-950 dark:bg-[hsl(var(--background))] dark:text-neutral-100 md:py-24">
+      {block.marqueeShowDecorations !== false && (
+        <svg
+          className="pointer-events-none absolute bottom-0 right-0 text-neutral-200 dark:text-neutral-800"
+          fill="none"
+          height="154"
+          viewBox="0 0 460 154"
+          width="460"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <g clipPath="url(#team-marquee-curve)">
+            <path
+              d="M-87.463 458.432C-102.118 348.092 -77.3418 238.841 -15.0744 188.274C57.4129 129.408 180.708 150.071 351.748 341.128C278.246 -374.233 633.954 380.602 548.123 42.7707"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="40"
+            />
+          </g>
+          <defs>
+            <clipPath id="team-marquee-curve">
+              <rect fill="white" height="154" width="460" />
+            </clipPath>
+          </defs>
+        </svg>
+      )}
+
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="mx-auto mb-16 flex max-w-5xl flex-col items-center px-6 text-center lg:px-0">
+          <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <UsersRound className="h-6 w-6" aria-hidden="true" />
+          </div>
+
+          <h2 className="relative mb-4 text-4xl font-medium tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-5xl">
+            {headline}
+            {block.marqueeShowDecorations !== false && (
+              <svg
+                className="pointer-events-none absolute -right-8 -top-2 -z-10 w-24 text-neutral-200 dark:text-neutral-700"
+                fill="currentColor"
+                height="86"
+                viewBox="0 0 108 86"
+                width="108"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M38.8484 16.236L15 43.5793L78.2688 15L18.1218 71L93 34.1172L70.2047 65.2739"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="28"
+                />
+              </svg>
+            )}
+          </h2>
+          <p className="max-w-2xl text-neutral-600 dark:text-neutral-400">
+            {subtitle}
+          </p>
+        </div>
+
+        <div className="relative w-full">
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-white to-transparent dark:from-[hsl(var(--background))] sm:w-32" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-white to-transparent dark:from-[hsl(var(--background))] sm:w-32" />
+
+          <div className="team-marquee-viewport overflow-x-auto overflow-y-hidden overscroll-x-contain">
+            <div
+              className={cn(
+                "team-marquee-track flex w-max gap-6",
+                block.marqueePauseOnHover !== false && "team-marquee-track--pause",
+              )}
+              style={{ "--team-marquee-duration": duration } as CSSProperties}
+            >
+              {marqueeMembers.map((member, index) => {
+                const originalIndex = index % members.length;
+                const photo = member.photoId ? photoMap.get(member.photoId) : undefined;
+                return (
+                  <div
+                    key={`${member.id}-${index}`}
+                    aria-hidden={index >= members.length ? "true" : undefined}
+                  >
+                    <MarqueeTeamCard
+                      member={member}
+                      photo={photo}
+                      priority={originalIndex < 3}
+                      grayscale={block.grayscale !== false}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {block.marqueeShowQuote !== false && (
+          <div className="mx-auto mt-20 max-w-3xl px-6 text-center lg:px-0">
+            <p className="mb-8 text-lg font-medium leading-relaxed text-neutral-900 dark:text-neutral-100 md:text-xl">
+              {quote}
+            </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative h-14 w-14 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                {quotePhoto ? (
+                  <ResponsiveImage
+                    photo={quotePhoto}
+                    sizes="56px"
+                    className="h-full w-full"
+                  />
+                ) : (
+                  <PlaceholderPortrait
+                    member={members[0]}
+                    className="text-sm"
+                  />
+                )}
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {quoteAuthor}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {quoteRole}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   const members = useMemo(
     () => (block.members ?? []).filter((member) => !memberIsEmpty(member)),
@@ -414,6 +625,16 @@ export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   if ((block.layout ?? "showcase") === "memberCards") {
     return (
       <EditorialTeamCards
+        block={block}
+        members={members}
+        photoMap={photoMap}
+      />
+    );
+  }
+
+  if ((block.layout ?? "showcase") === "marqueeCards") {
+    return (
+      <MarqueeTeamCards
         block={block}
         members={members}
         photoMap={photoMap}

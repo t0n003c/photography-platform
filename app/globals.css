@@ -3146,3 +3146,34 @@ main:has(.palmer-grid) + footer .footer-copyright {
     transform: translateX(0);
   }
 }
+
+.team-marquee-viewport {
+  scrollbar-width: none;
+}
+
+.team-marquee-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.team-marquee-track {
+  animation: team-marquee-scroll var(--team-marquee-duration, 32s) linear infinite;
+}
+
+.team-marquee-track--pause:hover {
+  animation-play-state: paused;
+}
+
+@keyframes team-marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-50% - 0.75rem), 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-marquee-track {
+    animation: none;
+  }
+}

@@ -83,6 +83,10 @@ describe("page builder blocks", () => {
       layout: "showcase",
       cardPosition: "alternate",
       showCardArrow: true,
+      marqueeSpeed: 32,
+      marqueePauseOnHover: true,
+      marqueeShowDecorations: true,
+      marqueeShowQuote: true,
       grayscale: true,
       showSocials: true,
       members: [
@@ -127,6 +131,51 @@ describe("page builder blocks", () => {
         }),
       ],
     });
+  });
+
+  it("keeps marquee team card settings and collects quote photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "team",
+        type: "team",
+        layout: "marqueeCards",
+        title: "Creative Cnippet Members",
+        marqueeSubtitle: "A reference-style team marquee.",
+        marqueeSpeed: 24,
+        marqueePauseOnHover: false,
+        marqueeShowDecorations: false,
+        marqueeShowQuote: true,
+        marqueeQuote: "The team moved quickly and beautifully.",
+        marqueeQuoteAuthor: "Natalia Kara",
+        marqueeQuoteRole: "CTO",
+        marqueeQuotePhotoId: "quote-photo",
+        members: [
+          {
+            id: "member-1",
+            name: "Patrick Stewart",
+            role: "CEO - Founder",
+            photoId: "member-photo",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "team",
+      type: "team",
+      layout: "marqueeCards",
+      title: "Creative Cnippet Members",
+      marqueeSubtitle: "A reference-style team marquee.",
+      marqueeSpeed: 24,
+      marqueePauseOnHover: false,
+      marqueeShowDecorations: false,
+      marqueeShowQuote: true,
+      marqueeQuote: "The team moved quickly and beautifully.",
+      marqueeQuoteAuthor: "Natalia Kara",
+      marqueeQuoteRole: "CTO",
+      marqueeQuotePhotoId: "quote-photo",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["quote-photo", "member-photo"]);
   });
 
   it("defaults enhanced spacer settings for old spacer blocks", () => {

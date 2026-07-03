@@ -1025,6 +1025,15 @@ is gitignored):
   member two shows text-left/image-right, and so on. The section clips horizontal overflow
   during entrance transforms. Focused Chrome smoke verified desktop cycling, side alternation,
   wraparound, iPhone 13 dark mode, and reduced motion with 0 console/page errors.
+  Follow-up: The Team block now also has a "Marquee team cards" layout based on
+  `21st.dev/@cnippet_dev/components/team`. It adds editable marquee settings
+  (`marqueeSubtitle`, speed, pause-on-hover, decorations, quote toggle/text/author/role/photo)
+  while reusing the existing ordered team members and portrait picker. The renderer matches the
+  reference structure: centered blue icon + headline/subtext, headline scribble, bottom-right
+  curve decoration, left/right fade masks, grayscale portrait cards that reveal color on hover,
+  frosted bottom name/role overlays, CSS marquee motion, light/dark styling, and a reduced-motion
+  horizontal-scroll fallback. Focused Chrome smoke verified desktop, iPhone 13 dark mode, and
+  reduced motion with 0 console/page errors and no horizontal overflow.
   Page block follow-up: Spacer and Divider blocks are now configurable instead of fixed.
   Spacer keeps legacy `md` visual spacing by default but supports XS/SM/MD/LG/XL/custom
   desktop heights, same-or-overridden mobile heights, full-band or content-width

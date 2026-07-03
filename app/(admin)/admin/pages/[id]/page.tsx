@@ -209,6 +209,16 @@ function makeBlock(type: BlockType): Block {
       layout: "showcase",
       cardPosition: "alternate",
       showCardArrow: true,
+      marqueeSubtitle: "Meet the people behind the images, edits, and client experience.",
+      marqueeSpeed: 32,
+      marqueePauseOnHover: true,
+      marqueeShowDecorations: true,
+      marqueeShowQuote: true,
+      marqueeQuote:
+        "The care, communication, and delivery from this team made the entire experience feel effortless.",
+      marqueeQuoteAuthor: "Natalia Kara",
+      marqueeQuoteRole: "Studio client",
+      marqueeQuotePhotoId: null,
       grayscale: true,
       showSocials: true,
       members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
@@ -1183,7 +1193,10 @@ function LeafEditor({
     }
     case "team": {
       const members = block.members ?? [];
-      const isEditorial = (block.layout ?? "showcase") === "memberCards";
+      const teamLayout = block.layout ?? "showcase";
+      const isEditorial = teamLayout === "memberCards";
+      const isMarquee = teamLayout === "marqueeCards";
+      const isShowcase = teamLayout === "showcase";
       const updateMember = (
         index: number,
         patch: Partial<(typeof members)[number]>,
@@ -1215,6 +1228,7 @@ function LeafEditor({
               >
                 <option value="showcase">Showcase list</option>
                 <option value="memberCards">Editorial member cards</option>
+                <option value="marqueeCards">Marquee team cards</option>
               </Select>
             </Field>
             {isEditorial ? (
@@ -1231,6 +1245,16 @@ function LeafEditor({
                   <option value="left">Image left</option>
                   <option value="right">Image right</option>
                 </Select>
+              </Field>
+            ) : isMarquee ? (
+              <Field label="Marquee speed">
+                <Input
+                  type="number"
+                  min={12}
+                  max={80}
+                  value={block.marqueeSpeed ?? 32}
+                  onChange={(e) => set({ marqueeSpeed: Number(e.target.value) })}
+                />
               </Field>
             ) : (
               <Field label="Portrait treatment">
@@ -1255,6 +1279,17 @@ function LeafEditor({
                   Show card arrow
                 </label>
               </Field>
+            ) : isMarquee ? (
+              <Field label="Marquee behavior">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.marqueePauseOnHover ?? true}
+                    onChange={(e) => set({ marqueePauseOnHover: e.target.checked })}
+                  />
+                  Pause on hover
+                </label>
+              </Field>
             ) : (
               <Field label="Social links">
                 <label className="flex h-9 items-center gap-2 text-sm">
@@ -1267,7 +1302,19 @@ function LeafEditor({
                 </label>
               </Field>
             )}
-            {!isEditorial && (
+            {isMarquee && (
+              <Field label="Portrait treatment">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.grayscale ?? true}
+                    onChange={(e) => set({ grayscale: e.target.checked })}
+                  />
+                  Grayscale until hover
+                </label>
+              </Field>
+            )}
+            {isShowcase && (
               <Field label="Editorial cards">
                 <p className="flex h-9 items-center text-xs text-[hsl(var(--muted-foreground))]">
                   Switch layout to edit bio text.
@@ -1275,6 +1322,78 @@ function LeafEditor({
               </Field>
             )}
           </div>
+          {isMarquee && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Field label="Intro text">
+                    <Textarea
+                      rows={2}
+                      value={block.marqueeSubtitle ?? ""}
+                      onChange={(e) => set({ marqueeSubtitle: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Decorative marks">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.marqueeShowDecorations ?? true}
+                      onChange={(e) =>
+                        set({ marqueeShowDecorations: e.target.checked })
+                      }
+                    />
+                    Show reference scribbles
+                  </label>
+                </Field>
+                <Field label="Bottom quote">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.marqueeShowQuote ?? true}
+                      onChange={(e) => set({ marqueeShowQuote: e.target.checked })}
+                    />
+                    Show quote section
+                  </label>
+                </Field>
+              </div>
+              {block.marqueeShowQuote !== false && (
+                <div className="grid gap-3 lg:grid-cols-[13rem_1fr]">
+                  <Field label="Quote avatar">
+                    <PhotoPicker
+                      photos={photos}
+                      value={block.marqueeQuotePhotoId ?? null}
+                      onChange={(photoId) => set({ marqueeQuotePhotoId: photoId })}
+                      containerClassName="max-h-48"
+                    />
+                  </Field>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <Field label="Quote text">
+                        <Textarea
+                          rows={3}
+                          value={block.marqueeQuote ?? ""}
+                          onChange={(e) => set({ marqueeQuote: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Quote author">
+                      <Input
+                        value={block.marqueeQuoteAuthor ?? ""}
+                        onChange={(e) => set({ marqueeQuoteAuthor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Quote role">
+                      <Input
+                        value={block.marqueeQuoteRole ?? ""}
+                        onChange={(e) => set({ marqueeQuoteRole: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-3">
             {members.map((member, index) => (
               <div key={member.id} className="rounded-lg border p-3">
