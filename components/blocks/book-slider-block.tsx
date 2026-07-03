@@ -113,6 +113,108 @@ function PageLink({ href, children }: { href: string; children: ReactNode }) {
   return <Link href={href}>{children}</Link>;
 }
 
+function BookPageContent({
+  page,
+  index,
+  photo,
+}: {
+  page: BookSliderPage;
+  index: number;
+  photo?: PhotoDTO;
+}) {
+  const linkLabel = page.linkLabel?.trim();
+  const linkHref = page.linkHref?.trim();
+  const fullImage = (page.imageMode ?? "editorial") === "full";
+
+  if (fullImage) {
+    return (
+      <div className="relative z-10 h-full min-h-[inherit] overflow-hidden text-white">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 82vw, 420px"
+            priority={index < 2}
+            className="absolute inset-0 h-full w-full"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-sm opacity-80">
+            Page image
+          </div>
+        )}
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/82 via-black/28 to-black/8" />
+        <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:p-8">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
+            {String(index + 1).padStart(2, "0")}
+          </p>
+          <h3 className="max-w-[18rem] text-balance font-serif text-3xl font-semibold leading-[0.98] text-white drop-shadow sm:text-4xl">
+            {page.headline || `Page ${index + 1}`}
+          </h3>
+          {page.subhead && (
+            <p className="mt-3 max-w-[19rem] text-sm leading-relaxed text-white/82">
+              {page.subhead}
+            </p>
+          )}
+          {page.caption && (
+            <p className="mt-4 line-clamp-3 max-w-[19rem] text-xs leading-relaxed text-white/68">
+              {page.caption}
+            </p>
+          )}
+          {linkLabel && linkHref && (
+            <PageLink href={linkHref}>
+              <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white backdrop-blur transition hover:bg-white/18">
+                {linkLabel}
+              </span>
+            </PageLink>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative z-10 flex h-full min-h-[inherit] flex-col">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 82vw, 360px"
+            priority={index < 2}
+            className="h-full w-full"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-black/10 text-sm opacity-70">
+            Page image
+          </div>
+        )}
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+      </div>
+      <div className="relative shrink-0 px-6 py-6 sm:px-7 sm:py-7">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] opacity-55">
+          {String(index + 1).padStart(2, "0")}
+        </p>
+        <h3 className="text-balance font-serif text-2xl font-semibold leading-[1.02] sm:text-3xl">
+          {page.headline || `Page ${index + 1}`}
+        </h3>
+        {page.subhead && (
+          <p className="mt-3 text-sm leading-relaxed opacity-78">{page.subhead}</p>
+        )}
+        {page.caption && (
+          <p className="mt-4 line-clamp-3 text-xs leading-relaxed opacity-62">
+            {page.caption}
+          </p>
+        )}
+        {linkLabel && linkHref && (
+          <PageLink href={linkHref}>
+            <span className="mt-5 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition hover:bg-black/5">
+              {linkLabel}
+            </span>
+          </PageLink>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const BookPage = forwardRef<
   HTMLDivElement,
   {
@@ -122,58 +224,17 @@ const BookPage = forwardRef<
     block: BookSliderBlockData;
   }
 >(function BookPage({ page, index, photo, block }, ref) {
-  const linkLabel = page.linkLabel?.trim();
-  const linkHref = page.linkHref?.trim();
-
   return (
     <div
       ref={ref}
       className={cn(
         "book-slider-page relative overflow-hidden",
+        (page.imageMode ?? "editorial") === "full" && "book-slider-page--full",
         block.paperTexture !== false && "book-slider-page--texture",
       )}
       data-density={block.pageStyle === "hard" ? "hard" : undefined}
     >
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          {photo ? (
-            <ResponsiveImage
-              photo={photo}
-              sizes="(max-width: 767px) 82vw, 360px"
-              priority={index < 2}
-              className="h-full w-full"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-black/10 text-sm opacity-70">
-              Page image
-            </div>
-          )}
-          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-        </div>
-        <div className="relative shrink-0 px-6 py-6 sm:px-7 sm:py-7">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] opacity-55">
-            {String(index + 1).padStart(2, "0")}
-          </p>
-          <h3 className="text-balance font-serif text-2xl font-semibold leading-[1.02] sm:text-3xl">
-            {page.headline || `Page ${index + 1}`}
-          </h3>
-          {page.subhead && (
-            <p className="mt-3 text-sm leading-relaxed opacity-78">{page.subhead}</p>
-          )}
-          {page.caption && (
-            <p className="mt-4 line-clamp-3 text-xs leading-relaxed opacity-62">
-              {page.caption}
-            </p>
-          )}
-          {linkLabel && linkHref && (
-            <PageLink href={linkHref}>
-              <span className="mt-5 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition hover:bg-black/5">
-                {linkLabel}
-              </span>
-            </PageLink>
-          )}
-        </div>
-      </div>
+      <BookPageContent page={page} index={index} photo={photo} />
     </div>
   );
 });
@@ -242,42 +303,15 @@ function StaticBookFallback({
           key={page.id}
           className={cn(
             "book-slider-page relative min-h-[30rem] overflow-hidden rounded-[1.25rem] shadow-xl",
+            (page.imageMode ?? "editorial") === "full" && "book-slider-page--full",
             block.paperTexture !== false && "book-slider-page--texture",
           )}
         >
-          <div className="relative z-10 flex h-full min-h-[30rem] flex-col">
-            <div className="relative min-h-0 flex-1 overflow-hidden">
-              {selectedPhoto(page.photoId, photoMap) ? (
-                <ResponsiveImage
-                  photo={selectedPhoto(page.photoId, photoMap)!}
-                  sizes="(max-width: 767px) 82vw, 360px"
-                  priority={index < 2}
-                  className="h-full w-full"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-black/10 text-sm opacity-70">
-                  Page image
-                </div>
-              )}
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-            </div>
-            <div className="relative shrink-0 px-6 py-6 sm:px-7 sm:py-7">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] opacity-55">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h3 className="text-balance font-serif text-2xl font-semibold leading-[1.02] sm:text-3xl">
-                {page.headline || `Page ${index + 1}`}
-              </h3>
-              {page.subhead && (
-                <p className="mt-3 text-sm leading-relaxed opacity-78">{page.subhead}</p>
-              )}
-              {page.caption && (
-                <p className="mt-4 line-clamp-3 text-xs leading-relaxed opacity-62">
-                  {page.caption}
-                </p>
-              )}
-            </div>
-          </div>
+          <BookPageContent
+            page={page}
+            index={index}
+            photo={selectedPhoto(page.photoId, photoMap)}
+          />
         </div>
       ))}
     </div>

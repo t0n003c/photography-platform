@@ -106,6 +106,7 @@ function makeBookSliderPage(index = 0) {
   return {
     id: newBlockId(),
     photoId: null,
+    imageMode: "editorial" as const,
     headline: index === 0 ? "Opening frame" : `Story page ${index + 1}`,
     subhead:
       index === 0
@@ -2848,15 +2849,35 @@ function LeafEditor({
           <div className="space-y-3 rounded-lg border p-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-medium">Book pages</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => set({ pages: [...pages, makeBookSliderPage(pages.length)] })}
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add page
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set({ pages: [...pages, makeBookSliderPage(pages.length)] })}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add page
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    set({
+                      pages: [
+                        ...pages,
+                        ...Array.from({ length: 3 }, (_, addIndex) =>
+                          makeBookSliderPage(pages.length + addIndex),
+                        ),
+                      ],
+                    })
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add 3 pages
+                </Button>
+              </div>
             </div>
             {pages.length === 0 ? (
               <p className="rounded-md border border-dashed p-4 text-sm text-[hsl(var(--muted-foreground))]">
@@ -2914,6 +2935,19 @@ function LeafEditor({
                       />
                     </Field>
                     <div className="grid gap-2 sm:grid-cols-2">
+                      <Field label="Image layout">
+                        <Select
+                          value={page.imageMode ?? "editorial"}
+                          onChange={(e) =>
+                            updatePage(index, {
+                              imageMode: e.target.value as typeof page.imageMode,
+                            })
+                          }
+                        >
+                          <option value="editorial">Editorial split</option>
+                          <option value="full">Full-page image</option>
+                        </Select>
+                      </Field>
                       <Field label="Headline">
                         <Input
                           value={page.headline ?? ""}

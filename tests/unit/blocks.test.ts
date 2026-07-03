@@ -194,6 +194,7 @@ describe("page builder blocks", () => {
           {
             id: "page-1",
             photoId: "page-photo-1",
+            imageMode: "full",
             headline: "Arrival",
             subhead: "A calm beginning.",
             caption: "Short page caption.",
@@ -226,6 +227,7 @@ describe("page builder blocks", () => {
         {
           id: "page-1",
           photoId: "page-photo-1",
+          imageMode: "full",
           headline: "Arrival",
           linkHref: "/galleries",
         },

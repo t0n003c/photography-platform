@@ -1096,6 +1096,10 @@ is gitignored):
   realistic click/drag page-turning book, lets the library switch to portrait mode on
   mobile, and renders the same content as static cards for SSR/reduced-motion fallback.
   `collectPhotoIds` preloads the cover and page photos.
+  Book slider follow-up: the editor exposes both "Add page" and "Add 3 pages" controls,
+  and each book page now stores `imageMode` (`editorial` split or `full` image). Full
+  image pages render the photo edge-to-edge with a dark text gradient/overlay in both
+  the pageflip renderer and the reduced-motion static fallback.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

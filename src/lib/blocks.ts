@@ -109,6 +109,7 @@ const FeatureCarouselBlock = z.object({
 const BookSliderPage = z.object({
   id,
   photoId: z.string().nullable().default(null),
+  imageMode: z.enum(["editorial", "full"]).default("editorial"),
   headline: z.string().default("Page headline"),
   subhead: z.string().default("A short supporting line for this page."),
   caption: z.string().default(""),
