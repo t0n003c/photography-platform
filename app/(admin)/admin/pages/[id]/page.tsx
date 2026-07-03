@@ -87,7 +87,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "gallery", "banner",
-  "quote", "testimonials", "team", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
 
@@ -149,6 +149,86 @@ function makeTeamMember(index = 0) {
   };
 }
 
+function makePricingFeature(text = "Feature", tooltip = "") {
+  return {
+    id: newBlockId(),
+    text,
+    tooltip,
+  };
+}
+
+function makePricingPlan(index = 0) {
+  const plans = [
+    {
+      name: "Basic",
+      info: "For most individuals",
+      monthlyPrice: 7,
+      yearlyPrice: 74,
+      highlighted: false,
+      ctaLabel: "Start Your Free Trial",
+      ctaHref: "#",
+      features: [
+        makePricingFeature("Up to 3 Blog posts"),
+        makePricingFeature("Up to 3 Transcriptions"),
+        makePricingFeature("Up to 3 Posts stored"),
+        makePricingFeature("Markdown support", "Export content in Markdown format"),
+        makePricingFeature("Community support", "Get answers to your questions"),
+        makePricingFeature("AI powered suggestions", "Get up to 100 AI powered suggestions"),
+      ],
+    },
+    {
+      name: "Pro",
+      info: "For small businesses",
+      monthlyPrice: 17.99,
+      yearlyPrice: 190,
+      highlighted: true,
+      ctaLabel: "Get started",
+      ctaHref: "#",
+      features: [
+        makePricingFeature("Up to 500 Blog Posts"),
+        makePricingFeature("Up to 500 Transcriptions"),
+        makePricingFeature("Up to 500 Posts stored"),
+        makePricingFeature("Unlimited Markdown support", "Export content in Markdown format"),
+        makePricingFeature("SEO optimization tools"),
+        makePricingFeature("Priority support", "Get 24/7 chat support"),
+        makePricingFeature("AI powered suggestions", "Get up to 500 AI powered suggestions"),
+      ],
+    },
+    {
+      name: "Business",
+      info: "For large organizations",
+      monthlyPrice: 69.99,
+      yearlyPrice: 528,
+      highlighted: false,
+      ctaLabel: "Contact team",
+      ctaHref: "#",
+      features: [
+        makePricingFeature("Unlimited Blog Posts"),
+        makePricingFeature("Unlimited Transcriptions"),
+        makePricingFeature("Unlimited Posts stored"),
+        makePricingFeature("Unlimited Markdown support"),
+        makePricingFeature("SEO optimization tools", "Advanced SEO optimization tools"),
+        makePricingFeature("Priority support", "Get 24/7 chat support"),
+        makePricingFeature("AI powered suggestions", "Get up to 500 AI powered suggestions"),
+      ],
+    },
+  ];
+  const plan = plans[index] ?? {
+    name: "New plan",
+    info: "For new clients",
+    monthlyPrice: 29,
+    yearlyPrice: 299,
+    highlighted: false,
+    ctaLabel: "Get started",
+    ctaHref: "#",
+    features: [makePricingFeature("Feature")],
+  };
+  return {
+    id: newBlockId(),
+    ...plan,
+  };
+}
+
 function makeDividerBlock(id: string): Extract<Block, { type: "divider" }> {
   return {
     id,
@@ -181,7 +261,14 @@ function makeBlock(type: BlockType): Block {
     case "testimonials": return {
       id,
       type,
+      layout: "slider",
       label: "Reviews",
+      title: "See what all the talk is about!",
+      subtitle: "Transformative client experience from all around the globe",
+      gridPanel: true,
+      gridColumns: "3",
+      glassShowcaseBackground: true,
+      glassShowcaseBackgroundColor: "#0d1324",
       autoplay: false,
       showThumbnails: true,
       items: [
@@ -236,6 +323,18 @@ function makeBlock(type: BlockType): Block {
       grayscale: true,
       showSocials: true,
       members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
+    };
+    case "pricing": return {
+      id,
+      type,
+      heading: "Plans that Scale with You",
+      description: "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
+      currency: "$",
+      defaultFrequency: "monthly",
+      showBillingToggle: true,
+      theme: "auto",
+      showHighlightEffect: true,
+      plans: [makePricingPlan(0), makePricingPlan(1), makePricingPlan(2)],
     };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
@@ -632,6 +731,8 @@ function blockSummary(block: Block): string {
       return `${block.items.length} reviews`;
     case "team":
       return `${block.members.length} members`;
+    case "pricing":
+      return `${block.plans.length} plans`;
     case "cta":
       return block.headline || block.buttonLabel;
     case "contactForm":
@@ -1069,6 +1170,7 @@ function LeafEditor({
       );
     case "testimonials": {
       const items = block.items ?? [];
+      const testimonialLayout = block.layout ?? "slider";
       const updateItem = (
         index: number,
         patch: Partial<(typeof items)[number]>,
@@ -1082,32 +1184,136 @@ function LeafEditor({
       return (
         <div className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-3">
-            <Field label="Side label">
-              <Input
-                value={block.label}
-                onChange={(e) => set({ label: e.target.value })}
-              />
+            <Field label="Layout">
+              <Select
+                value={testimonialLayout}
+                onChange={(e) =>
+                  set({ layout: e.target.value as typeof block.layout })
+                }
+              >
+                <option value="slider">Slider</option>
+                <option value="portrait-grid">Portrait cards grid</option>
+                <option value="retro-carousel">Retro carousel</option>
+                <option value="glass-stack">Glass card stack</option>
+              </Select>
             </Field>
-            <Field label="Thumbnail rail">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showThumbnails ?? true}
-                  onChange={(e) => set({ showThumbnails: e.target.checked })}
-                />
-                Show thumbnails
-              </label>
-            </Field>
-            <Field label="Auto-roll">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.autoplay ?? false}
-                  onChange={(e) => set({ autoplay: e.target.checked })}
-                />
-                Advance slides
-              </label>
-            </Field>
+            {testimonialLayout === "slider" ? (
+              <>
+                <Field label="Side label">
+                  <Input
+                    value={block.label}
+                    onChange={(e) => set({ label: e.target.value })}
+                  />
+                </Field>
+                <Field label="Thumbnail rail">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showThumbnails ?? true}
+                      onChange={(e) => set({ showThumbnails: e.target.checked })}
+                    />
+                    Show thumbnails
+                  </label>
+                </Field>
+                <Field label="Auto-roll">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.autoplay ?? false}
+                      onChange={(e) => set({ autoplay: e.target.checked })}
+                    />
+                    Advance slides
+                  </label>
+                </Field>
+              </>
+            ) : testimonialLayout === "portrait-grid" ? (
+              <>
+                <Field label="Section title">
+                  <Input
+                    value={block.title ?? ""}
+                    onChange={(e) => set({ title: e.target.value })}
+                  />
+                </Field>
+                <Field label="Dark panel">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.gridPanel ?? true}
+                      onChange={(e) => set({ gridPanel: e.target.checked })}
+                    />
+                    Rounded showcase
+                  </label>
+                </Field>
+                <Field label="Columns">
+                  <Select
+                    value={block.gridColumns ?? "3"}
+                    onChange={(e) =>
+                      set({ gridColumns: e.target.value as typeof block.gridColumns })
+                    }
+                  >
+                    <option value="3">3 columns</option>
+                    <option value="2">2 columns</option>
+                  </Select>
+                </Field>
+                <div className="sm:col-span-3">
+                  <Field label="Subtitle">
+                    <Input
+                      value={block.subtitle ?? ""}
+                      onChange={(e) => set({ subtitle: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </>
+            ) : testimonialLayout === "glass-stack" ? (
+              <>
+                <Field label="Showcase background">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.glassShowcaseBackground ?? true}
+                      onChange={(e) =>
+                        set({ glassShowcaseBackground: e.target.checked })
+                      }
+                    />
+                    Use background
+                  </label>
+                </Field>
+                {(block.glassShowcaseBackground ?? true) && (
+                  <Field label="Background color">
+                    <Input
+                      type="color"
+                      value={block.glassShowcaseBackgroundColor ?? "#0d1324"}
+                      onChange={(e) =>
+                        set({ glassShowcaseBackgroundColor: e.target.value })
+                      }
+                    />
+                  </Field>
+                )}
+                <Field label="Auto-roll">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.autoplay ?? false}
+                      onChange={(e) => set({ autoplay: e.target.checked })}
+                    />
+                    Advance slides
+                  </label>
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Auto-roll">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.autoplay ?? false}
+                      onChange={(e) => set({ autoplay: e.target.checked })}
+                    />
+                    Advance slides
+                  </label>
+                </Field>
+              </>
+            )}
           </div>
           <div className="space-y-3">
             {items.map((item, index) => (
@@ -1667,6 +1873,345 @@ function LeafEditor({
           >
             <Plus className="h-4 w-4" />
             Add member
+          </Button>
+        </div>
+      );
+    }
+    case "pricing": {
+      const plans = block.plans ?? [];
+      const updatePlan = (
+        index: number,
+        patch: Partial<(typeof plans)[number]>,
+      ) => {
+        set({
+          plans: plans.map((plan, i) =>
+            i === index ? { ...plan, ...patch } : plan,
+          ),
+        });
+      };
+      const updateFeature = (
+        planIndex: number,
+        featureIndex: number,
+        patch: Partial<(typeof plans)[number]["features"][number]>,
+      ) => {
+        const plan = plans[planIndex];
+        if (!plan) return;
+        updatePlan(planIndex, {
+          features: plan.features.map((feature, i) =>
+            i === featureIndex ? { ...feature, ...patch } : feature,
+          ),
+        });
+      };
+      const setPlanPrice = (
+        index: number,
+        key: "monthlyPrice" | "yearlyPrice",
+        value: string,
+      ) => {
+        const next = Number(value);
+        updatePlan(index, { [key]: Number.isFinite(next) ? next : 0 });
+      };
+
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Field label="Heading">
+              <Input
+                value={block.heading ?? ""}
+                onChange={(e) => set({ heading: e.target.value })}
+              />
+            </Field>
+            <Field label="Currency">
+              <Input
+                value={block.currency ?? "$"}
+                onChange={(e) => set({ currency: e.target.value })}
+              />
+            </Field>
+            <Field label="Theme">
+              <Select
+                value={block.theme ?? "auto"}
+                onChange={(e) => set({ theme: e.target.value as typeof block.theme })}
+              >
+                <option value="auto">Auto</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </Select>
+            </Field>
+            <div className="sm:col-span-3">
+              <Field label="Description">
+                <Textarea
+                  rows={2}
+                  value={block.description ?? ""}
+                  onChange={(e) => set({ description: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Billing toggle">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showBillingToggle ?? true}
+                  onChange={(e) => set({ showBillingToggle: e.target.checked })}
+                />
+                Show monthly/yearly
+              </label>
+            </Field>
+            <Field label="Default period">
+              <Select
+                value={block.defaultFrequency ?? "monthly"}
+                onChange={(e) =>
+                  set({
+                    defaultFrequency: e.target
+                      .value as typeof block.defaultFrequency,
+                  })
+                }
+              >
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </Select>
+            </Field>
+            <Field label="Popular effect">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showHighlightEffect ?? true}
+                  onChange={(e) => set({ showHighlightEffect: e.target.checked })}
+                />
+                Animated border
+              </label>
+            </Field>
+          </div>
+
+          <div className="space-y-3">
+            {plans.map((plan, planIndex) => (
+              <div key={plan.id} className="rounded-lg border p-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                    Plan {planIndex + 1}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={planIndex === 0}
+                      onClick={() =>
+                        set({ plans: swapAt(plans, planIndex, planIndex - 1) })
+                      }
+                      aria-label="Move plan up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={planIndex === plans.length - 1}
+                      onClick={() =>
+                        set({ plans: swapAt(plans, planIndex, planIndex + 1) })
+                      }
+                      aria-label="Move plan down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({ plans: plans.filter((_, i) => i !== planIndex) })
+                      }
+                      aria-label="Remove plan"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <Field label="Name">
+                    <Input
+                      value={plan.name}
+                      onChange={(e) => updatePlan(planIndex, { name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Subtitle">
+                    <Input
+                      value={plan.info}
+                      onChange={(e) => updatePlan(planIndex, { info: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Highlighted">
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={plan.highlighted ?? false}
+                        onChange={(e) =>
+                          updatePlan(planIndex, { highlighted: e.target.checked })
+                        }
+                      />
+                      Popular plan
+                    </label>
+                  </Field>
+                  <Field label="Monthly price">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={plan.monthlyPrice}
+                      onChange={(e) =>
+                        setPlanPrice(planIndex, "monthlyPrice", e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Yearly price">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={plan.yearlyPrice}
+                      onChange={(e) =>
+                        setPlanPrice(planIndex, "yearlyPrice", e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Button label">
+                    <Input
+                      value={plan.ctaLabel}
+                      onChange={(e) =>
+                        updatePlan(planIndex, { ctaLabel: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <Field label="Button link">
+                      <Input
+                        value={plan.ctaHref}
+                        onChange={(e) =>
+                          updatePlan(planIndex, { ctaHref: e.target.value })
+                        }
+                      />
+                    </Field>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2 rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                      Features
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        updatePlan(planIndex, {
+                          features: [
+                            ...plan.features,
+                            makePricingFeature(`Feature ${plan.features.length + 1}`),
+                          ],
+                        })
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add feature
+                    </Button>
+                  </div>
+                  {plan.features.map((feature, featureIndex) => (
+                    <div
+                      key={feature.id}
+                      className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]"
+                    >
+                      <Field label="Feature">
+                        <Input
+                          value={feature.text}
+                          onChange={(e) =>
+                            updateFeature(planIndex, featureIndex, {
+                              text: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field label="Tooltip">
+                        <Input
+                          value={feature.tooltip ?? ""}
+                          onChange={(e) =>
+                            updateFeature(planIndex, featureIndex, {
+                              tooltip: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                      <div className="flex items-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={featureIndex === 0}
+                          onClick={() =>
+                            updatePlan(planIndex, {
+                              features: swapAt(
+                                plan.features,
+                                featureIndex,
+                                featureIndex - 1,
+                              ),
+                            })
+                          }
+                          aria-label="Move feature up"
+                          className="h-9 w-9"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={featureIndex === plan.features.length - 1}
+                          onClick={() =>
+                            updatePlan(planIndex, {
+                              features: swapAt(
+                                plan.features,
+                                featureIndex,
+                                featureIndex + 1,
+                              ),
+                            })
+                          }
+                          aria-label="Move feature down"
+                          className="h-9 w-9"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            updatePlan(planIndex, {
+                              features: plan.features.filter(
+                                (_, i) => i !== featureIndex,
+                              ),
+                            })
+                          }
+                          aria-label="Remove feature"
+                          className="h-9 w-9"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => set({ plans: [...plans, makePricingPlan(plans.length)] })}
+          >
+            <Plus className="h-4 w-4" />
+            Add plan
           </Button>
         </div>
       );

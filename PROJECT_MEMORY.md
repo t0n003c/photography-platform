@@ -1021,6 +1021,51 @@ is gitignored):
   `components/blocks/testimonial-slider-block.tsx` renders the reference-style desktop layout:
   counter + vertical label rail, portrait, quote/name/company, thumbnail rail, and circular
   previous/next controls with reduced-motion-safe CSS transitions.
+  Follow-up: Testimonials now also has a `portrait-grid` layout based on
+  21st.dev/ravikatiyar's Testimonials reference. The same block stores
+  `title`, `subtitle`, `gridPanel`, and `gridColumns` (2 or 3 desktop columns);
+  the renderer shows a centered title/subtitle and a responsive portrait-card grid with a
+  count-aware rounded panel width so the 2-column version form-fits its cards, plus image
+  gradient overlays, lucide quote icon, quote/name/affiliation text inside each
+  card, CSS stagger-in motion, and a reduced-motion static fallback. Latest tweak:
+  portrait-grid card gutters are slightly larger while the rounded showcase panel
+  uses tighter left/right padding so 2-column cards sit 20px from the panel edges
+  on desktop.
+  Follow-up: Testimonials now has a third layout, `retro-carousel`, based on
+  `21st.dev/@ishamsu/components/retro-testimonial`. It reuses the same testimonial
+  items but renders a vintage paper-card carousel with grayscale circular portraits,
+  large centered quote text, italic lowercase name/affiliation treatment, bottom-right
+  circular previous/next controls, optional auto-roll, light/dark colors, responsive
+  single-card mobile behavior, and reduced-motion-safe CSS animation.
+  Latest tweak: the retro cards now self-host the same Unsplash paper/stain texture used
+  by the reference demo (`public/textures/retro-testimonial-paper.webp`) and layer it over
+  the cream card at low opacity, with the earlier CSS stains retained only as subtle theme
+  blending. This is necessary because the reference uses a real background image, not pure
+  CSS gradients. The retro portrait ring was then reduced to 2px while keeping the
+  reference source color (`rgba(59,59,59,0.6)`) instead of whitening it; dark mode uses
+  a softened warm equivalent.
+  Follow-up: Testimonials now also has a `glass-stack` layout based on
+  `21st.dev/@vaib215/components/testimonial-cards`. It reuses the same testimonial
+  items and renders a dark glassmorphism card stack with front/middle/back depth,
+  rounded circular portraits, italic quote text, blue author line, tap/click/keyboard
+  shuffling, horizontal drag gestures for the front card, optional auto-roll, mobile
+  sizing, light/dark-safe panel colors, and a reduced-motion static fallback. The
+  layout now also exposes `glassShowcaseBackground` and `glassShowcaseBackgroundColor`
+  so the rounded showcase panel can be disabled or recolored without affecting the
+  portrait-grid panel setting.
+  Page block follow-up: Pages now include a `pricing` block labeled "Price", based on
+  `21st.dev/@efferd/components/pricing` / Efferd's pricing section source. The block
+  stores editable heading/description, currency, default billing period, monthly/yearly
+  toggle visibility, theme (`auto`/`dark`/`light`), highlighted-plan border effect toggle,
+  and ordered pricing plans. Each plan stores name, subtitle, monthly/yearly prices,
+  highlighted/popular state, CTA label/link, and ordered feature rows with optional tooltip
+  text. `components/blocks/pricing-block.tsx` recreates the reference layout with a
+  centered heading, animated billing pill, three-card responsive pricing grid, popular
+  badge, yearly discount badge, tooltip helper icons, CTA buttons, CSS-only border trail
+  animation, mobile stacking, reduced-motion fallback, and light/dark mode support.
+  Follow-up fix: the pricing block's `auto` theme now reads the active `next-themes`
+  resolved/forced theme before falling back to the OS preference, so forced Light
+  preview/page mode stays light even on a dark-system machine.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

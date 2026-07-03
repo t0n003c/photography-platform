@@ -98,6 +98,11 @@ describe("page builder blocks", () => {
       {
         id: "reviews",
         type: "testimonials",
+        layout: "portrait-grid",
+        title: "See what all the talk is about!",
+        subtitle: "Transformative client experience.",
+        gridPanel: false,
+        gridColumns: "2",
         items: [
           {
             id: "review-1",
@@ -114,11 +119,146 @@ describe("page builder blocks", () => {
     expect(blocks[0]).toMatchObject({
       id: "reviews",
       type: "testimonials",
+      layout: "portrait-grid",
       label: "Reviews",
+      title: "See what all the talk is about!",
+      subtitle: "Transformative client experience.",
+      gridPanel: false,
+      gridColumns: "2",
       autoplay: false,
       showThumbnails: true,
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-1"]);
+  });
+
+  it("keeps retro testimonial carousel blocks", () => {
+    const blocks = parseBlocks([
+      {
+        id: "retro-reviews",
+        type: "testimonials",
+        layout: "retro-carousel",
+        autoplay: true,
+        items: [
+          {
+            id: "review-1",
+            name: "Michael Rodriguez",
+            affiliation: "Founder, Techstart",
+            quote: "As a startup founder, I needed a quick way to build a professional-looking product.",
+            photoId: "photo-retro-1",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "retro-reviews",
+      type: "testimonials",
+      layout: "retro-carousel",
+      autoplay: true,
+      showThumbnails: true,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-retro-1"]);
+  });
+
+  it("keeps glass testimonial stack blocks", () => {
+    const blocks = parseBlocks([
+      {
+        id: "glass-reviews",
+        type: "testimonials",
+        layout: "glass-stack",
+        glassShowcaseBackground: false,
+        glassShowcaseBackgroundColor: "#1e293b",
+        autoplay: true,
+        items: [
+          {
+            id: "review-1",
+            name: "Jenn F.",
+            affiliation: "Marketing Director @ Square",
+            quote: "Our team shipped a campaign-ready site in a single week.",
+            photoId: "photo-glass-1",
+          },
+          {
+            id: "review-2",
+            name: "Adrian Y.",
+            affiliation: "Product Marketing @ Meta",
+            quote: "The cards felt polished without getting in the way of the message.",
+            photoId: "photo-glass-2",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "glass-reviews",
+      type: "testimonials",
+      layout: "glass-stack",
+      glassShowcaseBackground: false,
+      glassShowcaseBackgroundColor: "#1e293b",
+      autoplay: true,
+      showThumbnails: true,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-glass-1", "photo-glass-2"]);
+  });
+
+  it("keeps pricing blocks with plans and feature tooltips", () => {
+    const blocks = parseBlocks([
+      {
+        id: "price",
+        type: "pricing",
+        heading: "Plans that Scale with You",
+        description: "Simple pricing for every client.",
+        currency: "$",
+        defaultFrequency: "yearly",
+        showBillingToggle: true,
+        theme: "dark",
+        showHighlightEffect: true,
+        plans: [
+          {
+            id: "pro",
+            name: "Pro",
+            info: "For small businesses",
+            monthlyPrice: 17.99,
+            yearlyPrice: 190,
+            highlighted: true,
+            ctaLabel: "Get started",
+            ctaHref: "/contact",
+            features: [
+              {
+                id: "support",
+                text: "Priority support",
+                tooltip: "Get 24/7 chat support",
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "price",
+      type: "pricing",
+      heading: "Plans that Scale with You",
+      defaultFrequency: "yearly",
+      theme: "dark",
+      plans: [
+        {
+          id: "pro",
+          highlighted: true,
+          monthlyPrice: 17.99,
+          yearlyPrice: 190,
+          features: [
+            {
+              id: "support",
+              tooltip: "Get 24/7 chat support",
+            },
+          ],
+        },
+      ],
+    });
+    expect(collectPhotoIds(blocks)).toEqual([]);
   });
 
   it("keeps team blocks and collects member portraits", () => {

@@ -322,13 +322,227 @@ html.js .pr-root.is-enhanced {
   display: none;
 }
 
+@keyframes testimonial-grid-card-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.testimonial-grid-card {
+  animation: testimonial-grid-card-in 520ms var(--testimonial-card-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes testimonial-retro-card-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--retro-enter-x, 0px), 28px, 0) rotate(var(--retro-enter-rotate, 0deg)) scale(0.96);
+  }
+  100% {
+    opacity: var(--retro-opacity, 1);
+    transform: translate3d(var(--retro-x, 0px), var(--retro-y, 0px), 0) rotate(var(--retro-rotate, 0deg)) scale(var(--retro-scale, 1));
+  }
+}
+
+.testimonial-retro-card {
+  opacity: var(--retro-opacity, 1);
+  transform: translate3d(var(--retro-x, 0px), var(--retro-y, 0px), 0) rotate(var(--retro-rotate, 0deg)) scale(var(--retro-scale, 1));
+  animation: testimonial-retro-card-in 620ms var(--retro-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    opacity 420ms ease,
+    box-shadow 420ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.testimonial-retro-card:hover {
+  box-shadow: 0 22px 58px rgb(82 67 47 / 0.22);
+}
+
+.testimonial-retro-paper {
+  overflow: hidden;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(246 236 214 / 0.08)),
+    url("/textures/retro-testimonial-paper.webp");
+  background-position: left top, left center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: sepia(0.1) saturate(0.9) contrast(1.05);
+  mix-blend-mode: multiply;
+  opacity: 0.38;
+}
+
+.testimonial-retro-paper::before,
+.testimonial-retro-paper::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.testimonial-retro-paper::before {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(130 86 39 / 0.18), transparent 20%),
+    linear-gradient(180deg, rgb(112 78 42 / 0.12), transparent 19%);
+  opacity: 0.5;
+}
+
+.testimonial-retro-paper::after {
+  inset: 0;
+  background:
+    radial-gradient(circle at 28% 16%, rgb(255 255 255 / 0.2) 0 8%, transparent 20%),
+    repeating-radial-gradient(circle at 50% 50%, rgb(80 64 42 / 0.012) 0 1px, transparent 1px 4px);
+  opacity: 0.46;
+}
+
+.dark .testimonial-retro-paper {
+  filter: sepia(0.32) saturate(0.7) contrast(0.98) brightness(0.72);
+  mix-blend-mode: screen;
+  opacity: 0.2;
+}
+
+.dark .testimonial-retro-paper::before {
+  background:
+    linear-gradient(90deg, rgb(245 221 174 / 0.1), transparent 21%),
+    linear-gradient(180deg, rgb(245 221 174 / 0.08), transparent 20%);
+  opacity: 0.35;
+}
+
+.dark .testimonial-retro-paper::after {
+  background:
+    radial-gradient(circle at 28% 16%, rgb(255 238 198 / 0.08) 0 8%, transparent 20%),
+    repeating-radial-gradient(circle at 50% 50%, rgb(255 238 198 / 0.01) 0 1px, transparent 1px 4px);
+  opacity: 0.34;
+}
+
+.testimonial-retro-avatar {
+  border-color: rgb(59 59 59 / 0.6);
+}
+
+.dark .testimonial-retro-avatar {
+  border-color: rgb(218 207 184 / 0.34);
+}
+
+.testimonial-retro-avatar img {
+  filter: grayscale(1) sepia(0.18) contrast(0.96);
+}
+
+@keyframes testimonial-glass-card-in {
+  0% {
+    opacity: 0;
+    transform:
+      translate3d(calc(var(--glass-x, 0px) + var(--glass-drag-x, 0px) + var(--glass-enter-x, 0px)), calc(var(--glass-y, 0px) + 28px), 0)
+      rotate(calc(var(--glass-rotate, 0deg) - 3deg))
+      scale(calc(var(--glass-scale, 1) * 0.94));
+    filter: blur(12px);
+  }
+
+  100% {
+    opacity: var(--glass-opacity, 1);
+    transform:
+      translate3d(calc(var(--glass-x, 0px) + var(--glass-drag-x, 0px)), var(--glass-y, 0px), 0)
+      rotate(var(--glass-rotate, 0deg))
+      scale(var(--glass-scale, 1));
+    filter: blur(var(--glass-blur, 0px));
+  }
+}
+
+.testimonial-glass-card {
+  left: clamp(0.2rem, 6.5vw, 2.75rem);
+  top: 1.15rem;
+  opacity: var(--glass-opacity, 1);
+  transform:
+    translate3d(calc(var(--glass-x, 0px) + var(--glass-drag-x, 0px)), var(--glass-y, 0px), 0)
+    rotate(var(--glass-rotate, 0deg))
+    scale(var(--glass-scale, 1));
+  filter: blur(var(--glass-blur, 0px));
+  animation: testimonial-glass-card-in 680ms var(--glass-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    opacity 430ms ease,
+    filter 430ms ease,
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity, filter;
+}
+
+.testimonial-glass-card[data-slot="front"]:hover {
+  box-shadow: 0 34px 100px rgb(0 0 0 / 0.44);
+}
+
+/* Efferd-inspired pricing block: CSS replacements for the reference
+   framer-motion toggle pill and animated highlighted-card border trail. */
+.pricing-frequency-thumb {
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pricing-border-trail {
+  0% {
+    offset-distance: 0%;
+  }
+
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+.pricing-border-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+  mask-image:
+    linear-gradient(transparent, transparent),
+    linear-gradient(#000, #000);
+  z-index: 1;
+}
+
+.pricing-border-trail::before {
+  content: "";
+  position: absolute;
+  width: 6.25rem;
+  aspect-ratio: 1;
+  background: rgb(161 161 170);
+  offset-path: rect(0 auto auto 0 round 6.25rem);
+  animation: pricing-border-trail 5s linear infinite;
+  box-shadow:
+    0 0 60px 30px rgb(255 255 255 / 0.5),
+    0 0 100px 60px rgb(0 0 0 / 0.5),
+    0 0 140px 90px rgb(0 0 0 / 0.5);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .testimonial-slider-portrait,
-  .testimonial-slider-copy {
+  .testimonial-slider-copy,
+  .testimonial-grid-card,
+  .testimonial-retro-card,
+  .testimonial-glass-card {
     animation: none;
     opacity: 1;
-    transform: none;
     filter: none;
+  }
+
+  .testimonial-slider-portrait,
+  .testimonial-slider-copy,
+  .testimonial-grid-card {
+    transform: none;
+  }
+
+  .testimonial-retro-card,
+  .testimonial-glass-card {
+    transition: none;
+  }
+
+  .pricing-frequency-thumb {
+    transition: none;
+  }
+
+  .pricing-border-trail::before {
+    animation: none;
   }
 }
 

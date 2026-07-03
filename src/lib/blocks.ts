@@ -209,7 +209,16 @@ const TestimonialItem = z.object({
 const TestimonialsBlock = z.object({
   ...baseBlock,
   type: z.literal("testimonials"),
+  layout: z.enum(["slider", "portrait-grid", "retro-carousel", "glass-stack"]).default("slider"),
   label: z.string().default("Reviews"),
+  title: z.string().default("See what all the talk is about!"),
+  subtitle: z
+    .string()
+    .default("Transformative client experience from all around the globe"),
+  gridPanel: z.boolean().default(true),
+  gridColumns: z.enum(["2", "3"]).default("3"),
+  glassShowcaseBackground: z.boolean().default(true),
+  glassShowcaseBackgroundColor: z.string().default("#0d1324"),
   autoplay: z.boolean().default(false),
   showThumbnails: z.boolean().default(true),
   items: z.array(TestimonialItem).default([]),
@@ -276,6 +285,38 @@ const TeamBlock = z.object({
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),
+});
+const PricingFeature = z.object({
+  id: z.string().min(1),
+  text: z.string().default("Feature"),
+  tooltip: z.string().default(""),
+});
+const PricingPlan = z.object({
+  id: z.string().min(1),
+  name: z.string().default("Plan"),
+  info: z.string().default("For most clients"),
+  monthlyPrice: z.number().default(7),
+  yearlyPrice: z.number().default(74),
+  highlighted: z.boolean().default(false),
+  ctaLabel: z.string().default("Get started"),
+  ctaHref: z.string().default("#"),
+  features: z.array(PricingFeature).default([]),
+});
+const PricingBlock = z.object({
+  ...baseBlock,
+  type: z.literal("pricing"),
+  heading: z.string().default("Plans that Scale with You"),
+  description: z
+    .string()
+    .default(
+      "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
+    ),
+  currency: z.string().default("$"),
+  defaultFrequency: z.enum(["monthly", "yearly"]).default("monthly"),
+  showBillingToggle: z.boolean().default(true),
+  theme: z.enum(["auto", "dark", "light"]).default("auto"),
+  showHighlightEffect: z.boolean().default(true),
+  plans: z.array(PricingPlan).default([]),
 });
 export const CtaButtonStyleEnum = z.enum([
   "solid",
@@ -488,6 +529,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   QuoteBlock,
   TestimonialsBlock,
   TeamBlock,
+  PricingBlock,
   CtaBlock,
   ContactFormBlock,
   SpacerBlock,
@@ -578,6 +620,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   quote: "Quote",
   testimonials: "Testimonials",
   team: "Team",
+  pricing: "Price",
   cta: "Call to action",
   contactForm: "Contact form",
   spacer: "Spacer",
