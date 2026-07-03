@@ -1,15 +1,26 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Loader2, Plus, Instagram, Mail } from "lucide-react";
+import { ChevronDown, KeyRound, Loader2, Plus, Instagram, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { LivePreview } from "@/components/admin/live-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
+import {
+  LoginShell,
+  loginControlClass,
+  loginPrimaryButtonClass,
+  loginSecondaryButtonClass,
+} from "@/components/auth/login-shell";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
+import {
+  DEFAULT_LOGIN_DESIGN,
+  normalizeLoginDesign,
+  type LoginDesignConfig,
+} from "@/src/lib/login-design";
 
 type Scope =
   | "home"
@@ -436,13 +447,275 @@ export default function DesignPage() {
                     </div>
                   )}
               </CollapsibleDesignCard>
-              {scope === "about" && <FooterDesignCard />}
+              {scope === "about" && (
+                <>
+                  <FooterDesignCard />
+                  <LoginDesignCard />
+                </>
+              )}
               </Fragment>
             );
           })}
         </div>
       )}
     </div>
+  );
+}
+
+function LoginDesignCard() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [cfgId, setCfgId] = useState<string | null>(null);
+  const [isDefault, setIsDefault] = useState(false);
+  const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
+  const [siteTitle, setSiteTitle] = useState("Your studio");
+  const [s, setS] = useState<LoginDesignConfig>(DEFAULT_LOGIN_DESIGN);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      api.get<{ data: PageConfig[] }>("/api/v1/admin/page-configs?scope=global"),
+      api
+        .get<{ data: { siteTitle: string } }>("/api/v1/admin/settings")
+        .catch(() => ({ data: { siteTitle: "Your studio" } })),
+    ])
+      .then(([cfgRes, setRes]) => {
+        if (!active) return;
+        setSiteTitle(setRes.data.siteTitle || "Your studio");
+        const globals = cfgRes.data.filter((c) => c.scope === "global");
+        const pick = globals.find((c) => c.isDefault) ?? globals[0] ?? null;
+        if (!pick) return;
+        setCfgId(pick.id);
+        setIsDefault(pick.isDefault);
+        const cfg = (pick.config ?? {}) as Record<string, unknown>;
+        setBaseConfig(cfg);
+        setS(normalizeLoginDesign(cfg.login));
+      })
+      .catch((err) => active && toast(errMsg(err), "error"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [toast]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      let id = cfgId;
+      let base = baseConfig;
+      if (!id) {
+        const res = await api.post<{ data: PageConfig }>(
+          "/api/v1/admin/page-configs",
+          {
+            scope: "global",
+            gridType: "justified",
+            spacing: "normal",
+            theme: "auto",
+            hero: { enabled: false },
+            config: {},
+          },
+        );
+        id = res.data.id;
+        base = {};
+        setCfgId(id);
+      }
+      const nextConfig = { ...base, login: s };
+      await api.patch(`/api/v1/admin/page-configs/${id}`, {
+        config: nextConfig,
+      });
+      setBaseConfig(nextConfig);
+      if (!isDefault) {
+        await api.post(`/api/v1/admin/page-configs/${id}/set-default`);
+        setIsDefault(true);
+      }
+      toast("Login design saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <CollapsibleDesignCard title="Login">
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <Spinner className="h-5 w-5" />
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Layout">
+                <Select
+                  value={s.layout}
+                  onChange={(e) =>
+                    setS({ ...s, layout: e.target.value as LoginDesignConfig["layout"] })
+                  }
+                >
+                  <option value="simple">Simple card</option>
+                  <option value="gradient-card">Gradient card</option>
+                </Select>
+              </Field>
+              <Field label="Background">
+                <Select
+                  value={s.backgroundMode}
+                  onChange={(e) =>
+                    setS({
+                      ...s,
+                      backgroundMode: e.target.value as LoginDesignConfig["backgroundMode"],
+                    })
+                  }
+                >
+                  <option value="default">Theme background</option>
+                  <option value="soft-gradient">Soft gradient</option>
+                  <option value="custom">Custom color</option>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Headline">
+                <Input
+                  value={s.headline}
+                  onChange={(e) => setS({ ...s, headline: e.target.value })}
+                />
+              </Field>
+              <Field label="Subtitle">
+                <Input
+                  value={s.subtitle}
+                  onChange={(e) => setS({ ...s, subtitle: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Primary button label">
+                <Input
+                  value={s.primaryLabel}
+                  onChange={(e) => setS({ ...s, primaryLabel: e.target.value })}
+                />
+              </Field>
+              <Field label="Passkey button label">
+                <Input
+                  value={s.passkeyLabel}
+                  onChange={(e) => setS({ ...s, passkeyLabel: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Background color">
+                <Input
+                  type="color"
+                  value={s.backgroundColor}
+                  onChange={(e) => setS({ ...s, backgroundColor: e.target.value })}
+                  disabled={s.backgroundMode !== "custom"}
+                />
+              </Field>
+              <Field label="Gradient from">
+                <Input
+                  type="color"
+                  value={s.gradientFrom}
+                  onChange={(e) => setS({ ...s, gradientFrom: e.target.value })}
+                  disabled={s.backgroundMode === "default" && s.layout !== "gradient-card"}
+                />
+              </Field>
+              <Field label="Gradient to">
+                <Input
+                  type="color"
+                  value={s.gradientTo}
+                  onChange={(e) => setS({ ...s, gradientTo: e.target.value })}
+                  disabled={s.backgroundMode === "default" && s.layout !== "gradient-card"}
+                />
+              </Field>
+              <Field label="Accent">
+                <Input
+                  type="color"
+                  value={s.cardAccent}
+                  onChange={(e) => setS({ ...s, cardAccent: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={s.showBrand}
+                  onChange={(e) => setS({ ...s, showBrand: e.target.checked })}
+                />
+                Show site name
+              </label>
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={s.showIconRow}
+                  onChange={(e) => setS({ ...s, showIconRow: e.target.checked })}
+                />
+                Show auth icon row
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Button onClick={save} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save login
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))]">
+              Live preview
+            </p>
+            <LoginDesignPreview s={s} siteTitle={siteTitle} />
+          </div>
+        </div>
+      )}
+    </CollapsibleDesignCard>
+  );
+}
+
+function LoginDesignPreview({
+  s,
+  siteTitle,
+}: {
+  s: LoginDesignConfig;
+  siteTitle: string;
+}) {
+  const inputClass = loginControlClass(s);
+  const primaryButtonClass = loginPrimaryButtonClass(s);
+  const secondaryButtonClass = loginSecondaryButtonClass(s);
+
+  return (
+    <LoginShell design={s} siteName={siteTitle} description={s.subtitle} preview>
+      <div className="space-y-4">
+        <Field label="Email">
+          <Input value="owner@example.com" readOnly className={inputClass} />
+        </Field>
+        <Field label="Password">
+          <Input value="••••••••" readOnly className={inputClass} />
+        </Field>
+        <Button type="button" className={`w-full ${primaryButtonClass ?? ""}`}>
+          {s.primaryLabel || "Sign in"}
+        </Button>
+        <div className="flex items-center gap-3 text-xs text-[hsl(var(--muted-foreground))]">
+          <span className="h-px flex-1 bg-[hsl(var(--border))]" />
+          or
+          <span className="h-px flex-1 bg-[hsl(var(--border))]" />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className={`w-full ${secondaryButtonClass ?? ""}`}
+        >
+          <KeyRound className="h-4 w-4" />
+          {s.passkeyLabel || "Sign in with passkey"}
+        </Button>
+      </div>
+    </LoginShell>
   );
 }
 

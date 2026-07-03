@@ -450,6 +450,45 @@ html.js .pr-root.is-enhanced {
     inset 0 0 0 1px rgb(255 255 255 / 0.06);
 }
 
+.login-shell--reference .login-card--reference {
+  animation: login-card-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-shell--reference button,
+.login-shell--reference input {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.login-shell--reference input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-accent) 24%, transparent);
+}
+
+@keyframes login-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell--reference .login-card--reference {
+    animation: none;
+  }
+
+  .login-shell--reference button,
+  .login-shell--reference input {
+    transition: none;
+  }
+}
+
 .book-slider-shell {
   --book-slider-effective-text: var(--book-slider-text);
   max-width: min(100%, var(--book-slider-shell-width, 548px));

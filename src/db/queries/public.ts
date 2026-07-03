@@ -13,6 +13,10 @@ import {
 import { serializePhotos, type PhotoDTO } from "@/src/db/queries/photos";
 import { encodeCursor, decodeCursor } from "@/src/lib/cursor";
 import { cached, CACHE_KEYS } from "@/src/lib/cache";
+import {
+  normalizeLoginDesign,
+  type LoginDesignConfig,
+} from "@/src/lib/login-design";
 
 // Read layer for the public site (RSC). Server Components call these directly
 // (no HTTP hop); the matching Route Handlers exist for the PWA/client fetches.
@@ -375,6 +379,15 @@ export async function getFooterConfig(): Promise<FooterConfig> {
       typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
     showSocial: f.showSocial ?? true,
   };
+}
+
+// ── Login screen composition ─────────────────────────────────────────────────
+// Visual-only settings for /login. Auth behavior stays in the login component
+// and Better Auth; this config controls the card skin/copy only.
+export async function getLoginConfig(): Promise<LoginDesignConfig> {
+  const cfg = await resolvePageConfig("global");
+  const login = (cfg?.config as { login?: unknown } | null)?.login;
+  return normalizeLoginDesign(login);
 }
 
 // ── shared ───────────────────────────────────────────────────────────────────
