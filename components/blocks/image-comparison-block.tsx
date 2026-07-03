@@ -27,9 +27,13 @@ const ASPECT_CLASS: Record<
   string
 > = {
   "16-9": "aspect-video",
+  "3-2": "aspect-[3/2]",
   "4-3": "aspect-[4/3]",
   square: "aspect-square",
+  "4-5": "aspect-[4/5]",
   portrait: "aspect-[4/5]",
+  "2-3": "aspect-[2/3]",
+  "9-16": "aspect-[9/16]",
 };
 
 const WIDTH_CLASS: Record<

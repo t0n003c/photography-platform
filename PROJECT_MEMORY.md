@@ -1111,6 +1111,9 @@ is gitignored):
   `21st.dev/@ravikatiyar/components/image-comparison-slider-horizontal`. It stores
   left/right photo IDs, labels, title/subtitle, initial divider position, aspect ratio,
   width, rounded-frame toggle, showcase background toggle/color, and handle color.
+  Aspect ratio options are 16:9 wide, 3:2 landscape, 4:3 landscape, 1:1 square,
+  4:5 portrait, 2:3 portrait, and 9:16 vertical; legacy saved `portrait` values still
+  render as 4:5.
   The renderer is a responsive before/after slider with clipped right image, draggable
   divider/handle, tap-to-move on desktop, touch handle dragging on mobile, keyboard
   arrow/Home/End support, light/dark panel styling, and preview placeholders when one

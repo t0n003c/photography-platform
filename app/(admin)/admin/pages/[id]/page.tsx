@@ -2575,15 +2575,22 @@ function LeafEditor({
             </Field>
             <Field label="Aspect ratio">
               <Select
-                value={block.aspectRatio ?? "16-9"}
+                value={
+                  block.aspectRatio === "portrait"
+                    ? "4-5"
+                    : (block.aspectRatio ?? "16-9")
+                }
                 onChange={(e) =>
                   set({ aspectRatio: e.target.value as typeof block.aspectRatio })
                 }
               >
-                <option value="16-9">16:9</option>
-                <option value="4-3">4:3</option>
-                <option value="square">Square</option>
-                <option value="portrait">Portrait</option>
+                <option value="16-9">16:9 wide</option>
+                <option value="3-2">3:2 landscape</option>
+                <option value="4-3">4:3 landscape</option>
+                <option value="square">1:1 square</option>
+                <option value="4-5">4:5 portrait</option>
+                <option value="2-3">2:3 portrait</option>
+                <option value="9-16">9:16 vertical</option>
               </Select>
             </Field>
             <Field label="Width">

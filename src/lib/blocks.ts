@@ -95,7 +95,9 @@ const ImageComparisonBlock = z.object({
   leftLabel: z.string().default("Before"),
   rightLabel: z.string().default("After"),
   initialPosition: z.number().min(5).max(95).default(50),
-  aspectRatio: z.enum(["16-9", "4-3", "square", "portrait"]).default("16-9"),
+  aspectRatio: z
+    .enum(["16-9", "3-2", "4-3", "square", "4-5", "portrait", "2-3", "9-16"])
+    .default("16-9"),
   width: z.enum(["normal", "wide", "full"]).default("wide"),
   rounded: z.boolean().default(true),
   showcaseBackground: z.boolean().default(true),

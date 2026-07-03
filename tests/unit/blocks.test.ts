@@ -183,7 +183,7 @@ describe("page builder blocks", () => {
         leftLabel: "Before",
         rightLabel: "After",
         initialPosition: 42,
-        aspectRatio: "4-3",
+        aspectRatio: "4-5",
         width: "full",
         rounded: false,
         showcaseBackground: false,
@@ -200,7 +200,7 @@ describe("page builder blocks", () => {
       leftPhotoId: "before-photo",
       rightPhotoId: "after-photo",
       initialPosition: 42,
-      aspectRatio: "4-3",
+      aspectRatio: "4-5",
       showcaseBackground: false,
     });
     expect(collectPhotoIds(blocks)).toEqual(["before-photo", "after-photo"]);
