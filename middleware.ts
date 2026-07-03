@@ -29,7 +29,8 @@ export function middleware(request: NextRequest) {
     // XSS is low-risk; scripts remain strict nonce-only.
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    "media-src 'self' blob:",
+    // Banner Prisma Hero can use an admin-provided HTTPS background video URL.
+    "media-src 'self' blob: https:",
     "font-src 'self'",
     `connect-src 'self' ${turnstile}`,
     `frame-src 'self' ${turnstile}`,

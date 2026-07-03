@@ -784,6 +784,28 @@ is gitignored):
   Latest Banner follow-up: desktop overlay layouts now explicitly position their
   content within the container (bottom-left shifted right, bottom-right pinned right,
   center truly centered), and split-image-right pins text to the image-side edge.
+  Banner follow-up: the Banner block now has a "Prisma hero" layout based on the
+  21st.dev Prisma Hero reference. It uses the existing banner headline/subhead/CTA
+  and photo source fields, plus optional `prismaVideoUrl` and asterisk visibility.
+  The public renderer branches before
+  normal overlay/split banners to show a rounded cinematic media frame with optional
+  autoplay muted video, photo fallback, noise/gradient overlays, oversized bottom
+  headline, stacked subhead/CTA below the headline, CSS load-in motion, and a
+  reduced-motion static fallback. CSP `media-src` allows HTTPS media for this
+  admin-provided video URL. No Framer Motion dependency was added.
+  Follow-up: Prisma Hero also uses the banner `overlay` field as "Background
+  overlay" with soft darken, none, and strong darken options; `none` removes the
+  noise and gradient overlay layers so the background image/video is not darkened.
+  Banner follow-up: the Banner block also has an "Agency viral hero" layout based on
+  21st.dev/rahil1202's AgencyViralHero reference, intentionally omitting the floating
+  glass nav. It stores `agencyVideoUrl` and `agencyAccentText`, reuses the banner
+  headline/subhead/CTA/photo fallback/focal/zoom fields, and renders a full-screen
+  video/photo hero with centered two-line heading, italic serif accent line, subhead,
+  white pill CTA with play icon, CSS entrance motion, and reduced-motion fallback.
+  Follow-up: Agency Viral uses the existing banner `overlay` field as a dedicated
+  "Background overlay" setting with soft darken, none, and strong darken options;
+  `none` removes both the full-screen dark scrim and the vignette layer so the
+  background image/video is not darkened.
   Scroll Panels Classic Columns follow-up: classic now has count-aware intro distribution
   (desktop 6/9/12/15/18/21/24 -> 3/3/4/5/6/7/8 columns; mobile 9/12/15/18/21/24 -> 3/3/4/4/5/5 columns) plus
   equal horizontal/vertical desktop gutters, tighter gaps, and count-specific card widths so

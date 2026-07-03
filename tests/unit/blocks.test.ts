@@ -31,6 +31,68 @@ describe("page builder blocks", () => {
     expect(blocks.some((block) => block.type === "contactForm")).toBe(true);
   });
 
+  it("keeps Prisma hero banner settings and collects its photo", () => {
+    const blocks = parseBlocks([
+      {
+        id: "hero",
+        type: "banner",
+        layout: "prisma-hero",
+        source: "photo",
+        photoId: "photo-hero",
+        overlay: "none",
+        headline: "Prisma",
+        subhead: "A cinematic introduction.",
+        ctaLabel: "Join us",
+        ctaHref: "/contact",
+        prismaVideoUrl: "https://example.com/prisma.mp4",
+        prismaShowAsterisk: false,
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "hero",
+      type: "banner",
+      layout: "prisma-hero",
+      photoId: "photo-hero",
+      overlay: "none",
+      prismaVideoUrl: "https://example.com/prisma.mp4",
+      prismaShowAsterisk: false,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-hero"]);
+  });
+
+  it("keeps Agency Viral hero banner settings and collects its photo", () => {
+    const blocks = parseBlocks([
+      {
+        id: "agency-hero",
+        type: "banner",
+        layout: "agency-viral-hero",
+        source: "photo",
+        photoId: "photo-agency",
+        overlay: "none",
+        headline: "Agency that makes your",
+        agencyAccentText: "videos & reels viral",
+        subhead: "Short-form video editing for creators.",
+        ctaLabel: "See our works",
+        ctaHref: "/portfolio",
+        agencyVideoUrl: "https://example.com/agency.mp4",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "agency-hero",
+      type: "banner",
+      layout: "agency-viral-hero",
+      photoId: "photo-agency",
+      overlay: "none",
+      agencyAccentText: "videos & reels viral",
+      agencyVideoUrl: "https://example.com/agency.mp4",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-agency"]);
+  });
+
   it("keeps testimonial blocks and collects portrait photos", () => {
     const blocks = parseBlocks([
       {

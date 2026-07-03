@@ -176,7 +176,7 @@ function makeBlock(type: BlockType): Block {
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" };
+    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -2140,6 +2140,9 @@ function LeafEditor({
       );
     }
     case "banner": {
+      const isPrisma = block.layout === "prisma-hero";
+      const isAgency = block.layout === "agency-viral-hero";
+      const isSpecialHero = isPrisma || isAgency;
       // Source / darken / layout trio (top-left in both source modes).
       const cfg = (
         <>
@@ -2148,13 +2151,23 @@ function LeafEditor({
               <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
             </Select>
           </Field>
-          <Field label="Darken image">
-            <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
-              <option value="auto">Auto (only behind text)</option>
-              <option value="none">None</option>
-              <option value="dark">Always darken</option>
-            </Select>
-          </Field>
+          {isSpecialHero ? (
+            <Field label="Background overlay">
+              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+                <option value="auto">Soft darken</option>
+                <option value="none">None</option>
+                <option value="dark">Strong darken</option>
+              </Select>
+            </Field>
+          ) : !isSpecialHero && (
+            <Field label="Darken image">
+              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+                <option value="auto">Auto (only behind text)</option>
+                <option value="none">None</option>
+                <option value="dark">Always darken</option>
+              </Select>
+            </Field>
+          )}
           <Field label="Layout">
             <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
               <option value="bottom-left">Bottom left</option>
@@ -2164,6 +2177,8 @@ function LeafEditor({
               <option value="split-right">Split · image right</option>
               <option value="split-top">Split · image top</option>
               <option value="split-bottom">Split · image bottom</option>
+              <option value="prisma-hero">Prisma hero</option>
+              <option value="agency-viral-hero">Agency viral hero</option>
             </Select>
           </Field>
         </>
@@ -2198,50 +2213,99 @@ function LeafEditor({
       );
       const rest = (
         <>
-          <Field label="Headline"><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
+          <Field label={isAgency ? "Headline line 1" : "Headline"}><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
+          {isAgency && (
+            <Field label="Italic headline line">
+              <Input
+                value={block.agencyAccentText ?? ""}
+                onChange={(e) => set({ agencyAccentText: e.target.value })}
+                placeholder="videos & reels viral"
+              />
+            </Field>
+          )}
           <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
-          <Field label="Headline font">
-            <Select value={block.headlineFont ?? "sans"} onChange={(e) => set({ headlineFont: e.target.value as typeof block.headlineFont })}>
-              <option value="sans">Sans</option><option value="serif">Serif</option>
-            </Select>
-          </Field>
-          <Field label="Headline size">
-            <Select value={block.headlineSize ?? "lg"} onChange={(e) => set({ headlineSize: e.target.value as typeof block.headlineSize })}>
-              <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="xl">Extra large</option>
-            </Select>
-          </Field>
-          <Field label="Letter spacing">
-            <Select value={block.headlineTracking ?? "normal"} onChange={(e) => set({ headlineTracking: e.target.value as typeof block.headlineTracking })}>
-              <option value="normal">Normal</option><option value="wide">Wide</option><option value="widest">Widest</option>
-            </Select>
-          </Field>
-          <Field label="Headline case">
-            <Select value={block.headlineCase ?? "normal"} onChange={(e) => set({ headlineCase: e.target.value as typeof block.headlineCase })}>
-              <option value="normal">As typed</option><option value="upper">UPPERCASE</option>
-            </Select>
-          </Field>
+          {!isSpecialHero && (
+            <>
+              <Field label="Headline font">
+                <Select value={block.headlineFont ?? "sans"} onChange={(e) => set({ headlineFont: e.target.value as typeof block.headlineFont })}>
+                  <option value="sans">Sans</option><option value="serif">Serif</option>
+                </Select>
+              </Field>
+              <Field label="Headline size">
+                <Select value={block.headlineSize ?? "lg"} onChange={(e) => set({ headlineSize: e.target.value as typeof block.headlineSize })}>
+                  <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="xl">Extra large</option>
+                </Select>
+              </Field>
+              <Field label="Letter spacing">
+                <Select value={block.headlineTracking ?? "normal"} onChange={(e) => set({ headlineTracking: e.target.value as typeof block.headlineTracking })}>
+                  <option value="normal">Normal</option><option value="wide">Wide</option><option value="widest">Widest</option>
+                </Select>
+              </Field>
+              <Field label="Headline case">
+                <Select value={block.headlineCase ?? "normal"} onChange={(e) => set({ headlineCase: e.target.value as typeof block.headlineCase })}>
+                  <option value="normal">As typed</option><option value="upper">UPPERCASE</option>
+                </Select>
+              </Field>
+            </>
+          )}
           <Field label="Button label"><Input value={block.ctaLabel ?? ""} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
           <Field label="Button link"><Input value={block.ctaHref ?? ""} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
-          <Field label="Button style">
-            <Select value={block.buttonStyle ?? "solid"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
-              <option value="solid">Solid</option><option value="pill">Pill</option><option value="outline">Outline</option><option value="link">Text link</option>
-            </Select>
-          </Field>
+          {!isSpecialHero && (
+            <Field label="Button style">
+              <Select value={block.buttonStyle ?? "solid"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
+                <option value="solid">Solid</option><option value="pill">Pill</option><option value="outline">Outline</option><option value="link">Text link</option>
+              </Select>
+            </Field>
+          )}
           <Field label="Height">
             <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
               <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
             </Select>
           </Field>
-          <Field label="Effect">
-            <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
-              <option value="none">None</option>
-              <option value="ken-burns">Ken Burns (slow zoom)</option>
-              <option value="reveal">Load reveal</option>
-              <option value="css-glitch-1">CSS glitch - haunted</option>
-              <option value="css-glitch-2">CSS glitch - ethereal</option>
-              <option value="webgl-distortion">WebGL distortion</option>
-            </Select>
-          </Field>
+          {isPrisma ? (
+            <>
+              <div className="sm:col-span-2">
+                <Field label="Background video URL">
+                  <Input
+                    value={block.prismaVideoUrl ?? ""}
+                    onChange={(e) => set({ prismaVideoUrl: e.target.value })}
+                    placeholder="https://.../video.mp4"
+                  />
+                </Field>
+              </div>
+              <Field label="Asterisk mark">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.prismaShowAsterisk ?? true}
+                    onChange={(e) => set({ prismaShowAsterisk: e.target.checked })}
+                  />
+                  Show beside headline
+                </label>
+              </Field>
+            </>
+          ) : isAgency ? (
+            <div className="sm:col-span-2">
+              <Field label="Background video URL">
+                <Input
+                  value={block.agencyVideoUrl ?? ""}
+                  onChange={(e) => set({ agencyVideoUrl: e.target.value })}
+                  placeholder="https://.../video.mp4"
+                />
+              </Field>
+            </div>
+          ) : (
+            <Field label="Effect">
+              <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
+                <option value="none">None</option>
+                <option value="ken-burns">Ken Burns (slow zoom)</option>
+                <option value="reveal">Load reveal</option>
+                <option value="css-glitch-1">CSS glitch - haunted</option>
+                <option value="css-glitch-2">CSS glitch - ethereal</option>
+                <option value="webgl-distortion">WebGL distortion</option>
+              </Select>
+            </Field>
+          )}
         </>
       );
       // Featured: no photo picker, so put the (tall) Image position beside the

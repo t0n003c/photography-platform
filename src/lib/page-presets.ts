@@ -17,18 +17,25 @@ export const PAGE_TYPES: { value: PageType; label: string; hint: string }[] = [
   { value: "contact", label: "Contact", hint: "Heading and intro text." },
 ];
 
+const BANNER_PRISMA_DEFAULTS = {
+  prismaVideoUrl: "",
+  prismaShowAsterisk: true,
+  agencyVideoUrl: "",
+  agencyAccentText: "",
+};
+
 // Starter blocks per page type. `gen` returns a fresh unique id per block.
 export function presetBlocks(type: PageType, gen: () => string): Block[] {
   switch (type) {
     case "portfolio":
       return [
-        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", ...BANNER_PRISMA_DEFAULTS },
         { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] },
         { id: gen(), type: "cta", headline: "Like what you see?", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" },
       ];
     case "landing":
       return [
-        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+        { id: gen(), type: "banner", source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", ...BANNER_PRISMA_DEFAULTS },
         {
           id: gen(),
           type: "columns",
@@ -78,7 +85,7 @@ export function homePresetBlocks(
   opts: { headline: string; subhead: string },
 ): Block[] {
   return [
-    { id: gen(), type: "banner", source: "featured", photoId: null, headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none" },
+    { id: gen(), type: "banner", source: "featured", photoId: null, headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", ...BANNER_PRISMA_DEFAULTS },
     { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, manualOrderPhotoIds: [], filterSorts: [], sortMode: "source", filterMode: "none", showOverlayText: true, customFilters: [] },
     { id: gen(), type: "categoryIndex", title: "By category" },
     { id: gen(), type: "locationIndex", title: "By location" },

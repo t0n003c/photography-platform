@@ -148,6 +148,8 @@ export const BannerLayoutEnum = z.enum([
   "split-right",
   "split-top",
   "split-bottom",
+  "prisma-hero",
+  "agency-viral-hero",
 ]);
 const BannerBlock = z.object({
   ...baseBlock,
@@ -182,6 +184,14 @@ const BannerBlock = z.object({
   // Call-to-action button styling.
   buttonStyle: z.enum(["solid", "outline", "link", "pill"]).default("solid"),
   effect: BannerEffectEnum.default("none"),
+  // Prisma hero layout: cinematic rounded media frame with optional video,
+  // oversized headline, and stacked copy/CTA below it.
+  prismaVideoUrl: z.string().default(""),
+  prismaShowAsterisk: z.boolean().default(true),
+  // Agency viral hero layout: full-screen video/photo hero with centered
+  // split headline and CTA, intentionally without the reference floating nav.
+  agencyVideoUrl: z.string().default(""),
+  agencyAccentText: z.string().default(""),
 });
 const QuoteBlock = z.object({
   ...baseBlock,

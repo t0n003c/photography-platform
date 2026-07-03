@@ -161,6 +161,110 @@ html.js .pr-root.is-enhanced {
   .banner-reveal > * { opacity: 1; animation: none; transform: none; }
 }
 
+/* Prisma hero: reference-style cinematic load-in without a client dependency. */
+.banner-prisma-noise {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.18) 0 1px, transparent 1px),
+    radial-gradient(circle at 70% 65%, rgb(255 255 255 / 0.12) 0 1px, transparent 1px);
+  background-size: 5px 5px, 7px 7px;
+}
+
+@keyframes banner-prisma-word-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.42em, 0);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+@keyframes banner-prisma-rise-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.banner-prisma-word {
+  opacity: 0;
+  animation: banner-prisma-word-in 880ms var(--prisma-delay, 180ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.banner-prisma-copy {
+  animation: banner-prisma-rise-in 760ms 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.banner-prisma-cta {
+  animation: banner-prisma-rise-in 760ms 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-prisma-word,
+  .banner-prisma-copy,
+  .banner-prisma-cta {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Agency viral hero: centered video hero, nav intentionally omitted. */
+@keyframes banner-agency-heading-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.985);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes banner-agency-rise-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.banner-agency-heading {
+  animation: banner-agency-heading-in 820ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.banner-agency-copy {
+  animation: banner-agency-rise-in 720ms 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.banner-agency-cta {
+  animation: banner-agency-rise-in 720ms 470ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-agency-heading,
+  .banner-agency-copy,
+  .banner-agency-cta {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 /* ── Page-builder heading/subheading font choices ─────────────────────────── */
 .font-playfair { font-family: var(--font-playfair), Georgia, "Times New Roman", serif; }
 .font-cormorant { font-family: var(--font-cormorant), Georgia, "Times New Roman", serif; }

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { ArrowRight, Play } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
@@ -14,6 +16,16 @@ const HEIGHTS: Record<BannerData["height"], string> = {
   short: "h-[48vh]",
   tall: "h-[72vh]",
   full: "h-[88vh]",
+};
+const PRISMA_HEIGHTS: Record<BannerData["height"], string> = {
+  short: "min-h-[62svh]",
+  tall: "min-h-[76svh]",
+  full: "min-h-[calc(100svh-6rem)] md:min-h-[calc(100svh-5rem)]",
+};
+const AGENCY_HEIGHTS: Record<BannerData["height"], string> = {
+  short: "min-h-[62svh]",
+  tall: "min-h-[76svh]",
+  full: "min-h-[calc(100svh-6rem)] md:min-h-[calc(100svh-5rem)]",
 };
 // Literal md: variants (Tailwind only generates classes it sees verbatim, so
 // these can't be built from HEIGHTS at runtime). Used by the split layout.
@@ -189,6 +201,240 @@ function BannerImage({
   );
 }
 
+function PrismaHeadline({
+  text,
+  showAsterisk,
+}: {
+  text: string;
+  showAsterisk: boolean;
+}) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return null;
+
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-x-[0.08em] gap-y-1">
+      {words.map((word, index) => (
+        <span
+          key={`${word}-${index}`}
+          className="banner-prisma-word inline-block"
+          style={
+            {
+              "--prisma-delay": `${180 + index * 80}ms`,
+            } as CSSProperties
+          }
+        >
+          {word}
+          {showAsterisk && index === words.length - 1 && (
+            <sup className="ml-2 align-super text-[0.32em] leading-none">*</sup>
+          )}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function PrismaHeroBanner({
+  block,
+  photo,
+}: {
+  block: BannerData;
+  photo: PhotoDTO | undefined;
+}) {
+  const headline = block.headline.trim() || "Prisma";
+  const subhead = block.subhead.trim();
+  const videoUrl = block.prismaVideoUrl.trim();
+  const fx = block.focalX ?? 50;
+  const fy = block.focalY ?? 50;
+  const zoom = block.zoom ?? 1;
+  const overlay = block.overlay ?? "auto";
+  const showOverlay = overlay !== "none";
+
+  return (
+    <section
+      className={cn(
+        "banner-prisma relative box-border w-full overflow-hidden bg-[hsl(var(--background))] p-0 sm:p-3",
+        PRISMA_HEIGHTS[block.height],
+      )}
+    >
+      <div className="relative h-full min-h-[inherit] w-full overflow-hidden rounded-2xl bg-neutral-950 md:rounded-[2rem]">
+        {photo && (
+          <ResponsiveImage
+            photo={photo}
+            sizes="100vw"
+            priority
+            className="absolute inset-0 h-full w-full object-cover"
+            objectPosition={`${fx}% ${fy}%`}
+            style={
+              zoom !== 1
+                ? { transform: `scale(${zoom})`, transformOrigin: `${fx}% ${fy}%` }
+                : undefined
+            }
+          />
+        )}
+        {videoUrl && (
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            src={videoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+          />
+        )}
+        {showOverlay && (
+          <>
+            <div
+              className={cn(
+                "banner-prisma-noise pointer-events-none absolute inset-0 mix-blend-overlay",
+                overlay === "dark" ? "opacity-85" : "opacity-70",
+              )}
+            />
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0",
+                overlay === "dark"
+                  ? "bg-gradient-to-b from-black/50 via-black/10 to-black/80"
+                  : "bg-gradient-to-b from-black/30 via-transparent to-black/65",
+              )}
+            />
+          </>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-5 sm:px-6 sm:pb-7 md:px-10 md:pb-9">
+          <div className="flex max-w-5xl flex-col items-start">
+            <h1 className="max-w-full font-sans text-6xl font-medium leading-[0.85] tracking-normal text-[#e1e0cc] sm:text-7xl md:text-[7.5rem] lg:text-[9rem] xl:text-[10.5rem] 2xl:text-[11.5rem]">
+              <PrismaHeadline
+                text={headline}
+                showAsterisk={block.prismaShowAsterisk !== false}
+              />
+            </h1>
+            {subhead && (
+              <p className="banner-prisma-copy mt-4 max-w-md text-xs leading-[1.2] text-[#e1e0cc]/75 sm:text-sm md:mt-5 md:text-base">
+                {subhead}
+              </p>
+            )}
+            {block.ctaLabel && block.ctaHref && (
+              <Link
+                href={block.ctaHref}
+                className="banner-prisma-cta group mt-5 inline-flex items-center gap-2 rounded-full bg-[#e1e0cc] py-1 pl-5 pr-1 text-sm font-medium leading-none text-black transition-all hover:gap-3 sm:text-base"
+              >
+                {block.ctaLabel}
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
+                  <ArrowRight className="h-4 w-4 text-[#e1e0cc]" aria-hidden="true" />
+                </span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AgencyViralBanner({
+  block,
+  photo,
+}: {
+  block: BannerData;
+  photo: PhotoDTO | undefined;
+}) {
+  const headline = block.headline.trim() || "Agency that makes your";
+  const accent = block.agencyAccentText.trim() || "videos & reels viral";
+  const subhead = block.subhead.trim();
+  const videoUrl = block.agencyVideoUrl.trim();
+  const fx = block.focalX ?? 50;
+  const fy = block.focalY ?? 50;
+  const zoom = block.zoom ?? 1;
+  const overlay = block.overlay ?? "auto";
+  const showOverlay = overlay !== "none";
+
+  return (
+    <section
+      className={cn(
+        "banner-agency relative flex w-full items-center justify-center overflow-hidden bg-neutral-950 px-4 py-14 text-center",
+        AGENCY_HEIGHTS[block.height],
+      )}
+    >
+      {photo && (
+        <ResponsiveImage
+          photo={photo}
+          sizes="100vw"
+          priority
+          className="absolute inset-0 h-full w-full object-cover"
+          objectPosition={`${fx}% ${fy}%`}
+          style={
+            zoom !== 1
+              ? { transform: `scale(${zoom})`, transformOrigin: `${fx}% ${fy}%` }
+              : undefined
+          }
+        />
+      )}
+      {videoUrl && (
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src={videoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+      )}
+      {showOverlay && (
+        <>
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              overlay === "dark" ? "bg-black/55" : "bg-black/35",
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              overlay === "dark"
+                ? "bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.24)_42%,rgba(0,0,0,0.72)_100%)]"
+                : "bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.16)_45%,rgba(0,0,0,0.56)_100%)]",
+            )}
+          />
+        </>
+      )}
+
+      <div className="relative z-10 flex max-w-5xl flex-col items-center pt-8 sm:pt-10 md:pt-12">
+        <h1
+          className="banner-agency-heading text-white"
+          style={{ textShadow: "0 10px 30px rgb(0 0 0 / 0.5)" }}
+        >
+          <span className="block font-sans text-3xl font-semibold leading-[1.1] tracking-normal sm:text-4xl md:text-5xl lg:text-6xl">
+            {headline}
+          </span>
+          <span className="mt-1 block font-serif text-5xl italic leading-[1.05] tracking-normal sm:text-6xl md:text-7xl lg:text-8xl">
+            {accent}
+          </span>
+        </h1>
+        {subhead && (
+          <p className="banner-agency-copy mt-6 max-w-xl text-sm font-medium leading-relaxed text-white/75 sm:text-base md:text-lg">
+            {subhead}
+          </p>
+        )}
+        {block.ctaLabel && block.ctaHref && (
+          <Link
+            href={block.ctaHref}
+            className="banner-agency-cta mt-10 inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 text-base font-medium leading-none text-black transition hover:bg-white/90"
+          >
+            <span className="flex h-5 w-5 items-center justify-center">
+              <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+            </span>
+            {block.ctaLabel}
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function Scrim({ block }: { block: BannerData }) {
   const hasText = Boolean(
     block.headline || block.subhead || (block.ctaLabel && block.ctaHref),
@@ -344,6 +590,12 @@ export async function BannerBlock({
     }
   }
 
+  if (block.layout === "prisma-hero") {
+    return <PrismaHeroBanner block={block} photo={resolved} />;
+  }
+  if (block.layout === "agency-viral-hero") {
+    return <AgencyViralBanner block={block} photo={resolved} />;
+  }
   if (block.layout.startsWith("split-")) {
     return <SplitBanner block={block} photo={resolved} />;
   }
