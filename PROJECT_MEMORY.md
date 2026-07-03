@@ -1066,6 +1066,14 @@ is gitignored):
   Follow-up fix: the pricing block's `auto` theme now reads the active `next-themes`
   resolved/forced theme before falling back to the OS preference, so forced Light
   preview/page mode stays light even on a dark-system machine.
+  Price block variant follow-up: `pricing.style` now supports `standard` and
+  `glass-gradient`, the latter based on `21st.dev/@vaib215/components/dark-gradient-pricing`.
+  The glass-gradient renderer uses frosted radial cards, stacked mobile cards, included/
+  unavailable feature icons, reference-like centered heading/subhead and CTA emphasis,
+  CSS-only entry motion with reduced-motion fallback, and the same light/dark theme
+  resolver as the standard style. Plans can now store an optional `priceLabel` such as
+  "Contact us"; feature rows store `included` so unavailable benefits can render with
+  muted x icons.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

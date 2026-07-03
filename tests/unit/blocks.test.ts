@@ -207,6 +207,7 @@ describe("page builder blocks", () => {
       {
         id: "price",
         type: "pricing",
+        style: "glass-gradient",
         heading: "Plans that Scale with You",
         description: "Simple pricing for every client.",
         currency: "$",
@@ -221,6 +222,7 @@ describe("page builder blocks", () => {
             info: "For small businesses",
             monthlyPrice: 17.99,
             yearlyPrice: 190,
+            priceLabel: "Contact us",
             highlighted: true,
             ctaLabel: "Get started",
             ctaHref: "/contact",
@@ -229,6 +231,7 @@ describe("page builder blocks", () => {
                 id: "support",
                 text: "Priority support",
                 tooltip: "Get 24/7 chat support",
+                included: false,
               },
             ],
           },
@@ -240,6 +243,7 @@ describe("page builder blocks", () => {
     expect(blocks[0]).toMatchObject({
       id: "price",
       type: "pricing",
+      style: "glass-gradient",
       heading: "Plans that Scale with You",
       defaultFrequency: "yearly",
       theme: "dark",
@@ -249,10 +253,12 @@ describe("page builder blocks", () => {
           highlighted: true,
           monthlyPrice: 17.99,
           yearlyPrice: 190,
+          priceLabel: "Contact us",
           features: [
             {
               id: "support",
               tooltip: "Get 24/7 chat support",
+              included: false,
             },
           ],
         },

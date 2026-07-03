@@ -290,6 +290,7 @@ const PricingFeature = z.object({
   id: z.string().min(1),
   text: z.string().default("Feature"),
   tooltip: z.string().default(""),
+  included: z.boolean().default(true),
 });
 const PricingPlan = z.object({
   id: z.string().min(1),
@@ -297,6 +298,7 @@ const PricingPlan = z.object({
   info: z.string().default("For most clients"),
   monthlyPrice: z.number().default(7),
   yearlyPrice: z.number().default(74),
+  priceLabel: z.string().default(""),
   highlighted: z.boolean().default(false),
   ctaLabel: z.string().default("Get started"),
   ctaHref: z.string().default("#"),
@@ -305,6 +307,7 @@ const PricingPlan = z.object({
 const PricingBlock = z.object({
   ...baseBlock,
   type: z.literal("pricing"),
+  style: z.enum(["standard", "glass-gradient"]).default("standard"),
   heading: z.string().default("Plans that Scale with You"),
   description: z
     .string()

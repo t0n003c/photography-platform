@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { CheckCircleIcon, Info, StarIcon } from "lucide-react";
+import { Check, CheckCircleIcon, Info, StarIcon, X } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/src/lib/utils";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -11,6 +11,9 @@ import type { LeafBlock } from "@/src/lib/blocks";
 type PricingBlockData = Extract<LeafBlock, { type: "pricing" }>;
 type PricingPlan = PricingBlockData["plans"][number];
 type Frequency = "monthly" | "yearly";
+type CSSPropertiesWithVars = CSSProperties & {
+  [key: `--${string}`]: string | number | undefined;
+};
 
 const frequencies: Frequency[] = ["monthly", "yearly"];
 
@@ -22,9 +25,19 @@ function formatPrice(value: number, currency: string) {
 }
 
 function discountFor(plan: PricingPlan) {
+  if (plan.priceLabel.trim()) return 0;
   const monthlyYear = plan.monthlyPrice * 12;
   if (!monthlyYear || plan.yearlyPrice >= monthlyYear) return 0;
   return Math.round(((monthlyYear - plan.yearlyPrice) / monthlyYear) * 100);
+}
+
+function displayPrice(plan: PricingPlan, frequency: Frequency, currency: string) {
+  const custom = plan.priceLabel.trim();
+  if (custom) return custom;
+  return formatPrice(
+    frequency === "yearly" ? plan.yearlyPrice : plan.monthlyPrice,
+    currency,
+  );
 }
 
 function filteredPlans(plans: PricingPlan[]) {
@@ -139,7 +152,8 @@ function PricingCard({
   showHighlightEffect: boolean;
 }) {
   const highlighted = plan.highlighted;
-  const price = frequency === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+  const price = displayPrice(plan, frequency, currency);
+  const hasCustomPrice = Boolean(plan.priceLabel.trim());
   const off = frequency === "yearly" ? discountFor(plan) : 0;
   const ctaHref = plan.ctaHref.trim() || "#";
   const ctaLabel = plan.ctaLabel.trim() || "Get started";
@@ -209,9 +223,9 @@ function PricingCard({
         )}
         <p className="mt-4 flex items-end gap-1">
           <span className="text-4xl font-bold tracking-tight">
-            {formatPrice(price, currency)}
+            {price}
           </span>
-          {plan.name.toLowerCase() !== "free" && (
+          {!hasCustomPrice && plan.name.toLowerCase() !== "free" && (
             <span
               className={cn(
                 "pb-1 text-base",
@@ -232,12 +246,20 @@ function PricingCard({
       >
         {plan.features.map((feature) => {
           const tooltip = feature.tooltip.trim();
+          const included = feature.included !== false;
+          const FeatureIcon = included ? CheckCircleIcon : X;
           return (
             <div key={feature.id} className="group/feature flex items-start gap-3">
-              <CheckCircleIcon
+              <FeatureIcon
                 className={cn(
                   "mt-0.5 h-4 w-4 shrink-0",
-                  dark ? "text-white" : "text-neutral-950",
+                  included
+                    ? dark
+                      ? "text-white"
+                      : "text-neutral-950"
+                    : dark
+                      ? "text-white/28"
+                      : "text-neutral-400",
                 )}
                 aria-hidden="true"
               />
@@ -318,6 +340,239 @@ function PricingCard({
   );
 }
 
+function GlassGradientPricingCard({
+  plan,
+  frequency,
+  currency,
+  dark,
+  index,
+}: {
+  plan: PricingPlan;
+  frequency: Frequency;
+  currency: string;
+  dark: boolean;
+  index: number;
+}) {
+  const highlighted = plan.highlighted;
+  const price = displayPrice(plan, frequency, currency);
+  const hasCustomPrice = Boolean(plan.priceLabel.trim());
+  const ctaHref = plan.ctaHref.trim() || "#";
+  const ctaLabel = plan.ctaLabel.trim() || "Get started";
+
+  return (
+    <article
+      className={cn(
+        "pricing-glass-card group relative flex min-h-[31.5rem] w-full flex-col overflow-hidden rounded-lg border px-6 py-7 text-center",
+        "transition duration-300 hover:-translate-y-1",
+        dark
+          ? "border-white/12 bg-white/[0.06] text-white shadow-2xl shadow-black/35"
+          : "border-neutral-200/90 bg-white/70 text-neutral-950 shadow-[0_24px_90px_rgba(15,23,42,0.08)]",
+        highlighted &&
+          (dark
+            ? "border-white/22 bg-white/[0.095]"
+            : "border-neutral-300 bg-white/85"),
+      )}
+      style={
+        {
+          "--pricing-glass-delay": `${index * 110}ms`,
+        } as CSSPropertiesWithVars
+      }
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 opacity-90 transition-opacity duration-300 group-hover:opacity-100",
+          dark
+            ? "bg-[radial-gradient(circle_at_50%_4%,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_50%_86%,rgba(59,130,246,0.16),transparent_42%)]"
+            : "bg-[radial-gradient(circle_at_50%_0%,rgba(15,23,42,0.08),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(148,163,184,0.16),transparent_42%)]",
+        )}
+        aria-hidden="true"
+      />
+      <div className="relative flex h-full flex-col">
+        <h3 className="text-base font-medium tracking-tight">{plan.name}</h3>
+
+        <div className="mt-7">
+          <p
+            className={cn(
+              "text-balance text-4xl font-semibold tracking-tight",
+              hasCustomPrice ? "text-[2.35rem] leading-tight" : "",
+            )}
+          >
+            {price}
+            {!hasCustomPrice && (
+              <span className="text-[0.72em] font-semibold">
+                /{frequency === "monthly" ? "mo" : "yr"}
+              </span>
+            )}
+          </p>
+          {plan.info && (
+            <p
+              className={cn(
+                "mt-4 text-base leading-relaxed",
+                dark ? "text-white/70" : "text-neutral-700",
+              )}
+            >
+              {plan.info}
+            </p>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "mt-7 border-t pt-7",
+            dark ? "border-white/12" : "border-neutral-200",
+          )}
+        >
+          <ul className="space-y-4 text-left text-sm">
+            {plan.features.map((feature) => {
+              const included = feature.included !== false;
+              return (
+                <li
+                  key={feature.id}
+                  className={cn(
+                    "flex items-center gap-3",
+                    included
+                      ? dark
+                        ? "text-white/78"
+                        : "text-neutral-600"
+                      : dark
+                        ? "text-white/38"
+                        : "text-neutral-500",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                      included
+                        ? dark
+                          ? "bg-white text-neutral-950"
+                          : "bg-neutral-950 text-white"
+                        : dark
+                          ? "bg-white/10 text-white/55"
+                          : "bg-neutral-100 text-neutral-500",
+                    )}
+                    aria-hidden="true"
+                  >
+                    {included ? (
+                      <Check className="h-3 w-3 stroke-[3]" />
+                    ) : (
+                      <X className="h-3 w-3 stroke-[2.5]" />
+                    )}
+                  </span>
+                  <span>{feature.text}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div className="mt-auto pt-10">
+          <Link
+            href={ctaHref}
+            className={cn(
+              "inline-flex h-11 w-full items-center justify-center rounded-md px-5 text-sm font-semibold transition",
+              highlighted
+                ? dark
+                  ? "bg-white text-neutral-950 hover:bg-white/90"
+                  : "bg-neutral-950 text-white hover:bg-neutral-800"
+                : dark
+                  ? "text-white hover:bg-white/[0.08]"
+                  : "text-neutral-950 hover:bg-neutral-100",
+            )}
+          >
+            {ctaLabel}
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function GlassGradientPricingBlock({
+  block,
+  plans,
+  frequency,
+  setFrequency,
+  dark,
+  title,
+  description,
+}: {
+  block: PricingBlockData;
+  plans: PricingPlan[];
+  frequency: Frequency;
+  setFrequency: (frequency: Frequency) => void;
+  dark: boolean;
+  title: string;
+  description: string;
+}) {
+  const showToggle = block.showBillingToggle !== false;
+  const gridClass =
+    plans.length === 1
+      ? "max-w-sm grid-cols-1"
+      : plans.length === 2
+        ? "max-w-3xl grid-cols-1 md:grid-cols-2"
+        : "max-w-5xl grid-cols-1 md:grid-cols-3";
+
+  return (
+    <section
+      className={cn(
+        "pricing-block pricing-block--glass-gradient relative overflow-hidden py-20 sm:py-28",
+        dark ? "bg-[#07080d] text-white" : "bg-white text-neutral-950",
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          dark
+            ? "bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.22),transparent_28%),radial-gradient(circle_at_10%_100%,rgba(14,165,233,0.12),transparent_30%)]"
+            : "bg-[radial-gradient(circle_at_50%_4%,rgba(148,163,184,0.20),transparent_26%),radial-gradient(circle_at_100%_100%,rgba(226,232,240,0.55),transparent_34%)]",
+        )}
+        aria-hidden="true"
+      />
+      <Container className="relative z-10">
+        <div className="mx-auto max-w-5xl">
+          <div className="mx-auto mb-12 max-w-3xl space-y-4 text-center">
+            <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
+              {title}
+            </h2>
+            {description && (
+              <p
+                className={cn(
+                  "text-balance text-base leading-relaxed md:text-lg",
+                  dark ? "text-white/60" : "text-neutral-500",
+                )}
+              >
+                {description}
+              </p>
+            )}
+            {showToggle && (
+              <div className="pt-4">
+                <PricingFrequencyToggle
+                  frequency={frequency}
+                  onChange={setFrequency}
+                  dark={dark}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className={cn("mx-auto grid gap-6", gridClass)}>
+            {plans.map((plan, index) => (
+              <GlassGradientPricingCard
+                key={plan.id}
+                plan={plan}
+                frequency={frequency}
+                currency={block.currency || "$"}
+                dark={dark}
+                index={index}
+              />
+            ))}
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
 export function PricingBlock({ block }: { block: PricingBlockData }) {
   const plans = useMemo(() => filteredPlans(block.plans ?? []), [block.plans]);
   const [frequency, setFrequency] = useState<Frequency>(
@@ -346,6 +601,20 @@ export function PricingBlock({ block }: { block: PricingBlockData }) {
           Price - add a plan
         </div>
       </Container>
+    );
+  }
+
+  if ((block.style ?? "standard") === "glass-gradient") {
+    return (
+      <GlassGradientPricingBlock
+        block={block}
+        plans={plans}
+        frequency={frequency}
+        setFrequency={setFrequency}
+        dark={dark}
+        title={title}
+        description={description}
+      />
     );
   }
 

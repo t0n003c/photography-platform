@@ -515,12 +515,32 @@ html.js .pr-root.is-enhanced {
     0 0 140px 90px rgb(0 0 0 / 0.5);
 }
 
+@keyframes pricing-glass-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0) scale(0.985);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.pricing-glass-card {
+  animation: pricing-glass-card-in 720ms var(--pricing-glass-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .testimonial-slider-portrait,
   .testimonial-slider-copy,
   .testimonial-grid-card,
   .testimonial-retro-card,
-  .testimonial-glass-card {
+  .testimonial-glass-card,
+  .pricing-glass-card {
     animation: none;
     opacity: 1;
     filter: none;
@@ -528,12 +548,14 @@ html.js .pr-root.is-enhanced {
 
   .testimonial-slider-portrait,
   .testimonial-slider-copy,
-  .testimonial-grid-card {
+  .testimonial-grid-card,
+  .pricing-glass-card {
     transform: none;
   }
 
   .testimonial-retro-card,
-  .testimonial-glass-card {
+  .testimonial-glass-card,
+  .pricing-glass-card {
     transition: none;
   }
 

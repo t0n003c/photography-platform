@@ -149,11 +149,12 @@ function makeTeamMember(index = 0) {
   };
 }
 
-function makePricingFeature(text = "Feature", tooltip = "") {
+function makePricingFeature(text = "Feature", tooltip = "", included = true) {
   return {
     id: newBlockId(),
     text,
     tooltip,
+    included,
   };
 }
 
@@ -164,6 +165,7 @@ function makePricingPlan(index = 0) {
       info: "For most individuals",
       monthlyPrice: 7,
       yearlyPrice: 74,
+      priceLabel: "",
       highlighted: false,
       ctaLabel: "Start Your Free Trial",
       ctaHref: "#",
@@ -171,9 +173,9 @@ function makePricingPlan(index = 0) {
         makePricingFeature("Up to 3 Blog posts"),
         makePricingFeature("Up to 3 Transcriptions"),
         makePricingFeature("Up to 3 Posts stored"),
-        makePricingFeature("Markdown support", "Export content in Markdown format"),
+        makePricingFeature("Markdown support", "Export content in Markdown format", false),
         makePricingFeature("Community support", "Get answers to your questions"),
-        makePricingFeature("AI powered suggestions", "Get up to 100 AI powered suggestions"),
+        makePricingFeature("AI powered suggestions", "Get up to 100 AI powered suggestions", false),
       ],
     },
     {
@@ -181,6 +183,7 @@ function makePricingPlan(index = 0) {
       info: "For small businesses",
       monthlyPrice: 17.99,
       yearlyPrice: 190,
+      priceLabel: "",
       highlighted: true,
       ctaLabel: "Get started",
       ctaHref: "#",
@@ -190,7 +193,7 @@ function makePricingPlan(index = 0) {
         makePricingFeature("Up to 500 Posts stored"),
         makePricingFeature("Unlimited Markdown support", "Export content in Markdown format"),
         makePricingFeature("SEO optimization tools"),
-        makePricingFeature("Priority support", "Get 24/7 chat support"),
+        makePricingFeature("Priority support", "Get 24/7 chat support", false),
         makePricingFeature("AI powered suggestions", "Get up to 500 AI powered suggestions"),
       ],
     },
@@ -199,6 +202,7 @@ function makePricingPlan(index = 0) {
       info: "For large organizations",
       monthlyPrice: 69.99,
       yearlyPrice: 528,
+      priceLabel: "Contact us",
       highlighted: false,
       ctaLabel: "Contact team",
       ctaHref: "#",
@@ -218,6 +222,7 @@ function makePricingPlan(index = 0) {
     info: "For new clients",
     monthlyPrice: 29,
     yearlyPrice: 299,
+    priceLabel: "",
     highlighted: false,
     ctaLabel: "Get started",
     ctaHref: "#",
@@ -327,6 +332,7 @@ function makeBlock(type: BlockType): Block {
     case "pricing": return {
       id,
       type,
+      style: "standard",
       heading: "Plans that Scale with You",
       description: "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
       currency: "$",
@@ -1913,7 +1919,18 @@ function LeafEditor({
 
       return (
         <div className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Pricing style">
+              <Select
+                value={block.style ?? "standard"}
+                onChange={(e) =>
+                  set({ style: e.target.value as typeof block.style })
+                }
+              >
+                <option value="standard">Standard cards</option>
+                <option value="glass-gradient">Glass gradient</option>
+              </Select>
+            </Field>
             <Field label="Heading">
               <Input
                 value={block.heading ?? ""}
@@ -1936,7 +1953,7 @@ function LeafEditor({
                 <option value="light">Light</option>
               </Select>
             </Field>
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-2 lg:col-span-4">
               <Field label="Description">
                 <Textarea
                   rows={2}
@@ -2074,6 +2091,15 @@ function LeafEditor({
                       }
                     />
                   </Field>
+                  <Field label="Display price">
+                    <Input
+                      value={plan.priceLabel ?? ""}
+                      placeholder="Optional, e.g. Contact us"
+                      onChange={(e) =>
+                        updatePlan(planIndex, { priceLabel: e.target.value })
+                      }
+                    />
+                  </Field>
                   <Field label="Button label">
                     <Input
                       value={plan.ctaLabel}
@@ -2119,7 +2145,7 @@ function LeafEditor({
                   {plan.features.map((feature, featureIndex) => (
                     <div
                       key={feature.id}
-                      className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]"
+                      className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto] lg:grid-cols-[1fr_1fr_auto_auto]"
                     >
                       <Field label="Feature">
                         <Input
@@ -2140,6 +2166,20 @@ function LeafEditor({
                             })
                           }
                         />
+                      </Field>
+                      <Field label="Included">
+                        <label className="flex h-9 items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={feature.included ?? true}
+                            onChange={(e) =>
+                              updateFeature(planIndex, featureIndex, {
+                                included: e.target.checked,
+                              })
+                            }
+                          />
+                          Show check
+                        </label>
                       </Field>
                       <div className="flex items-end gap-1">
                         <Button
