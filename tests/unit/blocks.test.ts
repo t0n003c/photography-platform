@@ -80,10 +80,53 @@ describe("page builder blocks", () => {
       id: "team",
       type: "team",
       title: "",
+      layout: "showcase",
+      cardPosition: "alternate",
+      showCardArrow: true,
       grayscale: true,
       showSocials: true,
+      members: [
+        expect.objectContaining({
+          description:
+            "Share a short bio, specialty, or role description for this team member.",
+        }),
+      ],
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-team-1"]);
+  });
+
+  it("keeps editorial team member card settings", () => {
+    const blocks = parseBlocks([
+      {
+        id: "team",
+        type: "team",
+        layout: "memberCards",
+        cardPosition: "right",
+        showCardArrow: false,
+        members: [
+          {
+            id: "member-1",
+            name: "Jennie Garcia",
+            role: "Backend Engineer",
+            description: "Builds polished client experiences.",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "team",
+      type: "team",
+      layout: "memberCards",
+      cardPosition: "right",
+      showCardArrow: false,
+      members: [
+        expect.objectContaining({
+          name: "Jennie Garcia",
+          description: "Builds polished client experiences.",
+        }),
+      ],
+    });
   });
 
   it("defaults enhanced spacer settings for old spacer blocks", () => {

@@ -104,18 +104,43 @@ function makeTestimonialItem() {
 
 function makeTeamMember(index = 0) {
   const examples = [
-    ["Chadrack", "director of photography"],
-    ["Mak VieSAinte", "FOUNDER"],
-    ["Osiris Balonga", "LEAD FRONT-END"],
-    ["Jacques", "PRODUCT OWNER"],
-    ["Riche Makso", "CTO - PRODUCT DESIGNER"],
-    ["Jemima", "MAKE-UP ARTISTE"],
+    [
+      "Chadrack",
+      "director of photography",
+      "Chadrack shapes the visual language of every session with a calm eye for light, location, and story.",
+    ],
+    [
+      "Mak VieSAinte",
+      "FOUNDER",
+      "Mak leads the creative direction and keeps each client experience focused, polished, and personal.",
+    ],
+    [
+      "Osiris Balonga",
+      "LEAD FRONT-END",
+      "Osiris builds refined digital experiences that make every gallery feel fast, immersive, and considered.",
+    ],
+    [
+      "Jacques",
+      "PRODUCT OWNER",
+      "Jacques turns client needs into practical workflows so each project moves cleanly from idea to delivery.",
+    ],
+    [
+      "Riche Makso",
+      "CTO - PRODUCT DESIGNER",
+      "Riche blends product strategy and interaction design to keep the platform elegant under the surface.",
+    ],
+    [
+      "Jemima",
+      "MAKE-UP ARTISTE",
+      "Jemima brings a precise, natural styling approach that helps every portrait subject feel camera-ready.",
+    ],
   ] as const;
-  const [name, role] = examples[index % examples.length];
+  const [name, role, description] = examples[index % examples.length];
   return {
     id: newBlockId(),
     name,
     role,
+    description,
     photoId: null,
     twitterUrl: "",
     linkedinUrl: "",
@@ -181,6 +206,9 @@ function makeBlock(type: BlockType): Block {
       id,
       type,
       title: "",
+      layout: "showcase",
+      cardPosition: "alternate",
+      showCardArrow: true,
       grayscale: true,
       showSocials: true,
       members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
@@ -1155,6 +1183,7 @@ function LeafEditor({
     }
     case "team": {
       const members = block.members ?? [];
+      const isEditorial = (block.layout ?? "showcase") === "memberCards";
       const updateMember = (
         index: number,
         patch: Partial<(typeof members)[number]>,
@@ -1177,26 +1206,74 @@ function LeafEditor({
                 onChange={(e) => set({ title: e.target.value })}
               />
             </Field>
-            <Field label="Portrait treatment">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.grayscale ?? true}
-                  onChange={(e) => set({ grayscale: e.target.checked })}
-                />
-                Grayscale until active
-              </label>
+            <Field label="Team layout">
+              <Select
+                value={block.layout ?? "showcase"}
+                onChange={(e) =>
+                  set({ layout: e.target.value as typeof block.layout })
+                }
+              >
+                <option value="showcase">Showcase list</option>
+                <option value="memberCards">Editorial member cards</option>
+              </Select>
             </Field>
-            <Field label="Social links">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showSocials ?? true}
-                  onChange={(e) => set({ showSocials: e.target.checked })}
-                />
-                Show on active member
-              </label>
-            </Field>
+            {isEditorial ? (
+              <Field label="Card side">
+                <Select
+                  value={block.cardPosition ?? "alternate"}
+                  onChange={(e) =>
+                    set({
+                      cardPosition: e.target.value as typeof block.cardPosition,
+                    })
+                  }
+                >
+                  <option value="alternate">Alternate left/right</option>
+                  <option value="left">Image left</option>
+                  <option value="right">Image right</option>
+                </Select>
+              </Field>
+            ) : (
+              <Field label="Portrait treatment">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.grayscale ?? true}
+                    onChange={(e) => set({ grayscale: e.target.checked })}
+                  />
+                  Grayscale until active
+                </label>
+              </Field>
+            )}
+            {isEditorial ? (
+              <Field label="Circular arrow">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showCardArrow ?? true}
+                    onChange={(e) => set({ showCardArrow: e.target.checked })}
+                  />
+                  Show card arrow
+                </label>
+              </Field>
+            ) : (
+              <Field label="Social links">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showSocials ?? true}
+                    onChange={(e) => set({ showSocials: e.target.checked })}
+                  />
+                  Show on active member
+                </label>
+              </Field>
+            )}
+            {!isEditorial && (
+              <Field label="Editorial cards">
+                <p className="flex h-9 items-center text-xs text-[hsl(var(--muted-foreground))]">
+                  Switch layout to edit bio text.
+                </p>
+              </Field>
+            )}
           </div>
           <div className="space-y-3">
             {members.map((member, index) => (
@@ -1264,6 +1341,19 @@ function LeafEditor({
                         onChange={(e) => updateMember(index, { role: e.target.value })}
                       />
                     </Field>
+                    {isEditorial && (
+                      <div className="sm:col-span-2">
+                        <Field label="Bio">
+                          <Textarea
+                            rows={3}
+                            value={member.description ?? ""}
+                            onChange={(e) =>
+                              updateMember(index, { description: e.target.value })
+                            }
+                          />
+                        </Field>
+                      </div>
+                    )}
                     <Field label="X / Twitter URL">
                       <Input
                         value={member.twitterUrl ?? ""}

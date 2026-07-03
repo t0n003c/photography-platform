@@ -1008,6 +1008,23 @@ is gitignored):
   layout with reference-style active member markers, grayscale hover/tap transitions,
   reveal-on-active social links, mobile horizontal portrait scroll, and theme-aware
   light/dark colors.
+  Follow-up: The Team block now has a second layout, "Editorial member cards", based on
+  Shatlyk1011/Emerald UI's Team Member Card. It stores `layout`, `cardPosition`, and
+  `showCardArrow` on the block plus a per-member `description`; the admin editor exposes
+  card side, circular-arrow, and bio controls only for the editorial layout. The renderer
+  keeps the existing Team Showcase intact and branches to large portrait cards with
+  uppercase role labels, overlapping two-line names, bio text, circular arrow CTA, staggered
+  CSS entrance timing, hover image scale, light/dark colors, and reduced-motion/no-JS
+  fallbacks. Focused Chrome smoke verified desktop, iPhone 13 dark mode, and reduced motion
+  with 0 console/page errors. Docker rebuilds were also cleaned up by ignoring local
+  `.claude`/`.codex` agent assets from the image build context.
+  Follow-up: The editorial Team card arrow is now functional. Instead of stacking every
+  member vertically, the layout renders one active member in-place and the circular arrow
+  cycles to the next member, wrapping back to the first. The default alternate side setting
+  still flips image/text placement by member index, so member one shows image-left/text-right,
+  member two shows text-left/image-right, and so on. The section clips horizontal overflow
+  during entrance transforms. Focused Chrome smoke verified desktop cycling, side alternation,
+  wraparound, iPhone 13 dark mode, and reduced motion with 0 console/page errors.
   Page block follow-up: Spacer and Divider blocks are now configurable instead of fixed.
   Spacer keeps legacy `md` visual spacing by default but supports XS/SM/MD/LG/XL/custom
   desktop heights, same-or-overridden mobile heights, full-band or content-width

@@ -208,6 +208,11 @@ const TeamMember = z.object({
   id: z.string().min(1),
   name: z.string().default("Team member"),
   role: z.string().default("Role"),
+  description: z
+    .string()
+    .default(
+      "Share a short bio, specialty, or role description for this team member.",
+    ),
   photoId: z.string().nullable().default(null),
   twitterUrl: z.string().default(""),
   linkedinUrl: z.string().default(""),
@@ -218,6 +223,9 @@ const TeamBlock = z.object({
   ...baseBlock,
   type: z.literal("team"),
   title: z.string().default(""),
+  layout: z.enum(["showcase", "memberCards"]).default("showcase"),
+  cardPosition: z.enum(["alternate", "left", "right"]).default("alternate"),
+  showCardArrow: z.boolean().default(true),
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),

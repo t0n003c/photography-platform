@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useState, type PointerEvent } from "react";
+import {
+  useMemo,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
+import { ArrowRight } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { cn } from "@/src/lib/utils";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -38,12 +44,34 @@ function memberIsEmpty(member: TeamMember) {
   return !(
     member.name.trim() ||
     member.role.trim() ||
+    member.description?.trim() ||
     member.photoId ||
     member.twitterUrl.trim() ||
     member.linkedinUrl.trim() ||
     member.instagramUrl.trim() ||
     member.behanceUrl.trim()
   );
+}
+
+function splitName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] || "Team", lastName: "Member" };
+  }
+  return {
+    firstName: parts.slice(0, -1).join(" "),
+    lastName: parts[parts.length - 1],
+  };
+}
+
+function editorialPosition(
+  block: TeamBlockData,
+  index: number,
+): "left" | "right" {
+  if (block.cardPosition === "left" || block.cardPosition === "right") {
+    return block.cardPosition;
+  }
+  return index % 2 === 0 ? "left" : "right";
 }
 
 function PlaceholderPortrait({
@@ -167,6 +195,196 @@ function PortraitCard({
   );
 }
 
+function EditorialPortrait({
+  member,
+  photo,
+  priority,
+}: {
+  member: TeamMember;
+  photo?: PhotoDTO;
+  priority: boolean;
+}) {
+  const fullName = member.name || "Team member";
+  return (
+    <div className="team-editorial-portrait group relative h-[26rem] w-full max-w-[22.5rem] shrink-0 overflow-hidden bg-[hsl(var(--muted))] sm:h-[30rem] md:h-[31.25rem] md:w-[22.5rem]">
+      <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+      {photo ? (
+        <ResponsiveImage
+          photo={photo}
+          sizes="(max-width: 767px) 90vw, 360px"
+          priority={priority}
+          className="h-full w-full transition-transform duration-500 ease-[0.22,1,0.36,1] group-hover:scale-105 motion-reduce:transition-none"
+        />
+      ) : (
+        <PlaceholderPortrait
+          member={member}
+          className="transition-transform duration-500 ease-[0.22,1,0.36,1] group-hover:scale-105 motion-reduce:transition-none"
+        />
+      )}
+      <span className="sr-only">{fullName}</span>
+    </div>
+  );
+}
+
+function EditorialTeamCard({
+  block,
+  member,
+  photo,
+  index,
+  cardIndex,
+  totalMembers,
+  onNext,
+}: {
+  block: TeamBlockData;
+  member: TeamMember;
+  photo?: PhotoDTO;
+  index: number;
+  cardIndex?: number;
+  totalMembers?: number;
+  onNext?: () => void;
+}) {
+  const position = editorialPosition(block, index);
+  const isRight = position === "right";
+  const { firstName, lastName } = splitName(member.name);
+  const description =
+    member.description?.trim() ||
+    "Share a short bio, specialty, or role description for this team member.";
+  const memberCount = totalMembers ?? 0;
+  const canAdvance = Boolean(onNext && memberCount > 1);
+  const nextLabel = canAdvance
+    ? `Show next team member, ${cardIndex === memberCount - 1 ? "back to the first member" : "next member"}`
+    : `View ${member.name || "team member"}`;
+
+  return (
+    <article
+      className="team-editorial-card relative my-10 flex flex-col justify-center md:my-12"
+      style={{ "--team-delay": "0ms" } as CSSProperties}
+    >
+      <div className="team-editorial-role">
+        <p
+          className={cn(
+            "mb-4 text-xs font-medium uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-500",
+            isRight && "md:text-right",
+          )}
+        >
+          {member.role || "Team member"}
+        </p>
+      </div>
+
+      <div
+        className={cn(
+          "flex flex-col items-start gap-8 md:flex-row md:items-center md:gap-0",
+          isRight ? "md:justify-start" : "md:justify-end",
+        )}
+      >
+        <div className={cn(isRight && "md:order-2")}>
+          <EditorialPortrait
+            member={member}
+            photo={photo}
+            priority={index === 0}
+          />
+        </div>
+
+        <div
+          className={cn(
+            "team-editorial-info relative z-[2] flex w-full flex-col gap-7 md:w-[calc(100%-350px)] md:gap-14",
+            isRight ? "md:left-8 md:items-end" : "md:-left-8",
+          )}
+        >
+          <div>
+            <p className="text-4xl font-extralight leading-[1.1] tracking-tight text-zinc-900 dark:text-white sm:text-5xl">
+              {firstName}
+              <br />
+              <span className="font-normal">{lastName}</span>
+            </p>
+          </div>
+
+          <div
+            className={cn(
+              "flex flex-col gap-6 sm:flex-row sm:gap-8",
+              isRight && "md:justify-end",
+            )}
+          >
+            {block.showCardArrow !== false && (
+              <button
+                type="button"
+                aria-label={nextLabel}
+                onClick={canAdvance ? onNext : undefined}
+                disabled={!canAdvance}
+                className={cn(
+                  "team-editorial-arrow group flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-300 transition-[transform,background-color,border-color] duration-300 hover:scale-110 hover:border-zinc-600 hover:bg-zinc-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] dark:border-white/20 dark:hover:border-white/60 dark:hover:bg-white/10 motion-reduce:transition-none",
+                  !canAdvance && "cursor-default opacity-70 hover:scale-100 hover:border-zinc-300 hover:bg-transparent dark:hover:border-white/20 dark:hover:bg-transparent",
+                  isRight && "sm:order-2",
+                )}
+              >
+                <ArrowRight
+                  size={22}
+                  className={cn(
+                    "text-zinc-600 transition-all duration-300 group-hover:-rotate-45 group-hover:text-white dark:text-zinc-400 dark:group-hover:text-white motion-reduce:transition-none",
+                    isRight && "rotate-180 group-hover:rotate-[225deg]",
+                  )}
+                />
+              </button>
+            )}
+
+            <div className="w-full sm:max-w-[22rem] md:w-[40%]">
+              <p
+                className={cn(
+                  "text-sm leading-[1.8] text-zinc-500 dark:text-zinc-400",
+                  isRight && "md:text-right",
+                )}
+              >
+                {description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function EditorialTeamCards({
+  block,
+  members,
+  photoMap,
+}: {
+  block: TeamBlockData;
+  members: TeamMember[];
+  photoMap: Map<string, PhotoDTO>;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const safeActiveIndex = activeIndex < members.length ? activeIndex : 0;
+  const activeMember = members[safeActiveIndex] ?? members[0];
+  const activePhoto = activeMember?.photoId
+    ? photoMap.get(activeMember.photoId)
+    : undefined;
+
+  if (!activeMember) return null;
+
+  return (
+    <section className="team-showcase-block team-editorial-block overflow-x-clip bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 md:px-6">
+        {block.title.trim() && (
+          <h2 className="mb-8 text-xs font-medium uppercase tracking-[0.24em] text-[hsl(var(--muted-foreground))]">
+            {block.title}
+          </h2>
+        )}
+        <EditorialTeamCard
+          key={activeMember.id}
+          block={block}
+          member={activeMember}
+          photo={activePhoto}
+          index={safeActiveIndex}
+          cardIndex={safeActiveIndex}
+          totalMembers={members.length}
+          onNext={() => setActiveIndex((current) => (current + 1) % members.length)}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   const members = useMemo(
     () => (block.members ?? []).filter((member) => !memberIsEmpty(member)),
@@ -190,6 +408,16 @@ export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
           Team - add members
         </div>
       </section>
+    );
+  }
+
+  if ((block.layout ?? "showcase") === "memberCards") {
+    return (
+      <EditorialTeamCards
+        block={block}
+        members={members}
+        photoMap={photoMap}
+      />
     );
   }
 
