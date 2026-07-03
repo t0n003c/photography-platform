@@ -372,6 +372,8 @@ export function BookSliderBlock({
     "--book-slider-text": block.textColor || "#2d251d",
     "--book-slider-accent": block.accentColor || "#8b5e34",
     "--book-slider-shadow-opacity": shadowStrength,
+    "--book-slider-page-width": `${size.width}px`,
+    "--book-slider-shell-width": `${size.width + 128}px`,
   } as CSSPropertiesWithVars;
 
   return (
@@ -405,46 +407,48 @@ export function BookSliderBlock({
             <StaticBookFallback block={block} pages={pages} photoMap={photoMap} />
           ) : (
             <div className="relative flex justify-center">
-              <HTMLFlipBook
-                ref={bookRef}
-                width={size.width}
-                height={size.height}
-                size="stretch"
-                minWidth={260}
-                maxWidth={size.width}
-                minHeight={360}
-                maxHeight={size.height}
-                startPage={0}
-                drawShadow
-                flippingTime={950}
-                usePortrait
-                startZIndex={10}
-                autoSize
-                maxShadowOpacity={shadowStrength}
-                showCover
-                mobileScrollSupport
-                clickEventForward
-                useMouseEvents
-                swipeDistance={24}
-                showPageCorners
-                disableFlipByClick={false}
-                className="book-slider-flipbook"
-                style={{}}
-                onFlip={(event) => setPageIndex(Number(event.data) || 0)}
-                onInit={syncPageCount}
-              >
-                <BookCover block={block} photo={coverPhoto} />
-                {pages.map((page, index) => (
-                  <BookPage
-                    key={page.id}
-                    page={page}
-                    index={index}
-                    photo={selectedPhoto(page.photoId, photoMap)}
-                    block={block}
-                  />
-                ))}
-                <BookCover block={block} photo={coverPhoto} back />
-              </HTMLFlipBook>
+              <div className="book-slider-single-frame">
+                <HTMLFlipBook
+                  ref={bookRef}
+                  width={size.width}
+                  height={size.height}
+                  size="stretch"
+                  minWidth={260}
+                  maxWidth={size.width}
+                  minHeight={360}
+                  maxHeight={size.height}
+                  startPage={0}
+                  drawShadow
+                  flippingTime={950}
+                  usePortrait
+                  startZIndex={10}
+                  autoSize
+                  maxShadowOpacity={shadowStrength}
+                  showCover
+                  mobileScrollSupport
+                  clickEventForward
+                  useMouseEvents
+                  swipeDistance={24}
+                  showPageCorners
+                  disableFlipByClick={false}
+                  className="book-slider-flipbook"
+                  style={{}}
+                  onFlip={(event) => setPageIndex(Number(event.data) || 0)}
+                  onInit={syncPageCount}
+                >
+                  <BookCover block={block} photo={coverPhoto} />
+                  {pages.map((page, index) => (
+                    <BookPage
+                      key={page.id}
+                      page={page}
+                      index={index}
+                      photo={selectedPhoto(page.photoId, photoMap)}
+                      block={block}
+                    />
+                  ))}
+                  <BookCover block={block} photo={coverPhoto} back />
+                </HTMLFlipBook>
+              </div>
 
               {showControls && (
                 <>

@@ -431,6 +431,7 @@ html.js .pr-root.is-enhanced {
 }
 
 .book-slider-shell {
+  max-width: min(100%, var(--book-slider-shell-width, 548px));
   background:
     radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.44), transparent 34%),
     var(--book-slider-bg);
@@ -451,6 +452,10 @@ html.js .pr-root.is-enhanced {
 
 .book-slider-flipbook {
   filter: drop-shadow(0 24px 32px rgb(40 28 18 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.35)));
+}
+
+.book-slider-single-frame {
+  width: min(100%, var(--book-slider-page-width, 420px));
 }
 
 .dark .book-slider-flipbook {
