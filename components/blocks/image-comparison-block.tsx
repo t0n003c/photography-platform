@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
-import { ChevronsLeftRight } from "lucide-react";
+import { ChevronsLeftRight, ChevronsUpDown } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { cn } from "@/src/lib/utils";
@@ -32,6 +32,7 @@ const ASPECT_CLASS: Record<
   square: "aspect-square",
   "4-5": "aspect-[4/5]",
   portrait: "aspect-[4/5]",
+  "3-4": "aspect-[3/4]",
   "2-3": "aspect-[2/3]",
   "9-16": "aspect-[9/16]",
 };
@@ -98,6 +99,8 @@ export function ImageComparisonBlock({
   const leftPhoto = selectedPhoto(block.leftPhotoId, photoMap);
   const rightPhoto = selectedPhoto(block.rightPhotoId, photoMap);
   const hasBothPhotos = Boolean(leftPhoto && rightPhoto);
+  const orientation = block.comparisonOrientation ?? "horizontal";
+  const isVertical = orientation === "vertical";
   const [position, setPosition] = useState(() =>
     clampPosition(block.initialPosition ?? 50),
   );
@@ -108,11 +111,14 @@ export function ImageComparisonBlock({
     setPosition(clampPosition(block.initialPosition ?? 50));
   }, [block.initialPosition]);
 
-  const setPositionFromClientX = useCallback((clientX: number) => {
+  const setPositionFromPointer = useCallback((event: PointerEvent<HTMLDivElement>) => {
     const rect = stageRef.current?.getBoundingClientRect();
-    if (!rect || rect.width <= 0) return;
-    setPosition(clampPosition(((clientX - rect.left) / rect.width) * 100));
-  }, []);
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    const value = isVertical
+      ? ((event.clientY - rect.top) / rect.height) * 100
+      : ((event.clientX - rect.left) / rect.width) * 100;
+    setPosition(clampPosition(value));
+  }, [isVertical]);
 
   const onPointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -122,17 +128,17 @@ export function ImageComparisonBlock({
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       setDragging(true);
-      setPositionFromClientX(event.clientX);
+      setPositionFromPointer(event);
     },
-    [setPositionFromClientX],
+    [setPositionFromPointer],
   );
 
   const onPointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       if (!dragging) return;
-      setPositionFromClientX(event.clientX);
+      setPositionFromPointer(event);
     },
-    [dragging, setPositionFromClientX],
+    [dragging, setPositionFromPointer],
   );
 
   const endDrag = useCallback((event: PointerEvent<HTMLDivElement>) => {
@@ -143,11 +149,11 @@ export function ImageComparisonBlock({
   }, []);
 
   const onKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowLeft") {
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       event.preventDefault();
       setPosition((current) => clampPosition(current - (event.shiftKey ? 10 : 2)));
     }
-    if (event.key === "ArrowRight") {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       event.preventDefault();
       setPosition((current) => clampPosition(current + (event.shiftKey ? 10 : 2)));
     }
@@ -163,8 +169,10 @@ export function ImageComparisonBlock({
 
   if (!hasBothPhotos && !preview) return null;
 
-  const leftLabel = block.leftLabel?.trim() || "Before";
-  const rightLabel = block.rightLabel?.trim() || "After";
+  const leftLabel = block.leftLabel?.trim() || (isVertical ? "Top" : "Before");
+  const rightLabel = block.rightLabel?.trim() || (isVertical ? "Bottom" : "After");
+  const firstMissingLabel = isVertical ? "Choose top image" : "Choose left image";
+  const secondMissingLabel = isVertical ? "Choose bottom image" : "Choose right image";
   const panelStyle = {
     "--image-comparison-bg": block.backgroundColor || "#f4f4f5",
     "--image-comparison-handle": block.handleColor || "#ffffff",
@@ -202,7 +210,8 @@ export function ImageComparisonBlock({
             ref={stageRef}
             data-comparison-stage
             className={cn(
-              "group relative isolate w-full cursor-ew-resize touch-pan-y select-none overflow-hidden border border-[hsl(var(--border))] bg-[hsl(var(--muted))] shadow-[0_24px_80px_rgb(0_0_0/0.16)] outline-none",
+              "group relative isolate w-full touch-pan-y select-none overflow-hidden border border-[hsl(var(--border))] bg-[hsl(var(--muted))] shadow-[0_24px_80px_rgb(0_0_0/0.16)] outline-none",
+              isVertical ? "cursor-ns-resize" : "cursor-ew-resize",
               block.rounded !== false && "rounded-xl sm:rounded-2xl",
               ASPECT_CLASS[block.aspectRatio ?? "16-9"],
             )}
@@ -215,18 +224,22 @@ export function ImageComparisonBlock({
               <ComparisonImage
                 photo={leftPhoto}
                 label={leftLabel}
-                missingLabel="Choose left image"
+                missingLabel={firstMissingLabel}
                 priority
               />
             </div>
             <div
               className="absolute inset-0"
-              style={{ clipPath: `inset(0 0 0 ${position}%)` }}
+              style={{
+                clipPath: isVertical
+                  ? `inset(${position}% 0 0 0)`
+                  : `inset(0 0 0 ${position}%)`,
+              }}
             >
               <ComparisonImage
                 photo={rightPhoto}
                 label={rightLabel}
-                missingLabel="Choose right image"
+                missingLabel={secondMissingLabel}
                 priority
               />
             </div>
@@ -239,30 +252,44 @@ export function ImageComparisonBlock({
             </div>
             <div
               data-comparison-label
-              className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-white/88 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-950 shadow-sm backdrop-blur"
+              className={cn(
+                "pointer-events-none absolute z-20 rounded-full bg-white/88 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-950 shadow-sm backdrop-blur",
+                isVertical ? "bottom-4 right-4" : "right-4 top-4",
+              )}
             >
               {rightLabel}
             </div>
 
             <div
-              className="absolute inset-y-0 z-30 w-px bg-[var(--image-comparison-handle)] shadow-[0_0_20px_rgb(0_0_0/0.34)]"
-              style={{ left: `${position}%` }}
+              className={cn(
+                "absolute z-30 bg-[var(--image-comparison-handle)] shadow-[0_0_20px_rgb(0_0_0/0.34)]",
+                isVertical ? "inset-x-0 h-px" : "inset-y-0 w-px",
+              )}
+              style={isVertical ? { top: `${position}%` } : { left: `${position}%` }}
               aria-hidden="true"
             />
             <div
               data-comparison-handle
               role="slider"
               aria-label="Image comparison position"
+              aria-orientation={orientation}
               aria-valuemin={5}
               aria-valuemax={95}
               aria-valuenow={Math.round(position)}
               aria-valuetext={`${Math.round(position)} percent`}
               tabIndex={0}
-              className="absolute top-1/2 z-40 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-full border border-white/70 bg-[var(--image-comparison-handle)] text-neutral-950 shadow-[0_12px_30px_rgb(0_0_0/0.28)] outline-none ring-offset-2 transition-transform group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-              style={{ left: `${position}%` }}
+              className={cn(
+                "absolute z-40 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center rounded-full border border-white/70 bg-[var(--image-comparison-handle)] text-neutral-950 shadow-[0_12px_30px_rgb(0_0_0/0.28)] outline-none ring-offset-2 transition-transform group-hover:scale-105 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
+                isVertical ? "left-1/2 cursor-ns-resize" : "top-1/2 cursor-ew-resize",
+              )}
+              style={isVertical ? { top: `${position}%` } : { left: `${position}%` }}
               onKeyDown={onKeyDown}
             >
-              <ChevronsLeftRight className="h-5 w-5" aria-hidden="true" />
+              {isVertical ? (
+                <ChevronsUpDown className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <ChevronsLeftRight className="h-5 w-5" aria-hidden="true" />
+              )}
             </div>
           </div>
         </div>

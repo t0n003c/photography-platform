@@ -285,6 +285,7 @@ function makeBlock(type: BlockType): Block {
       rightPhotoId: null,
       leftLabel: "Before",
       rightLabel: "After",
+      comparisonOrientation: "horizontal",
       initialPosition: 50,
       aspectRatio: "16-9",
       width: "wide",
@@ -812,8 +813,11 @@ function blockSummary(block: Block): string {
       return block.text.slice(0, 40);
     case "featureCarousel":
       return `${block.photoIds.length} photos`;
-    case "imageComparison":
-      return `${block.leftLabel || "Before"} / ${block.rightLabel || "After"}`;
+    case "imageComparison": {
+      const comparisonKind =
+        block.comparisonOrientation === "vertical" ? "Vertical" : "Horizontal";
+      return `${comparisonKind} · ${block.leftLabel || "Before"} / ${block.rightLabel || "After"}`;
+    }
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
@@ -2508,7 +2512,8 @@ function LeafEditor({
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
         </div>
       );
-    case "imageComparison":
+    case "imageComparison": {
+      const isVerticalComparison = block.comparisonOrientation === "vertical";
       return (
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
@@ -2526,7 +2531,7 @@ function LeafEditor({
             </Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Left image">
+            <Field label={isVerticalComparison ? "Top image" : "Left image"}>
               <PhotoPicker
                 photos={photos}
                 value={block.leftPhotoId ?? null}
@@ -2534,7 +2539,7 @@ function LeafEditor({
                 containerClassName="max-h-64"
               />
             </Field>
-            <Field label="Right image">
+            <Field label={isVerticalComparison ? "Bottom image" : "Right image"}>
               <PhotoPicker
                 photos={photos}
                 value={block.rightPhotoId ?? null}
@@ -2544,13 +2549,26 @@ function LeafEditor({
             </Field>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Left label">
+            <Field label="Orientation">
+              <Select
+                value={block.comparisonOrientation ?? "horizontal"}
+                onChange={(e) =>
+                  set({
+                    comparisonOrientation: e.target.value as typeof block.comparisonOrientation,
+                  })
+                }
+              >
+                <option value="horizontal">Horizontal</option>
+                <option value="vertical">Vertical</option>
+              </Select>
+            </Field>
+            <Field label={isVerticalComparison ? "Top label" : "Left label"}>
               <Input
                 value={block.leftLabel ?? ""}
                 onChange={(e) => set({ leftLabel: e.target.value })}
               />
             </Field>
-            <Field label="Right label">
+            <Field label={isVerticalComparison ? "Bottom label" : "Right label"}>
               <Input
                 value={block.rightLabel ?? ""}
                 onChange={(e) => set({ rightLabel: e.target.value })}
@@ -2589,6 +2607,7 @@ function LeafEditor({
                 <option value="4-3">4:3 landscape</option>
                 <option value="square">1:1 square</option>
                 <option value="4-5">4:5 portrait</option>
+                <option value="3-4">3:4 portrait</option>
                 <option value="2-3">2:3 portrait</option>
                 <option value="9-16">9:16 vertical</option>
               </Select>
@@ -2641,6 +2660,7 @@ function LeafEditor({
           </div>
         </div>
       );
+    }
     case "featureCarousel": {
       const selectedPhotos = block.photoIds
         .map((photoId) => photos.find((photo) => photo.id === photoId))

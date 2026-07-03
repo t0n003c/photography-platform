@@ -1108,15 +1108,17 @@ is gitignored):
   has a `showcaseBackground` toggle; off removes the rounded outer panel/shadow while
   preserving the actual book page colors.
   Page block follow-up: Pages now include an `imageComparison` block based on
-  `21st.dev/@ravikatiyar/components/image-comparison-slider-horizontal`. It stores
-  left/right photo IDs, labels, title/subtitle, initial divider position, aspect ratio,
-  width, rounded-frame toggle, showcase background toggle/color, and handle color.
+  `21st.dev/@ravikatiyar/components/image-comparison-slider-horizontal` and the vertical
+  sibling at `21st.dev/@ravikatiyar/components/image-comparison-slider-vertical`. It stores
+  left/right photo IDs (shown as top/bottom in vertical mode), labels, title/subtitle,
+  horizontal/vertical orientation, initial divider position, aspect ratio, width,
+  rounded-frame toggle, showcase background toggle/color, and handle color.
   Aspect ratio options are 16:9 wide, 3:2 landscape, 4:3 landscape, 1:1 square,
-  4:5 portrait, 2:3 portrait, and 9:16 vertical; legacy saved `portrait` values still
-  render as 4:5.
-  The renderer is a responsive before/after slider with clipped right image, draggable
-  divider/handle, tap-to-move on desktop, touch handle dragging on mobile, keyboard
-  arrow/Home/End support, light/dark panel styling, and preview placeholders when one
+  4:5 portrait, 3:4 portrait, 2:3 portrait, and 9:16 vertical; legacy saved `portrait`
+  values still render as 4:5.
+  The renderer is a responsive before/after slider with clipped second image, draggable
+  divider/handle, tap-to-move on desktop, touch handle dragging on mobile, horizontal or
+  vertical keyboard arrow/Home/End support, light/dark panel styling, and preview placeholders when one
   side has not been selected. `collectPhotoIds` preloads both comparison photos.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
