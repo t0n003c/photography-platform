@@ -23,6 +23,12 @@ how to *work* in it. Authoritative long-form: [`docs/`](docs/) (start with
 6. **Verify before claiming done** — see the checklist below. Assert **0 console errors**.
 7. **Challenge-and-recommend** rather than silently comply when a request is ambiguous or a
    better approach exists.
+8. **Reference links set the quality bar.** When the owner pastes a reference link or asks to
+   add a function/feature/effect from a reference, first plan how it should fit this app, then
+   match the reference as closely as practical: timing, animation beats, easing, transitions,
+   layout, spacing, text overlays, typography/font feel, text styling, controls, and interaction
+   states. Preserve this app's data model, accessibility, performance, responsive behavior, and
+   light/dark mode support; clearly call out any intentional deviations before/when delivering.
 
 ---
 

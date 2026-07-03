@@ -1049,6 +1049,14 @@ is gitignored):
   (`data-grid-fourth`), deeper 3D scatter from far Z (`data-grid-fourth-v2`), tilted wide-grid
   fly-in (`data-grid-fifth`), 3D side-door reveal (`data-grid-eighth`), and skewed fan-in
   (`data-grid-ninth`). Re-read `codrops/OnScrollLayoutFormations/js/index.js` before adding them.
+- **Owner preference for reference-driven features/effects:** Whenever the owner pastes a
+  reference link or asks to add a new function, feature, UI component, or visual effect from a
+  reference, treat the reference as the implementation quality bar. Plan the app fit first, then
+  match timing, animation beats, easing, transitions, layout, spacing, text overlays,
+  typography/font feel, text styling, controls, and interaction states as closely as practical.
+  Every reference-driven addition should also work in light mode, dark mode, responsive desktop
+  and mobile views, and reduced motion/no-JS fallback where animation is involved. Document any
+  intentional deviations instead of silently drifting from the reference.
 - **Keep `src/lib/render-config.ts` as the single grid-type source of truth**; retire the unused
   `src/layout-config/` legacy descriptor when convenient.
 - **Set the production `SETTINGS_ENCRYPTION_KEY`** before storing real client/SMTP secrets.
