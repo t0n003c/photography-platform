@@ -3533,6 +3533,60 @@ main:has(.palmer-grid) + footer .footer-copyright {
   animation-play-state: paused;
 }
 
+.team-orbit-stage {
+  height: var(--team-orbit-stage-mobile, 360px);
+  width: min(100%, var(--team-orbit-stage-mobile, 360px));
+}
+
+.team-orbit-ring {
+  height: calc(var(--team-orbit-ring-radius-mobile, 128px) * 2);
+  width: calc(var(--team-orbit-ring-radius-mobile, 128px) * 2);
+  transform: translate(-50%, -50%);
+}
+
+.team-orbit-item {
+  height: var(--team-orbit-size-mobile, 60px);
+  width: var(--team-orbit-size-mobile, 60px);
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--team-orbit-angle, 0deg))
+    translateY(calc(var(--team-orbit-radius-mobile, 128px) * -1));
+  transition: transform 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: var(--team-orbit-delay, 0ms);
+}
+
+.team-orbit-item-inner {
+  transform: rotate(var(--team-orbit-counter-angle, 0deg));
+  transition: transform 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: var(--team-orbit-delay, 0ms);
+}
+
+.team-orbit-photo-button:hover {
+  transform: scale(1.12);
+  box-shadow: 0 18px 38px -18px rgb(99 102 241 / 0.8);
+}
+
+@media (min-width: 768px) {
+  .team-orbit-stage {
+    height: var(--team-orbit-stage-desktop, 500px);
+    width: min(100%, var(--team-orbit-stage-desktop, 500px));
+  }
+
+  .team-orbit-ring {
+    height: calc(var(--team-orbit-ring-radius-desktop, 200px) * 2);
+    width: calc(var(--team-orbit-ring-radius-desktop, 200px) * 2);
+  }
+
+  .team-orbit-item {
+    height: var(--team-orbit-size-desktop, 80px);
+    width: var(--team-orbit-size-desktop, 80px);
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--team-orbit-angle, 0deg))
+      translateY(calc(var(--team-orbit-radius-desktop, 200px) * -1));
+  }
+}
+
 @keyframes team-marquee-scroll {
   from {
     transform: translate3d(0, 0, 0);
@@ -3542,8 +3596,88 @@ main:has(.palmer-grid) + footer .footer-copyright {
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .team-orbit-profile-card {
+    animation: team-orbit-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .team-orbit-card-avatar {
+    animation: team-orbit-avatar-in 360ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .team-orbit-card-copy {
+    animation: team-orbit-copy-in 360ms 130ms ease-out both;
+  }
+
+  .team-orbit-icon-accent {
+    animation: team-orbit-icon-float 1.8s ease-in-out infinite alternate;
+  }
+
+  .team-orbit-icon-accent--late {
+    animation-delay: 500ms;
+  }
+}
+
+@keyframes team-orbit-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes team-orbit-avatar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes team-orbit-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes team-orbit-icon-float {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+  to {
+    transform: translate3d(0, -7px, 0) scale(1.08);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .team-marquee-track {
+    animation: none;
+  }
+
+  .team-orbit-item,
+  .team-orbit-item-inner,
+  .team-orbit-photo-button,
+  .team-orbit-profile-card {
+    transition: none;
+  }
+
+  .team-orbit-profile-card,
+  .team-orbit-card-avatar,
+  .team-orbit-card-copy,
+  .team-orbit-icon-accent {
     animation: none;
   }
 }

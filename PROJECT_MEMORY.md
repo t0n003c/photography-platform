@@ -1094,6 +1094,15 @@ is gitignored):
   layout with reference-style active member markers, grayscale hover/tap transitions,
   reveal-on-active social links, mobile horizontal portrait scroll, and theme-aware
   light/dark colors.
+  Team block follow-up: `team.layout` now also supports `orbitCarousel`, based on
+  Sera UI / 21st.dev's Orbiting Carousel with Animated Icons reference. The block
+  stores orbit intro text, ring count (`auto`/1/2/3), autoplay speed, pause-on-hover,
+  progress dots, animated icon accents, and a center-card button label/link. The
+  renderer keeps the reference structure: a centered profile card with member portrait,
+  role, bio, arrows, and button, surrounded by circular member portraits that rotate
+  and counter-rotate so faces stay upright. Larger teams automatically split into
+  two or three concentric rings sharing the same center, with mobile-specific radii,
+  dark/light-safe colors, and reduced-motion/autoplay guards.
   Follow-up: The Team block now has a second layout, "Editorial member cards", based on
   Shatlyk1011/Emerald UI's Team Member Card. It stores `layout`, `cardPosition`, and
   `showCardArrow` on the block plus a per-member `description`; the admin editor exposes

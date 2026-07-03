@@ -1,16 +1,24 @@
 "use client";
 
 import {
+  useCallback,
+  useEffect,
   useMemo,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type PointerEvent,
 } from "react";
 import {
   ArrowRight,
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
   Facebook,
   Instagram,
   Linkedin,
+  Mail,
+  Sparkles,
   Twitter,
   UsersRound,
   Youtube,
@@ -22,6 +30,9 @@ import type { LeafBlock } from "@/src/lib/blocks";
 
 type TeamBlockData = Extract<LeafBlock, { type: "team" }>;
 type TeamMember = TeamBlockData["members"][number];
+type CSSPropertiesWithVars = CSSProperties & {
+  [key: `--${string}`]: string | number | undefined;
+};
 
 interface TeamShowcaseBlockProps {
   block: TeamBlockData;
@@ -42,6 +53,20 @@ const COLUMN_CLASSES = [
     card: "w-[115px] h-[125px] sm:w-[136px] sm:h-[146px] md:w-[162px] md:h-[172px]",
   },
 ];
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return reduced;
+}
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -820,6 +845,400 @@ function CreativeTeamSection({
   );
 }
 
+function orbitRingCount(memberCount: number, setting?: string) {
+  if (setting === "1" || setting === "2" || setting === "3") {
+    return Math.min(Number(setting), Math.max(1, memberCount));
+  }
+  if (memberCount > 16) return 3;
+  if (memberCount > 8) return 2;
+  return 1;
+}
+
+function orbitRadii(ringCount: number, ringIndex: number) {
+  const desktop =
+    ringCount === 1
+      ? [200]
+      : ringCount === 2
+        ? [150, 225]
+        : [118, 196, 274];
+  const mobile =
+    ringCount === 1
+      ? [128]
+      : ringCount === 2
+        ? [92, 148]
+        : [74, 120, 166];
+
+  return {
+    desktop: desktop[ringIndex] ?? desktop[desktop.length - 1],
+    mobile: mobile[ringIndex] ?? mobile[mobile.length - 1],
+  };
+}
+
+function orbitPortraitSizes(ringCount: number, ringIndex: number) {
+  if (ringCount === 1) return { desktop: 80, mobile: 60 };
+  if (ringCount === 2) {
+    return {
+      desktop: ringIndex === 0 ? 68 : 76,
+      mobile: ringIndex === 0 ? 48 : 56,
+    };
+  }
+  return {
+    desktop: ringIndex === 0 ? 56 : ringIndex === 1 ? 64 : 72,
+    mobile: ringIndex === 0 ? 40 : ringIndex === 1 ? 46 : 52,
+  };
+}
+
+function orbitStageSize(ringCount: number) {
+  if (ringCount === 3) return { desktop: 720, mobile: 410 };
+  if (ringCount === 2) return { desktop: 610, mobile: 380 };
+  return { desktop: 500, mobile: 360 };
+}
+
+function orbitTransitionDelay(
+  position: number,
+  anchor: number,
+  itemCount: number,
+  reduced: boolean,
+) {
+  if (reduced || itemCount <= 1) return "0ms";
+  const raw = Math.abs(position - anchor);
+  const wrapped = Math.min(raw, itemCount - raw);
+  return `${Math.min(220, wrapped * 45)}ms`;
+}
+
+function splitOrbitRings(members: TeamMember[], ringCount: number) {
+  const rings = Array.from({ length: ringCount }, () => [] as TeamMember[]);
+  members.forEach((member, index) => {
+    rings[index % ringCount].push(member);
+  });
+  return rings.filter((ring) => ring.length > 0);
+}
+
+function OrbitMemberPortrait({
+  member,
+  photo,
+  active,
+  priority,
+}: {
+  member: TeamMember;
+  photo?: PhotoDTO;
+  active: boolean;
+  priority: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "team-orbit-photo-button block h-full w-full overflow-hidden rounded-full border bg-neutral-900 shadow-lg outline-none transition-[border-color,box-shadow,transform,opacity] duration-300",
+        active
+          ? "border-indigo-400 shadow-indigo-500/35"
+          : "border-white/25 opacity-90 hover:border-indigo-300 hover:opacity-100",
+      )}
+    >
+      {photo ? (
+        <ResponsiveImage
+          photo={photo}
+          sizes="(max-width: 767px) 56px, 80px"
+          priority={priority}
+          className="h-full w-full"
+        />
+      ) : (
+        <PlaceholderPortrait
+          member={member}
+          className="bg-[linear-gradient(145deg,#1f2937,#6366f1)] text-sm text-white"
+        />
+      )}
+    </span>
+  );
+}
+
+function OrbitTeamCarousel({
+  block,
+  members,
+  photoMap,
+}: {
+  block: TeamBlockData;
+  members: TeamMember[];
+  photoMap: Map<string, PhotoDTO>;
+}) {
+  const reduced = useReducedMotion();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const activeMember = members[activeIndex] ?? members[0];
+  const activePhoto = activeMember?.photoId
+    ? photoMap.get(activeMember.photoId)
+    : undefined;
+  const ringCount = orbitRingCount(members.length, block.orbitRingCount);
+  const rings = useMemo(
+    () => splitOrbitRings(members, ringCount),
+    [members, ringCount],
+  );
+  const stageSize = orbitStageSize(ringCount);
+  const title = block.title.trim();
+  const subtitle = block.orbitSubtitle?.trim();
+  const buttonLabel = block.orbitButtonLabel?.trim();
+  const buttonHref = block.orbitButtonHref?.trim() ?? "";
+  const description =
+    activeMember?.description?.trim() ||
+    "Share a short bio, specialty, or role description for this team member.";
+  const autoplayDelay = Math.max(
+    2000,
+    Math.min(15000, block.orbitSpeed ?? 5000),
+  );
+  const canNavigate = members.length > 1;
+
+  useEffect(() => {
+    if (activeIndex <= members.length - 1) return;
+    setActiveIndex(0);
+  }, [activeIndex, members.length]);
+
+  const next = useCallback(() => {
+    if (!canNavigate) return;
+    setActiveIndex((current) => (current + 1) % members.length);
+  }, [canNavigate, members.length]);
+
+  const previous = useCallback(() => {
+    if (!canNavigate) return;
+    setActiveIndex((current) => (current - 1 + members.length) % members.length);
+  }, [canNavigate, members.length]);
+
+  useEffect(() => {
+    if (
+      reduced ||
+      !canNavigate ||
+      block.orbitAutoplay === false ||
+      (block.orbitPauseOnHover !== false && paused)
+    ) {
+      return;
+    }
+    const timer = window.setInterval(next, autoplayDelay);
+    return () => window.clearInterval(timer);
+  }, [
+    autoplayDelay,
+    block.orbitAutoplay,
+    block.orbitPauseOnHover,
+    canNavigate,
+    next,
+    paused,
+    reduced,
+  ]);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      previous();
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      next();
+    }
+  };
+
+  return (
+    <section className="team-showcase-block team-orbit-section bg-[hsl(var(--background))] py-12 text-[hsl(var(--foreground))] md:py-20">
+      <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+        {(title || subtitle) && (
+          <div className="mx-auto mb-8 max-w-3xl text-center md:mb-10">
+            {title && (
+              <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] md:text-base">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div
+          className="team-orbit-panel relative mx-auto overflow-hidden rounded-[2rem] border border-white/10 bg-neutral-950 text-white shadow-2xl shadow-black/25 dark:bg-black"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocus={() => setPaused(true)}
+          onBlur={() => setPaused(false)}
+          onKeyDown={onKeyDown}
+          tabIndex={0}
+          aria-label="Orbiting team carousel"
+        >
+          <div
+            className="team-orbit-stage relative mx-auto flex items-center justify-center"
+            style={
+              {
+                "--team-orbit-stage-mobile": `${stageSize.mobile}px`,
+                "--team-orbit-stage-desktop": `${stageSize.desktop}px`,
+              } as CSSPropertiesWithVars
+            }
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.20),transparent_34%),radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.08),transparent_56%)]" />
+
+            {rings.map((ring, ringIndex) => {
+              const radii = orbitRadii(ringCount, ringIndex);
+              const anchorByMember = ring.findIndex(
+                (member) => member.id === activeMember.id,
+              );
+              const anchor =
+                anchorByMember >= 0 ? anchorByMember : activeIndex % ring.length;
+              return (
+                <div key={ringIndex} className="absolute inset-0">
+                  <div
+                    className="team-orbit-ring pointer-events-none absolute left-1/2 top-1/2 rounded-full border border-white/15"
+                    style={
+                      {
+                        "--team-orbit-ring-radius-mobile": `${radii.mobile}px`,
+                        "--team-orbit-ring-radius-desktop": `${radii.desktop}px`,
+                      } as CSSPropertiesWithVars
+                    }
+                    aria-hidden="true"
+                  />
+                  {ring.map((member, position) => {
+                    const memberIndex = members.findIndex((item) => item.id === member.id);
+                    const photo = member.photoId
+                      ? photoMap.get(member.photoId)
+                      : undefined;
+                    const isActive = member.id === activeMember.id;
+                    const angle = (position - anchor) * (360 / ring.length);
+                    const sizes = orbitPortraitSizes(ringCount, ringIndex);
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        aria-label={`Show ${member.name || "team member"}`}
+                        aria-current={isActive ? "true" : undefined}
+                        onClick={() => setActiveIndex(memberIndex)}
+                        className="team-orbit-item absolute left-1/2 top-1/2 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+                        style={
+                          {
+                            "--team-orbit-angle": `${angle}deg`,
+                            "--team-orbit-counter-angle": `${-angle}deg`,
+                            "--team-orbit-radius-mobile": `${radii.mobile}px`,
+                            "--team-orbit-radius-desktop": `${radii.desktop}px`,
+                            "--team-orbit-size-mobile": `${sizes.mobile}px`,
+                            "--team-orbit-size-desktop": `${sizes.desktop}px`,
+                            "--team-orbit-delay": orbitTransitionDelay(
+                              position,
+                              anchor,
+                              ring.length,
+                              reduced,
+                            ),
+                            zIndex: isActive ? 25 : 10 + ringIndex,
+                          } as CSSPropertiesWithVars
+                        }
+                      >
+                        <span className="team-orbit-item-inner block h-full w-full">
+                          <OrbitMemberPortrait
+                            member={member}
+                            photo={photo}
+                            active={isActive}
+                            priority={memberIndex < 3}
+                          />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            {activeMember && (
+              <article
+                key={activeMember.id}
+                className="team-orbit-profile-card relative z-30 w-48 rounded-xl border border-white/10 bg-neutral-950/90 p-3 text-center shadow-2xl shadow-black/40 backdrop-blur md:w-52 md:p-4"
+              >
+                {block.orbitShowIconAccents !== false && (
+                  <>
+                    <span className="team-orbit-icon-accent pointer-events-none absolute -left-3 top-7 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-indigo-200 backdrop-blur">
+                      <Sparkles className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="team-orbit-icon-accent team-orbit-icon-accent--late pointer-events-none absolute -right-3 bottom-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-indigo-200 backdrop-blur">
+                      <Mail className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                  </>
+                )}
+                <div className="team-orbit-card-avatar mx-auto -mt-10 h-16 w-16 overflow-hidden rounded-full border-4 border-neutral-950 bg-neutral-800 shadow-md md:-mt-12 md:h-20 md:w-20">
+                  {activePhoto ? (
+                    <ResponsiveImage
+                      photo={activePhoto}
+                      sizes="(max-width: 767px) 64px, 80px"
+                      priority
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <PlaceholderPortrait
+                      member={activeMember}
+                      className="bg-[linear-gradient(145deg,#1f2937,#6366f1)] text-lg text-white"
+                    />
+                  )}
+                </div>
+                <div className="team-orbit-card-copy">
+                  <h3 className="mt-2 truncate text-base font-bold text-white md:text-lg">
+                    {activeMember.name || "Team member"}
+                  </h3>
+                  <p className="mt-1 flex items-center justify-center gap-1 truncate text-xs text-neutral-300 md:text-sm">
+                    <Briefcase className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{activeMember.role || "Role"}</span>
+                  </p>
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-neutral-400">
+                    {description}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={previous}
+                    disabled={!canNavigate}
+                    aria-label="Previous team member"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  {buttonLabel && buttonHref && (
+                    <a
+                      {...linkAttrs(buttonHref)}
+                      className="inline-flex h-8 items-center justify-center rounded-full bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+                    >
+                      {buttonLabel}
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={next}
+                    disabled={!canNavigate}
+                    aria-label="Next team member"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </article>
+            )}
+          </div>
+
+          {block.orbitShowDots !== false && members.length > 1 && (
+            <div className="relative z-20 mx-auto flex max-w-md flex-wrap justify-center gap-2 px-6 pb-7">
+              {members.map((member, index) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  aria-label={`Show ${member.name || `member ${index + 1}`}`}
+                  aria-current={index === activeIndex ? "true" : undefined}
+                  onClick={() => setActiveIndex(index)}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-[background-color,transform,width] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300",
+                    index === activeIndex
+                      ? "w-5 bg-indigo-400"
+                      : "bg-white/25 hover:bg-white/50",
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   const members = useMemo(
     () => (block.members ?? []).filter((member) => !memberIsEmpty(member)),
@@ -869,6 +1288,16 @@ export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   if ((block.layout ?? "showcase") === "creativeSection") {
     return (
       <CreativeTeamSection
+        block={block}
+        members={members}
+        photoMap={photoMap}
+      />
+    );
+  }
+
+  if ((block.layout ?? "showcase") === "orbitCarousel") {
+    return (
+      <OrbitTeamCarousel
         block={block}
         members={members}
         photoMap={photoMap}

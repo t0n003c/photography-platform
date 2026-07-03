@@ -342,6 +342,13 @@ describe("page builder blocks", () => {
       marqueePauseOnHover: true,
       marqueeShowDecorations: true,
       marqueeShowQuote: true,
+      orbitRingCount: "auto",
+      orbitAutoplay: true,
+      orbitSpeed: 5000,
+      orbitPauseOnHover: true,
+      orbitShowDots: true,
+      orbitShowIconAccents: true,
+      orbitButtonLabel: "Connect",
       grayscale: true,
       showSocials: true,
       members: [
@@ -352,6 +359,52 @@ describe("page builder blocks", () => {
       ],
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-team-1"]);
+  });
+
+  it("keeps orbit team carousel settings", () => {
+    const blocks = parseBlocks([
+      {
+        id: "team",
+        type: "team",
+        layout: "orbitCarousel",
+        title: "Studio Team",
+        orbitSubtitle: "Choose a team member from the orbit.",
+        orbitRingCount: "3",
+        orbitAutoplay: false,
+        orbitSpeed: 6500,
+        orbitPauseOnHover: false,
+        orbitShowDots: false,
+        orbitShowIconAccents: false,
+        orbitButtonLabel: "Profile",
+        orbitButtonHref: "/team",
+        members: [
+          {
+            id: "member-1",
+            name: "Orbit Member",
+            role: "Producer",
+            description: "Coordinates clients and creative delivery.",
+            photoId: "orbit-photo",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "team",
+      type: "team",
+      layout: "orbitCarousel",
+      title: "Studio Team",
+      orbitSubtitle: "Choose a team member from the orbit.",
+      orbitRingCount: "3",
+      orbitAutoplay: false,
+      orbitSpeed: 6500,
+      orbitPauseOnHover: false,
+      orbitShowDots: false,
+      orbitShowIconAccents: false,
+      orbitButtonLabel: "Profile",
+      orbitButtonHref: "/team",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["orbit-photo"]);
   });
 
   it("keeps editorial team member card settings", () => {

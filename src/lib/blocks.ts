@@ -266,7 +266,7 @@ const TeamBlock = z.object({
   type: z.literal("team"),
   title: z.string().default(""),
   layout: z
-    .enum(["showcase", "memberCards", "marqueeCards", "creativeSection"])
+    .enum(["showcase", "memberCards", "marqueeCards", "creativeSection", "orbitCarousel"])
     .default("showcase"),
   cardPosition: z.enum(["alternate", "left", "right"]).default("alternate"),
   showCardArrow: z.boolean().default(true),
@@ -305,6 +305,19 @@ const TeamBlock = z.object({
   marqueeQuoteAuthor: z.string().default("Natalia Kara"),
   marqueeQuoteRole: z.string().default("Studio client"),
   marqueeQuotePhotoId: z.string().nullable().default(null),
+  orbitSubtitle: z
+    .string()
+    .default(
+      "Select a team member from the orbit to learn more about their role.",
+    ),
+  orbitRingCount: z.enum(["auto", "1", "2", "3"]).default("auto"),
+  orbitAutoplay: z.boolean().default(true),
+  orbitSpeed: z.number().int().min(2000).max(15000).default(5000),
+  orbitPauseOnHover: z.boolean().default(true),
+  orbitShowDots: z.boolean().default(true),
+  orbitShowIconAccents: z.boolean().default(true),
+  orbitButtonLabel: z.string().default("Connect"),
+  orbitButtonHref: z.string().default("#"),
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),

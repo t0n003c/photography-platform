@@ -344,6 +344,15 @@ function makeBlock(type: BlockType): Block {
       marqueeQuoteAuthor: "Natalia Kara",
       marqueeQuoteRole: "Studio client",
       marqueeQuotePhotoId: null,
+      orbitSubtitle: "Select a team member from the orbit to learn more about their role.",
+      orbitRingCount: "auto",
+      orbitAutoplay: true,
+      orbitSpeed: 5000,
+      orbitPauseOnHover: true,
+      orbitShowDots: true,
+      orbitShowIconAccents: true,
+      orbitButtonLabel: "Connect",
+      orbitButtonHref: "#",
       grayscale: true,
       showSocials: true,
       members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
@@ -1444,6 +1453,7 @@ function LeafEditor({
       const isEditorial = teamLayout === "memberCards";
       const isMarquee = teamLayout === "marqueeCards";
       const isCreative = teamLayout === "creativeSection";
+      const isOrbit = teamLayout === "orbitCarousel";
       const isShowcase = teamLayout === "showcase";
       const updateMember = (
         index: number,
@@ -1478,6 +1488,7 @@ function LeafEditor({
                 <option value="memberCards">Editorial member cards</option>
                 <option value="marqueeCards">Marquee team cards</option>
                 <option value="creativeSection">Creative team section</option>
+                <option value="orbitCarousel">Orbit carousel</option>
               </Select>
             </Field>
             {isEditorial ? (
@@ -1517,6 +1528,20 @@ function LeafEditor({
                   />
                   Show website and icons
                 </label>
+              </Field>
+            ) : isOrbit ? (
+              <Field label="Orbit rings">
+                <Select
+                  value={block.orbitRingCount ?? "auto"}
+                  onChange={(e) =>
+                    set({ orbitRingCount: e.target.value as typeof block.orbitRingCount })
+                  }
+                >
+                  <option value="auto">Auto by team size</option>
+                  <option value="1">1 circle</option>
+                  <option value="2">2 circles</option>
+                  <option value="3">3 circles</option>
+                </Select>
               </Field>
             ) : (
               <Field label="Portrait treatment">
@@ -1563,6 +1588,17 @@ function LeafEditor({
                   Show on cards
                 </label>
               </Field>
+            ) : isOrbit ? (
+              <Field label="Autoplay">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.orbitAutoplay ?? true}
+                    onChange={(e) => set({ orbitAutoplay: e.target.checked })}
+                  />
+                  Auto rotate members
+                </label>
+              </Field>
             ) : (
               <Field label="Social links">
                 <label className="flex h-9 items-center gap-2 text-sm">
@@ -1595,6 +1631,82 @@ function LeafEditor({
               </Field>
             )}
           </div>
+          {isOrbit && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Field label="Intro text">
+                    <Textarea
+                      rows={2}
+                      value={block.orbitSubtitle ?? ""}
+                      onChange={(e) => set({ orbitSubtitle: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Autoplay speed">
+                  <Input
+                    type="number"
+                    min={2000}
+                    max={15000}
+                    step={250}
+                    value={block.orbitSpeed ?? 5000}
+                    onChange={(e) =>
+                      set({
+                        orbitSpeed: Math.max(
+                          2000,
+                          Math.min(15000, pxInput(e.target.value)),
+                        ),
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Pause on hover">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.orbitPauseOnHover ?? true}
+                      onChange={(e) => set({ orbitPauseOnHover: e.target.checked })}
+                    />
+                    Pause autoplay
+                  </label>
+                </Field>
+                <Field label="Progress dots">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.orbitShowDots ?? true}
+                      onChange={(e) => set({ orbitShowDots: e.target.checked })}
+                    />
+                    Show below orbit
+                  </label>
+                </Field>
+                <Field label="Animated icons">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.orbitShowIconAccents ?? true}
+                      onChange={(e) =>
+                        set({ orbitShowIconAccents: e.target.checked })
+                      }
+                    />
+                    Show card accents
+                  </label>
+                </Field>
+                <Field label="Button label">
+                  <Input
+                    value={block.orbitButtonLabel ?? ""}
+                    onChange={(e) => set({ orbitButtonLabel: e.target.value })}
+                  />
+                </Field>
+                <Field label="Button link">
+                  <Input
+                    value={block.orbitButtonHref ?? ""}
+                    onChange={(e) => set({ orbitButtonHref: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
           {isCreative && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="grid gap-2 sm:grid-cols-2">
@@ -1840,7 +1952,7 @@ function LeafEditor({
                         onChange={(e) => updateMember(index, { role: e.target.value })}
                       />
                     </Field>
-                    {isEditorial && (
+                    {(isEditorial || isOrbit) && (
                       <div className="sm:col-span-2">
                         <Field label="Bio">
                           <Textarea
