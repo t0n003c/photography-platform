@@ -452,6 +452,12 @@ html.js .pr-root.is-enhanced {
     inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
+.book-slider-shell--plain,
+.dark .book-slider-shell--plain {
+  background: transparent;
+  box-shadow: none;
+}
+
 .book-slider-flipbook {
   filter: drop-shadow(0 24px 32px rgb(40 28 18 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.35)));
 }

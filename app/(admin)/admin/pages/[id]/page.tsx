@@ -307,6 +307,7 @@ function makeBlock(type: BlockType): Block {
       size: "standard",
       pageStyle: "soft",
       paperTexture: true,
+      showcaseBackground: true,
       showControls: true,
       showPageNumbers: true,
       shadowStrength: 0.45,
@@ -2792,6 +2793,16 @@ function LeafEditor({
                   onChange={(e) => set({ paperTexture: e.target.checked })}
                 />
                 Add paper and stain
+              </label>
+            </Field>
+            <Field label="Showcase background">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showcaseBackground ?? true}
+                  onChange={(e) => set({ showcaseBackground: e.target.checked })}
+                />
+                Show background panel
               </label>
             </Field>
             <Field label="Controls">

@@ -130,6 +130,7 @@ const BookSliderBlock = z.object({
   size: z.enum(["compact", "standard", "large"]).default("standard"),
   pageStyle: z.enum(["soft", "hard"]).default("soft"),
   paperTexture: z.boolean().default(true),
+  showcaseBackground: z.boolean().default(true),
   showControls: z.boolean().default(true),
   showPageNumbers: z.boolean().default(true),
   shadowStrength: z.number().min(0).max(1).default(0.45),

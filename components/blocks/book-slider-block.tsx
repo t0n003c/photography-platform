@@ -527,6 +527,7 @@ export function BookSliderBlock({
         <div
           className={cn(
             "book-slider-shell relative mx-auto rounded-[2rem] px-3 py-7 sm:px-8 sm:py-10",
+            block.showcaseBackground === false && "book-slider-shell--plain",
             size.maxWidth,
           )}
         >
