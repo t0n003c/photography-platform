@@ -1100,8 +1100,9 @@ is gitignored):
   and each book page now stores `imageMode` (`editorial` split or `full` image). Full
   image pages render the photo edge-to-edge with a dark text gradient/overlay in both
   the pageflip renderer and the reduced-motion static fallback. The live flipbook is
-  constrained to a single-page frame so each click/drag reveals one new page/photo at a
-  time instead of a two-page desktop spread.
+  a double-page desktop spread again, but each spread pairs one photo leaf with its
+  matching text leaf so each click/drag reveals one new photo at a time. Mobile keeps
+  the compact single-page leaf with photo and copy together.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

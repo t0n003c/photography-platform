@@ -94,6 +94,20 @@ function useReducedMotion() {
   return reduced;
 }
 
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query);
+    const sync = () => setMatches(mediaQuery.matches);
+    sync();
+    mediaQuery.addEventListener("change", sync);
+    return () => mediaQuery.removeEventListener("change", sync);
+  }, [query]);
+
+  return matches;
+}
+
 function selectedPhoto(photoId: string | null | undefined, photoMap: Map<string, PhotoDTO>) {
   return photoId ? photoMap.get(photoId) : undefined;
 }
@@ -215,6 +229,103 @@ function BookPageContent({
   );
 }
 
+function BookPhotoPageContent({
+  page,
+  index,
+  photo,
+}: {
+  page: BookSliderPage;
+  index: number;
+  photo?: PhotoDTO;
+}) {
+  const fullImage = (page.imageMode ?? "editorial") === "full";
+
+  if (fullImage) {
+    return (
+      <div className="book-slider-photo-leaf relative z-10 h-full min-h-[inherit] overflow-hidden text-white">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 82vw, 420px"
+            priority={index < 2}
+            className="absolute inset-0 h-full w-full"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-sm opacity-80">
+            Page image
+          </div>
+        )}
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/42 via-transparent to-black/12" />
+        <p className="absolute bottom-6 left-6 z-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/72">
+          {String(index + 1).padStart(2, "0")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="book-slider-photo-leaf relative z-10 flex h-full min-h-[inherit] flex-col p-7">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[0.85rem] shadow-[0_18px_42px_rgb(0_0_0/0.14)]">
+        {photo ? (
+          <ResponsiveImage
+            photo={photo}
+            sizes="(max-width: 767px) 82vw, 420px"
+            priority={index < 2}
+            className="h-full w-full"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-black/10 text-sm opacity-70">
+            Page image
+          </div>
+        )}
+      </div>
+      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.24em] opacity-55">
+        {String(index + 1).padStart(2, "0")}
+      </p>
+    </div>
+  );
+}
+
+function BookTextPageContent({
+  page,
+  index,
+}: {
+  page: BookSliderPage;
+  index: number;
+}) {
+  const linkLabel = page.linkLabel?.trim();
+  const linkHref = page.linkHref?.trim();
+
+  return (
+    <div className="book-slider-copy-leaf relative z-10 flex h-full min-h-[inherit] flex-col justify-between px-8 py-9">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-55">
+        {String(index + 1).padStart(2, "0")}
+      </p>
+      <div>
+        <h3 className="text-balance font-serif text-3xl font-semibold leading-[1.02] sm:text-4xl">
+          {page.headline || `Page ${index + 1}`}
+        </h3>
+        {page.subhead && (
+          <p className="mt-5 text-sm leading-relaxed opacity-78">{page.subhead}</p>
+        )}
+        {page.caption && (
+          <p className="mt-6 line-clamp-6 text-sm leading-relaxed opacity-62">
+            {page.caption}
+          </p>
+        )}
+        {linkLabel && linkHref && (
+          <PageLink href={linkHref}>
+            <span className="mt-7 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition hover:bg-black/5">
+              {linkLabel}
+            </span>
+          </PageLink>
+        )}
+      </div>
+      <span className="h-px w-16 bg-current opacity-25" />
+    </div>
+  );
+}
+
 const BookPage = forwardRef<
   HTMLDivElement,
   {
@@ -222,19 +333,30 @@ const BookPage = forwardRef<
     index: number;
     photo?: PhotoDTO;
     block: BookSliderBlockData;
+    variant?: "single" | "photo" | "copy";
   }
->(function BookPage({ page, index, photo, block }, ref) {
+>(function BookPage({ page, index, photo, block, variant = "single" }, ref) {
   return (
     <div
       ref={ref}
       className={cn(
         "book-slider-page relative overflow-hidden",
-        (page.imageMode ?? "editorial") === "full" && "book-slider-page--full",
+        variant === "photo" && "book-slider-page--photo",
+        variant === "copy" && "book-slider-page--copy",
+        variant !== "copy" &&
+          (page.imageMode ?? "editorial") === "full" &&
+          "book-slider-page--full",
         block.paperTexture !== false && "book-slider-page--texture",
       )}
       data-density={block.pageStyle === "hard" ? "hard" : undefined}
     >
-      <BookPageContent page={page} index={index} photo={photo} />
+      {variant === "photo" ? (
+        <BookPhotoPageContent page={page} index={index} photo={photo} />
+      ) : variant === "copy" ? (
+        <BookTextPageContent page={page} index={index} />
+      ) : (
+        <BookPageContent page={page} index={index} photo={photo} />
+      )}
     </div>
   );
 });
@@ -327,9 +449,9 @@ export function BookSliderBlock({
 }) {
   const [mounted, setMounted] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageCount, setPageCount] = useState(0);
   const bookRef = useRef<PageFlipHandle | null>(null);
   const reduced = useReducedMotion();
+  const desktopSpread = useMediaQuery("(min-width: 768px)");
   const pages = useMemo(
     () => (block.pages ?? []).filter((page) => page.headline || page.photoId || page.subhead),
     [block.pages],
@@ -339,15 +461,19 @@ export function BookSliderBlock({
   const shadowStrength = Math.max(0, Math.min(1, block.shadowStrength ?? 0.45));
   const hasPages = pages.length > 0;
   const showControls = block.showControls !== false && hasPages && !reduced;
+  const readyForFlipbook = mounted && !reduced && desktopSpread !== null;
+  const doublePageFrame = desktopSpread === true;
+  const displayedPage = doublePageFrame
+    ? Math.min(pages.length, Math.max(1, Math.floor((pageIndex - 1) / 2) + 1))
+    : Math.min(pages.length, Math.max(1, pageIndex));
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const syncPageCount = useCallback(() => {
-    const nextCount = bookRef.current?.pageFlip()?.getPageCount() ?? pages.length + 2;
-    setPageCount(nextCount);
-  }, [pages.length]);
+  useEffect(() => {
+    setPageIndex(0);
+  }, [doublePageFrame]);
 
   const next = useCallback(() => {
     bookRef.current?.pageFlip()?.flipNext("bottom");
@@ -373,7 +499,8 @@ export function BookSliderBlock({
     "--book-slider-accent": block.accentColor || "#8b5e34",
     "--book-slider-shadow-opacity": shadowStrength,
     "--book-slider-page-width": `${size.width}px`,
-    "--book-slider-shell-width": `${size.width + 128}px`,
+    "--book-slider-spread-width": `${size.width * 2}px`,
+    "--book-slider-shell-width": `${size.width * 2 + 128}px`,
   } as CSSPropertiesWithVars;
 
   return (
@@ -403,12 +530,20 @@ export function BookSliderBlock({
             size.maxWidth,
           )}
         >
-          {!mounted || reduced ? (
+          {!readyForFlipbook ? (
             <StaticBookFallback block={block} pages={pages} photoMap={photoMap} />
           ) : (
             <div className="relative flex justify-center">
-              <div className="book-slider-single-frame">
+              <div
+                className={cn(
+                  "book-slider-frame",
+                  doublePageFrame
+                    ? "book-slider-frame--spread"
+                    : "book-slider-frame--single",
+                )}
+              >
                 <HTMLFlipBook
+                  key={doublePageFrame ? "spread" : "single"}
                   ref={bookRef}
                   width={size.width}
                   height={size.height}
@@ -434,18 +569,35 @@ export function BookSliderBlock({
                   className="book-slider-flipbook"
                   style={{}}
                   onFlip={(event) => setPageIndex(Number(event.data) || 0)}
-                  onInit={syncPageCount}
                 >
                   <BookCover block={block} photo={coverPhoto} />
-                  {pages.map((page, index) => (
-                    <BookPage
-                      key={page.id}
-                      page={page}
-                      index={index}
-                      photo={selectedPhoto(page.photoId, photoMap)}
-                      block={block}
-                    />
-                  ))}
+                  {doublePageFrame
+                    ? pages.flatMap((page, index) => [
+                        <BookPage
+                          key={`${page.id}-photo`}
+                          page={page}
+                          index={index}
+                          photo={selectedPhoto(page.photoId, photoMap)}
+                          block={block}
+                          variant="photo"
+                        />,
+                        <BookPage
+                          key={`${page.id}-copy`}
+                          page={page}
+                          index={index}
+                          block={block}
+                          variant="copy"
+                        />,
+                      ])
+                    : pages.map((page, index) => (
+                        <BookPage
+                          key={page.id}
+                          page={page}
+                          index={index}
+                          photo={selectedPhoto(page.photoId, photoMap)}
+                          block={block}
+                        />
+                      ))}
                   <BookCover block={block} photo={coverPhoto} back />
                 </HTMLFlipBook>
               </div>
@@ -475,9 +627,9 @@ export function BookSliderBlock({
 
           {block.showPageNumbers !== false && !reduced && (
             <div className="mt-6 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--book-slider-text)] opacity-70">
-              <span>{String(pageIndex + 1).padStart(2, "0")}</span>
+              <span>{String(displayedPage).padStart(2, "0")}</span>
               <span className="h-px w-10 bg-current opacity-35" />
-              <span>{String(pageCount || pages.length + 2).padStart(2, "0")}</span>
+              <span>{String(pages.length).padStart(2, "0")}</span>
             </div>
           )}
         </div>

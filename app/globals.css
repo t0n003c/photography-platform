@@ -454,8 +454,12 @@ html.js .pr-root.is-enhanced {
   filter: drop-shadow(0 24px 32px rgb(40 28 18 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.35)));
 }
 
-.book-slider-single-frame {
+.book-slider-frame--single {
   width: min(100%, var(--book-slider-page-width, 420px));
+}
+
+.book-slider-frame--spread {
+  width: min(100%, var(--book-slider-spread-width, 840px));
 }
 
 .dark .book-slider-flipbook {
