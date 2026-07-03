@@ -171,6 +171,78 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["photo-a", "photo-b", "photo-c"]);
   });
 
+  it("keeps book slider blocks and collects cover and page photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "book",
+        type: "bookSlider",
+        title: "Wedding Guide",
+        subtitle: "Click to turn the pages.",
+        coverTitle: "The Guide",
+        coverSubtitle: "A client welcome book",
+        coverPhotoId: "cover-photo",
+        size: "large",
+        pageStyle: "hard",
+        paperTexture: true,
+        showControls: false,
+        showPageNumbers: false,
+        shadowStrength: 0.7,
+        backgroundColor: "#f7f1e8",
+        textColor: "#2d251d",
+        accentColor: "#8b5e34",
+        pages: [
+          {
+            id: "page-1",
+            photoId: "page-photo-1",
+            headline: "Arrival",
+            subhead: "A calm beginning.",
+            caption: "Short page caption.",
+            linkLabel: "View",
+            linkHref: "/galleries",
+          },
+          {
+            id: "page-2",
+            photoId: "page-photo-2",
+            headline: "Details",
+            subhead: "Small moments.",
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "book",
+      type: "bookSlider",
+      title: "Wedding Guide",
+      coverPhotoId: "cover-photo",
+      size: "large",
+      pageStyle: "hard",
+      paperTexture: true,
+      showControls: false,
+      showPageNumbers: false,
+      shadowStrength: 0.7,
+      pages: [
+        {
+          id: "page-1",
+          photoId: "page-photo-1",
+          headline: "Arrival",
+          linkHref: "/galleries",
+        },
+        {
+          id: "page-2",
+          photoId: "page-photo-2",
+          headline: "Details",
+        },
+      ],
+    });
+    expect(collectPhotoIds(blocks)).toEqual([
+      "cover-photo",
+      "page-photo-1",
+      "page-photo-2",
+    ]);
+  });
+
   it("keeps retro testimonial carousel blocks", () => {
     const blocks = parseBlocks([
       {

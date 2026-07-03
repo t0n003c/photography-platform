@@ -86,7 +86,7 @@ const newBlockId = () =>
 
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "featureCarousel", "gallery", "banner",
+  "heading", "subheading", "richtext", "image", "featureCarousel", "bookSlider", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
@@ -99,6 +99,21 @@ function makeTestimonialItem() {
     quote:
       "Professionals in their craft. Every image felt intentional, polished, and completely true to the day.",
     photoId: null,
+  };
+}
+
+function makeBookSliderPage(index = 0) {
+  return {
+    id: newBlockId(),
+    photoId: null,
+    headline: index === 0 ? "Opening frame" : `Story page ${index + 1}`,
+    subhead:
+      index === 0
+        ? "A quiet introduction to the collection."
+        : "Add a short line that supports this spread.",
+    caption: "",
+    linkLabel: "",
+    linkHref: "",
   };
 }
 
@@ -278,6 +293,25 @@ function makeBlock(type: BlockType): Block {
       primaryHref: "",
       secondaryLabel: "",
       secondaryHref: "",
+    };
+    case "bookSlider": return {
+      id,
+      type,
+      title: "Studio Lookbook",
+      subtitle: "Click or drag the pages to browse this editorial-style book.",
+      coverTitle: "Lookbook",
+      coverSubtitle: "A curated story in motion",
+      coverPhotoId: null,
+      pages: [makeBookSliderPage(0), makeBookSliderPage(1), makeBookSliderPage(2)],
+      size: "standard",
+      pageStyle: "soft",
+      paperTexture: true,
+      showControls: true,
+      showPageNumbers: true,
+      shadowStrength: 0.45,
+      backgroundColor: "#f7f1e8",
+      textColor: "#2d251d",
+      accentColor: "#8b5e34",
     };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
     case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
@@ -2664,6 +2698,271 @@ function LeafEditor({
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+    case "bookSlider": {
+      const pages = block.pages ?? [];
+      const updatePage = (
+        index: number,
+        patch: Partial<(typeof pages)[number]>,
+      ) => {
+        set({
+          pages: pages.map((page, pageIndex) =>
+            pageIndex === index ? { ...page, ...patch } : page,
+          ),
+        });
+      };
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="sm:col-span-2">
+              <Field label="Title">
+                <Input
+                  value={block.title ?? ""}
+                  onChange={(e) => set({ title: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Book size">
+              <Select
+                value={block.size ?? "standard"}
+                onChange={(e) => set({ size: e.target.value as typeof block.size })}
+              >
+                <option value="compact">Compact</option>
+                <option value="standard">Standard</option>
+                <option value="large">Large</option>
+              </Select>
+            </Field>
+            <Field label="Page feel">
+              <Select
+                value={block.pageStyle ?? "soft"}
+                onChange={(e) =>
+                  set({ pageStyle: e.target.value as typeof block.pageStyle })
+                }
+              >
+                <option value="soft">Soft pages</option>
+                <option value="hard">Hard cover feel</option>
+              </Select>
+            </Field>
+            <Field label="Background">
+              <Input
+                type="color"
+                value={block.backgroundColor ?? "#f7f1e8"}
+                onChange={(e) => set({ backgroundColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Text color">
+              <Input
+                type="color"
+                value={block.textColor ?? "#2d251d"}
+                onChange={(e) => set({ textColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Accent color">
+              <Input
+                type="color"
+                value={block.accentColor ?? "#8b5e34"}
+                onChange={(e) => set({ accentColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Shadow strength">
+              <Input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={block.shadowStrength ?? 0.45}
+                onChange={(e) =>
+                  set({
+                    shadowStrength: Math.max(
+                      0,
+                      Math.min(1, Number(e.target.value) || 0),
+                    ),
+                  })
+                }
+              />
+            </Field>
+            <Field label="Paper texture">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.paperTexture ?? true}
+                  onChange={(e) => set({ paperTexture: e.target.checked })}
+                />
+                Add paper and stain
+              </label>
+            </Field>
+            <Field label="Controls">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showControls ?? true}
+                  onChange={(e) => set({ showControls: e.target.checked })}
+                />
+                Show arrows
+              </label>
+            </Field>
+            <Field label="Page numbers">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showPageNumbers ?? true}
+                  onChange={(e) => set({ showPageNumbers: e.target.checked })}
+                />
+                Show progress
+              </label>
+            </Field>
+          </div>
+          <Field label="Subtitle">
+            <Textarea
+              rows={2}
+              value={block.subtitle ?? ""}
+              onChange={(e) => set({ subtitle: e.target.value })}
+            />
+          </Field>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Cover title">
+              <Input
+                value={block.coverTitle ?? ""}
+                onChange={(e) => set({ coverTitle: e.target.value })}
+              />
+            </Field>
+            <Field label="Cover subtitle">
+              <Input
+                value={block.coverSubtitle ?? ""}
+                onChange={(e) => set({ coverSubtitle: e.target.value })}
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Cover photo">
+                <PhotoPicker
+                  photos={photos}
+                  value={block.coverPhotoId ?? null}
+                  onChange={(photoId) => set({ coverPhotoId: photoId })}
+                  containerClassName="max-h-64"
+                />
+              </Field>
+            </div>
+          </div>
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">Book pages</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => set({ pages: [...pages, makeBookSliderPage(pages.length)] })}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add page
+              </Button>
+            </div>
+            {pages.length === 0 ? (
+              <p className="rounded-md border border-dashed p-4 text-sm text-[hsl(var(--muted-foreground))]">
+                Add at least one page to build the flipbook.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {pages.map((page, index) => (
+                  <div key={page.id} className="space-y-3 rounded-md border p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 text-sm font-medium">
+                        Page {index + 1}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === 0}
+                        onClick={() => set({ pages: swapAt(pages, index, index - 1) })}
+                        aria-label="Move page up"
+                        className="h-8 w-8"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === pages.length - 1}
+                        onClick={() => set({ pages: swapAt(pages, index, index + 1) })}
+                        aria-label="Move page down"
+                        className="h-8 w-8"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          set({ pages: pages.filter((_, pageIndex) => pageIndex !== index) })
+                        }
+                        aria-label="Remove page"
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Field label="Photo">
+                      <PhotoPicker
+                        photos={photos}
+                        value={page.photoId ?? null}
+                        onChange={(photoId) => updatePage(index, { photoId })}
+                        containerClassName="max-h-52"
+                      />
+                    </Field>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Field label="Headline">
+                        <Input
+                          value={page.headline ?? ""}
+                          onChange={(e) =>
+                            updatePage(index, { headline: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Subhead">
+                        <Input
+                          value={page.subhead ?? ""}
+                          onChange={(e) =>
+                            updatePage(index, { subhead: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <div className="sm:col-span-2">
+                        <Field label="Caption">
+                          <Textarea
+                            rows={2}
+                            value={page.caption ?? ""}
+                            onChange={(e) =>
+                              updatePage(index, { caption: e.target.value })
+                            }
+                          />
+                        </Field>
+                      </div>
+                      <Field label="Link label">
+                        <Input
+                          value={page.linkLabel ?? ""}
+                          onChange={(e) =>
+                            updatePage(index, { linkLabel: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Link URL">
+                        <Input
+                          value={page.linkHref ?? ""}
+                          onChange={(e) =>
+                            updatePage(index, { linkHref: e.target.value })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       );
     }

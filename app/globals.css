@@ -430,6 +430,149 @@ html.js .pr-root.is-enhanced {
   filter: grayscale(1) sepia(0.18) contrast(0.96);
 }
 
+.book-slider-shell {
+  background:
+    radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.44), transparent 34%),
+    var(--book-slider-bg);
+  color: var(--book-slider-text);
+  box-shadow:
+    0 28px 90px rgb(38 28 17 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.24)),
+    inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+.dark .book-slider-shell {
+  background:
+    radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.08), transparent 34%),
+    color-mix(in srgb, var(--book-slider-bg) 28%, black);
+  box-shadow:
+    0 30px 100px rgb(0 0 0 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.55)),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.book-slider-flipbook {
+  filter: drop-shadow(0 24px 32px rgb(40 28 18 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.35)));
+}
+
+.dark .book-slider-flipbook {
+  filter: drop-shadow(0 26px 36px rgb(0 0 0 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.62)));
+}
+
+.book-slider-page,
+.book-slider-cover {
+  height: 100%;
+  width: 100%;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.08), transparent 8%, transparent 92%, rgb(0 0 0 / 0.08)),
+    color-mix(in srgb, var(--book-slider-bg) 82%, white);
+  color: var(--book-slider-text);
+}
+
+.book-slider-page {
+  border: 1px solid color-mix(in srgb, var(--book-slider-text) 14%, transparent);
+}
+
+.book-slider-cover {
+  border: 1px solid rgb(255 255 255 / 0.18);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.22);
+}
+
+.book-slider-page--texture::before,
+.book-slider-page--texture::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.book-slider-page--texture::before {
+  background-image:
+    linear-gradient(90deg, rgb(255 255 255 / 0.18), transparent 18%, transparent 82%, rgb(0 0 0 / 0.08)),
+    url("/textures/retro-testimonial-paper.webp");
+  background-size: cover, 620px 620px;
+  mix-blend-mode: multiply;
+  opacity: 0.34;
+}
+
+.book-slider-page--texture::after {
+  background:
+    radial-gradient(circle at 18% 22%, rgb(131 87 45 / 0.18), transparent 18%),
+    radial-gradient(circle at 82% 70%, rgb(114 79 45 / 0.12), transparent 24%),
+    radial-gradient(ellipse at 42% 93%, rgb(95 62 34 / 0.10), transparent 28%);
+  opacity: 0.9;
+}
+
+.dark .book-slider-page--texture::before {
+  mix-blend-mode: screen;
+  opacity: 0.16;
+}
+
+.dark .book-slider-page--texture::after {
+  opacity: 0.32;
+}
+
+.book-slider-control {
+  position: absolute;
+  top: 50%;
+  z-index: 50;
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--book-slider-text) 18%, transparent);
+  background: color-mix(in srgb, var(--book-slider-bg) 72%, white);
+  color: var(--book-slider-text);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.14);
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    background-color 180ms ease;
+}
+
+.book-slider-control:hover {
+  background: color-mix(in srgb, var(--book-slider-accent) 14%, white);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.book-slider-control--prev {
+  left: 0.5rem;
+  transform: translate(-50%, -50%);
+}
+
+.book-slider-control--next {
+  right: 0.5rem;
+  transform: translate(50%, -50%);
+}
+
+.book-slider-control--prev:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.book-slider-control--next:hover {
+  transform: translate(50%, -50%) scale(1.06);
+}
+
+@media (max-width: 767px) {
+  .book-slider-control {
+    top: auto;
+    bottom: -1.5rem;
+  }
+
+  .book-slider-control--prev,
+  .book-slider-control--prev:hover {
+    left: calc(50% - 2rem);
+    transform: translate(-100%, 0);
+  }
+
+  .book-slider-control--next,
+  .book-slider-control--next:hover {
+    right: calc(50% - 2rem);
+    transform: translate(100%, 0);
+  }
+}
+
 @keyframes testimonial-glass-card-in {
   0% {
     opacity: 0;

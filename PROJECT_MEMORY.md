@@ -1085,6 +1085,17 @@ is gitignored):
   cards, swipe gesture support, mobile scaling, light/dark-safe colors, autoplay pause
   on hover/focus, and a reduced-motion static fallback. `collectPhotoIds` preloads
   selected carousel images.
+  Page block follow-up: Pages now include a `bookSlider` block based on
+  `21st.dev/@aarispathan15/components/book-slider` and the `react-pageflip` library.
+  It is intentionally a Pages block rather than a Gallery-tab layout because it stores
+  curated book pages with per-page photo/headline/subhead/caption/link fields plus
+  cover title/subtitle/photo. Settings include compact/standard/large sizing, soft/hard
+  page feel, controls, page numbers, shadow strength, background/text/accent colors,
+  and a paper texture + stain toggle that reuses `/textures/retro-testimonial-paper.webp`.
+  `components/blocks/book-slider-block.tsx` dynamically loads `react-pageflip` for a
+  realistic click/drag page-turning book, lets the library switch to portrait mode on
+  mobile, and renders the same content as static cards for SSR/reduced-motion fallback.
+  `collectPhotoIds` preloads the cover and page photos.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/

@@ -106,6 +106,36 @@ const FeatureCarouselBlock = z.object({
   secondaryLabel: z.string().default(""),
   secondaryHref: z.string().default(""),
 });
+const BookSliderPage = z.object({
+  id,
+  photoId: z.string().nullable().default(null),
+  headline: z.string().default("Page headline"),
+  subhead: z.string().default("A short supporting line for this page."),
+  caption: z.string().default(""),
+  linkLabel: z.string().default(""),
+  linkHref: z.string().default(""),
+});
+const BookSliderBlock = z.object({
+  ...baseBlock,
+  type: z.literal("bookSlider"),
+  title: z.string().default("Studio Lookbook"),
+  subtitle: z
+    .string()
+    .default("Click or drag the pages to browse this editorial-style book."),
+  coverTitle: z.string().default("Lookbook"),
+  coverSubtitle: z.string().default("A curated story in motion"),
+  coverPhotoId: z.string().nullable().default(null),
+  pages: z.array(BookSliderPage).default([]),
+  size: z.enum(["compact", "standard", "large"]).default("standard"),
+  pageStyle: z.enum(["soft", "hard"]).default("soft"),
+  paperTexture: z.boolean().default(true),
+  showControls: z.boolean().default(true),
+  showPageNumbers: z.boolean().default(true),
+  shadowStrength: z.number().min(0).max(1).default(0.45),
+  backgroundColor: z.string().default("#f7f1e8"),
+  textColor: z.string().default("#2d251d"),
+  accentColor: z.string().default("#8b5e34"),
+});
 const GallerySortEnum = z.enum([
   "source",
   "newest",
@@ -564,6 +594,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   RichTextBlock,
   ImageBlock,
   FeatureCarouselBlock,
+  BookSliderBlock,
   GalleryBlock,
   BannerBlock,
   QuoteBlock,
@@ -622,6 +653,12 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
     if (b.type === "featureCarousel") ids.push(...b.photoIds);
+    if (b.type === "bookSlider") {
+      if (b.coverPhotoId) ids.push(b.coverPhotoId);
+      for (const page of b.pages) {
+        if (page.photoId) ids.push(page.photoId);
+      }
+    }
     if (b.type === "banner" && b.photoId) ids.push(b.photoId);
     if (b.type === "testimonials") {
       for (const item of b.items) {
@@ -657,6 +694,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   richtext: "Text",
   image: "Image",
   featureCarousel: "Feature carousel",
+  bookSlider: "Book slider",
   gallery: "Gallery",
   banner: "Banner",
   quote: "Quote",
