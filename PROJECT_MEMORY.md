@@ -1103,6 +1103,9 @@ is gitignored):
   and counter-rotate so faces stay upright. Larger teams automatically split into
   two or three concentric rings sharing the same center, with mobile-specific radii,
   dark/light-safe colors, and reduced-motion/autoplay guards.
+  Orbit carousel follow-up: forced 2-ring and 3-ring layouts use wider desktop/mobile
+  radii plus per-ring angle offsets so member portraits clear the center profile card
+  and alternate into neighboring ring gaps instead of lining up as straight spokes.
   Follow-up: The Team block now has a second layout, "Editorial member cards", based on
   Shatlyk1011/Emerald UI's Team Member Card. It stores `layout`, `cardPosition`, and
   `showCardArrow` on the block plus a per-member `description`; the admin editor exposes

@@ -859,19 +859,25 @@ function orbitRadii(ringCount: number, ringIndex: number) {
     ringCount === 1
       ? [200]
       : ringCount === 2
-        ? [150, 225]
-        : [118, 196, 274];
+        ? [202, 292]
+        : [190, 260, 328];
   const mobile =
     ringCount === 1
       ? [128]
       : ringCount === 2
-        ? [92, 148]
-        : [74, 120, 166];
+        ? [142, 188]
+        : [138, 168, 196];
 
   return {
     desktop: desktop[ringIndex] ?? desktop[desktop.length - 1],
     mobile: mobile[ringIndex] ?? mobile[mobile.length - 1],
   };
+}
+
+function orbitRingAngleOffset(ringIndex: number, ringCount: number, itemCount: number) {
+  if (ringCount <= 1 || itemCount <= 1) return 0;
+  const step = 360 / itemCount;
+  return ringIndex * (step / ringCount);
 }
 
 function orbitPortraitSizes(ringCount: number, ringIndex: number) {
@@ -889,8 +895,8 @@ function orbitPortraitSizes(ringCount: number, ringIndex: number) {
 }
 
 function orbitStageSize(ringCount: number) {
-  if (ringCount === 3) return { desktop: 720, mobile: 410 };
-  if (ringCount === 2) return { desktop: 610, mobile: 380 };
+  if (ringCount === 3) return { desktop: 820, mobile: 440 };
+  if (ringCount === 2) return { desktop: 710, mobile: 410 };
   return { desktop: 500, mobile: 360 };
 }
 
@@ -1097,7 +1103,9 @@ function OrbitTeamCarousel({
                       ? photoMap.get(member.photoId)
                       : undefined;
                     const isActive = member.id === activeMember.id;
-                    const angle = (position - anchor) * (360 / ring.length);
+                    const angle =
+                      (position - anchor) * (360 / ring.length) +
+                      orbitRingAngleOffset(ringIndex, ringCount, ring.length);
                     const sizes = orbitPortraitSizes(ringCount, ringIndex);
                     return (
                       <button
@@ -1143,7 +1151,7 @@ function OrbitTeamCarousel({
             {activeMember && (
               <article
                 key={activeMember.id}
-                className="team-orbit-profile-card relative z-30 w-48 rounded-xl border border-white/10 bg-neutral-950/90 p-3 text-center shadow-2xl shadow-black/40 backdrop-blur md:w-52 md:p-4"
+                className="team-orbit-profile-card relative z-30 w-40 rounded-xl border border-white/10 bg-neutral-950/90 p-2.5 text-center shadow-2xl shadow-black/40 backdrop-blur md:w-52 md:p-4"
               >
                 {block.orbitShowIconAccents !== false && (
                   <>
@@ -1155,7 +1163,7 @@ function OrbitTeamCarousel({
                     </span>
                   </>
                 )}
-                <div className="team-orbit-card-avatar mx-auto -mt-10 h-16 w-16 overflow-hidden rounded-full border-4 border-neutral-950 bg-neutral-800 shadow-md md:-mt-12 md:h-20 md:w-20">
+                <div className="team-orbit-card-avatar mx-auto -mt-8 h-14 w-14 overflow-hidden rounded-full border-4 border-neutral-950 bg-neutral-800 shadow-md md:-mt-12 md:h-20 md:w-20">
                   {activePhoto ? (
                     <ResponsiveImage
                       photo={activePhoto}
@@ -1171,14 +1179,14 @@ function OrbitTeamCarousel({
                   )}
                 </div>
                 <div className="team-orbit-card-copy">
-                  <h3 className="mt-2 truncate text-base font-bold text-white md:text-lg">
+                  <h3 className="mt-2 truncate text-sm font-bold text-white md:text-lg">
                     {activeMember.name || "Team member"}
                   </h3>
-                  <p className="mt-1 flex items-center justify-center gap-1 truncate text-xs text-neutral-300 md:text-sm">
+                  <p className="mt-1 flex items-center justify-center gap-1 truncate text-[11px] text-neutral-300 md:text-sm">
                     <Briefcase className="h-3 w-3 shrink-0" aria-hidden="true" />
                     <span className="truncate">{activeMember.role || "Role"}</span>
                   </p>
-                  <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-neutral-400">
+                  <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-neutral-400 md:text-xs">
                     {description}
                   </p>
                 </div>
@@ -1188,14 +1196,14 @@ function OrbitTeamCarousel({
                     onClick={previous}
                     disabled={!canNavigate}
                     aria-label="Previous team member"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40 md:h-8 md:w-8"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                   </button>
                   {buttonLabel && buttonHref && (
                     <a
                       {...linkAttrs(buttonHref)}
-                      className="inline-flex h-8 items-center justify-center rounded-full bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+                      className="inline-flex h-7 items-center justify-center rounded-full bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 md:h-8 md:px-4 md:text-sm"
                     >
                       {buttonLabel}
                     </a>
@@ -1205,7 +1213,7 @@ function OrbitTeamCarousel({
                     onClick={next}
                     disabled={!canNavigate}
                     aria-label="Next team member"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-neutral-200 transition hover:bg-white/15 disabled:opacity-40 md:h-8 md:w-8"
                   >
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </button>
