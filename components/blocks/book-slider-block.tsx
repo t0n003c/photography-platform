@@ -626,7 +626,7 @@ export function BookSliderBlock({
           )}
 
           {block.showPageNumbers !== false && !reduced && (
-            <div className="mt-6 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--book-slider-text)] opacity-70">
+            <div className="mt-6 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--book-slider-effective-text)] opacity-70">
               <span>{String(displayedPage).padStart(2, "0")}</span>
               <span className="h-px w-10 bg-current opacity-35" />
               <span>{String(pages.length).padStart(2, "0")}</span>

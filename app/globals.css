@@ -431,17 +431,19 @@ html.js .pr-root.is-enhanced {
 }
 
 .book-slider-shell {
+  --book-slider-effective-text: var(--book-slider-text);
   max-width: min(100%, var(--book-slider-shell-width, 548px));
   background:
     radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.44), transparent 34%),
     var(--book-slider-bg);
-  color: var(--book-slider-text);
+  color: var(--book-slider-effective-text);
   box-shadow:
     0 28px 90px rgb(38 28 17 / calc(var(--book-slider-shadow-opacity, 0.45) * 0.24)),
     inset 0 0 0 1px rgb(0 0 0 / 0.06);
 }
 
 .dark .book-slider-shell {
+  --book-slider-effective-text: color-mix(in srgb, var(--book-slider-bg) 10%, white);
   background:
     radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.08), transparent 34%),
     color-mix(in srgb, var(--book-slider-bg) 28%, black);
@@ -473,11 +475,21 @@ html.js .pr-root.is-enhanced {
   background:
     linear-gradient(90deg, rgb(0 0 0 / 0.08), transparent 8%, transparent 92%, rgb(0 0 0 / 0.08)),
     color-mix(in srgb, var(--book-slider-bg) 82%, white);
-  color: var(--book-slider-text);
+  color: var(--book-slider-effective-text);
+}
+
+.dark .book-slider-page {
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.07), transparent 9%, transparent 91%, rgb(0 0 0 / 0.26)),
+    color-mix(in srgb, var(--book-slider-bg) 18%, #12100e);
 }
 
 .book-slider-page {
   border: 1px solid color-mix(in srgb, var(--book-slider-text) 14%, transparent);
+}
+
+.dark .book-slider-page {
+  border-color: color-mix(in srgb, var(--book-slider-effective-text) 16%, transparent);
 }
 
 .book-slider-cover {
@@ -512,12 +524,19 @@ html.js .pr-root.is-enhanced {
 }
 
 .dark .book-slider-page--texture::before {
-  mix-blend-mode: screen;
-  opacity: 0.16;
+  background-image:
+    linear-gradient(90deg, rgb(255 255 255 / 0.09), transparent 18%, transparent 82%, rgb(0 0 0 / 0.18)),
+    url("/textures/retro-testimonial-paper.webp");
+  mix-blend-mode: overlay;
+  opacity: 0.28;
 }
 
 .dark .book-slider-page--texture::after {
-  opacity: 0.32;
+  background:
+    radial-gradient(circle at 18% 22%, rgb(255 226 185 / 0.08), transparent 18%),
+    radial-gradient(circle at 82% 70%, rgb(255 232 196 / 0.06), transparent 24%),
+    radial-gradient(ellipse at 42% 93%, rgb(0 0 0 / 0.18), transparent 30%);
+  opacity: 0.62;
 }
 
 .book-slider-control {
@@ -530,9 +549,9 @@ html.js .pr-root.is-enhanced {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--book-slider-text) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--book-slider-effective-text) 18%, transparent);
   background: color-mix(in srgb, var(--book-slider-bg) 72%, white);
-  color: var(--book-slider-text);
+  color: var(--book-slider-effective-text);
   box-shadow: 0 18px 40px rgb(0 0 0 / 0.14);
   transition:
     transform 180ms ease,
@@ -540,9 +559,18 @@ html.js .pr-root.is-enhanced {
     background-color 180ms ease;
 }
 
+.dark .book-slider-control {
+  background: color-mix(in srgb, var(--book-slider-bg) 20%, #181512);
+  box-shadow: 0 20px 46px rgb(0 0 0 / 0.42);
+}
+
 .book-slider-control:hover {
   background: color-mix(in srgb, var(--book-slider-accent) 14%, white);
   transform: translateY(-50%) scale(1.06);
+}
+
+.dark .book-slider-control:hover {
+  background: color-mix(in srgb, var(--book-slider-accent) 24%, #211c17);
 }
 
 .book-slider-control--prev {

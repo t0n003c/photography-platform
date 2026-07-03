@@ -1102,7 +1102,9 @@ is gitignored):
   the pageflip renderer and the reduced-motion static fallback. The live flipbook is
   a double-page desktop spread again, but each spread pairs one photo leaf with its
   matching text leaf so each click/drag reveals one new photo at a time. Mobile keeps
-  the compact single-page leaf with photo and copy together.
+  the compact single-page leaf with photo and copy together. Dark mode now derives a
+  dark paper surface, lighter page ink, visible counters, and dark controls from the
+  same book color settings instead of leaving the pages bright cream.
   Page block follow-up: Pages now also include a `team` block inspired by the 21st.dev
   Team Showcase reference. The block stores an optional section title, grayscale/social
   toggles, and ordered team members (`name`, `role`, optional `photoId`, plus X/LinkedIn/
