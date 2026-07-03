@@ -430,6 +430,26 @@ html.js .pr-root.is-enhanced {
   filter: grayscale(1) sepia(0.18) contrast(0.96);
 }
 
+.image-comparison-shell--panel {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.48), transparent 38%),
+    var(--image-comparison-bg, hsl(var(--muted)));
+  border: 1px solid color-mix(in srgb, hsl(var(--foreground)) 10%, transparent);
+  box-shadow:
+    0 24px 76px rgb(0 0 0 / 0.12),
+    inset 0 0 0 1px rgb(255 255 255 / 0.28);
+}
+
+.dark .image-comparison-shell--panel {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.08), transparent 38%),
+    color-mix(in srgb, var(--image-comparison-bg, #f4f4f5) 16%, #111111);
+  border-color: rgb(255 255 255 / 0.1);
+  box-shadow:
+    0 28px 82px rgb(0 0 0 / 0.46),
+    inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
 .book-slider-shell {
   --book-slider-effective-text: var(--book-slider-text);
   max-width: min(100%, var(--book-slider-shell-width, 548px));

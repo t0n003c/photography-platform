@@ -171,6 +171,41 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["photo-a", "photo-b", "photo-c"]);
   });
 
+  it("keeps image comparison blocks and collects both photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "comparison",
+        type: "imageComparison",
+        title: "Retouch pass",
+        subtitle: "Drag to compare the edit.",
+        leftPhotoId: "before-photo",
+        rightPhotoId: "after-photo",
+        leftLabel: "Before",
+        rightLabel: "After",
+        initialPosition: 42,
+        aspectRatio: "4-3",
+        width: "full",
+        rounded: false,
+        showcaseBackground: false,
+        backgroundColor: "#111111",
+        handleColor: "#fefefe",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "comparison",
+      type: "imageComparison",
+      title: "Retouch pass",
+      leftPhotoId: "before-photo",
+      rightPhotoId: "after-photo",
+      initialPosition: 42,
+      aspectRatio: "4-3",
+      showcaseBackground: false,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["before-photo", "after-photo"]);
+  });
+
   it("keeps book slider blocks and collects cover and page photos", () => {
     const blocks = parseBlocks([
       {

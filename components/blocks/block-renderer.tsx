@@ -6,6 +6,7 @@ import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { GalleryBlock } from "@/components/blocks/gallery-block";
 import { BannerBlock } from "@/components/blocks/banner-block";
 import { FeatureCarouselBlock } from "@/components/blocks/feature-carousel-block";
+import { ImageComparisonBlock } from "@/components/blocks/image-comparison-block";
 import { BookSliderBlock } from "@/components/blocks/book-slider-block";
 import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-block";
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
@@ -385,6 +386,14 @@ function LeafView({
         </figure>
       );
     }
+    case "imageComparison":
+      return (
+        <ImageComparisonBlock
+          block={block}
+          photoMap={photoMap}
+          preview={preview}
+        />
+      );
     case "spacer": {
       const desktopHeight = spacerHeight(block.size, block.customHeight);
       const mobileHeight =
@@ -652,6 +661,7 @@ function LeafView({
 // rest are wrapped in a centered container with vertical rhythm.
 const FULL_BLEED = new Set([
   "banner",
+  "imageComparison",
   "featureCarousel",
   "bookSlider",
   "gallery",

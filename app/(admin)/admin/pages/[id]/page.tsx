@@ -86,7 +86,7 @@ const newBlockId = () =>
 
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "featureCarousel", "bookSlider", "gallery", "banner",
+  "heading", "subheading", "richtext", "image", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "scrollShowcase", "instagram", "columns",
 ];
@@ -276,6 +276,23 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
+    case "imageComparison": return {
+      id,
+      type,
+      title: "Before and after",
+      subtitle: "Drag the handle to compare the two versions.",
+      leftPhotoId: null,
+      rightPhotoId: null,
+      leftLabel: "Before",
+      rightLabel: "After",
+      initialPosition: 50,
+      aspectRatio: "16-9",
+      width: "wide",
+      rounded: true,
+      showcaseBackground: true,
+      backgroundColor: "#f4f4f5",
+      handleColor: "#ffffff",
+    };
     case "featureCarousel": return {
       id,
       type,
@@ -795,6 +812,8 @@ function blockSummary(block: Block): string {
       return block.text.slice(0, 40);
     case "featureCarousel":
       return `${block.photoIds.length} photos`;
+    case "imageComparison":
+      return `${block.leftLabel || "Before"} / ${block.rightLabel || "After"}`;
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
@@ -2487,6 +2506,132 @@ function LeafEditor({
             </Select>
           </Field>
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
+        </div>
+      );
+    case "imageComparison":
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Title">
+              <Input
+                value={block.title ?? ""}
+                onChange={(e) => set({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="Subtitle">
+              <Input
+                value={block.subtitle ?? ""}
+                onChange={(e) => set({ subtitle: e.target.value })}
+              />
+            </Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Left image">
+              <PhotoPicker
+                photos={photos}
+                value={block.leftPhotoId ?? null}
+                onChange={(photoId) => set({ leftPhotoId: photoId })}
+                containerClassName="max-h-64"
+              />
+            </Field>
+            <Field label="Right image">
+              <PhotoPicker
+                photos={photos}
+                value={block.rightPhotoId ?? null}
+                onChange={(photoId) => set({ rightPhotoId: photoId })}
+                containerClassName="max-h-64"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Left label">
+              <Input
+                value={block.leftLabel ?? ""}
+                onChange={(e) => set({ leftLabel: e.target.value })}
+              />
+            </Field>
+            <Field label="Right label">
+              <Input
+                value={block.rightLabel ?? ""}
+                onChange={(e) => set({ rightLabel: e.target.value })}
+              />
+            </Field>
+            <Field label="Starting position">
+              <Input
+                type="number"
+                min={5}
+                max={95}
+                step={1}
+                value={block.initialPosition ?? 50}
+                onChange={(e) =>
+                  set({
+                    initialPosition: Math.min(
+                      95,
+                      Math.max(5, Number(e.target.value) || 50),
+                    ),
+                  })
+                }
+              />
+            </Field>
+            <Field label="Aspect ratio">
+              <Select
+                value={block.aspectRatio ?? "16-9"}
+                onChange={(e) =>
+                  set({ aspectRatio: e.target.value as typeof block.aspectRatio })
+                }
+              >
+                <option value="16-9">16:9</option>
+                <option value="4-3">4:3</option>
+                <option value="square">Square</option>
+                <option value="portrait">Portrait</option>
+              </Select>
+            </Field>
+            <Field label="Width">
+              <Select
+                value={block.width ?? "wide"}
+                onChange={(e) => set({ width: e.target.value as typeof block.width })}
+              >
+                <option value="normal">Normal</option>
+                <option value="wide">Wide</option>
+                <option value="full">Full</option>
+              </Select>
+            </Field>
+            <Field label="Handle color">
+              <Input
+                type="color"
+                value={block.handleColor ?? "#ffffff"}
+                onChange={(e) => set({ handleColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Background color">
+              <Input
+                type="color"
+                value={block.backgroundColor ?? "#f4f4f5"}
+                onChange={(e) => set({ backgroundColor: e.target.value })}
+                disabled={block.showcaseBackground === false}
+              />
+            </Field>
+            <Field label="Corners">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.rounded ?? true}
+                  onChange={(e) => set({ rounded: e.target.checked })}
+                />
+                Rounded frame
+              </label>
+            </Field>
+            <Field label="Showcase background">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showcaseBackground ?? true}
+                  onChange={(e) => set({ showcaseBackground: e.target.checked })}
+                />
+                Show background panel
+              </label>
+            </Field>
+          </div>
         </div>
       );
     case "featureCarousel": {

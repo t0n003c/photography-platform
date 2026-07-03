@@ -83,6 +83,25 @@ const ImageBlock = z.object({
   width: z.enum(["normal", "wide", "full"]).default("normal"),
   rounded: z.boolean().default(true),
 });
+const ImageComparisonBlock = z.object({
+  ...baseBlock,
+  type: z.literal("imageComparison"),
+  title: z.string().default("Before and after"),
+  subtitle: z
+    .string()
+    .default("Drag the handle to compare the two versions."),
+  leftPhotoId: z.string().nullable().default(null),
+  rightPhotoId: z.string().nullable().default(null),
+  leftLabel: z.string().default("Before"),
+  rightLabel: z.string().default("After"),
+  initialPosition: z.number().min(5).max(95).default(50),
+  aspectRatio: z.enum(["16-9", "4-3", "square", "portrait"]).default("16-9"),
+  width: z.enum(["normal", "wide", "full"]).default("wide"),
+  rounded: z.boolean().default(true),
+  showcaseBackground: z.boolean().default(true),
+  backgroundColor: z.string().default("#f4f4f5"),
+  handleColor: z.string().default("#ffffff"),
+});
 const FeatureCarouselBlock = z.object({
   ...baseBlock,
   type: z.literal("featureCarousel"),
@@ -595,6 +614,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   SubheadingBlock,
   RichTextBlock,
   ImageBlock,
+  ImageComparisonBlock,
   FeatureCarouselBlock,
   BookSliderBlock,
   GalleryBlock,
@@ -654,6 +674,10 @@ export function collectPhotoIds(blocks: Block[]): string[] {
   const visitLeaf = (b: LeafBlock) => {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
+    if (b.type === "imageComparison") {
+      if (b.leftPhotoId) ids.push(b.leftPhotoId);
+      if (b.rightPhotoId) ids.push(b.rightPhotoId);
+    }
     if (b.type === "featureCarousel") ids.push(...b.photoIds);
     if (b.type === "bookSlider") {
       if (b.coverPhotoId) ids.push(b.coverPhotoId);
@@ -695,6 +719,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   subheading: "Subheading",
   richtext: "Text",
   image: "Image",
+  imageComparison: "Image comparison",
   featureCarousel: "Feature carousel",
   bookSlider: "Book slider",
   gallery: "Gallery",
