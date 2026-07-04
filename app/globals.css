@@ -850,10 +850,6 @@ html.js .pr-root.is-enhanced {
   width: min(100% - 3rem, 73.125rem);
 }
 
-.about-reflector-block-classic .about-reflector-container {
-  width: min(100% - 3rem, 99.6875rem);
-}
-
 .about-reflector-heading {
   margin: 0 0 5.25rem;
   text-align: left;
@@ -1179,7 +1175,7 @@ html.js .pr-root.is-enhanced {
 .about-section-classic {
   display: flex;
   margin: 0 auto;
-  max-width: 1595px;
+  max-width: 1170px;
   min-height: 1080px;
   padding: 80px 0;
   position: relative;
@@ -1270,12 +1266,6 @@ html.js .pr-root.is-enhanced {
 .about-section-classic .img-wrap:nth-of-type(3) {
   grid-column: 2;
   grid-row: 3 / 6;
-}
-
-@media (max-width: 1600px) {
-  .about-section-classic {
-    max-width: 1170px;
-  }
 }
 
 @media (max-width: 1200px) {
@@ -1371,6 +1361,10 @@ html.js .pr-root.is-enhanced {
 
   .about-reflector-block-classic .about-reflector-container {
     width: 100%;
+  }
+
+  .about-reflector-block-classic .about-reflector-heading {
+    padding: 0 15px;
   }
 
   .about-reflector-heading {
@@ -1484,12 +1478,15 @@ html.js .pr-root.is-enhanced {
   }
 
   .about-section-classic .images-wrap {
-    display: block;
+    display: grid;
+    gap: 16px;
+    grid-auto-rows: clamp(48px, 16vw, 66px);
+    grid-template-columns: calc(50% - 8px) calc(50% - 8px);
   }
 
   .about-section-classic .img-wrap {
-    margin-bottom: 15px;
-    min-height: 250px;
+    margin-bottom: 0;
+    min-height: 0;
   }
 }
 
