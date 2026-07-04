@@ -247,19 +247,6 @@ html.js .pr-root.is-enhanced {
     linear-gradient(135deg, color-mix(in srgb, var(--sticky-footer-bg) 88%, white 12%), var(--sticky-footer-bg) 58%);
 }
 
-.sticky-site-footer__fixed::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.17;
-  background-image:
-    linear-gradient(currentColor 1px, transparent 1px),
-    linear-gradient(90deg, currentColor 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: linear-gradient(to bottom, transparent, black 18%, black 76%, transparent);
-}
-
 .sticky-site-footer__content {
   position: relative;
   z-index: 1;

@@ -1256,8 +1256,8 @@ is gitignored):
   and bottom utility row like the Design preview instead of placing menu columns beside the
   oversized brand. This prevents real-page text overlap. The admin label is now "Reveal distance";
   it controls how much scroll space the sticky footer gets before it fully settles.
-  Follow-up: the Sticky animated footer live preview now includes the same subtle line-grid
-  background overlay as the public footer, so the Design preview and actual page match better.
+  Follow-up: the Sticky animated footer line-grid overlay was removed from both public rendering
+  and the Design preview. The preview now uses the same two accent glows as the public footer.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
