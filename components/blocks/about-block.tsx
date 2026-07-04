@@ -296,7 +296,12 @@ export function AboutBlock({
   const layout = block.layout ?? "simple";
 
   return (
-    <section className="about-reflector-block">
+    <section
+      className={cn(
+        "about-reflector-block",
+        layout === "classic" && "about-reflector-block-classic",
+      )}
+    >
       <div className="about-reflector-container">
         <SectionHeading block={block} />
         {layout === "modern" ? (

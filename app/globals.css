@@ -850,6 +850,10 @@ html.js .pr-root.is-enhanced {
   width: min(100% - 3rem, 73.125rem);
 }
 
+.about-reflector-block-classic .about-reflector-container {
+  width: min(100% - 3rem, 99.6875rem);
+}
+
 .about-reflector-heading {
   margin: 0 0 5.25rem;
   text-align: left;
@@ -1176,6 +1180,7 @@ html.js .pr-root.is-enhanced {
   display: flex;
   margin: 0 auto;
   max-width: 1595px;
+  min-height: 1080px;
   padding: 80px 0;
   position: relative;
 }
@@ -1247,7 +1252,7 @@ html.js .pr-root.is-enhanced {
 .about-section-classic .images-wrap {
   display: grid;
   gap: 80px;
-  grid-auto-rows: minmax(88px, 8vw);
+  grid-auto-rows: 1fr;
   grid-template-columns: calc(50% - 40px) calc(50% - 40px);
   width: 50%;
 }
@@ -1276,6 +1281,7 @@ html.js .pr-root.is-enhanced {
 @media (max-width: 1200px) {
   .about-section-classic {
     max-width: 1050px;
+    min-height: 880px;
   }
 
   .about-section-classic .images-wrap {
@@ -1294,6 +1300,7 @@ html.js .pr-root.is-enhanced {
 
   .about-section-classic {
     max-width: 100%;
+    min-height: 880px;
     padding: 40px 30px;
   }
 
@@ -1360,6 +1367,10 @@ html.js .pr-root.is-enhanced {
 
   .about-reflector-container {
     width: min(100% - 1.875rem, 73.125rem);
+  }
+
+  .about-reflector-block-classic .about-reflector-container {
+    width: 100%;
   }
 
   .about-reflector-heading {
@@ -1451,6 +1462,7 @@ html.js .pr-root.is-enhanced {
 
   .about-section-classic {
     flex-direction: column-reverse;
+    min-height: auto;
     padding: 0 15px;
   }
 
@@ -1476,7 +1488,6 @@ html.js .pr-root.is-enhanced {
   }
 
   .about-section-classic .img-wrap {
-    aspect-ratio: 4 / 5;
     margin-bottom: 15px;
     min-height: 250px;
   }
