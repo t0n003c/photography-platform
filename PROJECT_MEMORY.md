@@ -1252,6 +1252,10 @@ is gitignored):
   `page_config.config.footer` object. Public rendering uses a CSS clipped fixed footer reveal
   in `components/layout/footer.tsx` / `app/globals.css`, with reduced-motion and unsupported
   `clip-path` fallbacks that render as a normal footer instead of requiring JavaScript.
+  Follow-up: Sticky footer public rendering now stacks the large brand, tagline, menu columns,
+  and bottom utility row like the Design preview instead of placing menu columns beside the
+  oversized brand. This prevents real-page text overlap. The admin label is now "Reveal distance";
+  it controls how much scroll space the sticky footer gets before it fully settles.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

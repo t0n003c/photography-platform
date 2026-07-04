@@ -271,8 +271,21 @@ html.js .pr-root.is-enhanced {
   padding-block: clamp(3rem, 8svh, 5.5rem);
 }
 
+.sticky-site-footer__intro,
+.sticky-site-footer__nav-grid {
+  min-width: 0;
+}
+
+.sticky-site-footer__main {
+  min-width: 0;
+}
+
+.sticky-site-footer__nav-grid {
+  max-width: 54rem;
+}
+
 .sticky-site-footer__brand {
-  max-width: 11ch;
+  max-width: min(100%, 11ch);
   font-size: clamp(3.8rem, 13vw, 12rem);
   font-weight: 800;
   line-height: 0.82;

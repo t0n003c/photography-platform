@@ -117,7 +117,7 @@ export async function Footer() {
       <footer className="sticky-site-footer" style={stickyStyle}>
         <div className="sticky-site-footer__fixed">
           <Container className="sticky-site-footer__content">
-            <div className="sticky-site-footer__main grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
+            <div className="sticky-site-footer__main grid gap-10">
               <div className="sticky-site-footer__intro space-y-6">
                 <div className="inline-flex items-center rounded-full border border-current/20 px-3 py-1 text-xs uppercase tracking-[0.28em] text-current/70">
                   {settings.siteTitle}

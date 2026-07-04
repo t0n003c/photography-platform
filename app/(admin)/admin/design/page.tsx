@@ -1062,7 +1062,7 @@ function FooterDesignCard() {
                       />
                     </Field>
                   </div>
-                  <Field label="Reveal strength">
+                  <Field label="Reveal distance">
                     <Select
                       value={s.stickyRevealStrength}
                       onChange={(e) =>
@@ -1072,11 +1072,14 @@ function FooterDesignCard() {
                         })
                       }
                     >
-                      <option value="subtle">Subtle</option>
-                      <option value="standard">Standard</option>
-                      <option value="dramatic">Dramatic</option>
+                      <option value="subtle">Subtle - shorter scroll reveal</option>
+                      <option value="standard">Standard - balanced reveal</option>
+                      <option value="dramatic">Dramatic - full-screen reveal</option>
                     </Select>
                   </Field>
+                  <p className="text-xs leading-5 text-[hsl(var(--muted-foreground))]">
+                    Controls how much scroll space the sticky footer gets before it fully settles.
+                  </p>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
