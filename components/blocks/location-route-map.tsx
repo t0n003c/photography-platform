@@ -27,10 +27,9 @@ interface RouteLayerEvent {
   handler: () => void;
 }
 
-interface RouteOverlayPath {
-  id: string;
-  index: number;
-  d: string;
+interface RouteOverlayPathRefs {
+  casing: SVGPathElement | null;
+  line: SVGPathElement | null;
 }
 
 const STYLE_URLS = {
@@ -189,7 +188,7 @@ function estimatedRoute(
 function simplifyRouteCoordinates(
   coordinates: [number, number][],
   stops: LocationMapPoint[],
-  maxPoints = 1600,
+  maxPoints = 1000,
 ) {
   if (coordinates.length <= maxPoints) return coordinates;
 
@@ -586,13 +585,13 @@ export function LocationRouteMap({
   const popupRootsRef = useRef<Root[]>([]);
   const routeLayerIdsRef = useRef<string[]>([]);
   const routeLayerEventsRef = useRef<RouteLayerEvent[]>([]);
+  const routeOverlayPathRefs = useRef<Map<string, RouteOverlayPathRefs>>(new Map());
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePoint, setMobilePoint] = useState<LocationMapPoint | null>(null);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [routeOverlayPaths, setRouteOverlayPaths] = useState<RouteOverlayPath[]>([]);
   const mappedPoints = useMemo(
     () => points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng)),
     [points],
@@ -606,6 +605,27 @@ export function LocationRouteMap({
   const summaryPosition = block.routeSummaryPosition ?? "top-left";
   const summaryStyle = block.routeSummaryStyle ?? "solid";
   const travelMode = routeTravelMode(block);
+  const routeOverlayItems = useMemo(
+    () => routes.map((route, index) => ({ id: route.id, index })),
+    [routes],
+  );
+
+  const setRouteOverlayPathNode = (
+    routeId: string,
+    kind: keyof RouteOverlayPathRefs,
+    node: SVGPathElement | null,
+  ) => {
+    const entry = routeOverlayPathRefs.current.get(routeId) ?? {
+      casing: null,
+      line: null,
+    };
+    entry[kind] = node;
+    if (entry.casing || entry.line) {
+      routeOverlayPathRefs.current.set(routeId, entry);
+    } else {
+      routeOverlayPathRefs.current.delete(routeId);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -775,7 +795,7 @@ export function LocationRouteMap({
           },
           paint: {
             "line-color": isSelected ? "#ffffff" : "#0f172a",
-            "line-width": isSelected ? 15 : 12,
+            "line-width": isSelected ? 12 : 10,
             "line-opacity": 0.01,
             "line-blur": isSelected ? 0.5 : 0.75,
           },
@@ -792,7 +812,7 @@ export function LocationRouteMap({
             "line-color": isSelected
               ? block.routeLineColor
               : block.routeInactiveLineColor,
-            "line-width": isSelected ? 11 : 9,
+            "line-width": isSelected ? 8 : 6,
             "line-opacity": 0.01,
           },
         });
@@ -849,7 +869,10 @@ export function LocationRouteMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || routes.length === 0) {
-      setRouteOverlayPaths([]);
+      routeOverlayPathRefs.current.forEach((entry) => {
+        entry.casing?.setAttribute("d", "");
+        entry.line?.setAttribute("d", "");
+      });
       return;
     }
 
@@ -857,13 +880,13 @@ export function LocationRouteMap({
     const updateOverlay = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        setRouteOverlayPaths(
-          routes.map((route, index) => ({
-            id: route.id,
-            index,
-            d: projectRoutePath(map, route.coordinates),
-          })),
-        );
+        routes.forEach((route) => {
+          const entry = routeOverlayPathRefs.current.get(route.id);
+          if (!entry) return;
+          const d = projectRoutePath(map, route.coordinates);
+          entry.casing?.setAttribute("d", d);
+          entry.line?.setAttribute("d", d);
+        });
       });
     };
 
@@ -880,7 +903,7 @@ export function LocationRouteMap({
       map.off("pitch", updateOverlay);
       map.off("rotate", updateOverlay);
     };
-  }, [routes]);
+  }, [routes, selectedIndex]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -976,55 +999,59 @@ export function LocationRouteMap({
           Loading map
         </div>
       )}
-      {routeOverlayPaths.length > 0 && (
+      {routeOverlayItems.length > 0 && (
         <svg
           className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
           aria-hidden="true"
         >
-          {routeOverlayPaths
+          {routeOverlayItems
             .filter((path) => path.index !== selectedIndex)
             .map((path) => (
               <g key={path.id}>
                 <path
-                  d={path.d}
+                  ref={(node) => setRouteOverlayPathNode(path.id, "casing", node)}
+                  d=""
                   fill="none"
                   stroke="#ffffff"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeOpacity={0.36}
-                  strokeWidth={8}
+                  strokeWidth={7}
                 />
                 <path
-                  d={path.d}
+                  ref={(node) => setRouteOverlayPathNode(path.id, "line", node)}
+                  d=""
                   fill="none"
                   stroke={block.routeInactiveLineColor}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeOpacity={0.76}
-                  strokeWidth={4.5}
+                  strokeWidth={3.75}
                 />
               </g>
             ))}
-          {routeOverlayPaths
+          {routeOverlayItems
             .filter((path) => path.index === selectedIndex)
             .map((path) => (
               <g key={path.id}>
                 <path
-                  d={path.d}
+                  ref={(node) => setRouteOverlayPathNode(path.id, "casing", node)}
+                  d=""
                   fill="none"
                   stroke="#ffffff"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeOpacity={0.84}
-                  strokeWidth={11}
+                  strokeWidth={9.5}
                 />
                 <path
-                  d={path.d}
+                  ref={(node) => setRouteOverlayPathNode(path.id, "line", node)}
+                  d=""
                   fill="none"
                   stroke={block.routeLineColor}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={6.5}
+                  strokeWidth={5.5}
                 />
               </g>
             ))}

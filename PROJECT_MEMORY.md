@@ -739,6 +739,9 @@ is gitignored):
   casing while MapLibre line layers remain as wide hit targets. Oversized OSRM route geometries are
   simplified for display, and routes/markers resync on style-load so long routes with intermediate
   stops remain visible on dark/light map styles.
+  Follow-up: Route Planning SVG route paths update their `d` attributes directly during map
+  pan/zoom instead of going through React state, and long OSRM routes are capped at 1000 display
+  points while preserving stop anchors. This keeps active routes smooth during map navigation.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.
