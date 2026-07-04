@@ -716,6 +716,11 @@ is gitignored):
   optional link label/URL, and can be reordered alongside taxonomy location pins.
   Follow-up: Location Map hover popups now stay open while the cursor moves from marker to popup
   content, and popup cover photos are clickable when the pin has a link.
+  Follow-up: Location Map blocks now also support a 21st.dev/Aceternity-style "Dotted network"
+  display mode. It uses `dotted-map` to render a static world-dot SVG with animated connection
+  arcs, ordered/hub/manual connection modes, editable line/pin/map-dot colors, animation speed,
+  and optional city labels. The mode reuses taxonomy locations plus custom lat/lng pins and keeps
+  a reduced-motion fallback with static arcs/pulses.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.

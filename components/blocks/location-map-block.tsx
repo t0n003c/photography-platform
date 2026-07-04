@@ -3,6 +3,7 @@ import {
   LocationMapClient,
   type LocationMapPoint,
 } from "@/components/blocks/location-map-client";
+import { LocationDottedNetworkMap } from "@/components/blocks/location-dotted-network-map";
 import { getPublishedLocationMapItems } from "@/src/db/queries/public";
 import type { LeafBlock } from "@/src/lib/blocks";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -67,12 +68,13 @@ export async function LocationMapBlock({
     })
     .filter((point): point is LocationMapPoint => point !== null);
   const points = [...locationPoints, ...customPoints];
+  const isDottedNetwork = block.displayMode === "dotted-network";
 
   return (
     <section className="py-16">
       <Container>
         {(block.title || block.subtitle) && (
-          <div className="mb-8 max-w-2xl">
+          <div className={isDottedNetwork ? "mx-auto mb-8 max-w-3xl text-center" : "mb-8 max-w-2xl"}>
             {block.title && (
               <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                 {block.title}
@@ -85,7 +87,11 @@ export async function LocationMapBlock({
             )}
           </div>
         )}
-        <LocationMapClient block={block} points={points} />
+        {isDottedNetwork ? (
+          <LocationDottedNetworkMap block={block} points={points} />
+        ) : (
+          <LocationMapClient block={block} points={points} />
+        )}
       </Container>
     </section>
   );

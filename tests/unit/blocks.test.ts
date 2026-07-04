@@ -51,12 +51,26 @@ describe("page builder blocks", () => {
             linkHref: "/galleries/story",
           },
         ],
+        displayMode: "dotted-network",
         height: "lg",
         mapTheme: "dark",
         markerColor: "#22c55e",
         showLabels: false,
         showControls: false,
         popupMode: "hover",
+        networkConnectionMode: "manual",
+        networkConnections: [
+          {
+            id: "conn-a",
+            startId: "loc-a",
+            endId: "custom-pin-a",
+          },
+        ],
+        networkLineColor: "#0ea5e9",
+        networkDotColor: "#ef4444",
+        networkMapDotColor: "#64748b",
+        networkAnimationSeconds: 4.5,
+        networkShowLabels: false,
       },
     ]);
 
@@ -78,12 +92,26 @@ describe("page builder blocks", () => {
           linkHref: "/galleries/story",
         },
       ],
+      displayMode: "dotted-network",
       height: "lg",
       mapTheme: "dark",
       markerColor: "#22c55e",
       showLabels: false,
       showControls: false,
       popupMode: "hover",
+      networkConnectionMode: "manual",
+      networkConnections: [
+        {
+          id: "conn-a",
+          startId: "loc-a",
+          endId: "custom-pin-a",
+        },
+      ],
+      networkLineColor: "#0ea5e9",
+      networkDotColor: "#ef4444",
+      networkMapDotColor: "#64748b",
+      networkAnimationSeconds: 4.5,
+      networkShowLabels: false,
     });
     expect(collectPhotoIds(blocks)).toEqual(["photo-pin-a"]);
   });

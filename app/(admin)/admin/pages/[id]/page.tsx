@@ -282,6 +282,14 @@ function makeLocationMapPin(index = 0) {
   };
 }
 
+function makeLocationMapConnection(startId = "", endId = "") {
+  return {
+    id: newBlockId(),
+    startId,
+    endId,
+  };
+}
+
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
@@ -460,12 +468,20 @@ function makeBlock(type: BlockType): Block {
       subtitle: "Tap a marker to preview the work photographed in each place.",
       locationIds: [],
       customPins: [],
+      displayMode: "interactive",
       height: "md",
       mapTheme: "auto",
       markerColor: "#f43f5e",
       showLabels: true,
       showControls: true,
       popupMode: "click",
+      networkConnectionMode: "ordered",
+      networkConnections: [],
+      networkLineColor: "#0ea5e9",
+      networkDotColor: "#f43f5e",
+      networkMapDotColor: "#94a3b8",
+      networkAnimationSeconds: 3.2,
+      networkShowLabels: true,
     };
     case "scrollShowcase": return {
       id,
@@ -876,7 +892,7 @@ function blockSummary(block: Block): string {
     case "scrollShowcase":
       return `${block.style ?? "cinematic"} · up to ${block.limit} categories`;
     case "locationMap":
-      return `${block.locationIds.length || "all"} locations · ${(block.customPins ?? []).length} custom pins`;
+      return `${block.displayMode === "dotted-network" ? "Dotted network" : "Interactive"} · ${block.locationIds.length || "all"} locations · ${(block.customPins ?? []).length} custom pins`;
     default:
       return "";
   }
@@ -3943,10 +3959,31 @@ function LeafEditor({
       const photoCountOf = (id: string) => locs.find((loc) => loc.id === id)?.photoCount ?? 0;
       const locationOptionLabel = (loc: Opt) =>
         `${loc.label} (${loc.photoCount ?? 0} ${(loc.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
+      const shownLocationIds = chosen.length > 0 ? chosen : locs.map((loc) => loc.id);
+      const pointOptions = [
+        ...shownLocationIds.map((id) => ({
+          id,
+          label: labelOf(id),
+        })),
+        ...pins.map((pin, index) => ({
+          id: `custom-${pin.id}`,
+          label: pin.title || `Custom pin ${index + 1}`,
+        })),
+      ];
+      const connections = block.networkConnections ?? [];
       const updatePin = (index: number, patch: Partial<(typeof pins)[number]>) =>
         set({
           customPins: pins.map((pin, pinIndex) =>
             pinIndex === index ? { ...pin, ...patch } : pin,
+          ),
+        });
+      const updateConnection = (
+        index: number,
+        patch: Partial<(typeof connections)[number]>,
+      ) =>
+        set({
+          networkConnections: connections.map((connection, connectionIndex) =>
+            connectionIndex === index ? { ...connection, ...patch } : connection,
           ),
         });
       return (
@@ -4159,64 +4196,229 @@ function LeafEditor({
 
           <SettingsGroup title="Map appearance">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Height">
+              <Field label="Display mode">
                 <Select
-                  value={block.height}
-                  onChange={(e) => set({ height: e.target.value as typeof block.height })}
+                  value={block.displayMode ?? "interactive"}
+                  onChange={(e) => set({ displayMode: e.target.value as typeof block.displayMode })}
                 >
-                  <option value="sm">Small</option>
-                  <option value="md">Medium</option>
-                  <option value="lg">Large</option>
-                  <option value="screen">Almost full screen</option>
-                </Select>
-              </Field>
-              <Field label="Basemap style">
-                <Select
-                  value={block.mapTheme}
-                  onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
-                >
-                  <option value="auto">Auto light/dark</option>
-                  <option value="light">Light Positron</option>
-                  <option value="dark">Dark</option>
-                  <option value="liberty">Liberty</option>
-                  <option value="bright">Bright</option>
-                </Select>
-              </Field>
-              <Field label="Marker color">
-                <Input
-                  type="color"
-                  value={block.markerColor}
-                  onChange={(e) => set({ markerColor: e.target.value })}
-                />
-              </Field>
-              <Field label="Popup behavior">
-                <Select
-                  value={block.popupMode}
-                  onChange={(e) => set({ popupMode: e.target.value as typeof block.popupMode })}
-                >
-                  <option value="click">Click marker</option>
-                  <option value="hover">Hover marker</option>
+                  <option value="interactive">Interactive marker map</option>
+                  <option value="dotted-network">Dotted network map</option>
                 </Select>
               </Field>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showLabels}
-                  onChange={(e) => set({ showLabels: e.target.checked })}
-                />
-                Show marker labels
-              </label>
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showControls}
-                  onChange={(e) => set({ showControls: e.target.checked })}
-                />
-                Show map controls
-              </label>
-            </div>
+            {(block.displayMode ?? "interactive") === "interactive" ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Height">
+                    <Select
+                      value={block.height}
+                      onChange={(e) => set({ height: e.target.value as typeof block.height })}
+                    >
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                      <option value="screen">Almost full screen</option>
+                    </Select>
+                  </Field>
+                  <Field label="Basemap style">
+                    <Select
+                      value={block.mapTheme}
+                      onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
+                    >
+                      <option value="auto">Auto light/dark</option>
+                      <option value="light">Light Positron</option>
+                      <option value="dark">Dark</option>
+                      <option value="liberty">Liberty</option>
+                      <option value="bright">Bright</option>
+                    </Select>
+                  </Field>
+                  <Field label="Marker color">
+                    <Input
+                      type="color"
+                      value={block.markerColor}
+                      onChange={(e) => set({ markerColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Popup behavior">
+                    <Select
+                      value={block.popupMode}
+                      onChange={(e) => set({ popupMode: e.target.value as typeof block.popupMode })}
+                    >
+                      <option value="click">Click marker</option>
+                      <option value="hover">Hover marker</option>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showLabels}
+                      onChange={(e) => set({ showLabels: e.target.checked })}
+                    />
+                    Show marker labels
+                  </label>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showControls}
+                      onChange={(e) => set({ showControls: e.target.checked })}
+                    />
+                    Show map controls
+                  </label>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Connection mode">
+                    <Select
+                      value={block.networkConnectionMode ?? "ordered"}
+                      onChange={(e) =>
+                        set({ networkConnectionMode: e.target.value as typeof block.networkConnectionMode })
+                      }
+                    >
+                      <option value="ordered">Connect pins in order</option>
+                      <option value="hub">First pin as hub</option>
+                      <option value="manual">Manual connections</option>
+                    </Select>
+                  </Field>
+                  <Field label="Line color">
+                    <Input
+                      type="color"
+                      value={block.networkLineColor ?? "#0ea5e9"}
+                      onChange={(e) => set({ networkLineColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Pin color">
+                    <Input
+                      type="color"
+                      value={block.networkDotColor ?? "#f43f5e"}
+                      onChange={(e) => set({ networkDotColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Map dot color">
+                    <Input
+                      type="color"
+                      value={block.networkMapDotColor ?? "#94a3b8"}
+                      onChange={(e) => set({ networkMapDotColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Animation seconds">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={12}
+                      step={0.1}
+                      value={block.networkAnimationSeconds ?? 3.2}
+                      onChange={(e) =>
+                        set({
+                          networkAnimationSeconds: Math.max(
+                            1,
+                            Math.min(12, Number(e.target.value) || 3.2),
+                          ),
+                        })
+                      }
+                    />
+                  </Field>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.networkShowLabels ?? true}
+                      onChange={(e) => set({ networkShowLabels: e.target.checked })}
+                    />
+                    Show city labels
+                  </label>
+                </div>
+                {(block.networkConnectionMode ?? "ordered") === "manual" && (
+                  <div className="space-y-3 rounded-md border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                          Manual connections
+                        </p>
+                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                          Choose which pins should be connected by animated arcs.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={pointOptions.length < 2}
+                        onClick={() =>
+                          set({
+                            networkConnections: [
+                              ...connections,
+                              makeLocationMapConnection(pointOptions[0]?.id ?? "", pointOptions[1]?.id ?? ""),
+                            ],
+                          })
+                        }
+                      >
+                        Add connection
+                      </Button>
+                    </div>
+                    {pointOptions.length < 2 ? (
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        Add at least two mapped locations or custom pins to create a connection.
+                      </p>
+                    ) : connections.length === 0 ? (
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        No manual connections yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {connections.map((connection, index) => (
+                          <div key={connection.id} className="grid gap-2 rounded-md bg-[hsl(var(--muted))]/55 p-2 sm:grid-cols-[1fr_1fr_auto]">
+                            <Field label="From">
+                              <Select
+                                value={connection.startId}
+                                onChange={(e) => updateConnection(index, { startId: e.target.value })}
+                              >
+                                {pointOptions.map((point) => (
+                                  <option key={point.id} value={point.id}>
+                                    {point.label}
+                                  </option>
+                                ))}
+                              </Select>
+                            </Field>
+                            <Field label="To">
+                              <Select
+                                value={connection.endId}
+                                onChange={(e) => updateConnection(index, { endId: e.target.value })}
+                              >
+                                {pointOptions.map((point) => (
+                                  <option key={point.id} value={point.id}>
+                                    {point.label}
+                                  </option>
+                                ))}
+                              </Select>
+                            </Field>
+                            <div className="flex items-end">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  set({
+                                    networkConnections: connections.filter(
+                                      (_, connectionIndex) => connectionIndex !== index,
+                                    ),
+                                  })
+                                }
+                                aria-label="Remove connection"
+                                className="h-9 w-9"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </SettingsGroup>
         </div>
       );

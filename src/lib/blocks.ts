@@ -505,6 +505,11 @@ const LocationMapCustomPin = z.object({
   linkLabel: z.string().default(""),
   linkHref: z.string().default(""),
 });
+const LocationMapNetworkConnection = z.object({
+  id,
+  startId: z.string().default(""),
+  endId: z.string().default(""),
+});
 const LocationMapBlock = z.object({
   ...baseBlock,
   type: z.literal("locationMap"),
@@ -514,12 +519,20 @@ const LocationMapBlock = z.object({
     .default("Tap a marker to preview the work photographed in each place."),
   locationIds: z.array(z.string()).default([]),
   customPins: z.array(LocationMapCustomPin).default([]),
+  displayMode: z.enum(["interactive", "dotted-network"]).default("interactive"),
   height: z.enum(["sm", "md", "lg", "screen"]).default("md"),
   mapTheme: z.enum(["auto", "light", "dark", "liberty", "bright"]).default("auto"),
   markerColor: z.string().default("#f43f5e"),
   showLabels: z.boolean().default(true),
   showControls: z.boolean().default(true),
   popupMode: z.enum(["click", "hover"]).default("click"),
+  networkConnectionMode: z.enum(["ordered", "hub", "manual"]).default("ordered"),
+  networkConnections: z.array(LocationMapNetworkConnection).default([]),
+  networkLineColor: z.string().default("#0ea5e9"),
+  networkDotColor: z.string().default("#f43f5e"),
+  networkMapDotColor: z.string().default("#94a3b8"),
+  networkAnimationSeconds: z.number().min(1).max(12).default(3.2),
+  networkShowLabels: z.boolean().default(true),
 });
 // Cinematic, scroll-driven showcase: each published category becomes a
 // full-screen pinned panel (cover photo background + a few of its photos that
