@@ -205,7 +205,7 @@ function addRouteMarkers({
         ? block.routeStartColor
         : block.routeEndColor
       : block.markerColor;
-    dot.textContent = isPlanning ? "" : String(index + 1);
+    dot.textContent = String(index + 1);
     el.append(dot);
 
     if (block.routeShowLabels ?? true) {

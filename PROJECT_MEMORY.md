@@ -730,6 +730,8 @@ is gitignored):
   Follow-up: Location Map block settings now show Map Appearance before Map Content. Route Planning
   uses `routePointIds` as optional stops between start/end, passes all stops to OSRM, and route
   markers reuse the interactive map detail popup on desktop hover plus a mobile bottom sheet on tap.
+  Follow-up: Route Planning markers now show numeric order directly inside every map dot, including
+  start/end/stops, so users can tell first/second/third at a glance.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.
