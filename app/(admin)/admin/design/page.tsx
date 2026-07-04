@@ -1169,7 +1169,7 @@ function FooterPreview({
     ) : null;
     body = (
       <div
-        className="overflow-hidden rounded-md border p-4"
+        className="relative overflow-hidden rounded-md border p-4"
         style={{
           background:
             `radial-gradient(circle at 12% 20%, ${s.stickyAccentColor}55, transparent 34%), ` +
@@ -1177,7 +1177,18 @@ function FooterPreview({
           color: s.stickyTextColor,
         }}
       >
-        <div className="space-y-5">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.17]"
+          style={{
+            backgroundImage:
+              "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
+            backgroundSize: "34px 34px",
+            maskImage:
+              "linear-gradient(to bottom, transparent, black 18%, black 76%, transparent)",
+          }}
+        />
+        <div className="relative z-10 space-y-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-2">
               <p className="inline-flex rounded-full border border-current/20 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-current/70">
