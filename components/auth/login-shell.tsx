@@ -9,6 +9,15 @@ type CSSPropertiesWithVars = React.CSSProperties & {
   [key: `--${string}`]: string | number | undefined;
 };
 
+function updateLoginHoverPosition(event: React.PointerEvent<HTMLDivElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+  event.currentTarget.style.setProperty("--login-hover-x", `${x}%`);
+  event.currentTarget.style.setProperty("--login-hover-y", `${y}%`);
+}
+
 export function LoginShell({
   design = DEFAULT_LOGIN_DESIGN,
   siteName,
@@ -74,6 +83,8 @@ export function LoginShell({
               : "shadow-sm",
             isSplit && "grid lg:grid-cols-2",
           )}
+          onPointerEnter={isReference ? updateLoginHoverPosition : undefined}
+          onPointerMove={isReference ? updateLoginHoverPosition : undefined}
         >
           {isReference && (
             <div className="login-card-hover-color pointer-events-none absolute inset-0 z-0" />

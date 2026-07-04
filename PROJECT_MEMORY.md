@@ -695,7 +695,7 @@ is gitignored):
   Login design follow-up: Design now has a collapsed-by-default Login card stored in
   `page_config.config.login` on the default global config. It is visual-only: layout (`simple`,
   21st.dev-inspired `gradient-card`, or `split-photo`), headline/subtitle, background
-  mode/colors, accent, hover color wash, side photo URL/library photo, photo side/alt text,
+  mode/colors, accent, cursor-following hover color wash, side photo URL/library photo, photo side/alt text,
   site-name/icon-row toggles, and button labels. `/login` is now a server wrapper that loads
   site settings + login design and passes them into the client auth component; password, passkey,
   biometric, TOTP, and Turnstile behavior remain unchanged. A selected library login photo is

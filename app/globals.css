@@ -456,7 +456,7 @@ html.js .pr-root.is-enhanced {
 
 .login-shell--reference .login-card-hover-color {
   background:
-    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--login-hover, #f97316) 34%, transparent), transparent 44%),
+    radial-gradient(circle at var(--login-hover-x, 50%) var(--login-hover-y, 12%), color-mix(in srgb, var(--login-hover, #f97316) 34%, transparent), transparent 44%),
     linear-gradient(135deg, color-mix(in srgb, var(--login-hover, #f97316) 16%, transparent), transparent 58%);
   opacity: 0;
   transition: opacity 220ms ease;
