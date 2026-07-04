@@ -482,6 +482,18 @@ function makeBlock(type: BlockType): Block {
       networkMapDotColor: "#94a3b8",
       networkAnimationSeconds: 3.2,
       networkShowLabels: true,
+      routeStyle: "planning",
+      routeProvider: "osrm",
+      routePointIds: [],
+      routeStartId: "",
+      routeEndId: "",
+      routeShowAlternatives: true,
+      routeShowCards: true,
+      routeShowLabels: true,
+      routeLineColor: "#6366f1",
+      routeInactiveLineColor: "#94a3b8",
+      routeStartColor: "#22c55e",
+      routeEndColor: "#ef4444",
     };
     case "scrollShowcase": return {
       id,
@@ -892,7 +904,7 @@ function blockSummary(block: Block): string {
     case "scrollShowcase":
       return `${block.style ?? "cinematic"} · up to ${block.limit} categories`;
     case "locationMap":
-      return `${block.displayMode === "dotted-network" ? "Dotted network" : "Interactive"} · ${block.locationIds.length || "all"} locations · ${(block.customPins ?? []).length} custom pins`;
+      return `${block.displayMode === "dotted-network" ? "Dotted network" : block.displayMode === "route-planning" ? "Route planning" : "Interactive"} · ${block.locationIds.length || "all"} locations · ${(block.customPins ?? []).length} custom pins`;
     default:
       return "";
   }
@@ -3971,6 +3983,8 @@ function LeafEditor({
         })),
       ];
       const connections = block.networkConnections ?? [];
+      const routePointIds = block.routePointIds ?? [];
+      const routeStopOptions = pointOptions.filter((point) => !routePointIds.includes(point.id));
       const updatePin = (index: number, patch: Partial<(typeof pins)[number]>) =>
         set({
           customPins: pins.map((pin, pinIndex) =>
@@ -4202,6 +4216,7 @@ function LeafEditor({
                   onChange={(e) => set({ displayMode: e.target.value as typeof block.displayMode })}
                 >
                   <option value="interactive">Interactive marker map</option>
+                  <option value="route-planning">Route planning map</option>
                   <option value="dotted-network">Dotted network map</option>
                 </Select>
               </Field>
@@ -4268,6 +4283,240 @@ function LeafEditor({
                   </label>
                 </div>
               </>
+            ) : (block.displayMode ?? "interactive") === "route-planning" ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Route style">
+                    <Select
+                      value={block.routeStyle ?? "planning"}
+                      onChange={(e) => set({ routeStyle: e.target.value as typeof block.routeStyle })}
+                    >
+                      <option value="planning">Route planning</option>
+                      <option value="basic">Basic numbered route</option>
+                    </Select>
+                  </Field>
+                  <Field label="Height">
+                    <Select
+                      value={block.height}
+                      onChange={(e) => set({ height: e.target.value as typeof block.height })}
+                    >
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                      <option value="screen">Almost full screen</option>
+                    </Select>
+                  </Field>
+                  <Field label="Basemap style">
+                    <Select
+                      value={block.mapTheme}
+                      onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
+                    >
+                      <option value="auto">Auto light/dark</option>
+                      <option value="light">Light Positron</option>
+                      <option value="dark">Dark</option>
+                      <option value="liberty">Liberty</option>
+                      <option value="bright">Bright</option>
+                    </Select>
+                  </Field>
+                  <Field label="Route provider">
+                    <Select
+                      value={block.routeProvider ?? "osrm"}
+                      onChange={(e) => set({ routeProvider: e.target.value as typeof block.routeProvider })}
+                    >
+                      <option value="osrm">OSRM driving route</option>
+                      <option value="straight">Estimated path only</option>
+                    </Select>
+                  </Field>
+                </div>
+
+                {(block.routeStyle ?? "planning") === "planning" ? (
+                  <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
+                    <Field label="Start point">
+                      <Select
+                        value={block.routeStartId ?? ""}
+                        onChange={(e) => set({ routeStartId: e.target.value })}
+                      >
+                        <option value="">First mapped point</option>
+                        {pointOptions.map((point) => (
+                          <option key={point.id} value={point.id}>
+                            {point.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label="End point">
+                      <Select
+                        value={block.routeEndId ?? ""}
+                        onChange={(e) => set({ routeEndId: e.target.value })}
+                      >
+                        <option value="">Last mapped point</option>
+                        {pointOptions.map((point) => (
+                          <option key={point.id} value={point.id}>
+                            {point.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                ) : (
+                  <div className="space-y-3 rounded-md border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                          Route stops
+                        </p>
+                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                          Leave blank to use every mapped point in order.
+                        </p>
+                      </div>
+                    </div>
+                    {routePointIds.length > 0 && (
+                      <div className="space-y-1.5">
+                        {routePointIds.map((id, index) => (
+                          <div
+                            key={`${id}-${index}`}
+                            className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
+                          >
+                            <span className="min-w-0 truncate">
+                              {index + 1}. {pointOptions.find((point) => point.id === id)?.label ?? "(removed)"}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disabled={index === 0}
+                                onClick={() => set({ routePointIds: swapAt(routePointIds, index, index - 1) })}
+                                aria-label="Move route stop up"
+                                className="h-8 w-8"
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disabled={index === routePointIds.length - 1}
+                                onClick={() => set({ routePointIds: swapAt(routePointIds, index, index + 1) })}
+                                aria-label="Move route stop down"
+                                className="h-8 w-8"
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  set({ routePointIds: routePointIds.filter((_, stopIndex) => stopIndex !== index) })
+                                }
+                                aria-label="Remove route stop"
+                                className="h-8 w-8"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {routeStopOptions.length > 0 && (
+                      <Select
+                        value=""
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          set({ routePointIds: [...routePointIds, e.target.value] });
+                        }}
+                      >
+                        <option value="">+ Add route stop...</option>
+                        {routeStopOptions.map((point) => (
+                          <option key={point.id} value={point.id}>
+                            {point.label}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Active route color">
+                    <Input
+                      type="color"
+                      value={block.routeLineColor ?? "#6366f1"}
+                      onChange={(e) => set({ routeLineColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Other route color">
+                    <Input
+                      type="color"
+                      value={block.routeInactiveLineColor ?? "#94a3b8"}
+                      onChange={(e) => set({ routeInactiveLineColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Start marker">
+                    <Input
+                      type="color"
+                      value={block.routeStartColor ?? "#22c55e"}
+                      onChange={(e) => set({ routeStartColor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="End marker">
+                    <Input
+                      type="color"
+                      value={block.routeEndColor ?? "#ef4444"}
+                      onChange={(e) => set({ routeEndColor: e.target.value })}
+                    />
+                  </Field>
+                  {(block.routeStyle ?? "planning") === "basic" && (
+                    <Field label="Stop marker">
+                      <Input
+                        type="color"
+                        value={block.markerColor}
+                        onChange={(e) => set({ markerColor: e.target.value })}
+                      />
+                    </Field>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.routeShowCards ?? true}
+                      onChange={(e) => set({ routeShowCards: e.target.checked })}
+                    />
+                    Show route option buttons
+                  </label>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.routeShowLabels ?? true}
+                      onChange={(e) => set({ routeShowLabels: e.target.checked })}
+                    />
+                    Show point labels
+                  </label>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showControls}
+                      onChange={(e) => set({ showControls: e.target.checked })}
+                    />
+                    Show map controls
+                  </label>
+                  {(block.routeStyle ?? "planning") === "planning" && (
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.routeShowAlternatives ?? true}
+                        onChange={(e) => set({ routeShowAlternatives: e.target.checked })}
+                        disabled={(block.routeProvider ?? "osrm") !== "osrm"}
+                      />
+                      Show OSRM alternatives
+                    </label>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

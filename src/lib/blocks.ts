@@ -519,7 +519,7 @@ const LocationMapBlock = z.object({
     .default("Tap a marker to preview the work photographed in each place."),
   locationIds: z.array(z.string()).default([]),
   customPins: z.array(LocationMapCustomPin).default([]),
-  displayMode: z.enum(["interactive", "dotted-network"]).default("interactive"),
+  displayMode: z.enum(["interactive", "dotted-network", "route-planning"]).default("interactive"),
   height: z.enum(["sm", "md", "lg", "screen"]).default("md"),
   mapTheme: z.enum(["auto", "light", "dark", "liberty", "bright"]).default("auto"),
   markerColor: z.string().default("#f43f5e"),
@@ -533,6 +533,18 @@ const LocationMapBlock = z.object({
   networkMapDotColor: z.string().default("#94a3b8"),
   networkAnimationSeconds: z.number().min(1).max(12).default(3.2),
   networkShowLabels: z.boolean().default(true),
+  routeStyle: z.enum(["planning", "basic"]).default("planning"),
+  routeProvider: z.enum(["osrm", "straight"]).default("osrm"),
+  routePointIds: z.array(z.string()).default([]),
+  routeStartId: z.string().default(""),
+  routeEndId: z.string().default(""),
+  routeShowAlternatives: z.boolean().default(true),
+  routeShowCards: z.boolean().default(true),
+  routeShowLabels: z.boolean().default(true),
+  routeLineColor: z.string().default("#6366f1"),
+  routeInactiveLineColor: z.string().default("#94a3b8"),
+  routeStartColor: z.string().default("#22c55e"),
+  routeEndColor: z.string().default("#ef4444"),
 });
 // Cinematic, scroll-driven showcase: each published category becomes a
 // full-screen pinned panel (cover photo background + a few of its photos that

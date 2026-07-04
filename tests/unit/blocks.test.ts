@@ -116,6 +116,48 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["photo-pin-a"]);
   });
 
+  it("keeps location route planning settings", () => {
+    const blocks = parseBlocks([
+      {
+        id: "route-map",
+        type: "locationMap",
+        displayMode: "route-planning",
+        locationIds: ["loc-a", "loc-b", "loc-c"],
+        routeStyle: "basic",
+        routeProvider: "straight",
+        routePointIds: ["loc-c", "loc-a", "loc-b"],
+        routeStartId: "loc-a",
+        routeEndId: "loc-c",
+        routeShowAlternatives: false,
+        routeShowCards: false,
+        routeShowLabels: false,
+        routeLineColor: "#111827",
+        routeInactiveLineColor: "#9ca3af",
+        routeStartColor: "#10b981",
+        routeEndColor: "#f97316",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "route-map",
+      type: "locationMap",
+      displayMode: "route-planning",
+      routeStyle: "basic",
+      routeProvider: "straight",
+      routePointIds: ["loc-c", "loc-a", "loc-b"],
+      routeStartId: "loc-a",
+      routeEndId: "loc-c",
+      routeShowAlternatives: false,
+      routeShowCards: false,
+      routeShowLabels: false,
+      routeLineColor: "#111827",
+      routeInactiveLineColor: "#9ca3af",
+      routeStartColor: "#10b981",
+      routeEndColor: "#f97316",
+    });
+  });
+
   it("keeps Prisma hero banner settings and collects its photo", () => {
     const blocks = parseBlocks([
       {

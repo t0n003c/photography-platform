@@ -721,6 +721,12 @@ is gitignored):
   arcs, ordered/hub/manual connection modes, editable line/pin/map-dot colors, animation speed,
   and optional city labels. The mode reuses taxonomy locations plus custom lat/lng pins and keeps
   a reduced-motion fallback with static arcs/pulses.
+  Follow-up: Location Map blocks now also support a mapcn/21st.dev-style "Route planning" display
+  mode. It reuses the same taxonomy/custom lat/lng pins, renders MapLibre route layers, supports
+  route-planning vs basic numbered-stop route styles, optional OSRM driving alternatives with an
+  estimated-path fallback, start/end selectors, ordered route-stop overrides, route option cards,
+  label/control toggles, and editable active/inactive/start/end colors. `middleware.ts` allows
+  `https://router.project-osrm.org` in `connect-src`; keep this scoped if routing providers change.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.

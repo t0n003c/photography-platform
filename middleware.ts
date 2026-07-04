@@ -22,6 +22,8 @@ export function middleware(request: NextRequest) {
   // Location map blocks use OpenFreeMap vector styles/tiles. OpenFreeMap is
   // no-key and allows commercial use; keep CSP scoped to the tile host.
   const openFreeMap = "https://tiles.openfreemap.org";
+  // Route-planning Location Map blocks can request no-key OSRM driving routes.
+  const osrm = "https://router.project-osrm.org";
   const csp = [
     "default-src 'self'",
     // Next dev needs eval; prod is nonce-only. Turnstile's api.js is allowed by
@@ -35,7 +37,7 @@ export function middleware(request: NextRequest) {
     // Banner Prisma Hero can use an admin-provided HTTPS background video URL.
     "media-src 'self' blob: https:",
     "font-src 'self'",
-    `connect-src 'self' ${turnstile} ${openFreeMap}`,
+    `connect-src 'self' ${turnstile} ${openFreeMap} ${osrm}`,
     `frame-src 'self' ${turnstile}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
