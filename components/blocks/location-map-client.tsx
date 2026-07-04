@@ -76,14 +76,31 @@ function LocationPopupCard({
       )}
     >
       {point.coverUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={point.coverUrl}
-          alt={point.name}
-          className="h-32 w-full object-cover"
-          loading="lazy"
-          decoding="async"
-        />
+        point.href ? (
+          <a
+            href={point.href}
+            {...linkProps(point.href)}
+            aria-label={`${point.linkLabel || point.name} cover image`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={point.coverUrl}
+              alt={point.name}
+              className="h-32 w-full object-cover transition hover:opacity-90"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={point.coverUrl}
+            alt={point.name}
+            className="h-32 w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        )
       )}
       <div className="space-y-2 p-3">
         <div>
@@ -289,10 +306,24 @@ export function LocationMapClient({
         }).setDOMContent(popupContainer);
         marker.setPopup(popup);
         if (block.popupMode === "hover") {
-          el.addEventListener("mouseenter", () =>
-            popup.setLngLat([point.lng, point.lat]).addTo(map),
-          );
-          el.addEventListener("mouseleave", () => popup.remove());
+          let closeTimer: number | null = null;
+          const clearClose = () => {
+            if (!closeTimer) return;
+            window.clearTimeout(closeTimer);
+            closeTimer = null;
+          };
+          const openPopup = () => {
+            clearClose();
+            popup.setLngLat([point.lng, point.lat]).addTo(map);
+          };
+          const scheduleClose = () => {
+            clearClose();
+            closeTimer = window.setTimeout(() => popup.remove(), 220);
+          };
+          el.addEventListener("mouseenter", openPopup);
+          el.addEventListener("mouseleave", scheduleClose);
+          popupContainer.addEventListener("mouseenter", clearClose);
+          popupContainer.addEventListener("mouseleave", scheduleClose);
         }
       }
 

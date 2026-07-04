@@ -714,6 +714,8 @@ is gitignored):
   Follow-up: Location Map blocks now support custom one-off pins stored directly in the page block
   config. Each custom pin can set title/subtitle, latitude/longitude, optional cover photo,
   optional link label/URL, and can be reordered alongside taxonomy location pins.
+  Follow-up: Location Map hover popups now stay open while the cursor moves from marker to popup
+  content, and popup cover photos are clickable when the pin has a link.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.
