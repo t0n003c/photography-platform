@@ -503,6 +503,14 @@ html.js .pr-root.is-enhanced {
   border-bottom-color: hsl(var(--background));
 }
 
+.location-route-map .maplibregl-marker {
+  z-index: 12;
+}
+
+.location-route-map .maplibregl-popup {
+  z-index: 30;
+}
+
 .location-map-marker {
   display: flex;
   align-items: center;

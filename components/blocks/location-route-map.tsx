@@ -27,6 +27,12 @@ interface RouteLayerEvent {
   handler: () => void;
 }
 
+interface RouteOverlayPath {
+  id: string;
+  index: number;
+  d: string;
+}
+
 const STYLE_URLS = {
   light: "https://tiles.openfreemap.org/styles/positron",
   dark: "https://tiles.openfreemap.org/styles/dark",
@@ -180,6 +186,46 @@ function estimatedRoute(
   };
 }
 
+function simplifyRouteCoordinates(
+  coordinates: [number, number][],
+  stops: LocationMapPoint[],
+  maxPoints = 1600,
+) {
+  if (coordinates.length <= maxPoints) return coordinates;
+
+  const keep = new Set<number>([0, coordinates.length - 1]);
+  for (const stop of stops) {
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    coordinates.forEach(([lng, lat], index) => {
+      const distance = (lng - stop.lng) ** 2 + (lat - stop.lat) ** 2;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+    keep.add(nearestIndex);
+  }
+
+  const stride = Math.ceil(coordinates.length / maxPoints);
+  for (let index = 0; index < coordinates.length; index += stride) {
+    keep.add(index);
+  }
+
+  return [...keep]
+    .sort((a, b) => a - b)
+    .map((index) => coordinates[index]);
+}
+
+function projectRoutePath(map: MapLibreMap, coordinates: [number, number][]) {
+  return coordinates
+    .map((coordinate, index) => {
+      const point = map.project(coordinate);
+      return `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
 function fitCoordinates(
   map: MapLibreMap,
   coordinates: [number, number][],
@@ -226,8 +272,10 @@ function clearRouteLayers(
   });
   routeIds.forEach((routeId) => {
     const layerId = `${ROUTE_LAYER_PREFIX}-${routeId}`;
+    const casingLayerId = `${layerId}-casing`;
     const sourceId = `${ROUTE_SOURCE_PREFIX}-${routeId}`;
     if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getLayer(casingLayerId)) map.removeLayer(casingLayerId);
     if (map.getSource(sourceId)) map.removeSource(sourceId);
   });
 }
@@ -544,6 +592,7 @@ export function LocationRouteMap({
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [routeOverlayPaths, setRouteOverlayPaths] = useState<RouteOverlayPath[]>([]);
   const mappedPoints = useMemo(
     () => points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng)),
     [points],
@@ -657,7 +706,7 @@ export function LocationRouteMap({
             if (!route.geometry?.coordinates?.length) return null;
             return {
               id: `osrm-${index}`,
-              coordinates: route.geometry.coordinates,
+              coordinates: simplifyRouteCoordinates(route.geometry.coordinates, routeStops),
               duration: route.duration ?? 0,
               distance: route.distance ?? 0,
               source: "osrm",
@@ -704,6 +753,7 @@ export function LocationRouteMap({
         const isSelected = index === selectedIndex;
         const sourceId = `${ROUTE_SOURCE_PREFIX}-${route.id}`;
         const layerId = `${ROUTE_LAYER_PREFIX}-${route.id}`;
+        const casingLayerId = `${layerId}-casing`;
         map.addSource(sourceId, {
           type: "geojson",
           data: {
@@ -713,6 +763,21 @@ export function LocationRouteMap({
               type: "LineString",
               coordinates: route.coordinates,
             },
+          },
+        });
+        map.addLayer({
+          id: casingLayerId,
+          type: "line",
+          source: sourceId,
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": isSelected ? "#ffffff" : "#0f172a",
+            "line-width": isSelected ? 15 : 12,
+            "line-opacity": 0.01,
+            "line-blur": isSelected ? 0.5 : 0.75,
           },
         });
         map.addLayer({
@@ -727,8 +792,8 @@ export function LocationRouteMap({
             "line-color": isSelected
               ? block.routeLineColor
               : block.routeInactiveLineColor,
-            "line-width": isSelected ? 6 : 5,
-            "line-opacity": isSelected ? 1 : 0.62,
+            "line-width": isSelected ? 11 : 9,
+            "line-opacity": 0.01,
           },
         });
 
@@ -740,12 +805,18 @@ export function LocationRouteMap({
           map.getCanvas().style.cursor = "";
         };
         map.on("click", layerId, clickHandler);
+        map.on("click", casingLayerId, clickHandler);
         map.on("mouseenter", layerId, enterHandler);
+        map.on("mouseenter", casingLayerId, enterHandler);
         map.on("mouseleave", layerId, leaveHandler);
+        map.on("mouseleave", casingLayerId, leaveHandler);
         routeLayerEventsRef.current.push(
           { layerId, type: "click", handler: clickHandler },
+          { layerId: casingLayerId, type: "click", handler: clickHandler },
           { layerId, type: "mouseenter", handler: enterHandler },
+          { layerId: casingLayerId, type: "mouseenter", handler: enterHandler },
           { layerId, type: "mouseleave", handler: leaveHandler },
+          { layerId: casingLayerId, type: "mouseleave", handler: leaveHandler },
         );
         routeLayerIdsRef.current.push(route.id);
       });
@@ -758,12 +829,12 @@ export function LocationRouteMap({
     };
     if (map.isStyleLoaded()) syncLayers();
     map.on("load", scheduleSync);
-    map.on("styledata", scheduleSync);
+    map.on("style.load", scheduleSync);
 
     return () => {
       window.cancelAnimationFrame(frame);
       map.off("load", scheduleSync);
-      map.off("styledata", scheduleSync);
+      map.off("style.load", scheduleSync);
       clearRouteLayers(map, routeLayerIdsRef.current, routeLayerEventsRef.current);
       routeLayerIdsRef.current = [];
       routeLayerEventsRef.current = [];
@@ -774,6 +845,42 @@ export function LocationRouteMap({
     routes,
     selectedIndex,
   ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || routes.length === 0) {
+      setRouteOverlayPaths([]);
+      return;
+    }
+
+    let frame = 0;
+    const updateOverlay = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setRouteOverlayPaths(
+          routes.map((route, index) => ({
+            id: route.id,
+            index,
+            d: projectRoutePath(map, route.coordinates),
+          })),
+        );
+      });
+    };
+
+    updateOverlay();
+    map.on("move", updateOverlay);
+    map.on("resize", updateOverlay);
+    map.on("pitch", updateOverlay);
+    map.on("rotate", updateOverlay);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      map.off("move", updateOverlay);
+      map.off("resize", updateOverlay);
+      map.off("pitch", updateOverlay);
+      map.off("rotate", updateOverlay);
+    };
+  }, [routes]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -798,9 +905,11 @@ export function LocationRouteMap({
       });
     };
     if (map.isStyleLoaded()) addMarkers();
-    map.on("styledata", addMarkers);
+    map.on("load", addMarkers);
+    map.on("style.load", addMarkers);
     return () => {
-      map.off("styledata", addMarkers);
+      map.off("load", addMarkers);
+      map.off("style.load", addMarkers);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       popupRootsRef.current.forEach((root) => root.unmount());
@@ -866,6 +975,60 @@ export function LocationRouteMap({
         <div className="absolute inset-0 flex items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
           Loading map
         </div>
+      )}
+      {routeOverlayPaths.length > 0 && (
+        <svg
+          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+          aria-hidden="true"
+        >
+          {routeOverlayPaths
+            .filter((path) => path.index !== selectedIndex)
+            .map((path) => (
+              <g key={path.id}>
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeOpacity={0.36}
+                  strokeWidth={8}
+                />
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke={block.routeInactiveLineColor}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeOpacity={0.76}
+                  strokeWidth={4.5}
+                />
+              </g>
+            ))}
+          {routeOverlayPaths
+            .filter((path) => path.index === selectedIndex)
+            .map((path) => (
+              <g key={path.id}>
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeOpacity={0.84}
+                  strokeWidth={11}
+                />
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke={block.routeLineColor}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={6.5}
+                />
+              </g>
+            ))}
+        </svg>
       )}
       <div className={cn("absolute z-10 hidden sm:block", stopPanelPositionClass(summaryPosition))}>
         <RoutePlanPanel
