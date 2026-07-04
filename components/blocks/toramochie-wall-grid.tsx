@@ -147,7 +147,6 @@ export function ToraMochieTypedHeadline({
   );
   const initialWord = words[0] ?? "";
   const [typedWord, setTypedWord] = useState(initialWord);
-  const maxWordLength = Math.max(initialWord.length, ...words.map((word) => word.length));
   const label = `${prefix}${initialWord}`.trim();
 
   useEffect(() => {
@@ -199,14 +198,12 @@ export function ToraMochieTypedHeadline({
   }, [initialWord, reducedMotion, words]);
 
   return (
-    <mark
-      className="tora-wall-mark"
-      aria-label={label}
-      style={{ "--tora-typed-width": `${maxWordLength}ch` } as CSSProperties}
-    >
+    <mark className="tora-wall-mark" aria-label={label}>
       <span aria-hidden="true">
-        {prefix}
-        <span className="tora-wall-typed">{typedWord}</span>
+        {prefix && <span className="tora-wall-prefix">{prefix}</span>}
+        <span className={cn("tora-wall-typed", !prefix && "tora-wall-typed-only")}>
+          {typedWord}
+        </span>
       </span>
     </mark>
   );

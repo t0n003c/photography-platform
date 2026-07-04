@@ -1290,7 +1290,8 @@ is gitignored):
   Follow-up: Full Wall now seeds the reference headline/typed words when selected in the editor
   if those fields are blank, and existing saved Full Wall blocks with blank `typewriterWords`
   still animate by falling back to a multi-word loop instead of silently rendering a static
-  final word.
+  final word. The typed highlight no longer reserves the widest typed word; the black mark now
+  shrinks and grows with the currently typed characters like the reference.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
