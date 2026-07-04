@@ -243,7 +243,6 @@ html.js .pr-root.is-enhanced {
   align-items: stretch;
   background:
     radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--sticky-footer-accent) 38%, transparent), transparent 32%),
-    radial-gradient(circle at 82% 70%, color-mix(in srgb, var(--sticky-footer-accent) 24%, transparent), transparent 30%),
     linear-gradient(135deg, color-mix(in srgb, var(--sticky-footer-bg) 88%, white 12%), var(--sticky-footer-bg) 58%);
 }
 

@@ -1257,7 +1257,7 @@ is gitignored):
   oversized brand. This prevents real-page text overlap. The admin label is now "Reveal distance";
   it controls how much scroll space the sticky footer gets before it fully settles.
   Follow-up: the Sticky animated footer line-grid overlay was removed from both public rendering
-  and the Design preview. The preview now uses the same two accent glows as the public footer.
+  and the Design preview. Both surfaces now use one top-left accent glow only.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

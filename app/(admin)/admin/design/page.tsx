@@ -1173,7 +1173,6 @@ function FooterPreview({
         style={{
           background:
             `radial-gradient(circle at 12% 20%, ${s.stickyAccentColor}55, transparent 34%), ` +
-            `radial-gradient(circle at 82% 70%, ${s.stickyAccentColor}38, transparent 30%), ` +
             `linear-gradient(135deg, ${s.stickyBackgroundColor}, ${s.stickyBackgroundColor})`,
           color: s.stickyTextColor,
         }}
