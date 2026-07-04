@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { ArrowRight, ChevronDown, Play } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { CssGlitchImage } from "@/components/gallery/css-glitch";
+import { ToraMochieWallGrid } from "@/components/blocks/toramochie-wall-grid";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -518,6 +519,12 @@ function ToraCopy({
   const headline = block.headline.trim() || "Image banner";
   const subhead = block.subhead.trim();
   const showButton = Boolean(block.ctaLabel && block.ctaHref);
+  const button =
+    showButton && variant !== "wall" ? (
+      <Link href={block.ctaHref!} className="tora-banner-link mt-7">
+        {block.ctaLabel}
+      </Link>
+    ) : null;
 
   if (variant === "creative") {
     return (
@@ -539,11 +546,7 @@ function ToraCopy({
             {subhead}
           </p>
         )}
-        {showButton && (
-          <Link href={block.ctaHref!} className={cn("mt-7", buttonClass(block.buttonStyle, "light"))}>
-            {block.ctaLabel}
-          </Link>
-        )}
+        {button}
       </div>
     );
   }
@@ -597,6 +600,16 @@ function ToraCopy({
     );
   }
 
+  if (variant === "wall") {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col items-center px-5 text-center text-white">
+        <h1 className="font-sans text-2xl font-bold leading-[1.45] tracking-normal sm:text-4xl md:text-5xl">
+          <mark className="tora-wall-mark">{headline}</mark>
+        </h1>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center px-5 text-center text-white">
       <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.32em] text-white/78 sm:text-xs">
@@ -605,46 +618,19 @@ function ToraCopy({
       <h1
         className={cn(
           "font-sans font-black uppercase leading-[1.05] tracking-[0.12em]",
-          variant === "wall"
-            ? "text-2xl sm:text-4xl md:text-5xl"
-            : variant === "simple"
-              ? "text-4xl sm:text-6xl md:text-7xl"
-              : "text-3xl sm:text-5xl md:text-6xl",
+          variant === "simple"
+            ? "text-4xl sm:text-6xl md:text-7xl"
+            : "text-3xl sm:text-5xl md:text-6xl",
         )}
       >
         {headline}
       </h1>
-      {subhead && variant !== "wall" && (
+      {subhead && (
         <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-white/75 sm:text-base">
           {subhead}
         </p>
       )}
-      {showButton && variant !== "wall" && (
-        <Link href={block.ctaHref!} className={cn("mt-7", buttonClass(block.buttonStyle, "light"))}>
-          {block.ctaLabel}
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function ToraWallPhoto({
-  photo,
-  block,
-}: {
-  photo: PhotoDTO;
-  block: BannerData;
-}) {
-  const fx = block.focalX ?? 50;
-  const fy = block.focalY ?? 50;
-  return (
-    <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
-      <ResponsiveImage
-        photo={photo}
-        sizes="(min-width: 1024px) 17vw, (min-width: 640px) 25vw, 34vw"
-        className="h-full w-full object-cover"
-        objectPosition={`${fx}% ${fy}%`}
-      />
+      {button}
     </div>
   );
 }
@@ -669,11 +655,7 @@ function ToraMochieBanner({
           TORA_WALL_HEIGHTS[block.height],
         )}
       >
-        <div className="grid w-full grid-cols-3 gap-1 sm:grid-cols-4 lg:grid-cols-6">
-          {wallPhotos.map((item, index) => (
-            <ToraWallPhoto key={`${item.id}-${index}`} photo={item} block={block} />
-          ))}
-        </div>
+        <ToraMochieWallGrid block={block} photos={wallPhotos} />
         <ToraOverlay block={block} />
         <div className="absolute inset-0 flex items-center justify-center">
           <ToraCopy block={block} variant="wall" />
@@ -719,9 +701,12 @@ function ToraMochieBanner({
         <ToraCopy block={block} variant={variant} />
       </div>
       {isSimple && (
-        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-white/45">
-          <ChevronDown className="h-8 w-8" strokeWidth={1.2} aria-hidden="true" />
-          <ChevronDown className="-mt-5 h-8 w-8" strokeWidth={1.2} aria-hidden="true" />
+        <div className="absolute bottom-3 left-0 right-0 z-20 flex justify-center">
+          <svg className="tora-scroll-arrows" viewBox="0 0 30 50" aria-hidden="true">
+            <path className="a1" d="M0 0 L15 16 L30 0" />
+            <path className="a2" d="M0 13 L15 29 L30 13" />
+            <path className="a3" d="M0 26 L15 42 L30 26" />
+          </svg>
         </div>
       )}
     </section>

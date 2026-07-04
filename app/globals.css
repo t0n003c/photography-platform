@@ -161,6 +161,235 @@ html.js .pr-root.is-enhanced {
   .banner-reveal > * { opacity: 1; animation: none; transform: none; }
 }
 
+/* ToraMochie / Reflector image-banner references. The button mirrors the
+   theme's a-btn-1 text link; Full Wall mirrors gridrotator's 3s random swaps. */
+.tora-banner-link {
+  position: relative;
+  display: inline-block;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 4.2px;
+  line-height: 1.2;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 350ms ease;
+}
+
+.tora-banner-link::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1px);
+  left: 80%;
+  width: 33px;
+  height: 1px;
+  background-color: currentColor;
+  transform: translateX(27px);
+  transition: transform 400ms cubic-bezier(0.13, 0.68, 0.05, 0.83);
+}
+
+.tora-banner-link:hover::after {
+  transform: translateX(0);
+}
+
+.tora-wall-grid {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  background: #000;
+}
+
+.tora-wall-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #000;
+  perspective: 400px;
+}
+
+.tora-wall-face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  transform-style: preserve-3d;
+  will-change: opacity, transform;
+}
+
+.tora-wall-back {
+  opacity: 0;
+}
+
+.tora-wall-cell[data-anim="fade"] {
+  --tora-wall-out: translate3d(0, 0, 0);
+  --tora-wall-in: translate3d(0, 0, 0);
+}
+
+.tora-wall-cell[data-anim="slide-left"] {
+  --tora-wall-out: translateX(-100%);
+  --tora-wall-in: translateX(100%);
+}
+
+.tora-wall-cell[data-anim="slide-right"] {
+  --tora-wall-out: translateX(100%);
+  --tora-wall-in: translateX(-100%);
+}
+
+.tora-wall-cell[data-anim="slide-top"] {
+  --tora-wall-out: translateY(-100%);
+  --tora-wall-in: translateY(100%);
+}
+
+.tora-wall-cell[data-anim="slide-bottom"] {
+  --tora-wall-out: translateY(100%);
+  --tora-wall-in: translateY(-100%);
+}
+
+.tora-wall-cell[data-anim="rotate-left"] {
+  --tora-wall-out: rotateY(-90deg);
+  --tora-wall-in: rotateY(90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-right"] {
+  --tora-wall-out: rotateY(90deg);
+  --tora-wall-in: rotateY(-90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-top"] {
+  --tora-wall-out: rotateX(-90deg);
+  --tora-wall-in: rotateX(90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-bottom"] {
+  --tora-wall-out: rotateX(90deg);
+  --tora-wall-in: rotateX(-90deg);
+}
+
+.tora-wall-cell[data-anim="scale"] {
+  --tora-wall-out: scale(0);
+  --tora-wall-in: scale(0);
+}
+
+.tora-wall-cell[data-anim="rotate3d"] {
+  --tora-wall-out: rotate3d(1, 1, 0, -90deg);
+  --tora-wall-in: rotate3d(1, 1, 0, 90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-left-scale"] {
+  --tora-wall-out: scale(0.3) rotateY(-90deg);
+  --tora-wall-in: scale(0.3) rotateY(90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-right-scale"] {
+  --tora-wall-out: scale(0.3) rotateY(90deg);
+  --tora-wall-in: scale(0.3) rotateY(-90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-top-scale"] {
+  --tora-wall-out: scale(0.3) rotateX(-90deg);
+  --tora-wall-in: scale(0.3) rotateX(90deg);
+}
+
+.tora-wall-cell[data-anim="rotate-bottom-scale"] {
+  --tora-wall-out: scale(0.3) rotateX(90deg);
+  --tora-wall-in: scale(0.3) rotateX(-90deg);
+}
+
+.tora-wall-cell.is-swapping .tora-wall-front {
+  animation: tora-wall-front-out 800ms linear both;
+}
+
+.tora-wall-cell.is-swapping .tora-wall-back {
+  animation: tora-wall-back-in 800ms linear both;
+}
+
+@keyframes tora-wall-front-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  49% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: var(--tora-wall-out, translate3d(0, 0, 0));
+  }
+}
+
+@keyframes tora-wall-back-in {
+  0% {
+    opacity: 0;
+    transform: var(--tora-wall-in, translate3d(0, 0, 0));
+  }
+  49% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.tora-wall-mark {
+  background: #000;
+  color: #fff;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.08em 0.18em 0;
+}
+
+.tora-scroll-arrows {
+  width: 30px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.tora-scroll-arrows path {
+  fill: transparent;
+  stroke: white;
+  stroke-width: 1px;
+  animation: tora-scroll-arrow 2s infinite;
+}
+
+.tora-scroll-arrows path.a1 { animation-delay: -1s; }
+.tora-scroll-arrows path.a2 { animation-delay: -0.5s; }
+.tora-scroll-arrows path.a3 { animation-delay: 0s; }
+
+@keyframes tora-scroll-arrow {
+  0% { opacity: 0; }
+  40% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@media (max-width: 768px) {
+  .tora-banner-link {
+    letter-spacing: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-wall-cell.is-swapping .tora-wall-front,
+  .tora-wall-cell.is-swapping .tora-wall-back,
+  .tora-scroll-arrows path {
+    animation: none;
+  }
+
+  .tora-wall-back {
+    opacity: 0;
+  }
+}
+
 /* Prisma hero: reference-style cinematic load-in without a client dependency. */
 .banner-prisma-noise {
   background-image:

@@ -1278,6 +1278,12 @@ is gitignored):
   Follow-up: Compact sticky footer spacing was tightened again: lower compact reveal clamps,
   smaller content padding, tighter main/nav/link gaps, shorter social/tagline spacing, and a
   reduced compact bottom-row top padding.
+  Pages Banner follow-up: the ToraMochie/Reflector Image Banner reference is now represented
+  as Banner block layouts: Modern, Creative, Simple, Full wall, Bottom text, Only image, and
+  Classic. The source-matched refinements include the `a-btn-1` style uppercase text CTA with
+  sliding line hover, the Simple three-path pulsing down arrow, and a Full Wall grid-rotator
+  enhancement that swaps 7 random cells every 3s across 4x8 desktop / responsive mobile grids.
+  Full Wall keeps an SSR collage fallback and disables the rotator under reduced motion.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
