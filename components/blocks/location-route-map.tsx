@@ -27,11 +27,6 @@ interface RouteLayerEvent {
   handler: () => void;
 }
 
-interface RouteOverlayPathRefs {
-  casing: SVGPathElement | null;
-  line: SVGPathElement | null;
-}
-
 const STYLE_URLS = {
   light: "https://tiles.openfreemap.org/styles/positron",
   dark: "https://tiles.openfreemap.org/styles/dark",
@@ -188,7 +183,7 @@ function estimatedRoute(
 function simplifyRouteCoordinates(
   coordinates: [number, number][],
   stops: LocationMapPoint[],
-  maxPoints = 1000,
+  maxPoints = 360,
 ) {
   if (coordinates.length <= maxPoints) return coordinates;
 
@@ -216,13 +211,76 @@ function simplifyRouteCoordinates(
     .map((index) => coordinates[index]);
 }
 
-function projectRoutePath(map: MapLibreMap, coordinates: [number, number][]) {
-  return coordinates
-    .map((coordinate, index) => {
-      const point = map.project(coordinate);
-      return `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
-    })
-    .join(" ");
+function clearRouteCanvas(canvas: HTMLCanvasElement | null) {
+  if (!canvas) return;
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawProjectedRoute(
+  context: CanvasRenderingContext2D,
+  map: MapLibreMap,
+  coordinates: [number, number][],
+  color: string,
+  width: number,
+  alpha = 1,
+) {
+  if (coordinates.length < 2) return;
+  context.save();
+  context.globalAlpha = alpha;
+  context.strokeStyle = color;
+  context.lineWidth = width;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.beginPath();
+  coordinates.forEach((coordinate, index) => {
+    const point = map.project(coordinate);
+    if (index === 0) context.moveTo(point.x, point.y);
+    else context.lineTo(point.x, point.y);
+  });
+  context.stroke();
+  context.restore();
+}
+
+function drawRouteCanvas({
+  canvas,
+  map,
+  routes,
+  selectedIndex,
+  activeColor,
+  inactiveColor,
+}: {
+  canvas: HTMLCanvasElement;
+  map: MapLibreMap;
+  routes: RouteOption[];
+  selectedIndex: number;
+  activeColor: string;
+  inactiveColor: string;
+}) {
+  const rect = canvas.getBoundingClientRect();
+  const pixelRatio = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(rect.width * pixelRatio));
+  const height = Math.max(1, Math.round(rect.height * pixelRatio));
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, rect.width, rect.height);
+
+  routes.forEach((route, index) => {
+    if (index === selectedIndex) return;
+    drawProjectedRoute(context, map, route.coordinates, "#ffffff", 5, 0.36);
+    drawProjectedRoute(context, map, route.coordinates, inactiveColor, 2.5, 0.72);
+  });
+
+  const activeRoute = routes[selectedIndex] ?? routes[0];
+  if (activeRoute) {
+    drawProjectedRoute(context, map, activeRoute.coordinates, "#ffffff", 7.5, 0.86);
+    drawProjectedRoute(context, map, activeRoute.coordinates, activeColor, 4.25);
+  }
 }
 
 function fitCoordinates(
@@ -579,13 +637,13 @@ export function LocationRouteMap({
   points: LocationMapPoint[];
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const routeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const currentStyleUrlRef = useRef<string | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const popupRootsRef = useRef<Root[]>([]);
   const routeLayerIdsRef = useRef<string[]>([]);
   const routeLayerEventsRef = useRef<RouteLayerEvent[]>([]);
-  const routeOverlayPathRefs = useRef<Map<string, RouteOverlayPathRefs>>(new Map());
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePoint, setMobilePoint] = useState<LocationMapPoint | null>(null);
@@ -605,27 +663,6 @@ export function LocationRouteMap({
   const summaryPosition = block.routeSummaryPosition ?? "top-left";
   const summaryStyle = block.routeSummaryStyle ?? "solid";
   const travelMode = routeTravelMode(block);
-  const routeOverlayItems = useMemo(
-    () => routes.map((route, index) => ({ id: route.id, index })),
-    [routes],
-  );
-
-  const setRouteOverlayPathNode = (
-    routeId: string,
-    kind: keyof RouteOverlayPathRefs,
-    node: SVGPathElement | null,
-  ) => {
-    const entry = routeOverlayPathRefs.current.get(routeId) ?? {
-      casing: null,
-      line: null,
-    };
-    entry[kind] = node;
-    if (entry.casing || entry.line) {
-      routeOverlayPathRefs.current.set(routeId, entry);
-    } else {
-      routeOverlayPathRefs.current.delete(routeId);
-    }
-  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -795,9 +832,9 @@ export function LocationRouteMap({
           },
           paint: {
             "line-color": isSelected ? "#ffffff" : "#0f172a",
-            "line-width": isSelected ? 12 : 10,
+            "line-width": isSelected ? 9 : 6,
             "line-opacity": 0.01,
-            "line-blur": isSelected ? 0.5 : 0.75,
+            "line-blur": isSelected ? 0.25 : 0.5,
           },
         });
         map.addLayer({
@@ -812,7 +849,7 @@ export function LocationRouteMap({
             "line-color": isSelected
               ? block.routeLineColor
               : block.routeInactiveLineColor,
-            "line-width": isSelected ? 8 : 6,
+            "line-width": isSelected ? 6 : 4,
             "line-opacity": 0.01,
           },
         });
@@ -868,42 +905,49 @@ export function LocationRouteMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || routes.length === 0) {
-      routeOverlayPathRefs.current.forEach((entry) => {
-        entry.casing?.setAttribute("d", "");
-        entry.line?.setAttribute("d", "");
-      });
+    const canvas = routeCanvasRef.current;
+    if (!map || !canvas || routes.length === 0) {
+      clearRouteCanvas(canvas);
       return;
     }
 
     let frame = 0;
-    const updateOverlay = () => {
+    const draw = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        routes.forEach((route) => {
-          const entry = routeOverlayPathRefs.current.get(route.id);
-          if (!entry) return;
-          const d = projectRoutePath(map, route.coordinates);
-          entry.casing?.setAttribute("d", d);
-          entry.line?.setAttribute("d", d);
+        drawRouteCanvas({
+          canvas,
+          map,
+          routes,
+          selectedIndex,
+          activeColor: block.routeLineColor,
+          inactiveColor: block.routeInactiveLineColor,
         });
       });
     };
 
-    updateOverlay();
-    map.on("move", updateOverlay);
-    map.on("resize", updateOverlay);
-    map.on("pitch", updateOverlay);
-    map.on("rotate", updateOverlay);
+    draw();
+    map.on("move", draw);
+    map.on("resize", draw);
+    map.on("pitch", draw);
+    map.on("rotate", draw);
+    window.addEventListener("resize", draw);
 
     return () => {
       window.cancelAnimationFrame(frame);
-      map.off("move", updateOverlay);
-      map.off("resize", updateOverlay);
-      map.off("pitch", updateOverlay);
-      map.off("rotate", updateOverlay);
+      map.off("move", draw);
+      map.off("resize", draw);
+      map.off("pitch", draw);
+      map.off("rotate", draw);
+      window.removeEventListener("resize", draw);
+      clearRouteCanvas(canvas);
     };
-  }, [routes, selectedIndex]);
+  }, [
+    block.routeInactiveLineColor,
+    block.routeLineColor,
+    routes,
+    selectedIndex,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -999,64 +1043,11 @@ export function LocationRouteMap({
           Loading map
         </div>
       )}
-      {routeOverlayItems.length > 0 && (
-        <svg
-          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-          aria-hidden="true"
-        >
-          {routeOverlayItems
-            .filter((path) => path.index !== selectedIndex)
-            .map((path) => (
-              <g key={path.id}>
-                <path
-                  ref={(node) => setRouteOverlayPathNode(path.id, "casing", node)}
-                  d=""
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeOpacity={0.36}
-                  strokeWidth={7}
-                />
-                <path
-                  ref={(node) => setRouteOverlayPathNode(path.id, "line", node)}
-                  d=""
-                  fill="none"
-                  stroke={block.routeInactiveLineColor}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeOpacity={0.76}
-                  strokeWidth={3.75}
-                />
-              </g>
-            ))}
-          {routeOverlayItems
-            .filter((path) => path.index === selectedIndex)
-            .map((path) => (
-              <g key={path.id}>
-                <path
-                  ref={(node) => setRouteOverlayPathNode(path.id, "casing", node)}
-                  d=""
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeOpacity={0.84}
-                  strokeWidth={9.5}
-                />
-                <path
-                  ref={(node) => setRouteOverlayPathNode(path.id, "line", node)}
-                  d=""
-                  fill="none"
-                  stroke={block.routeLineColor}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={5.5}
-                />
-              </g>
-            ))}
-        </svg>
-      )}
+      <canvas
+        ref={routeCanvasRef}
+        className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+        aria-hidden="true"
+      />
       <div className={cn("absolute z-10 hidden sm:block", stopPanelPositionClass(summaryPosition))}>
         <RoutePlanPanel
           block={block}
