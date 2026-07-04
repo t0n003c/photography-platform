@@ -1303,6 +1303,12 @@ is gitignored):
   Modern list, Category cards, Distortion feature, Animated masonry, and Mix masonry. The distortion
   variant progressively overlays a Three.js displacement-style hover transition on top of the static
   image fallback and disables the overlay for reduced motion.
+  Follow-up: Portfolio List fidelity pass tightened the layouts against the live ToraMochie source.
+  Modern intentionally uses the measured 5-column 20% layout with alternating horizontal/vertical
+  items; Category cards and Animated masonry crop the image wrapper on hover instead of drawing an
+  inner border; Distortion uses the reference displacement map (`/textures/portfolio-displacement-1.jpg`)
+  with intensity -0.4, 0.7s in / 0.3s out, sine ease-out; Animated masonry uses side vertical category
+  labels and reference column ordering; Mix masonry is centered to the reference 1270px narrow/wide/narrow row.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

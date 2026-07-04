@@ -16,6 +16,7 @@ const fragmentShader = /* glsl */ `
   precision highp float;
   uniform sampler2D uTexture;
   uniform sampler2D uTexture2;
+  uniform sampler2D uDisplacement;
   uniform float uProgress;
   uniform float uIntensity;
   uniform float uTexAspect;
@@ -30,18 +31,23 @@ const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    float p = smoothstep(0.0, 1.0, uProgress);
-    vec2 wave = vec2(
-      sin((vUv.y + p * 0.35) * 18.0) * 0.025,
-      cos((vUv.x - p * 0.25) * 14.0) * 0.012
-    ) * uIntensity;
-    vec2 uv1 = coverUv(vUv + wave * p, uTexAspect, uViewAspect);
-    vec2 uv2 = coverUv(vUv - wave * (1.0 - p), uTexAspect2, uViewAspect);
+    float p = clamp(uProgress, 0.0, 1.0);
+    vec4 disp = texture2D(uDisplacement, vUv);
+    vec2 distortedPosition = vec2(vUv.x + p * (disp.r * uIntensity), vUv.y);
+    vec2 distortedPosition2 = vec2(vUv.x - (1.0 - p) * (disp.r * uIntensity), vUv.y);
+    vec2 uv1 = coverUv(distortedPosition, uTexAspect, uViewAspect);
+    vec2 uv2 = coverUv(distortedPosition2, uTexAspect2, uViewAspect);
     vec4 a = texture2D(uTexture, clamp(uv1, 0.0, 1.0));
     vec4 b = texture2D(uTexture2, clamp(uv2, 0.0, 1.0));
     gl_FragColor = mix(a, b, p);
   }
 `;
+
+const displacementSrc = "/textures/portfolio-displacement-1.jpg";
+
+function sineEaseOut(progress: number) {
+  return Math.sin((Math.PI / 2) * progress);
+}
 
 function DistortionPlane({
   primarySrc,
@@ -54,10 +60,15 @@ function DistortionPlane({
   active: boolean;
   onReady: () => void;
 }) {
-  const [primary, secondary] = useLoader(THREE.TextureLoader, [primarySrc, secondarySrc]);
+  const [primary, secondary, displacement] = useLoader(THREE.TextureLoader, [
+    primarySrc,
+    secondarySrc,
+    displacementSrc,
+  ]);
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const progress = useRef(0);
   const ready = useRef(false);
+  const transition = useRef({ from: 0, to: 0, elapsed: 0, duration: 0.3 });
   const { viewport, size } = useThree();
 
   useEffect(() => {
@@ -68,7 +79,20 @@ function DistortionPlane({
       texture.magFilter = THREE.LinearFilter;
       texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
     }
-  }, [primary, secondary]);
+    displacement.colorSpace = THREE.LinearSRGBColorSpace;
+    displacement.minFilter = THREE.LinearFilter;
+    displacement.magFilter = THREE.LinearFilter;
+    displacement.wrapS = displacement.wrapT = THREE.RepeatWrapping;
+  }, [displacement, primary, secondary]);
+
+  useEffect(() => {
+    transition.current = {
+      from: progress.current,
+      to: active ? 1 : 0,
+      elapsed: 0,
+      duration: active ? 0.7 : 0.3,
+    };
+  }, [active]);
 
   const primaryImage = primary.image as { width?: number; height?: number } | undefined;
   const secondaryImage = secondary.image as { width?: number; height?: number } | undefined;
@@ -83,17 +107,21 @@ function DistortionPlane({
     () => ({
       uTexture: { value: primary },
       uTexture2: { value: secondary },
+      uDisplacement: { value: displacement },
       uProgress: { value: 0 },
-      uIntensity: { value: 0.95 },
+      uIntensity: { value: -0.4 },
       uTexAspect: { value: primaryAspect },
       uTexAspect2: { value: secondaryAspect },
       uViewAspect: { value: 1 },
     }),
-    [primary, primaryAspect, secondary, secondaryAspect],
+    [displacement, primary, primaryAspect, secondary, secondaryAspect],
   );
 
-  useFrame(() => {
-    progress.current += ((active ? 1 : 0) - progress.current) * 0.08;
+  useFrame((_, delta) => {
+    const state = transition.current;
+    state.elapsed = Math.min(state.duration, state.elapsed + delta);
+    const eased = sineEaseOut(state.duration === 0 ? 1 : state.elapsed / state.duration);
+    progress.current = state.from + (state.to - state.from) * eased;
     if (matRef.current) {
       matRef.current.uniforms.uProgress.value = progress.current;
       matRef.current.uniforms.uViewAspect.value = size.width / Math.max(1, size.height);
@@ -143,7 +171,9 @@ export function PortfolioDistortionImage({
       className={`portfolio-distortion-overlay${ready ? " is-ready" : ""}`}
       onPointerEnter={() => setActive(true)}
       onPointerLeave={() => setActive(false)}
-      onPointerDown={() => setActive((value) => !value)}
+      onPointerDown={() => setActive(true)}
+      onPointerUp={() => setActive(false)}
+      onPointerCancel={() => setActive(false)}
       aria-hidden="true"
     >
       <Canvas

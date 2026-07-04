@@ -101,9 +101,15 @@ function ModernList({
           <PortfolioLink
             key={item.id}
             href={item.linkHref}
-            className={cn("portfolio-modern-item", index % 2 === 1 && "is-even")}
+            className={cn(
+              "portfolio-modern-item",
+              index % 2 === 0 ? "is-horizontal" : "is-vertical",
+            )}
           >
-            <PortfolioImage photo={photo} sizes="(min-width: 1100px) 18vw, (min-width: 768px) 32vw, 100vw" />
+            <PortfolioImage
+              photo={photo}
+              sizes="(min-width: 1300px) 18vw, (min-width: 768px) 30vw, 100vw"
+            />
             <div className="portfolio-card-copy">
               <h3>{item.title}</h3>
               {item.category && <p>{item.category}</p>}
@@ -178,24 +184,40 @@ function AnimatedMasonry({
   items: PortfolioListItemData[];
   photos: Map<string, PhotoDTO>;
 }) {
+  const columns: PortfolioListItemData[][] = [[], [], []];
+  const columnPattern = [0, 1, 2, 2, 0, 1, 2, 0];
+  items.forEach((item, index) => {
+    columns[columnPattern[index % columnPattern.length] ?? 0]?.push(item);
+  });
+
   return (
     <div className="portfolio-animated-masonry">
-      {items.map((item, index) => {
-        const photo = item.photoId ? photos.get(item.photoId) : undefined;
-        return (
-          <PortfolioLink
-            key={item.id}
-            href={item.linkHref}
-            className={cn("portfolio-masonry-item", `shape-${index % 4}`)}
-          >
-            <PortfolioImage photo={photo} sizes="(min-width: 900px) 30vw, 100vw" />
-            <div className="portfolio-card-copy">
-              {item.category && <p>{item.category}</p>}
-              <h3>{item.title}</h3>
-            </div>
-          </PortfolioLink>
-        );
-      })}
+      {columns.map((column, columnIndex) => (
+        <div className="portfolio-masonry-column" key={columnIndex}>
+          {column.map((item) => {
+            const index = items.findIndex((candidate) => candidate.id === item.id);
+            const photo = item.photoId ? photos.get(item.photoId) : undefined;
+            return (
+              <PortfolioLink
+                key={item.id}
+                href={item.linkHref}
+                className={cn(
+                  "portfolio-masonry-item",
+                  index % 8 === 1 ? "is-vertical" : "is-horizontal",
+                )}
+              >
+                <div className="portfolio-masonry-wrapper">
+                  {item.category && <p>{item.category}</p>}
+                  <div className="portfolio-masonry-content">
+                    <PortfolioImage photo={photo} sizes="(min-width: 900px) 30vw, 100vw" />
+                    <h3>{item.title}</h3>
+                  </div>
+                </div>
+              </PortfolioLink>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -215,7 +237,7 @@ function MixMasonry({
           <PortfolioLink
             key={item.id}
             href={item.linkHref}
-            className={cn("portfolio-mix-item", `mix-${index % 5}`)}
+            className={cn("portfolio-mix-item", `mix-${index % 3}`)}
           >
             <PortfolioImage photo={photo} sizes="(min-width: 900px) 32vw, 100vw" />
             <div className="portfolio-mix-title">{item.title}</div>
