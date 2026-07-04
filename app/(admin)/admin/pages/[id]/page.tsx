@@ -29,6 +29,10 @@ import { api, ApiError } from "@/src/lib/api-client";
 import { BLOCK_LABELS, type Block, type BlockType, type LeafBlock } from "@/src/lib/blocks";
 import { PhotoPicker, type PhotoOption } from "@/components/admin/photo-picker";
 import { FocalPointPicker } from "@/components/admin/focal-point-picker";
+import {
+  TORA_MOCHIE_DEFAULT_HEADLINE,
+  TORA_MOCHIE_DEFAULT_TYPED_WORDS,
+} from "@/components/blocks/toramochie-wall-grid";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 
 interface PageRow {
@@ -3659,6 +3663,16 @@ function LeafEditor({
       const selectedBannerPhotos = bannerPhotoIds
         .map((photoId) => photos.find((photo) => photo.id === photoId))
         .filter((photo): photo is PhotoOption => Boolean(photo));
+      const updateBannerLayout = (layout: typeof block.layout) => {
+        const patch: Partial<LeafBlock> = { layout };
+        if (layout === "toramochie-full-wall") {
+          if (!block.headline.trim()) patch.headline = TORA_MOCHIE_DEFAULT_HEADLINE;
+          if (!(block.typewriterWords ?? "").trim()) {
+            patch.typewriterWords = TORA_MOCHIE_DEFAULT_TYPED_WORDS;
+          }
+        }
+        set(patch);
+      };
       const toggleBannerPhoto = (photoId: string) =>
         set({
           photoIds: bannerPhotoIds.includes(photoId)
@@ -3692,7 +3706,10 @@ function LeafEditor({
             </Field>
           )}
           <Field label="Layout">
-            <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
+            <Select
+              value={block.layout ?? "bottom-left"}
+              onChange={(e) => updateBannerLayout(e.target.value as typeof block.layout)}
+            >
               <optgroup label="Standard">
                 <option value="bottom-left">Bottom left</option>
                 <option value="bottom-right">Bottom right</option>

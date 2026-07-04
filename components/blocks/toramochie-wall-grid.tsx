@@ -43,6 +43,10 @@ const ANIMATIONS = [
   "rotate-bottom-scale",
 ];
 
+export const TORA_MOCHIE_DEFAULT_HEADLINE = "Hi. I am a photographer. I capture life.";
+export const TORA_MOCHIE_DEFAULT_TYPED_WORDS = "life., action., people.";
+const DEFAULT_TYPED_WORDS = TORA_MOCHIE_DEFAULT_TYPED_WORDS.split(",").map((word) => word.trim());
+
 function gridForWidth(width: number): GridSize {
   if (width < 480) return { rows: 6, columns: 4 };
   if (width < 510) return { rows: 6, columns: 4 };
@@ -94,13 +98,20 @@ function configuredWords(value: string | undefined) {
 }
 
 function splitTypedHeadline(headline: string, typewriterWords: string | undefined): TypedHeadlineParts {
-  const cleanHeadline = headline.trim() || "Hi. I am a photographer. I capture life.";
+  const cleanHeadline = headline.trim() || TORA_MOCHIE_DEFAULT_HEADLINE;
   let words = configuredWords(typewriterWords);
   if (words.length === 0) {
     const lastWord = cleanHeadline.match(/(\S+)$/)?.[1] ?? cleanHeadline;
-    words = cleanHeadline.toLowerCase().includes("capture life")
-      ? ["life.", "action.", "people."]
-      : [lastWord];
+    const normalizedLastWord = lastWord.toLowerCase().replace(/[^\p{L}\p{N}]+$/u, "");
+    words =
+      cleanHeadline.toLowerCase().includes("capture life") || normalizedLastWord === "life"
+        ? DEFAULT_TYPED_WORDS
+        : [
+            lastWord,
+            ...DEFAULT_TYPED_WORDS.filter(
+              (word) => word.toLowerCase() !== lastWord.toLowerCase(),
+            ),
+          ].slice(0, 3);
   }
 
   const firstWord = words[0] ?? "";

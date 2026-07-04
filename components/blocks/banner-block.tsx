@@ -6,6 +6,7 @@ import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { CssGlitchImage } from "@/components/gallery/css-glitch";
 import {
+  TORA_MOCHIE_DEFAULT_HEADLINE,
   ToraMochieTypedHeadline,
   ToraMochieWallGrid,
 } from "@/components/blocks/toramochie-wall-grid";
@@ -519,7 +520,8 @@ function ToraCopy({
   variant: "modern" | "creative" | "simple" | "wall" | "bottom" | "strip" | "classic";
 }) {
   const eyebrow = block.eyebrow.trim() || "Image banner";
-  const headline = block.headline.trim() || "Image banner";
+  const headline =
+    block.headline.trim() || (variant === "wall" ? TORA_MOCHIE_DEFAULT_HEADLINE : "Image banner");
   const subhead = block.subhead.trim();
   const showButton = Boolean(block.ctaLabel && block.ctaHref);
   const button =
