@@ -2641,6 +2641,742 @@ html.js .pr-root.is-enhanced {
   will-change: transform, opacity, filter;
 }
 
+.tora-price-section {
+  --tora-price-dark: #111;
+  --tora-price-light: #fff;
+  --tora-price-grey: #8c8c8c;
+  --tora-price-light-grey: #e5e0d8;
+  --tora-price-main: hsl(var(--primary));
+  color: var(--tora-price-dark);
+  padding: 40px 0;
+}
+
+.tora-price-section.is-dark {
+  --tora-price-dark: #f7f3ea;
+  --tora-price-light: #0c0b0a;
+  --tora-price-grey: rgb(255 255 255 / 0.64);
+  --tora-price-light-grey: rgb(255 255 255 / 0.18);
+  --tora-price-main: #c6a46a;
+  background: #070605;
+  color: var(--tora-price-dark);
+}
+
+.tora-pricelist {
+  font-family: var(--font-sans);
+}
+
+.tora-pricelist .pricing-wrap,
+.tora-pricelist.pricing-wrap {
+  cursor: pointer;
+  outline: none;
+}
+
+.tora-pricelist .pricing-wrap:focus-visible,
+.tora-pricelist.pricing-wrap:focus-visible {
+  outline: 2px solid var(--tora-price-main);
+  outline-offset: 4px;
+}
+
+.tora-price-image {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.tora-price-image img,
+.tora-price-image > div {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.tora-price-check {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--tora-price-main);
+  background: transparent;
+  transition: border-color 350ms ease;
+}
+
+.tora-price-check::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--tora-price-main);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 350ms ease;
+}
+
+.tora-price-check.is-selected::before,
+.pricing-wrap.active .tora-price-check::before {
+  opacity: 1;
+}
+
+.tora-price-title,
+.tora-pricelist .title,
+.tora-price-image-title,
+.tora-pricelist .subtitle,
+.tora-price-subtitle {
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.tora-pricelist .title,
+.tora-price-image-title,
+.tora-price-title {
+  letter-spacing: 3px;
+}
+
+.tora-pricelist .subtitle,
+.tora-price-subtitle {
+  letter-spacing: 2px;
+}
+
+.tora-price-list-wrap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--tora-price-grey);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.tora-price-list-wrap li {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.tora-price-list-wrap li.is-excluded {
+  opacity: 0.44;
+}
+
+.tora-price-feature-icon {
+  width: 14px;
+  height: 14px;
+  margin-top: 0.45em;
+  color: var(--tora-price-main);
+  stroke-width: 2.4;
+}
+
+.tora-pricelist .price-wrap {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-serif);
+  font-size: 35px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.tora-pricelist .currency {
+  margin-right: 1px;
+}
+
+.tora-pricelist--classic {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: calc(100% + 30px);
+  margin: -15px;
+}
+
+.tora-pricelist--classic .pricing-wrap {
+  display: flex;
+  width: 50%;
+  padding: 15px;
+}
+
+.tora-pricelist--classic .wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  padding: 50px;
+  border: 1px solid var(--tora-price-light-grey);
+  transition: border-color 350ms ease;
+}
+
+.tora-pricelist--classic .wrap:hover,
+.tora-pricelist--classic .pricing-wrap:focus-visible .wrap {
+  border-color: var(--tora-price-dark);
+}
+
+.tora-pricelist--classic .tora-price-image-wrap,
+.tora-pricelist--modern .tora-price-image-wrap {
+  position: relative;
+  padding-top: calc(100% / 3 * 2);
+  margin-bottom: 45px;
+  overflow: hidden;
+}
+
+.tora-pricelist--classic .tora-price-image,
+.tora-pricelist--modern .tora-price-image {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  transition: filter 350ms ease;
+}
+
+.tora-pricelist--classic .wrap:hover .tora-price-image,
+.tora-pricelist--modern .wrap:hover .tora-price-image,
+.tora-pricelist--classic .pricing-wrap:focus-visible .tora-price-image,
+.tora-pricelist--modern .pricing-wrap:focus-visible .tora-price-image {
+  filter: grayscale(100%);
+}
+
+.tora-pricelist--classic .tora-price-image-title {
+  position: absolute;
+  bottom: 30px;
+  left: 40px;
+  z-index: 10;
+  color: #fff;
+  font-size: 19px;
+}
+
+.tora-pricelist--classic .subtitle {
+  margin-bottom: 10px;
+  color: var(--tora-price-dark);
+  font-size: 17px;
+}
+
+.tora-pricelist--classic .tora-price-list-wrap {
+  margin-bottom: 30px;
+}
+
+.tora-pricelist--classic .price-wrap,
+.tora-pricelist--modern .price-wrap {
+  margin-top: auto;
+}
+
+.tora-pricelist--classic .price-wrap,
+.tora-pricelist--modern .price-wrap,
+.tora-pricelist--img-bg .price-wrap {
+  justify-content: space-between;
+}
+
+.tora-pricelist--creative .pricing-wrap,
+.tora-pricelist--simple .pricing-wrap {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 350ms ease;
+}
+
+.tora-pricelist--creative .pricing-wrap:hover,
+.tora-pricelist--creative .pricing-wrap:focus-visible {
+  clip-path: inset(35px 35px 35px 35px);
+}
+
+.tora-pricelist--simple .pricing-wrap:hover,
+.tora-pricelist--simple .pricing-wrap:focus-visible {
+  clip-path: inset(15px 15px 15px 15px);
+}
+
+.tora-pricelist--creative .pricing-wrap::before,
+.tora-pricelist--simple .pricing-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgb(0 0 0 / 0.3);
+}
+
+.tora-pricelist--simple .pricing-wrap::before {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.tora-price-bg-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.tora-price-container {
+  position: relative;
+  z-index: 10;
+}
+
+.tora-pricelist--creative .pricing-wrap {
+  padding: 100px 40px;
+}
+
+.tora-pricelist--creative .wrap {
+  max-width: 500px;
+}
+
+.tora-pricelist--creative .price-wrap,
+.tora-pricelist--simple .price-wrap {
+  justify-content: flex-start;
+  margin-bottom: 50px;
+}
+
+.tora-pricelist--creative .tora-price-check,
+.tora-pricelist--simple .tora-price-check,
+.tora-pricelist--with-media .tora-price-check {
+  margin-right: 15px;
+}
+
+.tora-pricelist--creative .title {
+  font-size: 29px;
+  line-height: 1.5;
+}
+
+.tora-pricelist--creative .text,
+.tora-pricelist--simple .text {
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.tora-pricelist--creative .text {
+  margin-top: 40px;
+}
+
+.tora-pricelist--creative .subtitle,
+.tora-pricelist--simple .subtitle {
+  margin-top: 50px;
+  font-size: 17px;
+}
+
+.tora-pricelist--creative .tora-price-list-wrap,
+.tora-pricelist--simple .tora-price-list-wrap {
+  margin-top: 15px;
+  color: #fff;
+}
+
+.tora-pricelist--simple .pricing-wrap {
+  padding: 100px 40px;
+}
+
+.tora-price-simple-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+  align-items: center;
+  gap: 60px;
+}
+
+.tora-pricelist--simple .title {
+  max-width: 400px;
+  font-size: 36px;
+  line-height: 1.5;
+}
+
+.tora-pricelist--simple .price-wrap {
+  margin-bottom: 30px;
+}
+
+.tora-pricelist--modern {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: calc(100% + 30px);
+  margin: -15px;
+}
+
+.tora-pricelist--modern .pricing-wrap {
+  display: flex;
+  width: calc(100% / 3);
+  padding: 15px;
+}
+
+.tora-pricelist--modern .wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  padding: 30px;
+  border: 1px solid var(--tora-price-light-grey);
+  transition: border-color 350ms ease;
+}
+
+.tora-pricelist--modern .wrap:hover,
+.tora-pricelist--modern .pricing-wrap:focus-visible .wrap {
+  border-color: var(--tora-price-dark);
+}
+
+.tora-pricelist--modern .tora-price-image-wrap {
+  margin-bottom: 30px;
+}
+
+.tora-pricelist--modern .tora-price-image::before,
+.tora-pricelist--img-bg .tora-price-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: rgb(0 0 0 / 0.3);
+}
+
+.tora-pricelist--modern .wrap-top {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  width: 100%;
+  padding: 15px 10px;
+  text-align: center;
+}
+
+.tora-pricelist--modern .title,
+.tora-pricelist--modern .subtitle,
+.tora-pricelist--img-bg .title,
+.tora-pricelist--img-bg .subtitle {
+  color: #fff;
+}
+
+.tora-pricelist--modern .title,
+.tora-pricelist--img-bg .title {
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.tora-pricelist--modern .subtitle,
+.tora-pricelist--img-bg .subtitle {
+  font-size: 13px;
+}
+
+.tora-pricelist--modern .tora-price-list-wrap {
+  margin-bottom: 15px;
+}
+
+.tora-pricelist--modern .price-wrap .price,
+.tora-pricelist--with-media .price-wrap .price,
+.tora-pricelist--img-bg .price-wrap .price {
+  transition: color 350ms ease;
+}
+
+.tora-pricelist--modern .wrap:hover .price,
+.tora-pricelist--with-media .pricing-wrap:hover .price,
+.tora-pricelist--img-bg .pricing-wrap:hover .price {
+  color: var(--tora-price-main);
+}
+
+.tora-pricelist--with-media {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tora-pricelist--with-media .media-wrap {
+  position: relative;
+  width: 60%;
+  padding-top: calc(60% / 4 * 3);
+  overflow: hidden;
+}
+
+.tora-pricelist--with-media .media-wrap .tora-price-image {
+  position: absolute;
+  inset: 0;
+}
+
+.tora-pricelist--with-media .media-wrap.enable-video::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgb(0 0 0 / 0.3);
+}
+
+.tora-pricelist--with-media .video-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  width: 65px;
+  height: 65px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--tora-price-main);
+  border-radius: 50%;
+  background: var(--tora-price-main);
+  color: #fff;
+  transform: translate(-50%, -50%) translateZ(0);
+  transition: background 450ms ease;
+}
+
+.tora-pricelist--with-media .video-btn:hover {
+  background: transparent;
+}
+
+.tora-pricelist--with-media .pricing-content {
+  width: 40%;
+  padding-left: 70px;
+}
+
+.tora-pricelist--with-media .price-wrap {
+  justify-content: flex-start;
+  margin-bottom: 30px;
+}
+
+.tora-pricelist--with-media .tora-price-title {
+  margin-bottom: 10px;
+  font-size: 26px;
+}
+
+.tora-pricelist--with-media .tora-price-subtitle {
+  margin-bottom: 25px;
+  font-size: 13px;
+}
+
+.tora-pricelist--img-bg {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: calc(100% + 30px);
+  margin: -15px;
+}
+
+.tora-pricelist--img-bg .pricing-wrap {
+  display: flex;
+  position: relative;
+  width: calc(100% / 3);
+  padding: 15px;
+  clip-path: inset(15px);
+}
+
+.tora-pricelist--img-bg .img-bg-clip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 475px;
+  overflow: hidden;
+}
+
+.tora-pricelist--img-bg .tora-price-image {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  transform: scale(1);
+  transition: transform 550ms ease;
+}
+
+.tora-pricelist--img-bg .pricing-wrap:hover .tora-price-image,
+.tora-pricelist--img-bg .pricing-wrap:focus-visible .tora-price-image {
+  transform: scale(1.1);
+}
+
+.tora-pricelist--img-bg .content {
+  position: relative;
+  z-index: 10;
+  padding: 50px 30px;
+}
+
+.tora-pricelist--img-bg .title {
+  margin-bottom: 40px;
+}
+
+.tora-pricelist--img-bg .subtitle {
+  margin-bottom: 15px;
+}
+
+.tora-pricelist--img-bg .tora-price-list-wrap {
+  margin-bottom: 35px;
+  color: #fff;
+}
+
+.tora-pricelist--img-bg .price-wrap {
+  color: #fff;
+}
+
+@media (max-width: 1199px) {
+  .tora-pricelist--classic .wrap {
+    padding: 40px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap {
+    padding: 80px 40px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap:hover,
+  .tora-pricelist--creative .pricing-wrap:focus-visible {
+    clip-path: inset(25px 25px 25px 25px);
+  }
+
+  .tora-pricelist--simple .title {
+    font-size: 29px;
+  }
+
+  .tora-pricelist--simple .pricing-wrap {
+    padding: 80px 40px;
+  }
+
+  .tora-pricelist--modern .wrap {
+    padding: 20px;
+  }
+
+  .tora-pricelist--modern .title,
+  .tora-pricelist--img-bg .title {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-pricelist--classic .pricing-wrap {
+    width: calc(100% - 30px);
+    max-width: 500px;
+    padding: 0;
+  }
+
+  .tora-pricelist--classic .pricing-wrap:not(:first-of-type) {
+    margin-top: 30px;
+  }
+
+  .tora-pricelist--modern .pricing-wrap,
+  .tora-pricelist--img-bg .pricing-wrap {
+    width: calc(50% - 30px);
+    max-width: 500px;
+    padding: 15px;
+  }
+
+  .tora-pricelist--modern .pricing-wrap:not(:first-of-type):not(:nth-of-type(2)) {
+    margin-top: 30px;
+  }
+
+  .tora-pricelist--creative .price-wrap,
+  .tora-pricelist--simple .price-wrap {
+    margin-bottom: 40px;
+  }
+
+  .tora-pricelist--creative .title,
+  .tora-pricelist--simple .title {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-pricelist--simple .pricing-wrap {
+    padding: 60px 40px;
+  }
+
+  .tora-price-simple-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .tora-pricelist--with-media {
+    flex-direction: column;
+  }
+
+  .tora-pricelist--with-media .media-wrap {
+    width: 100%;
+    padding-top: calc(100% / 4 * 3);
+    margin-bottom: 35px;
+  }
+
+  .tora-pricelist--with-media .pricing-content {
+    width: 100%;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-price-section {
+    padding: 24px 0;
+  }
+
+  .tora-pricelist--classic .pricing-wrap:not(:first-of-type),
+  .tora-pricelist--modern .pricing-wrap:not(:first-of-type) {
+    margin-top: 15px !important;
+  }
+
+  .tora-pricelist--modern .pricing-wrap,
+  .tora-pricelist--img-bg .pricing-wrap {
+    width: 100%;
+  }
+
+  .tora-pricelist--img-bg .pricing-wrap:not(:first-of-type) {
+    margin-top: -15px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap,
+  .tora-pricelist--simple .pricing-wrap {
+    padding: 50px 40px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap:hover,
+  .tora-pricelist--creative .pricing-wrap:focus-visible,
+  .tora-pricelist--simple .pricing-wrap:hover,
+  .tora-pricelist--simple .pricing-wrap:focus-visible {
+    clip-path: inset(15px 15px 15px 15px);
+  }
+}
+
+@media (max-width: 600px) {
+  .tora-pricelist--classic .wrap,
+  .tora-pricelist--modern .wrap {
+    padding: 15px;
+  }
+
+  .tora-pricelist--classic .tora-price-image-title {
+    left: 50%;
+    bottom: 10px;
+    width: 100%;
+    padding: 0 15px;
+    text-align: center;
+    letter-spacing: 1px;
+    transform: translateX(-50%);
+  }
+
+  .tora-price-check {
+    width: 25px;
+    height: 25px;
+  }
+
+  .tora-price-check::before {
+    width: 15px;
+    height: 15px;
+  }
+
+  .tora-pricelist .price-wrap {
+    font-size: 29px;
+  }
+
+  .tora-pricelist--creative .title,
+  .tora-pricelist--simple .title {
+    font-size: 21px;
+  }
+
+  .tora-pricelist--creative .text,
+  .tora-pricelist--simple .text {
+    margin-top: 10px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap {
+    padding: 35px 5px;
+  }
+
+  .tora-pricelist--simple .pricing-wrap {
+    padding: 35px 5px 40px;
+  }
+
+  .tora-pricelist--creative .pricing-wrap:hover,
+  .tora-pricelist--creative .pricing-wrap:focus-visible,
+  .tora-pricelist--simple .pricing-wrap:hover,
+  .tora-pricelist--simple .pricing-wrap:focus-visible {
+    clip-path: inset(15px 5px 15px 5px);
+  }
+
+  .tora-pricelist--with-media .tora-price-title {
+    font-size: 24px;
+    letter-spacing: 1px;
+  }
+
+  .tora-pricelist--img-bg .img-bg-clip {
+    min-height: 410px;
+  }
+}
+
 .feature-carousel-card {
   z-index: var(--feature-carousel-z-mobile, 1);
   opacity: var(--feature-carousel-opacity-mobile, 1);
@@ -2688,7 +3424,14 @@ html.js .pr-root.is-enhanced {
 
   .testimonial-retro-card,
   .testimonial-glass-card,
-  .pricing-glass-card {
+  .pricing-glass-card,
+  .tora-pricelist .pricing-wrap,
+  .tora-price-image,
+  .tora-price-image img,
+  .tora-price-image > div,
+  .tora-price-check,
+  .tora-price-check::before,
+  .tora-pricelist--with-media .video-btn {
     transition: none;
   }
 

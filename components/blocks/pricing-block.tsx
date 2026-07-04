@@ -1,21 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Check, CheckCircleIcon, Info, StarIcon, X } from "lucide-react";
+import { Check, CheckCircleIcon, Info, Play, StarIcon, X } from "lucide-react";
+import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/src/lib/utils";
 import type { LeafBlock } from "@/src/lib/blocks";
+import type { PhotoDTO } from "@/src/db/queries/photos";
 
 type PricingBlockData = Extract<LeafBlock, { type: "pricing" }>;
 type PricingPlan = PricingBlockData["plans"][number];
 type Frequency = "monthly" | "yearly";
+type PhotoMap = Map<string, PhotoDTO>;
 type CSSPropertiesWithVars = CSSProperties & {
   [key: `--${string}`]: string | number | undefined;
 };
 
 const frequencies: Frequency[] = ["monthly", "yearly"];
+const toraPricingStyles = [
+  "tora-classic",
+  "tora-creative",
+  "tora-modern",
+  "tora-simple",
+  "tora-with-media",
+  "tora-image-background",
+] as const;
+type ToraPricingStyle = (typeof toraPricingStyles)[number];
 
 function formatPrice(value: number, currency: string) {
   if (!Number.isFinite(value)) return `${currency}0`;
@@ -85,6 +103,467 @@ function usePricingDarkMode(theme: PricingBlockData["theme"]) {
   if (activeTheme === "dark") return true;
   if (activeTheme === "light") return false;
   return fallbackSystemDark;
+}
+
+function isToraPricingStyle(
+  style: PricingBlockData["style"] | undefined,
+): style is ToraPricingStyle {
+  return toraPricingStyles.includes(style as ToraPricingStyle);
+}
+
+function planPhoto(
+  photoMap: PhotoMap | undefined,
+  plan: PricingPlan,
+  key: "photoId" | "mediaPhotoId" = "photoId",
+) {
+  const id = plan[key];
+  return id ? photoMap?.get(id) : undefined;
+}
+
+function ToraPlanMedia({
+  photo,
+  className,
+  sizes,
+  priority,
+}: {
+  photo: PhotoDTO | undefined;
+  className?: string;
+  sizes: string;
+  priority?: boolean;
+}) {
+  return (
+    <div className={cn("tora-pricing-media overflow-hidden", className)}>
+      {photo ? (
+        <ResponsiveImage
+          photo={photo}
+          sizes={sizes}
+          priority={priority}
+          className="h-full w-full"
+        />
+      ) : (
+        <div
+          className="h-full w-full bg-[linear-gradient(135deg,#d6d0c6,#9b9285_45%,#2b2926)]"
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+}
+
+function ToraSelectionDot({
+  selected,
+}: {
+  selected: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "tora-price-check inline-flex shrink-0 items-center justify-center rounded-full",
+        selected && "is-selected",
+      )}
+      aria-hidden="true"
+    />
+  );
+}
+
+function ToraPrice({
+  plan,
+  frequency,
+  currency,
+}: {
+  plan: PricingPlan;
+  frequency: Frequency;
+  currency: string;
+}) {
+  const price = displayPrice(plan, frequency, currency);
+
+  return (
+    <span className="tora-price-price" aria-label={price}>
+      {price.startsWith(currency) && !plan.priceLabel.trim() ? (
+        <>
+          <span className="currency">{currency}</span>
+          <span className="price">{price.slice(currency.length)}</span>
+        </>
+      ) : (
+        <span className="price">{price}</span>
+      )}
+    </span>
+  );
+}
+
+function ToraFeatureList({
+  plan,
+}: {
+  plan: PricingPlan;
+}) {
+  const features = plan.features.filter((feature) => feature.text.trim());
+  if (features.length === 0) return null;
+
+  return (
+    <ul className="tora-price-list-wrap">
+      {features.map((feature) => {
+        const included = feature.included !== false;
+        return (
+          <li
+            key={feature.id}
+            className={cn(!included && "is-excluded")}
+          >
+            <Check className="tora-price-feature-icon" aria-hidden="true" />
+            <span>{feature.text}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ToraImage({
+  photo,
+  className,
+  sizes,
+  priority,
+}: {
+  photo: PhotoDTO | undefined;
+  className?: string;
+  sizes: string;
+  priority?: boolean;
+}) {
+  return (
+    <ToraPlanMedia
+      photo={photo}
+      sizes={sizes}
+      priority={priority}
+      className={cn("tora-price-image", className)}
+    />
+  );
+}
+
+function ToraCardTop({
+  plan,
+  photo,
+  priority,
+}: {
+  plan: PricingPlan;
+  photo: PhotoDTO | undefined;
+  priority: boolean;
+}) {
+  return (
+    <div className="tora-price-image-wrap">
+      <ToraImage
+        photo={photo}
+        sizes="(min-width: 992px) 50vw, 100vw"
+        priority={priority}
+      />
+      <h3 className="tora-price-image-title">{plan.name}</h3>
+    </div>
+  );
+}
+
+function ToraPlanMeta({
+  plan,
+  overlay = false,
+}: {
+  plan: PricingPlan;
+  overlay?: boolean;
+}) {
+  const info = plan.info.trim();
+  return (
+    <>
+      <h3 className={overlay ? "title" : "tora-price-title"}>{plan.name}</h3>
+      {info && <p className={overlay ? "subtitle" : "tora-price-subtitle"}>{info}</p>}
+    </>
+  );
+}
+
+function ToraPricingBlock({
+  block,
+  plans,
+  frequency,
+  dark,
+  photoMap,
+}: {
+  block: PricingBlockData;
+  plans: PricingPlan[];
+  frequency: Frequency;
+  dark: boolean;
+  photoMap?: PhotoMap;
+}) {
+  const style = isToraPricingStyle(block.style) ? block.style : "tora-classic";
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
+    () => plans.find((plan) => plan.highlighted)?.id ?? plans[0]?.id ?? null,
+  );
+
+  useEffect(() => {
+    if (selectedPlanId && plans.some((plan) => plan.id === selectedPlanId)) {
+      return;
+    }
+    setSelectedPlanId(plans.find((plan) => plan.highlighted)?.id ?? plans[0]?.id ?? null);
+  }, [plans, selectedPlanId]);
+
+  const togglePlan = (planId: string) => {
+    setSelectedPlanId((current) => (current === planId ? null : planId));
+  };
+  const selectProps = (plan: PricingPlan) => ({
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-pressed": selectedPlanId === plan.id,
+    onClick: () => togglePlan(plan.id),
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      togglePlan(plan.id);
+    },
+  });
+
+  if (style === "tora-creative" || style === "tora-simple") {
+    const simple = style === "tora-simple";
+    return (
+      <section
+        className={cn(
+          "pricing-block tora-price-section",
+          dark && "is-dark",
+        )}
+      >
+        <div
+          className={cn(
+            "tora-pricelist",
+            simple ? "tora-pricelist--simple" : "tora-pricelist--creative",
+          )}
+        >
+          {plans.map((plan, index) => {
+            const selected = selectedPlanId === plan.id;
+            const photo = planPhoto(photoMap, plan);
+            return (
+              <article
+                key={plan.id}
+                {...selectProps(plan)}
+                className={cn(
+                  "pricing-wrap",
+                  selected && "active",
+                )}
+                style={
+                  {
+                    "--tora-index": index,
+                  } as CSSPropertiesWithVars
+                }
+              >
+                <ToraImage
+                  photo={photo}
+                  sizes="100vw"
+                  priority={index === 0}
+                  className="tora-price-bg-image"
+                />
+                <Container className="tora-price-container max-w-[1174px]">
+                  {simple ? (
+                    <div className="tora-price-simple-grid">
+                      <div>
+                        <h3 className="title">{plan.name}</h3>
+                      </div>
+                      <div>
+                        <div className="price-wrap">
+                          <ToraSelectionDot selected={selected} />
+                          <ToraPrice
+                            plan={plan}
+                            frequency={frequency}
+                            currency={block.currency || "$"}
+                          />
+                        </div>
+                        {plan.info && <p className="text">{plan.info}</p>}
+                        <p className="subtitle">{plan.name}</p>
+                        <ToraFeatureList plan={plan} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="wrap">
+                      <div className="price-wrap">
+                        <ToraSelectionDot selected={selected} />
+                        <ToraPrice
+                          plan={plan}
+                          frequency={frequency}
+                          currency={block.currency || "$"}
+                        />
+                      </div>
+                      <h3 className="title">{plan.name}</h3>
+                      {plan.info && <p className="text">{plan.info}</p>}
+                      <p className="subtitle">{plan.name}</p>
+                      <ToraFeatureList plan={plan} />
+                    </div>
+                  )}
+                </Container>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
+  if (style === "tora-with-media") {
+    return (
+      <section
+        className={cn(
+          "pricing-block tora-price-section",
+          dark && "is-dark",
+        )}
+      >
+        <Container className="max-w-[1174px]">
+          <div className="space-y-16">
+            {plans.map((plan, index) => {
+              const selected = selectedPlanId === plan.id;
+              const photo =
+                planPhoto(photoMap, plan, "mediaPhotoId") ??
+                planPhoto(photoMap, plan);
+              const videoUrl = plan.mediaVideoUrl.trim();
+              return (
+                <article
+                  key={plan.id}
+                  {...selectProps(plan)}
+                  className={cn(
+                    "tora-pricelist tora-pricelist--with-media pricing-wrap",
+                    selected && "active",
+                  )}
+                >
+                  <div className={cn("media-wrap", videoUrl && "enable-video")}>
+                    <ToraImage
+                      photo={photo}
+                      sizes="(min-width: 992px) 60vw, 100vw"
+                      priority={index === 0}
+                    />
+                    {videoUrl ? (
+                      <Link
+                        href={videoUrl}
+                        onClick={(event) => event.stopPropagation()}
+                        className="video-btn"
+                      >
+                        <Play className="h-8 w-8 fill-current" />
+                        <span className="sr-only">Play media</span>
+                      </Link>
+                    ) : (
+                      <span className="video-btn" aria-hidden="true">
+                        <Play className="h-8 w-8 fill-current" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="pricing-content">
+                    <div className="price-wrap">
+                      <ToraSelectionDot selected={selected} />
+                      <ToraPrice
+                        plan={plan}
+                        frequency={frequency}
+                        currency={block.currency || "$"}
+                      />
+                    </div>
+                    <ToraPlanMeta plan={plan} />
+                    <ToraFeatureList plan={plan} />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </Container>
+      </section>
+    );
+  }
+
+  const imageBackground = style === "tora-image-background";
+  const modern = style === "tora-modern";
+
+  return (
+    <section
+      className={cn(
+        "pricing-block tora-price-section",
+        dark && "is-dark",
+      )}
+    >
+      <Container className="max-w-[1174px]">
+        <div
+          className={cn(
+            "tora-pricelist",
+            imageBackground
+              ? "tora-pricelist--img-bg"
+              : modern
+                ? "tora-pricelist--modern"
+                : "tora-pricelist--classic",
+          )}
+        >
+          {plans.map((plan, index) => {
+            const selected = selectedPlanId === plan.id;
+            const photo = planPhoto(photoMap, plan);
+            return (
+              <article
+                key={plan.id}
+                {...selectProps(plan)}
+                className={cn(
+                  "pricing-wrap",
+                  selected && "active",
+                )}
+                style={
+                  {
+                    "--tora-index": index,
+                  } as CSSPropertiesWithVars
+                }
+              >
+                {imageBackground ? (
+                  <div className="img-bg-clip">
+                    <ToraImage
+                      photo={photo}
+                      sizes="(min-width: 992px) 33vw, 100vw"
+                      priority={index === 0}
+                    />
+                    <div className="content">
+                      <ToraPlanMeta plan={plan} overlay />
+                      <ToraFeatureList plan={plan} />
+                      <div className="price-wrap">
+                        <ToraPrice
+                          plan={plan}
+                          frequency={frequency}
+                          currency={block.currency || "$"}
+                        />
+                        <ToraSelectionDot selected={selected} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="wrap">
+                    {modern ? (
+                      <div className="tora-price-image-wrap">
+                        <ToraImage
+                          photo={photo}
+                          sizes="(min-width: 992px) 33vw, 100vw"
+                          priority={index === 0}
+                        />
+                        <div className="wrap-top">
+                          <ToraPlanMeta plan={plan} overlay />
+                        </div>
+                      </div>
+                    ) : (
+                      <ToraCardTop
+                        plan={plan}
+                        photo={photo}
+                        priority={index === 0}
+                      />
+                    )}
+                    {!modern && (
+                      <p className="subtitle">{plan.info || plan.name}</p>
+                    )}
+                    <ToraFeatureList plan={plan} />
+                    <div className="price-wrap">
+                      <ToraPrice
+                        plan={plan}
+                        frequency={frequency}
+                        currency={block.currency || "$"}
+                      />
+                      <ToraSelectionDot selected={selected} />
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </Container>
+    </section>
+  );
 }
 
 function PricingFrequencyToggle({
@@ -573,7 +1052,13 @@ function GlassGradientPricingBlock({
   );
 }
 
-export function PricingBlock({ block }: { block: PricingBlockData }) {
+export function PricingBlock({
+  block,
+  photoMap,
+}: {
+  block: PricingBlockData;
+  photoMap?: PhotoMap;
+}) {
   const plans = useMemo(() => filteredPlans(block.plans ?? []), [block.plans]);
   const [frequency, setFrequency] = useState<Frequency>(
     block.defaultFrequency ?? "monthly",
@@ -614,6 +1099,18 @@ export function PricingBlock({ block }: { block: PricingBlockData }) {
         dark={dark}
         title={title}
         description={description}
+      />
+    );
+  }
+
+  if (isToraPricingStyle(block.style)) {
+    return (
+      <ToraPricingBlock
+        block={block}
+        plans={plans}
+        frequency={frequency}
+        dark={dark}
+        photoMap={photoMap}
       />
     );
   }

@@ -215,6 +215,9 @@ function makePricingPlan(index = 0) {
     {
       name: "Basic",
       info: "For most individuals",
+      photoId: null,
+      mediaPhotoId: null,
+      mediaVideoUrl: "",
       monthlyPrice: 7,
       yearlyPrice: 74,
       priceLabel: "",
@@ -233,6 +236,9 @@ function makePricingPlan(index = 0) {
     {
       name: "Pro",
       info: "For small businesses",
+      photoId: null,
+      mediaPhotoId: null,
+      mediaVideoUrl: "",
       monthlyPrice: 17.99,
       yearlyPrice: 190,
       priceLabel: "",
@@ -252,6 +258,9 @@ function makePricingPlan(index = 0) {
     {
       name: "Business",
       info: "For large organizations",
+      photoId: null,
+      mediaPhotoId: null,
+      mediaVideoUrl: "",
       monthlyPrice: 69.99,
       yearlyPrice: 528,
       priceLabel: "Contact us",
@@ -272,6 +281,9 @@ function makePricingPlan(index = 0) {
   const plan = plans[index] ?? {
     name: "New plan",
     info: "For new clients",
+    photoId: null,
+    mediaPhotoId: null,
+    mediaVideoUrl: "",
     monthlyPrice: 29,
     yearlyPrice: 299,
     priceLabel: "",
@@ -2277,6 +2289,12 @@ function LeafEditor({
               >
                 <option value="standard">Standard cards</option>
                 <option value="glass-gradient">Glass gradient</option>
+                <option value="tora-classic">Tora classic image cards</option>
+                <option value="tora-creative">Tora creative full bleed</option>
+                <option value="tora-modern">Tora modern packages</option>
+                <option value="tora-simple">Tora simple banner</option>
+                <option value="tora-with-media">Tora with media</option>
+                <option value="tora-image-background">Tora image background</option>
               </Select>
             </Field>
             <Field label="Heading">
@@ -2419,6 +2437,43 @@ function LeafEditor({
                       Popular plan
                     </label>
                   </Field>
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <div className="grid gap-3 rounded-lg border p-3 lg:grid-cols-2">
+                      <Field label="Plan image / background">
+                        <PhotoPicker
+                          photos={photos}
+                          value={plan.photoId ?? null}
+                          onChange={(photoId) =>
+                            updatePlan(planIndex, { photoId })
+                          }
+                          containerClassName="max-h-48"
+                        />
+                      </Field>
+                      <div className="space-y-2">
+                        <Field label="Media panel image">
+                          <PhotoPicker
+                            photos={photos}
+                            value={plan.mediaPhotoId ?? null}
+                            onChange={(mediaPhotoId) =>
+                              updatePlan(planIndex, { mediaPhotoId })
+                            }
+                            containerClassName="max-h-36"
+                          />
+                        </Field>
+                        <Field label="Media video link">
+                          <Input
+                            value={plan.mediaVideoUrl ?? ""}
+                            placeholder="Optional video URL"
+                            onChange={(e) =>
+                              updatePlan(planIndex, {
+                                mediaVideoUrl: e.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
                   <Field label="Monthly price">
                     <Input
                       type="number"

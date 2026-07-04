@@ -588,7 +588,7 @@ function LeafView({
     case "team":
       return <TeamShowcaseBlock block={block} photoMap={photoMap} />;
     case "pricing":
-      return <PricingBlock block={block} />;
+      return <PricingBlock block={block} photoMap={photoMap} />;
     case "categoryIndex":
       return <CategoryIndexBlock block={block} />;
     case "locationIndex":

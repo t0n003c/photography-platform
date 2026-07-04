@@ -1309,6 +1309,24 @@ is gitignored):
   inner border; Distortion uses the reference displacement map (`/textures/portfolio-displacement-1.jpg`)
   with intensity -0.4, 0.7s in / 0.3s out, sine ease-out; Animated masonry uses side vertical category
   labels and reference column ordering; Mix masonry is centered to the reference 1270px narrow/wide/narrow row.
+  Pages Price block follow-up: the ToraMochie/Reflector Price List reference is represented as
+  additional `pricing.style` values: `tora-classic`, `tora-creative`, `tora-modern`,
+  `tora-simple`, `tora-with-media`, and `tora-image-background`. Pricing plans now store
+  optional `photoId`, `mediaPhotoId`, and `mediaVideoUrl` fields so each package can use a
+  library image/background and the with-media style can show a play affordance. The public
+  plan photos through `collectPhotoIds`. Fidelity correction: the Tora variants now follow the
+  actual `pricelist.css` shortcode structures instead of generic pricing cards: Classic is a
+  2-column 570px card grid inside a 1110px content width, Modern/Image Background are 3-column
+  380px grids, Creative/Simple are full-width background panels with source-like clip-path hover
+  timing, and With Media is a 60/40 media + pricing composition at 1110px desktop width. The
+  CSS keeps the reference uppercase letter spacing, price/check-dot sizing, 350/450/550ms
+  transitions, grayscale/scale hovers, mobile breakpoints, light/dark styling, and reduced-motion
+  safety. Follow-up: Classic and Modern now stretch their inner bordered `.wrap` to the row
+  height, and Image Background stretches `.img-bg-clip` to the row height, so side-by-side
+  cards/panels keep equal hover outline/background sizes even when plan feature text lengths
+  differ. The ToraMochie page also contains contact-form price-list variants; those should be
+  added to the Contact Form block as a separate follow-up if the owner wants that part of the
+  reference too.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

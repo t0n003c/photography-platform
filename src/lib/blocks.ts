@@ -475,6 +475,9 @@ const PricingPlan = z.object({
   id: z.string().min(1),
   name: z.string().default("Plan"),
   info: z.string().default("For most clients"),
+  photoId: z.string().nullable().default(null),
+  mediaPhotoId: z.string().nullable().default(null),
+  mediaVideoUrl: z.string().default(""),
   monthlyPrice: z.number().default(7),
   yearlyPrice: z.number().default(74),
   priceLabel: z.string().default(""),
@@ -486,7 +489,18 @@ const PricingPlan = z.object({
 const PricingBlock = z.object({
   ...baseBlock,
   type: z.literal("pricing"),
-  style: z.enum(["standard", "glass-gradient"]).default("standard"),
+  style: z
+    .enum([
+      "standard",
+      "glass-gradient",
+      "tora-classic",
+      "tora-creative",
+      "tora-modern",
+      "tora-simple",
+      "tora-with-media",
+      "tora-image-background",
+    ])
+    .default("standard"),
   heading: z.string().default("Plans that Scale with You"),
   description: z
     .string()
@@ -863,6 +877,12 @@ export function collectPhotoIds(blocks: Block[]): string[] {
       if (b.marqueeQuotePhotoId) ids.push(b.marqueeQuotePhotoId);
       for (const member of b.members) {
         if (member.photoId) ids.push(member.photoId);
+      }
+    }
+    if (b.type === "pricing") {
+      for (const plan of b.plans) {
+        if (plan.photoId) ids.push(plan.photoId);
+        if (plan.mediaPhotoId) ids.push(plan.mediaPhotoId);
       }
     }
     if (b.type === "logos") ids.push(...b.photoIds);
