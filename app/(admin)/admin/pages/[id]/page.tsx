@@ -355,7 +355,7 @@ function makeBlock(type: BlockType): Block {
       accentColor: "#8b5e34",
     };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
-    case "banner": return { id, type, source: "featured", photoId: null, headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
+    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], eyebrow: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -3652,13 +3652,26 @@ function LeafEditor({
     case "banner": {
       const isPrisma = block.layout === "prisma-hero";
       const isAgency = block.layout === "agency-viral-hero";
+      const isToraMochie = block.layout?.startsWith("toramochie-") ?? false;
+      const isToraWall = block.layout === "toramochie-full-wall";
       const isSpecialHero = isPrisma || isAgency;
+      const bannerPhotoIds = block.photoIds ?? [];
+      const selectedBannerPhotos = bannerPhotoIds
+        .map((photoId) => photos.find((photo) => photo.id === photoId))
+        .filter((photo): photo is PhotoOption => Boolean(photo));
+      const toggleBannerPhoto = (photoId: string) =>
+        set({
+          photoIds: bannerPhotoIds.includes(photoId)
+            ? bannerPhotoIds.filter((id) => id !== photoId)
+            : [...bannerPhotoIds, photoId],
+        });
       // Source / darken / layout trio (top-left in both source modes).
       const cfg = (
         <>
-          <Field label="Image source">
+          <Field label={isToraWall ? "Images source" : "Image source"}>
             <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
-              <option value="featured">Latest featured</option><option value="photo">Specific photo</option>
+              <option value="featured">Latest featured</option>
+              <option value="photo">{isToraWall ? "Selected photos" : "Specific photo"}</option>
             </Select>
           </Field>
           {isSpecialHero ? (
@@ -3680,15 +3693,28 @@ function LeafEditor({
           )}
           <Field label="Layout">
             <Select value={block.layout ?? "bottom-left"} onChange={(e) => set({ layout: e.target.value as typeof block.layout })}>
-              <option value="bottom-left">Bottom left</option>
-              <option value="bottom-right">Bottom right</option>
-              <option value="center">Centered</option>
-              <option value="split-left">Split · image left</option>
-              <option value="split-right">Split · image right</option>
-              <option value="split-top">Split · image top</option>
-              <option value="split-bottom">Split · image bottom</option>
-              <option value="prisma-hero">Prisma hero</option>
-              <option value="agency-viral-hero">Agency viral hero</option>
+              <optgroup label="Standard">
+                <option value="bottom-left">Bottom left</option>
+                <option value="bottom-right">Bottom right</option>
+                <option value="center">Centered</option>
+                <option value="split-left">Split · image left</option>
+                <option value="split-right">Split · image right</option>
+                <option value="split-top">Split · image top</option>
+                <option value="split-bottom">Split · image bottom</option>
+              </optgroup>
+              <optgroup label="Hero references">
+                <option value="prisma-hero">Prisma hero</option>
+                <option value="agency-viral-hero">Agency viral hero</option>
+              </optgroup>
+              <optgroup label="ToraMochie image banner">
+                <option value="toramochie-modern">Modern</option>
+                <option value="toramochie-creative">Creative</option>
+                <option value="toramochie-simple">Simple</option>
+                <option value="toramochie-full-wall">Full wall</option>
+                <option value="toramochie-bottom-text">Bottom text</option>
+                <option value="toramochie-only-image">Only image</option>
+                <option value="toramochie-classic">Classic</option>
+              </optgroup>
             </Select>
           </Field>
         </>
@@ -3723,6 +3749,13 @@ function LeafEditor({
       );
       const rest = (
         <>
+          <Field label="Small label">
+            <Input
+              value={block.eyebrow ?? ""}
+              onChange={(e) => set({ eyebrow: e.target.value })}
+              placeholder={isToraMochie ? "Image banner" : ""}
+            />
+          </Field>
           <Field label={isAgency ? "Headline line 1" : "Headline"}><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
           {isAgency && (
             <Field label="Italic headline line">
@@ -3844,15 +3877,93 @@ function LeafEditor({
               {focalField}
             </div>
             <div className="flex h-full flex-col gap-1.5">
-              <Label>Photo</Label>
-              <PhotoPicker
-                photos={photos}
-                value={block.photoId ?? null}
-                onChange={(pid) => set({ photoId: pid })}
-                containerClassName="min-h-0 flex-1"
-              />
+              <Label>{isToraWall ? "Photos" : "Photo"}</Label>
+              {isToraWall ? (
+                <PhotoPicker
+                  photos={photos}
+                  selectedIds={bannerPhotoIds}
+                  onToggle={toggleBannerPhoto}
+                  containerClassName="min-h-0 flex-1"
+                />
+              ) : (
+                <PhotoPicker
+                  photos={photos}
+                  value={block.photoId ?? null}
+                  onChange={(pid) => set({ photoId: pid })}
+                  containerClassName="min-h-0 flex-1"
+                />
+              )}
             </div>
           </div>
+          {isToraWall && selectedBannerPhotos.length > 0 && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <p className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                Selected order
+              </p>
+              <div className="space-y-2">
+                {selectedBannerPhotos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className="flex items-center gap-2 rounded-md border p-2"
+                  >
+                    <div className="h-10 w-10 overflow-hidden rounded bg-[hsl(var(--muted))]">
+                      {photo.thumbUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photo.thumbUrl}
+                          alt={photo.label}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {photo.label}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() =>
+                        set({ photoIds: swapAt(bannerPhotoIds, index, index - 1) })
+                      }
+                      aria-label="Move photo up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === selectedBannerPhotos.length - 1}
+                      onClick={() =>
+                        set({ photoIds: swapAt(bannerPhotoIds, index, index + 1) })
+                      }
+                      aria-label="Move photo down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({
+                          photoIds: bannerPhotoIds.filter((id) => id !== photo.id),
+                        })
+                      }
+                      aria-label="Remove photo"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="grid gap-2 sm:grid-cols-2">
             {zoomField}
             {rest}

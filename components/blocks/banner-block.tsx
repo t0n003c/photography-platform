@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, ChevronDown, Play } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
@@ -26,6 +26,21 @@ const AGENCY_HEIGHTS: Record<BannerData["height"], string> = {
   short: "min-h-[62svh]",
   tall: "min-h-[76svh]",
   full: "min-h-[calc(100svh-6rem)] md:min-h-[calc(100svh-5rem)]",
+};
+const TORA_HEIGHTS: Record<BannerData["height"], string> = {
+  short: "h-[52vh]",
+  tall: "h-[72vh]",
+  full: "h-[88vh]",
+};
+const TORA_STRIP_HEIGHTS: Record<BannerData["height"], string> = {
+  short: "h-[30vh]",
+  tall: "h-[40vh]",
+  full: "h-[54vh]",
+};
+const TORA_WALL_HEIGHTS: Record<BannerData["height"], string> = {
+  short: "py-8",
+  tall: "py-10 md:py-12",
+  full: "py-14 md:py-16",
 };
 // Literal md: variants (Tailwind only generates classes it sees verbatim, so
 // these can't be built from HEIGHTS at runtime). Used by the split layout.
@@ -107,6 +122,18 @@ function TextContent({
         block.effect === "reveal" && "banner-reveal",
       )}
     >
+      {block.eyebrow && (
+        <p
+          className={cn(
+            "mb-3 text-xs font-semibold uppercase tracking-[0.22em]",
+            tone === "light"
+              ? "text-white/80"
+              : "text-[hsl(var(--muted-foreground))]",
+          )}
+        >
+          {block.eyebrow}
+        </p>
+      )}
       {block.headline && (
         <h1
           className={cn(
@@ -437,7 +464,7 @@ function AgencyViralBanner({
 
 function Scrim({ block }: { block: BannerData }) {
   const hasText = Boolean(
-    block.headline || block.subhead || (block.ctaLabel && block.ctaHref),
+    block.eyebrow || block.headline || block.subhead || (block.ctaLabel && block.ctaHref),
   );
   const mode = block.overlay ?? "auto";
   const show = mode === "dark" || (mode === "auto" && hasText);
@@ -447,6 +474,258 @@ function Scrim({ block }: { block: BannerData }) {
       ? "bg-gradient-to-t from-black/75 via-black/30 to-black/10"
       : "bg-gradient-to-t from-black/60 via-black/10 to-transparent";
   return <div className={`absolute inset-0 ${cls}`} />;
+}
+
+function isToraMochieLayout(layout: BannerData["layout"]) {
+  return layout.startsWith("toramochie-");
+}
+
+function ToraOverlay({ block, subtle = false }: { block: BannerData; subtle?: boolean }) {
+  const mode = block.overlay ?? "auto";
+  if (mode === "none") return null;
+  return (
+    <>
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          mode === "dark"
+            ? "bg-black/55"
+            : subtle
+              ? "bg-black/20"
+              : "bg-black/38",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          mode === "dark"
+            ? "bg-gradient-to-b from-black/25 via-transparent to-black/65"
+            : "bg-gradient-to-b from-black/10 via-transparent to-black/48",
+        )}
+      />
+    </>
+  );
+}
+
+function ToraCopy({
+  block,
+  variant,
+}: {
+  block: BannerData;
+  variant: "modern" | "creative" | "simple" | "wall" | "bottom" | "strip" | "classic";
+}) {
+  const eyebrow = block.eyebrow.trim() || "Image banner";
+  const headline = block.headline.trim() || "Image banner";
+  const subhead = block.subhead.trim();
+  const showButton = Boolean(block.ctaLabel && block.ctaHref);
+
+  if (variant === "creative") {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col items-center px-5 text-center text-white">
+        <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.34em] text-white/78 sm:text-xs">
+          {eyebrow}
+        </p>
+        <h1
+          className="font-sans text-5xl font-black uppercase leading-[0.9] tracking-[0.08em] sm:text-7xl md:text-8xl lg:text-9xl"
+          style={{
+            WebkitTextStroke: "1px rgba(255,255,255,0.42)",
+            textShadow: "0 8px 24px rgba(0,0,0,0.32)",
+          }}
+        >
+          <span>{headline}</span>
+        </h1>
+        {subhead && (
+          <p className="mt-5 max-w-xl text-sm font-medium leading-relaxed text-white/76 sm:text-base">
+            {subhead}
+          </p>
+        )}
+        {showButton && (
+          <Link href={block.ctaHref!} className={cn("mt-7", buttonClass(block.buttonStyle, "light"))}>
+            {block.ctaLabel}
+          </Link>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "classic") {
+    return (
+      <div className="mx-auto flex max-w-3xl flex-col items-center px-5 text-center text-white">
+        <p className="font-serif text-lg italic leading-none text-white/78 sm:text-2xl">
+          {eyebrow}
+        </p>
+        <h1 className="mt-3 font-sans text-3xl font-bold uppercase tracking-[0.22em] sm:text-5xl md:text-6xl">
+          {headline}
+        </h1>
+        {subhead && (
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/75 sm:text-base">
+            {subhead}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "bottom") {
+    return (
+      <div className="max-w-2xl text-left text-white">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-white/70">
+          {eyebrow}
+        </p>
+        <h1 className="font-sans text-2xl font-black uppercase leading-tight tracking-[0.08em] sm:text-4xl md:text-5xl">
+          {headline}
+        </h1>
+        {subhead && (
+          <p className="mt-3 max-w-md text-sm font-medium leading-relaxed text-white/76">
+            {subhead}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "strip") {
+    return (
+      <div className="px-5 text-center text-white">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-white/70">
+          {eyebrow}
+        </p>
+        <h1 className="font-sans text-2xl font-black uppercase tracking-[0.16em] sm:text-4xl md:text-5xl">
+          {headline}
+        </h1>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex max-w-4xl flex-col items-center px-5 text-center text-white">
+      <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.32em] text-white/78 sm:text-xs">
+        {eyebrow}
+      </p>
+      <h1
+        className={cn(
+          "font-sans font-black uppercase leading-[1.05] tracking-[0.12em]",
+          variant === "wall"
+            ? "text-2xl sm:text-4xl md:text-5xl"
+            : variant === "simple"
+              ? "text-4xl sm:text-6xl md:text-7xl"
+              : "text-3xl sm:text-5xl md:text-6xl",
+        )}
+      >
+        {headline}
+      </h1>
+      {subhead && variant !== "wall" && (
+        <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-white/75 sm:text-base">
+          {subhead}
+        </p>
+      )}
+      {showButton && variant !== "wall" && (
+        <Link href={block.ctaHref!} className={cn("mt-7", buttonClass(block.buttonStyle, "light"))}>
+          {block.ctaLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ToraWallPhoto({
+  photo,
+  block,
+}: {
+  photo: PhotoDTO;
+  block: BannerData;
+}) {
+  const fx = block.focalX ?? 50;
+  const fy = block.focalY ?? 50;
+  return (
+    <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+      <ResponsiveImage
+        photo={photo}
+        sizes="(min-width: 1024px) 17vw, (min-width: 640px) 25vw, 34vw"
+        className="h-full w-full object-cover"
+        objectPosition={`${fx}% ${fy}%`}
+      />
+    </div>
+  );
+}
+
+function ToraMochieBanner({
+  block,
+  photo,
+  photos,
+}: {
+  block: BannerData;
+  photo: PhotoDTO | undefined;
+  photos: PhotoDTO[];
+}) {
+  const layout = block.layout;
+
+  if (layout === "toramochie-full-wall") {
+    const wallPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
+    return (
+      <section
+        className={cn(
+          "relative flex w-full items-center justify-center overflow-hidden bg-neutral-950 text-white",
+          TORA_WALL_HEIGHTS[block.height],
+        )}
+      >
+        <div className="grid w-full grid-cols-3 gap-1 sm:grid-cols-4 lg:grid-cols-6">
+          {wallPhotos.map((item, index) => (
+            <ToraWallPhoto key={`${item.id}-${index}`} photo={item} block={block} />
+          ))}
+        </div>
+        <ToraOverlay block={block} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ToraCopy block={block} variant="wall" />
+        </div>
+      </section>
+    );
+  }
+
+  const height =
+    layout === "toramochie-only-image" ? TORA_STRIP_HEIGHTS[block.height] : TORA_HEIGHTS[block.height];
+  const variant =
+    layout === "toramochie-creative"
+      ? "creative"
+      : layout === "toramochie-simple"
+        ? "simple"
+        : layout === "toramochie-bottom-text"
+          ? "bottom"
+          : layout === "toramochie-only-image"
+            ? "strip"
+            : layout === "toramochie-classic"
+              ? "classic"
+              : "modern";
+
+  const isBottom = variant === "bottom";
+  const isSimple = variant === "simple";
+
+  return (
+    <section className={cn("relative w-full overflow-hidden bg-neutral-950 text-white", height)}>
+      {photo && (
+        <BannerImage photo={photo} block={block} className="absolute inset-0 h-full w-full" />
+      )}
+      <ToraOverlay block={block} subtle={variant === "strip"} />
+      <div
+        className={cn(
+          "absolute inset-0 flex",
+          isBottom
+            ? "items-end justify-start px-6 pb-8 sm:px-10 md:px-[10vw] md:pb-12"
+            : variant === "classic"
+              ? "items-center justify-center pt-[12vh]"
+              : "items-center justify-center",
+        )}
+      >
+        <ToraCopy block={block} variant={variant} />
+      </div>
+      {isSimple && (
+        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-white/45">
+          <ChevronDown className="h-8 w-8" strokeWidth={1.2} aria-hidden="true" />
+          <ChevronDown className="-mt-5 h-8 w-8" strokeWidth={1.2} aria-hidden="true" />
+        </div>
+      )}
+    </section>
+  );
 }
 
 // Full-bleed photo with text overlaid (bottom-left / bottom-right / center).
@@ -576,20 +855,32 @@ function SplitBanner({
 export async function BannerBlock({
   block,
   photo,
+  photos = [],
 }: {
   block: BannerData;
   photo: PhotoDTO | undefined;
+  photos?: PhotoDTO[];
 }) {
   const h = HEIGHTS[block.height];
   let resolved = photo;
+  let wallPhotos = photos;
   if (block.source === "featured" && !resolved) {
     try {
-      resolved = (await getFeaturedPhotos(1))[0];
+      const featured = await getFeaturedPhotos(
+        block.layout === "toramochie-full-wall" ? 24 : 1,
+      );
+      resolved = featured[0];
+      if (block.layout === "toramochie-full-wall" && wallPhotos.length === 0) {
+        wallPhotos = featured;
+      }
     } catch {
       resolved = undefined;
     }
   }
 
+  if (isToraMochieLayout(block.layout)) {
+    return <ToraMochieBanner block={block} photo={resolved} photos={wallPhotos} />;
+  }
   if (block.layout === "prisma-hero") {
     return <PrismaHeroBanner block={block} photo={resolved} />;
   }

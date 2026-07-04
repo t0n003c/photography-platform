@@ -237,6 +237,13 @@ export const BannerLayoutEnum = z.enum([
   "split-bottom",
   "prisma-hero",
   "agency-viral-hero",
+  "toramochie-modern",
+  "toramochie-creative",
+  "toramochie-simple",
+  "toramochie-full-wall",
+  "toramochie-bottom-text",
+  "toramochie-only-image",
+  "toramochie-classic",
 ]);
 const BannerBlock = z.object({
   ...baseBlock,
@@ -244,6 +251,9 @@ const BannerBlock = z.object({
   // "photo" uses photoId; "featured" pulls the latest featured photo.
   source: z.enum(["photo", "featured"]).default("photo"),
   photoId: z.string().nullable().default(null),
+  // Optional multi-photo set used by collage-style banner layouts.
+  photoIds: z.array(z.string()).default([]),
+  eyebrow: z.string().default(""),
   headline: z.string().default(""),
   subhead: z.string().default(""),
   ctaLabel: z.string().optional(),
@@ -758,7 +768,10 @@ export function collectPhotoIds(blocks: Block[]): string[] {
         if (page.photoId) ids.push(page.photoId);
       }
     }
-    if (b.type === "banner" && b.photoId) ids.push(b.photoId);
+    if (b.type === "banner") {
+      if (b.photoId) ids.push(b.photoId);
+      ids.push(...(b.photoIds ?? []));
+    }
     if (b.type === "testimonials") {
       for (const item of b.items) {
         if (item.photoId) ids.push(item.photoId);

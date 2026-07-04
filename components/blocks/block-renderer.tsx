@@ -562,7 +562,15 @@ function LeafView({
       );
     }
     case "banner":
-      return <BannerBlock block={block} photo={block.photoId ? photoMap.get(block.photoId) : undefined} />;
+      return (
+        <BannerBlock
+          block={block}
+          photo={block.photoId ? photoMap.get(block.photoId) : undefined}
+          photos={(block.photoIds ?? [])
+            .map((photoId) => photoMap.get(photoId))
+            .filter((photo): photo is PhotoDTO => Boolean(photo))}
+        />
+      );
     case "gallery":
       return <GalleryBlock block={block} photoMap={photoMap} preview={preview} />;
     case "featureCarousel":
