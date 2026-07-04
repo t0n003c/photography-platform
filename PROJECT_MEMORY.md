@@ -1275,6 +1275,9 @@ is gitignored):
   calculates a compact/balanced/roomy density from column/link count plus intro content; compact
   footers get a shorter reveal height and pack the main content with the bottom row instead of
   stretching sparse links across a mostly empty panel.
+  Follow-up: Compact sticky footer spacing was tightened again: lower compact reveal clamps,
+  smaller content padding, tighter main/nav/link gaps, shorter social/tagline spacing, and a
+  reduced compact bottom-row top padding.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

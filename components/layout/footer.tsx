@@ -185,9 +185,9 @@ export async function Footer() {
           : "roomy";
     const revealHeights = {
       compact: {
-        subtle: "clamp(22rem, 42svh, 30rem)",
-        standard: "clamp(25rem, 50svh, 34rem)",
-        dramatic: "clamp(30rem, 62svh, 42rem)",
+        subtle: "clamp(18rem, 34svh, 24rem)",
+        standard: "clamp(20rem, 40svh, 28rem)",
+        dramatic: "clamp(24rem, 50svh, 34rem)",
       },
       balanced: {
         subtle: "clamp(26rem, 54svh, 36rem)",
