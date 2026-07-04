@@ -57,7 +57,6 @@ export function LoginShell({
     "--login-accent": design.cardAccent,
     "--login-hover": design.hoverColor,
     "--login-hover-intensity": `${hoverIntensity}%`,
-    "--login-hover-soft-intensity": `${Math.round(hoverIntensity * 0.47)}%`,
     "--login-hover-size": `${clampNumber(design.hoverGlowSize, 24, 70)}%`,
     "--login-photo-columns":
       design.photoSide === "left"
