@@ -61,7 +61,7 @@ function linkProps(href: string) {
   return { target: "_blank", rel: "noreferrer noopener" };
 }
 
-function LocationPopupCard({
+export function LocationPopupCard({
   point,
   className,
 }: {

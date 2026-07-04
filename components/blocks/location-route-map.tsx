@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import maplibregl, { type Map as MapLibreMap, type Marker } from "maplibre-gl";
-import { Clock, Loader2, MapPin, Route } from "lucide-react";
+import { Clock, Loader2, MapPin, Route, X } from "lucide-react";
 import type { LeafBlock } from "@/src/lib/blocks";
 import { cn } from "@/src/lib/utils";
-import type { LocationMapPoint } from "@/components/blocks/location-map-client";
+import {
+  LocationPopupCard,
+  type LocationMapPoint,
+} from "@/components/blocks/location-map-client";
 
 type LocationMapBlock = Extract<LeafBlock, { type: "locationMap" }>;
 
@@ -156,19 +160,32 @@ function resolveRouteStops(block: LocationMapBlock, mappedPoints: LocationMapPoi
     orderedStops[orderedStops.length - 1] ??
     null;
   if (start && end?.id === start.id) {
-    end = orderedStops.find((point) => point.id !== start.id) ?? null;
+    end =
+      orderedStops.find((point) => point.id !== start.id) ??
+      mappedPoints.find((point) => point.id !== start.id) ??
+      null;
   }
-  return start && end ? [start, end] : [];
+  if (!start || !end) return [];
+  const stopsBetween = explicitStops.filter(
+    (point) => point.id !== start.id && point.id !== end.id,
+  );
+  return [start, ...stopsBetween, end];
 }
 
 function addRouteMarkers({
   map,
   routeStops,
   block,
+  isMobile,
+  onMobilePoint,
+  popupRoots,
 }: {
   map: MapLibreMap;
   routeStops: LocationMapPoint[];
   block: LocationMapBlock;
+  isMobile: boolean;
+  onMobilePoint: (point: LocationMapPoint | null) => void;
+  popupRoots: Root[];
 }) {
   return routeStops.map((point, index) => {
     const isPlanning = (block.routeStyle ?? "planning") === "planning";
@@ -201,6 +218,43 @@ function addRouteMarkers({
       );
       label.textContent = point.name;
       el.append(label);
+    }
+
+    if (isMobile) {
+      el.addEventListener("click", (event) => {
+        event.preventDefault();
+        onMobilePoint(point);
+        map.easeTo({ center: [point.lng, point.lat], duration: 350 });
+      });
+    } else {
+      const popupContainer = document.createElement("div");
+      const popupRoot = createRoot(popupContainer);
+      popupRoot.render(<LocationPopupCard point={point} />);
+      popupRoots.push(popupRoot);
+      const popup = new maplibregl.Popup({
+        offset: 18,
+        closeButton: false,
+        maxWidth: "none",
+      }).setDOMContent(popupContainer);
+      let closeTimer: number | null = null;
+      const clearClose = () => {
+        if (!closeTimer) return;
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      };
+      const openPopup = () => {
+        clearClose();
+        popup.setLngLat([point.lng, point.lat]).addTo(map);
+      };
+      const scheduleClose = () => {
+        clearClose();
+        closeTimer = window.setTimeout(() => popup.remove(), 220);
+      };
+      el.addEventListener("mouseenter", openPopup);
+      el.addEventListener("mouseleave", scheduleClose);
+      el.addEventListener("click", openPopup);
+      popupContainer.addEventListener("mouseenter", clearClose);
+      popupContainer.addEventListener("mouseleave", scheduleClose);
     }
 
     return new maplibregl.Marker({ element: el, anchor: "center" })
@@ -280,10 +334,12 @@ export function LocationRouteMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const currentStyleUrlRef = useRef<string | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  const popupRootsRef = useRef<Root[]>([]);
   const routeLayerIdsRef = useRef<string[]>([]);
   const routeLayerEventsRef = useRef<RouteLayerEvent[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobilePoint, setMobilePoint] = useState<LocationMapPoint | null>(null);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -331,6 +387,8 @@ export function LocationRouteMap({
       routeLayerEventsRef.current = [];
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
+      popupRootsRef.current.forEach((root) => root.unmount());
+      popupRootsRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -370,11 +428,13 @@ export function LocationRouteMap({
       return;
     }
 
-    const [start, end] = routeStops;
     const controller = new AbortController();
     setIsLoading(true);
     const alternatives = block.routeShowAlternatives ?? true;
-    const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&alternatives=${alternatives ? "true" : "false"}`;
+    const osrmCoordinates = routeStops
+      .map((point) => `${point.lng},${point.lat}`)
+      .join(";");
+    const url = `https://router.project-osrm.org/route/v1/driving/${osrmCoordinates}?overview=full&geometries=geojson&alternatives=${alternatives ? "true" : "false"}`;
 
     async function loadRoutes() {
       try {
@@ -515,9 +575,21 @@ export function LocationRouteMap({
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
+    popupRootsRef.current.forEach((root) => root.unmount());
+    popupRootsRef.current = [];
     const addMarkers = () => {
       markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = addRouteMarkers({ map, routeStops, block });
+      markersRef.current = [];
+      popupRootsRef.current.forEach((root) => root.unmount());
+      popupRootsRef.current = [];
+      markersRef.current = addRouteMarkers({
+        map,
+        routeStops,
+        block,
+        isMobile,
+        onMobilePoint: setMobilePoint,
+        popupRoots: popupRootsRef.current,
+      });
     };
     if (map.isStyleLoaded()) addMarkers();
     map.on("styledata", addMarkers);
@@ -525,8 +597,10 @@ export function LocationRouteMap({
       map.off("styledata", addMarkers);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
+      popupRootsRef.current.forEach((root) => root.unmount());
+      popupRootsRef.current = [];
     };
-  }, [block, routeStops]);
+  }, [block, isMobile, routeStops]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -563,6 +637,19 @@ export function LocationRouteMap({
       {!isMounted && (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
           Loading map
+        </div>
+      )}
+      {isMobile && mobilePoint && (
+        <div className="absolute inset-x-3 bottom-16 z-20 rounded-xl border bg-[hsl(var(--background))] shadow-2xl sm:hidden">
+          <button
+            type="button"
+            aria-label="Close location details"
+            onClick={() => setMobilePoint(null)}
+            className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <LocationPopupCard point={mobilePoint} className="w-full" />
         </div>
       )}
       {showCards && routes.length > 0 && (

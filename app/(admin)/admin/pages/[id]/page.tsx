@@ -3985,6 +3985,12 @@ function LeafEditor({
       const connections = block.networkConnections ?? [];
       const routePointIds = block.routePointIds ?? [];
       const routeStopOptions = pointOptions.filter((point) => !routePointIds.includes(point.id));
+      const planningStopOptions = pointOptions.filter(
+        (point) =>
+          !routePointIds.includes(point.id) &&
+          point.id !== (block.routeStartId ?? "") &&
+          point.id !== (block.routeEndId ?? ""),
+      );
       const updatePin = (index: number, patch: Partial<(typeof pins)[number]>) =>
         set({
           customPins: pins.map((pin, pinIndex) =>
@@ -4001,11 +4007,12 @@ function LeafEditor({
           ),
         });
       return (
-        <div className="space-y-4">
-          <SettingsGroup
-            title="Map content"
-            description="Mix published taxonomy locations with one-off custom pins."
-          >
+        <div className="flex flex-col gap-4">
+          <div className="order-2">
+            <SettingsGroup
+              title="Map content"
+              description="Mix published taxonomy locations with one-off custom pins."
+            >
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Title">
                 <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
@@ -4206,9 +4213,11 @@ function LeafEditor({
                 </div>
               )}
             </div>
-          </SettingsGroup>
+            </SettingsGroup>
+          </div>
 
-          <SettingsGroup title="Map appearance">
+          <div className="order-1">
+            <SettingsGroup title="Map appearance">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Display mode">
                 <Select
@@ -4357,6 +4366,86 @@ function LeafEditor({
                         ))}
                       </Select>
                     </Field>
+                    <div className="space-y-3 sm:col-span-2">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                          Stops between
+                        </p>
+                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                          Add optional waypoints between the start and end.
+                        </p>
+                      </div>
+                      {routePointIds.length > 0 && (
+                        <div className="space-y-1.5">
+                          {routePointIds.map((id, index) => (
+                            <div
+                              key={`${id}-${index}`}
+                              className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
+                            >
+                              <span className="min-w-0 truncate">
+                                {index + 1}. {pointOptions.find((point) => point.id === id)?.label ?? "(removed)"}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={index === 0}
+                                  onClick={() => set({ routePointIds: swapAt(routePointIds, index, index - 1) })}
+                                  aria-label="Move stop up"
+                                  className="h-8 w-8"
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={index === routePointIds.length - 1}
+                                  onClick={() => set({ routePointIds: swapAt(routePointIds, index, index + 1) })}
+                                  aria-label="Move stop down"
+                                  className="h-8 w-8"
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    set({ routePointIds: routePointIds.filter((_, stopIndex) => stopIndex !== index) })
+                                  }
+                                  aria-label="Remove stop"
+                                  className="h-8 w-8"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {planningStopOptions.length > 0 ? (
+                        <Select
+                          value=""
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            set({ routePointIds: [...routePointIds, e.target.value] });
+                          }}
+                        >
+                          <option value="">+ Add stop between...</option>
+                          {planningStopOptions.map((point) => (
+                            <option key={point.id} value={point.id}>
+                              {point.label}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          Add more mapped locations or custom pins to use them as stops.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3 rounded-md border p-3">
@@ -4668,7 +4757,8 @@ function LeafEditor({
                 )}
               </div>
             )}
-          </SettingsGroup>
+            </SettingsGroup>
+          </div>
         </div>
       );
     }

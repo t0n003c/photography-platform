@@ -158,6 +158,29 @@ describe("page builder blocks", () => {
     });
   });
 
+  it("keeps route planning stops between start and end", () => {
+    const blocks = parseBlocks([
+      {
+        id: "route-map",
+        type: "locationMap",
+        displayMode: "route-planning",
+        routeStyle: "planning",
+        routeStartId: "loc-start",
+        routeEndId: "loc-end",
+        routePointIds: ["loc-stop-a", "loc-stop-b"],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      type: "locationMap",
+      displayMode: "route-planning",
+      routeStyle: "planning",
+      routeStartId: "loc-start",
+      routeEndId: "loc-end",
+      routePointIds: ["loc-stop-a", "loc-stop-b"],
+    });
+  });
+
   it("keeps Prisma hero banner settings and collects its photo", () => {
     const blocks = parseBlocks([
       {
