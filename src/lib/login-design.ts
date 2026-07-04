@@ -14,12 +14,18 @@ export interface LoginDesignConfig {
   gradientTo: string;
   cardAccent: string;
   hoverColor: string;
+  hoverGlowSize: number;
+  hoverGlowIntensity: number;
   primaryLabel: string;
   passkeyLabel: string;
   photoId: string | null;
   photoUrl: string;
   photoAlt: string;
   photoSide: LoginPhotoSide;
+  photoFocalX: number;
+  photoFocalY: number;
+  photoWidth: number;
+  showPhotoOnMobile: boolean;
 }
 
 export const DEFAULT_LOGIN_DESIGN: LoginDesignConfig = {
@@ -34,12 +40,18 @@ export const DEFAULT_LOGIN_DESIGN: LoginDesignConfig = {
   gradientTo: "#06b6d4",
   cardAccent: "#8b5cf6",
   hoverColor: "#f97316",
+  hoverGlowSize: 44,
+  hoverGlowIntensity: 34,
   primaryLabel: "Sign in",
   passkeyLabel: "Sign in with passkey",
   photoId: null,
   photoUrl: "",
   photoAlt: "Studio photograph",
   photoSide: "left",
+  photoFocalX: 50,
+  photoFocalY: 50,
+  photoWidth: 50,
+  showPhotoOnMobile: true,
 };
 
 function stringValue(value: unknown, fallback: string) {
@@ -48,6 +60,22 @@ function stringValue(value: unknown, fallback: string) {
 
 function booleanValue(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function numberValue(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 }
 
 function enumValue<T extends string>(
@@ -89,6 +117,18 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
     gradientTo: stringValue(input.gradientTo, DEFAULT_LOGIN_DESIGN.gradientTo),
     cardAccent: stringValue(input.cardAccent, DEFAULT_LOGIN_DESIGN.cardAccent),
     hoverColor: stringValue(input.hoverColor, DEFAULT_LOGIN_DESIGN.hoverColor),
+    hoverGlowSize: numberValue(
+      input.hoverGlowSize,
+      DEFAULT_LOGIN_DESIGN.hoverGlowSize,
+      24,
+      70,
+    ),
+    hoverGlowIntensity: numberValue(
+      input.hoverGlowIntensity,
+      DEFAULT_LOGIN_DESIGN.hoverGlowIntensity,
+      0,
+      70,
+    ),
     primaryLabel: stringValue(input.primaryLabel, DEFAULT_LOGIN_DESIGN.primaryLabel),
     passkeyLabel: stringValue(input.passkeyLabel, DEFAULT_LOGIN_DESIGN.passkeyLabel),
     photoId: typeof input.photoId === "string" ? input.photoId : null,
@@ -98,6 +138,28 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
       input.photoSide,
       ["left", "right"] as const,
       DEFAULT_LOGIN_DESIGN.photoSide,
+    ),
+    photoFocalX: numberValue(
+      input.photoFocalX,
+      DEFAULT_LOGIN_DESIGN.photoFocalX,
+      0,
+      100,
+    ),
+    photoFocalY: numberValue(
+      input.photoFocalY,
+      DEFAULT_LOGIN_DESIGN.photoFocalY,
+      0,
+      100,
+    ),
+    photoWidth: numberValue(
+      input.photoWidth,
+      DEFAULT_LOGIN_DESIGN.photoWidth,
+      35,
+      70,
+    ),
+    showPhotoOnMobile: booleanValue(
+      input.showPhotoOnMobile,
+      DEFAULT_LOGIN_DESIGN.showPhotoOnMobile,
     ),
   };
 }

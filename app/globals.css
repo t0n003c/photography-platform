@@ -456,10 +456,20 @@ html.js .pr-root.is-enhanced {
 
 .login-shell--reference .login-card-hover-color {
   background:
-    radial-gradient(circle at var(--login-hover-x, 50%) var(--login-hover-y, 12%), color-mix(in srgb, var(--login-hover, #f97316) 34%, transparent), transparent 44%),
-    linear-gradient(135deg, color-mix(in srgb, var(--login-hover, #f97316) 16%, transparent), transparent 58%);
+    radial-gradient(circle at var(--login-hover-x, 50%) var(--login-hover-y, 12%), color-mix(in srgb, var(--login-hover, #f97316) var(--login-hover-intensity, 34%), transparent), transparent var(--login-hover-size, 44%)),
+    linear-gradient(135deg, color-mix(in srgb, var(--login-hover, #f97316) var(--login-hover-soft-intensity, 16%), transparent), transparent 58%);
   opacity: 0;
   transition: opacity 220ms ease;
+}
+
+.login-shell--reference .login-card--split {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .login-shell--reference .login-card--split {
+    grid-template-columns: var(--login-photo-columns, minmax(0, 1fr) minmax(0, 1fr));
+  }
 }
 
 .login-shell--reference .login-card--reference:hover .login-card-hover-color,

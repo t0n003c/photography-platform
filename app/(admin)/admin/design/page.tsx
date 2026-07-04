@@ -668,6 +668,30 @@ function LoginDesignCard() {
                   disabled={s.layout === "simple"}
                 />
               </Field>
+              <Field label={`Glow size (${s.hoverGlowSize}%)`}>
+                <Input
+                  type="range"
+                  min={24}
+                  max={70}
+                  value={s.hoverGlowSize}
+                  onChange={(e) =>
+                    setS({ ...s, hoverGlowSize: Number(e.target.value) })
+                  }
+                  disabled={s.layout === "simple"}
+                />
+              </Field>
+              <Field label={`Glow intensity (${s.hoverGlowIntensity}%)`}>
+                <Input
+                  type="range"
+                  min={0}
+                  max={70}
+                  value={s.hoverGlowIntensity}
+                  onChange={(e) =>
+                    setS({ ...s, hoverGlowIntensity: Number(e.target.value) })
+                  }
+                  disabled={s.layout === "simple"}
+                />
+              </Field>
             </div>
 
             {s.layout === "split-photo" && (
@@ -687,12 +711,55 @@ function LoginDesignCard() {
                       <option value="right">Photo right</option>
                     </Select>
                   </Field>
+                  <Field label={`Photo width (${s.photoWidth}%)`}>
+                    <Input
+                      type="range"
+                      min={35}
+                      max={70}
+                      value={s.photoWidth}
+                      onChange={(e) =>
+                        setS({ ...s, photoWidth: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Crop X (${s.photoFocalX}%)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={s.photoFocalX}
+                      onChange={(e) =>
+                        setS({ ...s, photoFocalX: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Crop Y (${s.photoFocalY}%)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={s.photoFocalY}
+                      onChange={(e) =>
+                        setS({ ...s, photoFocalY: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
                   <Field label="Photo alt text">
                     <Input
                       value={s.photoAlt}
                       onChange={(e) => setS({ ...s, photoAlt: e.target.value })}
                     />
                   </Field>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={s.showPhotoOnMobile}
+                      onChange={(e) =>
+                        setS({ ...s, showPhotoOnMobile: e.target.checked })
+                      }
+                    />
+                    Show photo on mobile
+                  </label>
                 </div>
                 <Field label="Custom photo URL">
                   <Input
