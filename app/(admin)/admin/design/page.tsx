@@ -1,7 +1,16 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ChevronDown, KeyRound, Loader2, Plus, Instagram, Mail } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  KeyRound,
+  Loader2,
+  Plus,
+  Instagram,
+  Mail,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -22,6 +31,16 @@ import {
   normalizeLoginDesign,
   type LoginDesignConfig,
 } from "@/src/lib/login-design";
+import {
+  DEFAULT_FOOTER_CONFIG,
+  STICKY_FOOTER_STARTER_COLUMNS,
+  normalizeFooterConfig,
+  type FooterConfig,
+  type FooterLayout,
+  type FooterRevealStrength,
+  type StickyFooterColumnConfig,
+  type StickyFooterLinkConfig,
+} from "@/src/lib/footer-config";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 
 type Scope =
@@ -869,23 +888,65 @@ function LoginDesignPreview({
   );
 }
 
-type FooterLayout = "menu" | "logo-text" | "instagram" | "text" | "sticky";
-type FooterRevealStrength = "subtle" | "standard" | "dramatic";
-interface FooterSettings {
-  layout: FooterLayout;
-  text: string;
-  instagramLimit: number;
-  showSocial: boolean;
-  stickyBackgroundColor: string;
-  stickyTextColor: string;
-  stickyAccentColor: string;
-  stickyLargeText: boolean;
-  stickyRevealStrength: FooterRevealStrength;
-}
+type FooterSettings = FooterConfig;
 
 // Footer composition lives in the global page_config's `config.footer` jsonb.
 // The public footer reads the DEFAULT global config, so saving ensures this
-// config is the default. Footer menu links stay in the Menus tab.
+// config is the default. Sticky columns can be edited here; empty columns fall
+// back to the active Footer menu.
+function newFooterEditorId(prefix: string): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function createFooterColumn(): StickyFooterColumnConfig {
+  return {
+    id: newFooterEditorId("footer-column"),
+    label: "New column",
+    links: [
+      {
+        id: newFooterEditorId("footer-link"),
+        label: "New link",
+        href: "/",
+        openInNewTab: false,
+      },
+    ],
+  };
+}
+
+function createFooterLink(): StickyFooterLinkConfig {
+  return {
+    id: newFooterEditorId("footer-link"),
+    label: "New link",
+    href: "/",
+    openInNewTab: false,
+  };
+}
+
+function cloneStarterFooterColumns(): StickyFooterColumnConfig[] {
+  return STICKY_FOOTER_STARTER_COLUMNS.map((column) => ({
+    ...column,
+    id: newFooterEditorId("footer-column"),
+    links: column.links.map((link) => ({
+      ...link,
+      id: newFooterEditorId("footer-link"),
+    })),
+  }));
+}
+
+function moveArrayItem<T>(items: T[], from: number, to: number): T[] {
+  if (from < 0 || from >= items.length || to < 0 || to >= items.length) {
+    return items;
+  }
+  const next = [...items];
+  const [item] = next.splice(from, 1);
+  if (item === undefined) return items;
+  next.splice(to, 0, item);
+  return next;
+}
+
 function FooterDesignCard() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -895,17 +956,7 @@ function FooterDesignCard() {
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
   const [siteTitle, setSiteTitle] = useState("Your studio");
   const [hasLogo, setHasLogo] = useState(false);
-  const [s, setS] = useState<FooterSettings>({
-    layout: "menu",
-    text: "",
-    instagramLimit: 6,
-    showSocial: true,
-    stickyBackgroundColor: "#08090d",
-    stickyTextColor: "#f8fafc",
-    stickyAccentColor: "#8b5cf6",
-    stickyLargeText: true,
-    stickyRevealStrength: "standard",
-  });
+  const [s, setS] = useState<FooterSettings>(DEFAULT_FOOTER_CONFIG);
 
   useEffect(() => {
     let active = true;
@@ -928,19 +979,7 @@ function FooterDesignCard() {
         setIsDefault(pick.isDefault);
         const cfg = (pick.config ?? {}) as Record<string, unknown>;
         setBaseConfig(cfg);
-        const f = (cfg.footer ?? {}) as Partial<FooterSettings>;
-        setS({
-          layout: f.layout ?? "menu",
-          text: f.text ?? "",
-          instagramLimit:
-            typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
-          showSocial: f.showSocial ?? true,
-          stickyBackgroundColor: f.stickyBackgroundColor ?? "#08090d",
-          stickyTextColor: f.stickyTextColor ?? "#f8fafc",
-          stickyAccentColor: f.stickyAccentColor ?? "#8b5cf6",
-          stickyLargeText: f.stickyLargeText ?? true,
-          stickyRevealStrength: f.stickyRevealStrength ?? "standard",
-        });
+        setS(normalizeFooterConfig(cfg.footer));
       })
       .catch((err) => active && toast(errMsg(err), "error"))
       .finally(() => active && setLoading(false));
@@ -977,6 +1016,32 @@ function FooterDesignCard() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateStickyColumns = (
+    updater: (columns: StickyFooterColumnConfig[]) => StickyFooterColumnConfig[],
+  ) => {
+    setS((prev) => ({ ...prev, stickyColumns: updater(prev.stickyColumns) }));
+  };
+
+  const updateStickyColumn = (
+    columnId: string,
+    updater: (column: StickyFooterColumnConfig) => StickyFooterColumnConfig,
+  ) => {
+    updateStickyColumns((columns) =>
+      columns.map((column) => (column.id === columnId ? updater(column) : column)),
+    );
+  };
+
+  const updateStickyLink = (
+    columnId: string,
+    linkId: string,
+    updater: (link: StickyFooterLinkConfig) => StickyFooterLinkConfig,
+  ) => {
+    updateStickyColumn(columnId, (column) => ({
+      ...column,
+      links: column.links.map((link) => (link.id === linkId ? updater(link) : link)),
+    }));
   };
 
   return (
@@ -1088,10 +1153,245 @@ function FooterDesignCard() {
                     />
                     Show brand name
                   </label>
-                  <p className="text-xs leading-5 text-[hsl(var(--muted-foreground))]">
-                    Sticky footer columns come from Menus -&gt; Footer menu. Use parent no-link
-                    items as column headings, with child items as links.
-                  </p>
+                  <div className="space-y-3 rounded-md border border-dashed p-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Custom footer columns</p>
+                        <p className="mt-1 text-xs leading-5 text-[hsl(var(--muted-foreground))]">
+                          Add columns here to control the sticky footer directly. If this is
+                          empty, the footer uses Menus -&gt; Footer menu as a fallback.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            updateStickyColumns((columns) => [...columns, createFooterColumn()])
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add column
+                        </Button>
+                        {s.stickyColumns.length === 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStickyColumns(() => cloneStarterFooterColumns())}
+                          >
+                            Use 4-column starter
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {s.stickyColumns.length === 0 ? (
+                      <div className="rounded-md bg-[hsl(var(--muted))] p-3 text-xs leading-5 text-[hsl(var(--muted-foreground))]">
+                        No custom columns yet. The live footer will keep using the active
+                        Footer menu until you add columns here.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {s.stickyColumns.map((column, columnIndex) => (
+                          <div
+                            key={column.id}
+                            className="space-y-3 rounded-md border bg-[hsl(var(--background))] p-3"
+                          >
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                              <Field label={`Column ${columnIndex + 1} heading`}>
+                                <Input
+                                  value={column.label}
+                                  onChange={(e) =>
+                                    updateStickyColumn(column.id, (current) => ({
+                                      ...current,
+                                      label: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Company"
+                                />
+                              </Field>
+                              <div className="flex flex-wrap gap-1.5">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    updateStickyColumns((columns) =>
+                                      moveArrayItem(columns, columnIndex, columnIndex - 1),
+                                    )
+                                  }
+                                  disabled={columnIndex === 0}
+                                  aria-label="Move column up"
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    updateStickyColumns((columns) =>
+                                      moveArrayItem(columns, columnIndex, columnIndex + 1),
+                                    )
+                                  }
+                                  disabled={columnIndex === s.stickyColumns.length - 1}
+                                  aria-label="Move column down"
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    updateStickyColumns((columns) =>
+                                      columns.filter((item) => item.id !== column.id),
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                                  Links
+                                </p>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    updateStickyColumn(column.id, (current) => ({
+                                      ...current,
+                                      links: [...current.links, createFooterLink()],
+                                    }))
+                                  }
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  Add link
+                                </Button>
+                              </div>
+
+                              {column.links.length === 0 ? (
+                                <p className="rounded-md bg-[hsl(var(--muted))] p-2 text-xs text-[hsl(var(--muted-foreground))]">
+                                  This column has no links yet.
+                                </p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {column.links.map((link, linkIndex) => (
+                                    <div
+                                      key={link.id}
+                                      className="grid gap-2 rounded-md border p-2 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_auto]"
+                                    >
+                                      <Field label="Label">
+                                        <Input
+                                          value={link.label}
+                                          onChange={(e) =>
+                                            updateStickyLink(column.id, link.id, (current) => ({
+                                              ...current,
+                                              label: e.target.value,
+                                            }))
+                                          }
+                                          placeholder="About"
+                                        />
+                                      </Field>
+                                      <Field label="URL">
+                                        <Input
+                                          value={link.href}
+                                          onChange={(e) =>
+                                            updateStickyLink(column.id, link.id, (current) => ({
+                                              ...current,
+                                              href: e.target.value,
+                                            }))
+                                          }
+                                          placeholder="/about or https://example.com"
+                                        />
+                                      </Field>
+                                      <div className="flex flex-wrap items-end gap-1.5">
+                                        <label className="flex h-9 items-center gap-1.5 rounded-md border px-2 text-xs">
+                                          <input
+                                            type="checkbox"
+                                            checked={link.openInNewTab}
+                                            onChange={(e) =>
+                                              updateStickyLink(column.id, link.id, (current) => ({
+                                                ...current,
+                                                openInNewTab: e.target.checked,
+                                              }))
+                                            }
+                                          />
+                                          New tab
+                                        </label>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            updateStickyColumn(column.id, (current) => ({
+                                              ...current,
+                                              links: moveArrayItem(
+                                                current.links,
+                                                linkIndex,
+                                                linkIndex - 1,
+                                              ),
+                                            }))
+                                          }
+                                          disabled={linkIndex === 0}
+                                          aria-label="Move link up"
+                                        >
+                                          <ChevronUp className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            updateStickyColumn(column.id, (current) => ({
+                                              ...current,
+                                              links: moveArrayItem(
+                                                current.links,
+                                                linkIndex,
+                                                linkIndex + 1,
+                                              ),
+                                            }))
+                                          }
+                                          disabled={linkIndex === column.links.length - 1}
+                                          aria-label="Move link down"
+                                        >
+                                          <ChevronDown className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            updateStickyColumn(column.id, (current) => ({
+                                              ...current,
+                                              links: current.links.filter(
+                                                (item) => item.id !== link.id,
+                                              ),
+                                            }))
+                                          }
+                                          aria-label="Remove link"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               <label className="flex items-center gap-2 text-sm">
@@ -1109,7 +1409,8 @@ function FooterDesignCard() {
                 </Button>
               </div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Footer menu links are edited in Menus -&gt; Footer menu.
+                Sticky custom columns are edited here. Empty custom columns fall back to
+                Menus -&gt; Footer menu.
               </p>
             </div>
 
@@ -1136,6 +1437,9 @@ function FooterPreview({
   hasLogo: boolean;
 }) {
   const year = new Date().getFullYear();
+  const stickyPreviewColumns = s.stickyColumns.filter(
+    (column) => column.label.trim() || column.links.length > 0,
+  );
   const social = s.showSocial ? (
     <div className="flex items-center gap-3 text-[hsl(var(--muted-foreground))]">
       <Instagram className="h-4 w-4" aria-hidden="true" />
@@ -1205,16 +1509,31 @@ function FooterPreview({
               {stickySocial}
             </div>
             <div className="grid flex-[1.5] grid-cols-2 gap-4 text-[10px] sm:grid-cols-4">
-              {["Product", "Solutions", "Resources", "Company"].map((label) => (
-                <div key={label} className="space-y-2">
-                  <p className="font-semibold uppercase text-current">
-                    {label}
+              {stickyPreviewColumns.length === 0 ? (
+                <div className="col-span-full rounded-md border border-current/15 p-3 text-current/60">
+                  <p className="font-semibold uppercase text-current">Footer menu fallback</p>
+                  <p className="mt-1">
+                    Add custom columns to control this content from the Design tab.
                   </p>
-                  <p className="text-current/60">Portfolio</p>
-                  <p className="text-current/60">About</p>
-                  <p className="text-current/60">Contact</p>
                 </div>
-              ))}
+              ) : (
+                stickyPreviewColumns.map((column, index) => (
+                  <div key={column.id} className="space-y-2">
+                    <p className="font-semibold uppercase text-current">
+                      {column.label.trim() || `Column ${index + 1}`}
+                    </p>
+                    {column.links.length === 0 ? (
+                      <p className="text-current/45">No links</p>
+                    ) : (
+                      column.links.map((link) => (
+                        <p key={link.id} className="text-current/60">
+                          {link.label.trim() || "Untitled link"}
+                        </p>
+                      ))
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 border-t border-current/20 pt-2 text-[10px] text-current/55 sm:flex-row sm:items-center sm:justify-between">

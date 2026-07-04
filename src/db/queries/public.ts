@@ -17,6 +17,10 @@ import {
   normalizeLoginDesign,
   type LoginDesignConfig,
 } from "@/src/lib/login-design";
+import {
+  normalizeFooterConfig,
+  type FooterConfig,
+} from "@/src/lib/footer-config";
 
 // Read layer for the public site (RSC). Server Components call these directly
 // (no HTTP hop); the matching Route Handlers exist for the PWA/client fetches.
@@ -430,38 +434,15 @@ async function loadDefaultPageConfig(
 }
 
 // ── Footer composition ───────────────────────────────────────────────────────
-export type FooterLayout = "menu" | "logo-text" | "instagram" | "text" | "sticky";
-export interface FooterConfig {
-  layout: FooterLayout;
-  text: string;
-  instagramLimit: number;
-  showSocial: boolean;
-  stickyBackgroundColor: string;
-  stickyTextColor: string;
-  stickyAccentColor: string;
-  stickyLargeText: boolean;
-  stickyRevealStrength: "subtle" | "standard" | "dramatic";
-}
+export type { FooterConfig, FooterLayout } from "@/src/lib/footer-config";
 
 // Footer composition lives in the global page_config's `config.footer` jsonb,
 // edited under Design → Footer. Cached via resolvePageConfig (5m) and
 // invalidated when that config is saved.
 export async function getFooterConfig(): Promise<FooterConfig> {
   const cfg = await resolvePageConfig("global");
-  const f =
-    (cfg?.config as { footer?: Partial<FooterConfig> } | null)?.footer ?? {};
-  return {
-    layout: f.layout ?? "menu",
-    text: f.text ?? "",
-    instagramLimit:
-      typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
-    showSocial: f.showSocial ?? true,
-    stickyBackgroundColor: f.stickyBackgroundColor ?? "#08090d",
-    stickyTextColor: f.stickyTextColor ?? "#f8fafc",
-    stickyAccentColor: f.stickyAccentColor ?? "#8b5cf6",
-    stickyLargeText: f.stickyLargeText ?? true,
-    stickyRevealStrength: f.stickyRevealStrength ?? "standard",
-  };
+  const f = (cfg?.config as { footer?: unknown } | null)?.footer;
+  return normalizeFooterConfig(f);
 }
 
 // ── Login screen composition ─────────────────────────────────────────────────

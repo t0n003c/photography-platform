@@ -1265,6 +1265,12 @@ is gitignored):
   column, and flat menus still chunk as a fallback.
   Mobile sticky footer now renders at natural height instead of forcing content into 100svh, so
   long footer menus are not clipped.
+  Follow-up: Sticky footer content can now be controlled directly in Design -> Footer via custom
+  columns. The config shape is `footer.stickyColumns[]` with editable column labels and links
+  (`label`, `href`, `openInNewTab`), normalized by `src/lib/footer-config.ts`. Public rendering
+  uses custom columns first and only falls back to Menus -> Footer menu when no custom columns
+  are saved. The Design preview now mirrors custom columns instead of hard-coding Product /
+  Solutions / Resources / Company.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

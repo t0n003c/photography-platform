@@ -5,6 +5,11 @@ import { Container } from "@/components/ui/container";
 import { getMenu, type ResolvedMenuItem } from "@/src/db/queries/menus";
 import { getSiteSettings } from "@/src/db/queries/settings";
 import { getFooterConfig } from "@/src/db/queries/public";
+import {
+  isExternalFooterHref,
+  normalizeFooterHref,
+  type StickyFooterColumnConfig,
+} from "@/src/lib/footer-config";
 import { cn } from "@/src/lib/utils";
 import { InertLabel } from "./inert-label";
 import { FooterInstagram } from "./footer-instagram";
@@ -12,11 +17,20 @@ import { FooterInstagram } from "./footer-instagram";
 const linkCls =
   "text-sm text-foreground/70 transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]";
 
+interface FooterRenderableLink {
+  id: string;
+  label: string;
+  href: string;
+  external: boolean;
+  openInNewTab: boolean;
+  noLink: boolean;
+}
+
 function FooterLink({
   item,
   className,
 }: {
-  item: ResolvedMenuItem;
+  item: FooterRenderableLink;
   className?: string;
 }) {
   const cls = className ?? linkCls;
@@ -63,7 +77,7 @@ function Social({
 interface FooterColumn {
   id: string;
   label: string;
-  links: ResolvedMenuItem[];
+  links: FooterRenderableLink[];
 }
 
 function chunkFooterLinks(items: ResolvedMenuItem[], columns = 4) {
@@ -94,6 +108,26 @@ function resolveStickyFooterColumns(items: ResolvedMenuItem[]): FooterColumn[] {
   );
 }
 
+function resolveCustomStickyFooterColumns(
+  columns: StickyFooterColumnConfig[],
+): FooterColumn[] {
+  return columns.map((column) => ({
+    id: column.id,
+    label: column.label,
+    links: column.links.map((link) => {
+      const href = normalizeFooterHref(link.href);
+      return {
+        id: link.id,
+        label: link.label,
+        href,
+        external: isExternalFooterHref(href),
+        openInNewTab: link.openInNewTab,
+        noLink: href === "#",
+      };
+    }),
+  }));
+}
+
 /**
  * Site footer. Server component. Footer menu links come from Admin → Menus
  * (active footer preset); the overall composition (menu / logo+text /
@@ -108,7 +142,10 @@ export async function Footer() {
   ]);
   const flat = items.flatMap((i) => [i, ...i.children]);
   const copyright = `© ${year} ${settings.siteTitle}. All rights reserved.`;
-  const stickyColumns = resolveStickyFooterColumns(items);
+  const stickyColumns =
+    footer.stickyColumns.length > 0
+      ? resolveCustomStickyFooterColumns(footer.stickyColumns)
+      : resolveStickyFooterColumns(items);
 
   // The "menu" layout keeps the original three-column composition (and carries
   // its own copyright); the others render a centered body + a shared bottom row.
