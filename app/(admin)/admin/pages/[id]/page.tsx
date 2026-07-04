@@ -269,6 +269,19 @@ function makeDividerBlock(id: string): Extract<Block, { type: "divider" }> {
   };
 }
 
+function makeLocationMapPin(index = 0) {
+  return {
+    id: newBlockId(),
+    title: index === 0 ? "Custom pin" : `Custom pin ${index + 1}`,
+    subtitle: "",
+    lat: "",
+    lng: "",
+    photoId: null,
+    linkLabel: "",
+    linkHref: "",
+  };
+}
+
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
@@ -446,6 +459,7 @@ function makeBlock(type: BlockType): Block {
       title: "Explore locations",
       subtitle: "Tap a marker to preview the work photographed in each place.",
       locationIds: [],
+      customPins: [],
       height: "md",
       mapTheme: "auto",
       markerColor: "#f43f5e",
@@ -861,6 +875,8 @@ function blockSummary(block: Block): string {
         : `${block.style} · ${block.width}`;
     case "scrollShowcase":
       return `${block.style ?? "cinematic"} · up to ${block.limit} categories`;
+    case "locationMap":
+      return `${block.locationIds.length || "all"} locations · ${(block.customPins ?? []).length} custom pins`;
     default:
       return "";
   }
@@ -3921,16 +3937,23 @@ function LeafEditor({
     case "locationMap": {
       const locs = targets.location ?? [];
       const chosen = block.locationIds ?? [];
+      const pins = block.customPins ?? [];
       const unchosen = locs.filter((loc) => !chosen.includes(loc.id));
       const labelOf = (id: string) => locs.find((loc) => loc.id === id)?.label ?? "(removed)";
       const photoCountOf = (id: string) => locs.find((loc) => loc.id === id)?.photoCount ?? 0;
       const locationOptionLabel = (loc: Opt) =>
         `${loc.label} (${loc.photoCount ?? 0} ${(loc.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
+      const updatePin = (index: number, patch: Partial<(typeof pins)[number]>) =>
+        set({
+          customPins: pins.map((pin, pinIndex) =>
+            pinIndex === index ? { ...pin, ...patch } : pin,
+          ),
+        });
       return (
         <div className="space-y-4">
           <SettingsGroup
             title="Map content"
-            description="Empty selected locations means all published locations with coordinates."
+            description="Mix published taxonomy locations with one-off custom pins."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Title">
@@ -3943,7 +3966,7 @@ function LeafEditor({
             <div className="space-y-2 rounded-md border p-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                  Locations
+                  Taxonomy locations
                 </p>
                 {chosen.length > 0 && (
                   <Button
@@ -3997,6 +4020,139 @@ function LeafEditor({
                     </option>
                   ))}
                 </Select>
+              )}
+            </div>
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Custom pins
+                  </p>
+                  <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                    Add one-off coordinates with an optional photo cover and link.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() =>
+                    set({ customPins: [...pins, makeLocationMapPin(pins.length)] })
+                  }
+                >
+                  Add pin
+                </Button>
+              </div>
+              {pins.length === 0 ? (
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  No custom pins yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {pins.map((pin, index) => (
+                    <div key={pin.id} className="space-y-3 rounded-lg bg-[hsl(var(--muted))]/55 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium">
+                          {pin.title || `Custom pin ${index + 1}`}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={index === 0}
+                            onClick={() => set({ customPins: swapAt(pins, index, index - 1) })}
+                            aria-label="Move pin up"
+                            className="h-8 w-8"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={index === pins.length - 1}
+                            onClick={() => set({ customPins: swapAt(pins, index, index + 1) })}
+                            aria-label="Move pin down"
+                            className="h-8 w-8"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              set({ customPins: pins.filter((_, pinIndex) => pinIndex !== index) })
+                            }
+                            aria-label="Remove pin"
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label="Pin title">
+                          <Input
+                            value={pin.title}
+                            onChange={(e) => updatePin(index, { title: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Subtitle / label">
+                          <Input
+                            value={pin.subtitle}
+                            onChange={(e) => updatePin(index, { subtitle: e.target.value })}
+                            placeholder="Venue, city, or short note"
+                          />
+                        </Field>
+                        <Field label="Latitude">
+                          <Input
+                            type="number"
+                            step="any"
+                            min={-90}
+                            max={90}
+                            value={pin.lat}
+                            onChange={(e) => updatePin(index, { lat: e.target.value })}
+                            placeholder="34.0522"
+                          />
+                        </Field>
+                        <Field label="Longitude">
+                          <Input
+                            type="number"
+                            step="any"
+                            min={-180}
+                            max={180}
+                            value={pin.lng}
+                            onChange={(e) => updatePin(index, { lng: e.target.value })}
+                            placeholder="-118.2437"
+                          />
+                        </Field>
+                        <Field label="Link label">
+                          <Input
+                            value={pin.linkLabel}
+                            onChange={(e) => updatePin(index, { linkLabel: e.target.value })}
+                            placeholder="Open"
+                          />
+                        </Field>
+                        <Field label="Link URL">
+                          <Input
+                            value={pin.linkHref}
+                            onChange={(e) => updatePin(index, { linkHref: e.target.value })}
+                            placeholder="/contact or https://..."
+                          />
+                        </Field>
+                      </div>
+                      <Field label="Optional cover photo">
+                        <PhotoPicker
+                          photos={photos}
+                          value={pin.photoId ?? null}
+                          onChange={(photoId) => updatePin(index, { photoId })}
+                          containerClassName="max-h-44"
+                        />
+                      </Field>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </SettingsGroup>

@@ -711,6 +711,9 @@ is gitignored):
   locations with saved latitude/longitude pins, OpenFreeMap/MapLibre basemaps, map marker labels,
   rich cover-photo popups, directions/open-location actions, desktop popups, and mobile bottom
   sheet details. The Taxonomy > Locations editor exposes optional latitude/longitude fields.
+  Follow-up: Location Map blocks now support custom one-off pins stored directly in the page block
+  config. Each custom pin can set title/subtitle, latitude/longitude, optional cover photo,
+  optional link label/URL, and can be reordered alongside taxonomy location pins.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.

@@ -39,6 +39,18 @@ describe("page builder blocks", () => {
         title: "Field notes",
         subtitle: "Places with work nearby.",
         locationIds: ["loc-a", "loc-b"],
+        customPins: [
+          {
+            id: "pin-a",
+            title: "Ceremony overlook",
+            subtitle: "Cliffside",
+            lat: 36.7783,
+            lng: "-119.4179",
+            photoId: "photo-pin-a",
+            linkLabel: "Open story",
+            linkHref: "/galleries/story",
+          },
+        ],
         height: "lg",
         mapTheme: "dark",
         markerColor: "#22c55e",
@@ -54,6 +66,18 @@ describe("page builder blocks", () => {
       type: "locationMap",
       title: "Field notes",
       locationIds: ["loc-a", "loc-b"],
+      customPins: [
+        {
+          id: "pin-a",
+          title: "Ceremony overlook",
+          subtitle: "Cliffside",
+          lat: "36.7783",
+          lng: "-119.4179",
+          photoId: "photo-pin-a",
+          linkLabel: "Open story",
+          linkHref: "/galleries/story",
+        },
+      ],
       height: "lg",
       mapTheme: "dark",
       markerColor: "#22c55e",
@@ -61,7 +85,7 @@ describe("page builder blocks", () => {
       showControls: false,
       popupMode: "hover",
     });
-    expect(collectPhotoIds(blocks)).toEqual([]);
+    expect(collectPhotoIds(blocks)).toEqual(["photo-pin-a"]);
   });
 
   it("keeps Prisma hero banner settings and collects its photo", () => {

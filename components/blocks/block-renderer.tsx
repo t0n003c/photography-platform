@@ -580,7 +580,7 @@ function LeafView({
     case "locationIndex":
       return <LocationIndexBlock block={block} />;
     case "locationMap":
-      return <LocationMapBlock block={block} />;
+      return <LocationMapBlock block={block} photoMap={photoMap} />;
     case "scrollShowcase":
       return <ScrollShowcaseBlock block={block} />;
     case "instagram":

@@ -21,11 +21,13 @@ function coverUrl(photo: PhotoDTO | null): string | null {
 
 export async function LocationMapBlock({
   block,
+  photoMap,
 }: {
   block: LocationMapBlockConfig;
+  photoMap: Map<string, PhotoDTO>;
 }) {
   const items = await getPublishedLocationMapItems(block.locationIds ?? []);
-  const points: LocationMapPoint[] = items
+  const locationPoints: LocationMapPoint[] = items
     .filter(
       (item) =>
         typeof item.lat === "number" &&
@@ -35,14 +37,36 @@ export async function LocationMapBlock({
     )
     .map((item) => ({
       id: item.id,
-      slug: item.slug,
       name: item.name,
       region: item.region,
       lat: item.lat as number,
       lng: item.lng as number,
       photoCount: item.photoCount,
       coverUrl: coverUrl(item.cover),
+      href: `/locations/${item.slug}`,
+      linkLabel: "Open location",
     }));
+  const customPoints: LocationMapPoint[] = (block.customPins ?? [])
+    .map((pin, index): LocationMapPoint | null => {
+      const lat = coordinate(pin.lat);
+      const lng = coordinate(pin.lng);
+      if (lat == null || lng == null) return null;
+      const title = pin.title.trim() || `Custom pin ${index + 1}`;
+      const linkHref = pin.linkHref.trim();
+      return {
+        id: `custom-${pin.id}`,
+        name: title,
+        region: pin.subtitle.trim() || null,
+        lat,
+        lng,
+        photoCount: null,
+        coverUrl: coverUrl(pin.photoId ? photoMap.get(pin.photoId) ?? null : null),
+        href: linkHref || null,
+        linkLabel: pin.linkLabel.trim() || "Open",
+      };
+    })
+    .filter((point): point is LocationMapPoint => point !== null);
+  const points = [...locationPoints, ...customPoints];
 
   return (
     <section className="py-16">
@@ -65,4 +89,9 @@ export async function LocationMapBlock({
       </Container>
     </section>
   );
+}
+
+function coordinate(value: string): number | null {
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
 }

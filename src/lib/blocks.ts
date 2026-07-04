@@ -492,6 +492,19 @@ const LocationIndexBlock = z.object({
   type: z.literal("locationIndex"),
   title: z.string().default("By location"),
 });
+const CoordinateString = z
+  .preprocess((value) => (typeof value === "number" ? String(value) : value), z.string())
+  .default("");
+const LocationMapCustomPin = z.object({
+  id,
+  title: z.string().default("Custom pin"),
+  subtitle: z.string().default(""),
+  lat: CoordinateString,
+  lng: CoordinateString,
+  photoId: z.string().nullable().default(null),
+  linkLabel: z.string().default(""),
+  linkHref: z.string().default(""),
+});
 const LocationMapBlock = z.object({
   ...baseBlock,
   type: z.literal("locationMap"),
@@ -500,6 +513,7 @@ const LocationMapBlock = z.object({
     .string()
     .default("Tap a marker to preview the work photographed in each place."),
   locationIds: z.array(z.string()).default([]),
+  customPins: z.array(LocationMapCustomPin).default([]),
   height: z.enum(["sm", "md", "lg", "screen"]).default("md"),
   mapTheme: z.enum(["auto", "light", "dark", "liberty", "bright"]).default("auto"),
   markerColor: z.string().default("#f43f5e"),
@@ -733,6 +747,11 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.type === "gallery") {
       ids.push(...b.manualOrderPhotoIds);
       for (const sort of b.filterSorts) ids.push(...sort.photoIds);
+    }
+    if (b.type === "locationMap") {
+      for (const pin of b.customPins) {
+        if (pin.photoId) ids.push(pin.photoId);
+      }
     }
   };
   for (const b of blocks) {

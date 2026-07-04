@@ -11,13 +11,14 @@ type LocationMapBlock = Extract<LeafBlock, { type: "locationMap" }>;
 
 export interface LocationMapPoint {
   id: string;
-  slug: string;
   name: string;
   region: string | null;
   lat: number;
   lng: number;
-  photoCount: number;
+  photoCount: number | null;
   coverUrl: string | null;
+  href: string | null;
+  linkLabel: string;
 }
 
 const STYLE_URLS = {
@@ -55,6 +56,11 @@ function directionsHref(point: LocationMapPoint) {
   return `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`;
 }
 
+function linkProps(href: string) {
+  if (!/^https?:\/\//i.test(href)) return {};
+  return { target: "_blank", rel: "noreferrer noopener" };
+}
+
 function LocationPopupCard({
   point,
   className,
@@ -86,12 +92,14 @@ function LocationPopupCard({
           </p>
           <h3 className="font-semibold leading-tight">{point.name}</h3>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-[hsl(var(--muted-foreground))]">
-          <Images className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>
-            {point.photoCount} {point.photoCount === 1 ? "photo" : "photos"}
-          </span>
-        </div>
+        {point.photoCount != null && (
+          <div className="flex items-center gap-1.5 text-sm text-[hsl(var(--muted-foreground))]">
+            <Images className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>
+              {point.photoCount} {point.photoCount === 1 ? "photo" : "photos"}
+            </span>
+          </div>
+        )}
         <div className="flex gap-2 pt-1">
           <a
             href={directionsHref(point)}
@@ -102,13 +110,16 @@ function LocationPopupCard({
             <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
             Directions
           </a>
-          <a
-            href={`/locations/${point.slug}`}
-            aria-label={`Open ${point.name}`}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-[hsl(var(--background))] text-sm shadow-sm transition hover:bg-[hsl(var(--muted))]"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </a>
+          {point.href && (
+            <a
+              href={point.href}
+              {...linkProps(point.href)}
+              aria-label={point.linkLabel || `Open ${point.name}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-[hsl(var(--background))] text-sm shadow-sm transition hover:bg-[hsl(var(--muted))]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          )}
         </div>
       </div>
     </article>
@@ -327,28 +338,51 @@ export function LocationMapClient({
         )}
       </div>
       <div className="grid content-start gap-2 lg:max-h-[var(--location-map-list-height,40rem)] lg:overflow-y-auto lg:pr-1">
-        {mappedPoints.map((point) => (
-          <a
-            key={point.id}
-            href={`/locations/${point.slug}`}
-            className="group grid grid-cols-[3rem_minmax(0,1fr)] gap-3 rounded-lg border bg-[hsl(var(--background))] p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm"
-          >
-            <div className="relative h-12 w-12 overflow-hidden rounded-md bg-[hsl(var(--muted))]">
-              {point.coverUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={point.coverUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <MapPin className="m-3 h-6 w-6 text-[hsl(var(--muted-foreground))]" aria-hidden="true" />
-              )}
+        {mappedPoints.map((point) => {
+          const body = (
+            <>
+              <div className="relative h-12 w-12 overflow-hidden rounded-md bg-[hsl(var(--muted))]">
+                {point.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={point.coverUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <MapPin
+                    className="m-3 h-6 w-6 text-[hsl(var(--muted-foreground))]"
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{point.name}</p>
+                <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
+                  {point.region ||
+                    (point.photoCount != null
+                      ? `${point.photoCount} ${point.photoCount === 1 ? "photo" : "photos"}`
+                      : "Custom pin")}
+                </p>
+              </div>
+            </>
+          );
+          const className =
+            "group grid grid-cols-[3rem_minmax(0,1fr)] gap-3 rounded-lg border bg-[hsl(var(--background))] p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm";
+          return point.href ? (
+            <a
+              key={point.id}
+              href={point.href}
+              {...linkProps(point.href)}
+              className={className}
+            >
+              {body}
+            </a>
+          ) : (
+            <div
+              key={point.id}
+              className={className}
+            >
+              {body}
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{point.name}</p>
-              <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
-                {point.region || `${point.photoCount} ${point.photoCount === 1 ? "photo" : "photos"}`}
-              </p>
-            </div>
-          </a>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
