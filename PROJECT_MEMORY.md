@@ -1283,7 +1283,10 @@ is gitignored):
   Classic. The source-matched refinements include the `a-btn-1` style uppercase text CTA with
   sliding line hover, the Simple three-path pulsing down arrow, and a Full Wall grid-rotator
   enhancement that swaps 7 random cells every 3s across 4x8 desktop / responsive mobile grids.
-  Full Wall keeps an SSR collage fallback and disables the rotator under reduced motion.
+  Full Wall also has a typed headline suffix matching the reference typed.js beat
+  (`startDelay` 1200ms, type 30ms, backspace 20ms, 500ms hold), with editable comma-separated
+  words in the Banner settings and a reduced-motion static fallback. Full Wall keeps an SSR
+  collage fallback and disables motion under reduced motion.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

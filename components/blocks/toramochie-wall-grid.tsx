@@ -20,6 +20,11 @@ type Slot = {
   anim: string;
 };
 
+type TypedHeadlineParts = {
+  prefix: string;
+  words: string[];
+};
+
 const ANIMATIONS = [
   "fade",
   "slide-left",
@@ -79,6 +84,121 @@ function useReducedMotion() {
   }, []);
 
   return reduced;
+}
+
+function configuredWords(value: string | undefined) {
+  return (value ?? "")
+    .split(",")
+    .map((word) => word.trim())
+    .filter(Boolean);
+}
+
+function splitTypedHeadline(headline: string, typewriterWords: string | undefined): TypedHeadlineParts {
+  const cleanHeadline = headline.trim() || "Hi. I am a photographer. I capture life.";
+  let words = configuredWords(typewriterWords);
+  if (words.length === 0) {
+    const lastWord = cleanHeadline.match(/(\S+)$/)?.[1] ?? cleanHeadline;
+    words = cleanHeadline.toLowerCase().includes("capture life")
+      ? ["life.", "action.", "people."]
+      : [lastWord];
+  }
+
+  const firstWord = words[0] ?? "";
+  if (firstWord && cleanHeadline.endsWith(firstWord)) {
+    return {
+      prefix: cleanHeadline.slice(0, cleanHeadline.length - firstWord.length),
+      words,
+    };
+  }
+
+  const lastWordMatch = cleanHeadline.match(/^(.*\s)(\S+)$/);
+  if (lastWordMatch && words.length > 1) {
+    return { prefix: lastWordMatch[1], words };
+  }
+
+  return {
+    prefix: cleanHeadline ? `${cleanHeadline} ` : "",
+    words,
+  };
+}
+
+export function ToraMochieTypedHeadline({
+  headline,
+  typewriterWords,
+}: {
+  headline: string;
+  typewriterWords?: string;
+}) {
+  const reducedMotion = useReducedMotion();
+  const { prefix, words } = useMemo(
+    () => splitTypedHeadline(headline, typewriterWords),
+    [headline, typewriterWords],
+  );
+  const initialWord = words[0] ?? "";
+  const [typedWord, setTypedWord] = useState(initialWord);
+  const maxWordLength = Math.max(initialWord.length, ...words.map((word) => word.length));
+  const label = `${prefix}${initialWord}`.trim();
+
+  useEffect(() => {
+    setTypedWord(initialWord);
+  }, [initialWord]);
+
+  useEffect(() => {
+    if (reducedMotion || words.length < 2) return;
+
+    let cancelled = false;
+    let timeout: number | undefined;
+    let index = 0;
+    let current = words[index] ?? "";
+
+    const schedule = (fn: () => void, ms: number) => {
+      timeout = window.setTimeout(fn, ms);
+    };
+
+    const typeWord = (position: number) => {
+      if (cancelled) return;
+      const word = words[index] ?? "";
+      current = word.slice(0, position);
+      setTypedWord(current);
+      if (position < word.length) {
+        schedule(() => typeWord(position + 1), 30);
+      } else {
+        schedule(deleteWord, 500);
+      }
+    };
+
+    const deleteWord = () => {
+      if (cancelled) return;
+      if (current.length > 0) {
+        current = current.slice(0, -1);
+        setTypedWord(current);
+        schedule(deleteWord, 20);
+      } else {
+        index = (index + 1) % words.length;
+        schedule(() => typeWord(1), 30);
+      }
+    };
+
+    schedule(deleteWord, 1200);
+
+    return () => {
+      cancelled = true;
+      if (timeout) window.clearTimeout(timeout);
+    };
+  }, [initialWord, reducedMotion, words]);
+
+  return (
+    <mark
+      className="tora-wall-mark"
+      aria-label={label}
+      style={{ "--tora-typed-width": `${maxWordLength}ch` } as CSSProperties}
+    >
+      <span aria-hidden="true">
+        {prefix}
+        <span className="tora-wall-typed">{typedWord}</span>
+      </span>
+    </mark>
+  );
 }
 
 // Reference source: Reflector's gridrotator uses 4x8 desktop cells, responsive

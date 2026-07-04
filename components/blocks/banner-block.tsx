@@ -5,7 +5,10 @@ import { Container } from "@/components/ui/container";
 import { HeroMedia } from "@/components/webgl/hero-media";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { CssGlitchImage } from "@/components/gallery/css-glitch";
-import { ToraMochieWallGrid } from "@/components/blocks/toramochie-wall-grid";
+import {
+  ToraMochieTypedHeadline,
+  ToraMochieWallGrid,
+} from "@/components/blocks/toramochie-wall-grid";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -604,7 +607,10 @@ function ToraCopy({
     return (
       <div className="mx-auto flex max-w-5xl flex-col items-center px-5 text-center text-white">
         <h1 className="font-sans text-2xl font-bold leading-[1.45] tracking-normal sm:text-4xl md:text-5xl">
-          <mark className="tora-wall-mark">{headline}</mark>
+          <ToraMochieTypedHeadline
+            headline={headline}
+            typewriterWords={block.typewriterWords}
+          />
         </h1>
       </div>
     );

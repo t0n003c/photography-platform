@@ -254,6 +254,7 @@ const BannerBlock = z.object({
   // Optional multi-photo set used by collage-style banner layouts.
   photoIds: z.array(z.string()).default([]),
   eyebrow: z.string().default(""),
+  typewriterWords: z.string().default(""),
   headline: z.string().default(""),
   subhead: z.string().default(""),
   ctaLabel: z.string().optional(),

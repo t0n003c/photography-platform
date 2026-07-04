@@ -348,6 +348,12 @@ html.js .pr-root.is-enhanced {
   padding: 0.08em 0.18em 0;
 }
 
+.tora-wall-typed {
+  display: inline-block;
+  min-width: var(--tora-typed-width, 4ch);
+  text-align: left;
+}
+
 .tora-scroll-arrows {
   width: 30px;
   height: 50px;

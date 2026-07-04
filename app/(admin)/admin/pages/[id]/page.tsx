@@ -355,7 +355,7 @@ function makeBlock(type: BlockType): Block {
       accentColor: "#8b5e34",
     };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
-    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], eyebrow: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
+    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -3757,6 +3757,15 @@ function LeafEditor({
             />
           </Field>
           <Field label={isAgency ? "Headline line 1" : "Headline"}><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
+          {isToraWall && (
+            <Field label="Typed words">
+              <Input
+                value={block.typewriterWords ?? ""}
+                onChange={(e) => set({ typewriterWords: e.target.value })}
+                placeholder="life., action., people."
+              />
+            </Field>
+          )}
           {isAgency && (
             <Field label="Italic headline line">
               <Input
