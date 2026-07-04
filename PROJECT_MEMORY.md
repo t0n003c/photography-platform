@@ -1258,6 +1258,13 @@ is gitignored):
   it controls how much scroll space the sticky footer gets before it fully settles.
   Follow-up: the Sticky animated footer line-grid overlay was removed from both public rendering
   and the Design preview. Both surfaces now use one top-left accent glow only.
+  Follow-up: Sticky animated footer was realigned to the 21st.dev Efferd reference: compact
+  hash-style brand mark, small intro copy, outlined social buttons, dense footer columns, and
+  simple bottom copyright row. Footer content comes from Menus -> Footer menu; parent no-link
+  items with children render as column headings/links, loose top-level links are kept in a More
+  column, and flat menus still chunk as a fallback.
+  Mobile sticky footer now renders at natural height instead of forcing content into 100svh, so
+  long footer menus are not clipped.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ChevronDown, KeyRound, Loader2, Plus, Instagram, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1086,8 +1086,12 @@ function FooterDesignCard() {
                       checked={s.stickyLargeText}
                       onChange={(e) => setS({ ...s, stickyLargeText: e.target.checked })}
                     />
-                    Show large brand text
+                    Show brand name
                   </label>
+                  <p className="text-xs leading-5 text-[hsl(var(--muted-foreground))]">
+                    Sticky footer columns come from Menus -&gt; Footer menu. Use parent no-link
+                    items as column headings, with child items as links.
+                  </p>
                 </div>
               )}
               <label className="flex items-center gap-2 text-sm">
@@ -1105,7 +1109,7 @@ function FooterDesignCard() {
                 </Button>
               </div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Footer menu links are edited in the Menus tab.
+                Footer menu links are edited in Menus -&gt; Footer menu.
               </p>
             </div>
 
@@ -1162,9 +1166,13 @@ function FooterPreview({
     );
   } else if (s.layout === "sticky") {
     const stickySocial = s.showSocial ? (
-      <div className="flex items-center gap-3 text-current/70">
-        <Instagram className="h-4 w-4" aria-hidden="true" />
-        <Mail className="h-4 w-4" aria-hidden="true" />
+      <div className="flex items-center gap-2 text-current/70">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-current/20">
+          <Instagram className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-current/20">
+          <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
       </div>
     ) : null;
     body = (
@@ -1172,44 +1180,47 @@ function FooterPreview({
         className="overflow-hidden rounded-md border p-4"
         style={{
           background:
-            `radial-gradient(circle at 12% 20%, ${s.stickyAccentColor}55, transparent 34%), ` +
+            `radial-gradient(65% 75% at 8% 12%, ${s.stickyAccentColor}29, transparent 52%), ` +
             `linear-gradient(135deg, ${s.stickyBackgroundColor}, ${s.stickyBackgroundColor})`,
           color: s.stickyTextColor,
-        }}
+          "--sticky-footer-bg": s.stickyBackgroundColor,
+          "--sticky-footer-fg": s.stickyTextColor,
+          "--sticky-footer-accent": s.stickyAccentColor,
+        } as CSSProperties}
       >
         <div className="space-y-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-2">
-              <p className="inline-flex rounded-full border border-current/20 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-current/70">
-                {siteTitle}
-              </p>
-              {s.stickyLargeText ? (
-                <p className="max-w-[9ch] text-4xl font-black leading-[0.86] tracking-normal">
-                  {siteTitle}
-                </p>
-              ) : (
-                <p className="text-base font-semibold">{siteTitle}</p>
-              )}
-            </div>
-            {stickySocial}
-          </div>
-          <p className="max-w-sm text-xs leading-5 text-current/70">
-            {s.text || "A polished sticky footer reveal with menu columns and studio details."}
-          </p>
-          <div className="grid grid-cols-3 gap-3 border-t border-current/20 pt-3 text-[10px]">
-            {["Navigate", "Explore", "More"].map((label) => (
-              <div key={label} className="space-y-1.5">
-                <p className="font-semibold uppercase tracking-[0.18em] text-current/50">
-                  {label}
-                </p>
-                <p className="text-current/70">Portfolio</p>
-                <p className="text-current/70">About</p>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="sticky-site-footer__brand-mark" aria-hidden="true">
+                  <span />
+                </span>
+                {s.stickyLargeText && (
+                  <span className="text-sm font-semibold">{siteTitle}</span>
+                )}
               </div>
-            ))}
+              <p className="max-w-xs text-xs leading-5 text-current/60">
+                {s.text || "A compact sticky footer with studio details and menu columns."}
+              </p>
+              {stickySocial}
+            </div>
+            <div className="grid flex-[1.5] grid-cols-2 gap-4 text-[10px] sm:grid-cols-4">
+              {["Product", "Solutions", "Resources", "Company"].map((label) => (
+                <div key={label} className="space-y-2">
+                  <p className="font-semibold uppercase text-current">
+                    {label}
+                  </p>
+                  <p className="text-current/60">Portfolio</p>
+                  <p className="text-current/60">About</p>
+                  <p className="text-current/60">Contact</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-[10px] text-current/60">
-            © {year} {siteTitle}. All rights reserved.
-          </p>
+          <div className="flex flex-col gap-1 border-t border-current/20 pt-2 text-[10px] text-current/55 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {year} {siteTitle}. All rights reserved.</p>
+            <p>{siteTitle}</p>
+          </div>
         </div>
       </div>
     );

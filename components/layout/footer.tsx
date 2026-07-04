@@ -37,13 +37,19 @@ function FooterLink({
   );
 }
 
-function Social({ className }: { className?: string } = {}) {
+function Social({
+  className,
+  wrapperClassName,
+}: {
+  className?: string;
+  wrapperClassName?: string;
+} = {}) {
   const cls = cn(
     "text-foreground/70 transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
     className,
   );
   return (
-    <div className="flex items-center gap-4">
+    <div className={cn("flex items-center gap-4", wrapperClassName)}>
       <a href="#" aria-label="Instagram" className={cls}>
         <Instagram className="h-5 w-5" aria-hidden="true" />
       </a>
@@ -54,11 +60,38 @@ function Social({ className }: { className?: string } = {}) {
   );
 }
 
-function chunkFooterLinks(items: ResolvedMenuItem[], columns = 3) {
+interface FooterColumn {
+  id: string;
+  label: string;
+  links: ResolvedMenuItem[];
+}
+
+function chunkFooterLinks(items: ResolvedMenuItem[], columns = 4) {
   const chunkSize = Math.max(1, Math.ceil(items.length / columns));
   return Array.from({ length: columns }, (_, index) =>
     items.slice(index * chunkSize, index * chunkSize + chunkSize),
   ).filter((column) => column.length > 0);
+}
+
+function resolveStickyFooterColumns(items: ResolvedMenuItem[]): FooterColumn[] {
+  const nested = items
+    .filter((item) => item.children.length > 0)
+    .map((item) => ({ id: item.id, label: item.label, links: item.children }));
+  if (nested.length > 0) {
+    const standalone = items.filter((item) => item.children.length === 0);
+    return standalone.length > 0
+      ? [...nested, { id: "standalone-footer-links", label: "More", links: standalone }]
+      : nested;
+  }
+
+  const labels = ["Product", "Solutions", "Resources", "Company"];
+  return chunkFooterLinks(items.flatMap((item) => [item, ...item.children])).map(
+    (links, index) => ({
+      id: `fallback-${index}`,
+      label: labels[index] ?? "More",
+      links,
+    }),
+  );
 }
 
 /**
@@ -75,7 +108,7 @@ export async function Footer() {
   ]);
   const flat = items.flatMap((i) => [i, ...i.children]);
   const copyright = `© ${year} ${settings.siteTitle}. All rights reserved.`;
-  const stickyColumns = chunkFooterLinks(flat);
+  const stickyColumns = resolveStickyFooterColumns(items);
 
   // The "menu" layout keeps the original three-column composition (and carries
   // its own copyright); the others render a centered body + a shared bottom row.
@@ -117,37 +150,47 @@ export async function Footer() {
       <footer className="sticky-site-footer" style={stickyStyle}>
         <div className="sticky-site-footer__fixed">
           <Container className="sticky-site-footer__content">
-            <div className="sticky-site-footer__main grid gap-10">
-              <div className="sticky-site-footer__intro space-y-6">
-                <div className="inline-flex items-center rounded-full border border-current/20 px-3 py-1 text-xs uppercase tracking-[0.28em] text-current/70">
-                  {settings.siteTitle}
+            <div className="sticky-site-footer__main">
+              <div className="sticky-site-footer__intro">
+                <div className="sticky-site-footer__brand-row">
+                  <span className="sticky-site-footer__brand-mark" aria-hidden="true">
+                    <span />
+                  </span>
+                  {footer.stickyLargeText && (
+                    <span className="sticky-site-footer__brand-name">
+                      {settings.siteTitle}
+                    </span>
+                  )}
                 </div>
-                {footer.stickyLargeText && (
-                  <p className="sticky-site-footer__brand">{settings.siteTitle}</p>
-                )}
                 {footer.text && (
-                  <p className="sticky-site-footer__tagline max-w-2xl text-base leading-7 text-current/70 md:text-lg">
+                  <p className="sticky-site-footer__tagline">
                     {footer.text}
                   </p>
                 )}
+                {footer.showSocial && (
+                  <Social
+                    className="sticky-site-footer__social-link"
+                    wrapperClassName="sticky-site-footer__social"
+                  />
+                )}
               </div>
 
-              <div className="sticky-site-footer__nav-grid grid gap-8 sm:grid-cols-3">
-                {stickyColumns.map((column, columnIndex) => (
+              <div className="sticky-site-footer__nav-grid">
+                {stickyColumns.map((column) => (
                   <nav
-                    key={columnIndex}
-                    className="space-y-3"
-                    aria-label={columnIndex === 0 ? "Footer" : undefined}
+                    key={column.id}
+                    className="sticky-site-footer__column"
+                    aria-label={column.label}
                   >
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-current/50">
-                      {columnIndex === 0 ? "Navigate" : columnIndex === 1 ? "Explore" : "More"}
+                    <p className="sticky-site-footer__column-title">
+                      {column.label}
                     </p>
-                    <div className="sticky-site-footer__links flex flex-col gap-2">
-                      {column.map((item) => (
+                    <div className="sticky-site-footer__links">
+                      {column.links.map((item) => (
                         <FooterLink
                           key={item.id}
                           item={item}
-                          className="text-sm text-current/70 transition-colors hover:text-current focus:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
+                          className="sticky-site-footer__link"
                         />
                       ))}
                     </div>
@@ -160,17 +203,7 @@ export async function Footer() {
               <p className="footer-copyright text-xs text-current/60">
                 {copyright}
               </p>
-              <div className="flex items-center gap-5">
-                {footer.showSocial && (
-                  <Social className="text-current/70 hover:text-current" />
-                )}
-                <a
-                  href="#top"
-                  className="inline-flex h-9 items-center rounded-full border border-current/20 px-4 text-xs font-medium uppercase tracking-[0.18em] text-current/80 transition hover:border-current/50 hover:text-current focus:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
-                >
-                  Top
-                </a>
-              </div>
+              <p className="text-xs text-current/50">{settings.siteTitle}</p>
             </div>
           </Container>
         </div>
