@@ -869,12 +869,18 @@ function LoginDesignPreview({
   );
 }
 
-type FooterLayout = "menu" | "logo-text" | "instagram" | "text";
+type FooterLayout = "menu" | "logo-text" | "instagram" | "text" | "sticky";
+type FooterRevealStrength = "subtle" | "standard" | "dramatic";
 interface FooterSettings {
   layout: FooterLayout;
   text: string;
   instagramLimit: number;
   showSocial: boolean;
+  stickyBackgroundColor: string;
+  stickyTextColor: string;
+  stickyAccentColor: string;
+  stickyLargeText: boolean;
+  stickyRevealStrength: FooterRevealStrength;
 }
 
 // Footer composition lives in the global page_config's `config.footer` jsonb.
@@ -894,6 +900,11 @@ function FooterDesignCard() {
     text: "",
     instagramLimit: 6,
     showSocial: true,
+    stickyBackgroundColor: "#08090d",
+    stickyTextColor: "#f8fafc",
+    stickyAccentColor: "#8b5cf6",
+    stickyLargeText: true,
+    stickyRevealStrength: "standard",
   });
 
   useEffect(() => {
@@ -924,6 +935,11 @@ function FooterDesignCard() {
           instagramLimit:
             typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
           showSocial: f.showSocial ?? true,
+          stickyBackgroundColor: f.stickyBackgroundColor ?? "#08090d",
+          stickyTextColor: f.stickyTextColor ?? "#f8fafc",
+          stickyAccentColor: f.stickyAccentColor ?? "#8b5cf6",
+          stickyLargeText: f.stickyLargeText ?? true,
+          stickyRevealStrength: f.stickyRevealStrength ?? "standard",
         });
       })
       .catch((err) => active && toast(errMsg(err), "error"))
@@ -981,6 +997,7 @@ function FooterDesignCard() {
                   <option value="logo-text">Logo + text</option>
                   <option value="instagram">Instagram feed</option>
                   <option value="text">Plain text</option>
+                  <option value="sticky">Sticky animated footer</option>
                 </Select>
               </Field>
               {s.layout === "instagram" && (
@@ -996,8 +1013,16 @@ function FooterDesignCard() {
                   />
                 </Field>
               )}
-              {(s.layout === "logo-text" || s.layout === "text") && (
-                <Field label={s.layout === "logo-text" ? "Tagline / text" : "Text"}>
+              {(s.layout === "logo-text" || s.layout === "text" || s.layout === "sticky") && (
+                <Field
+                  label={
+                    s.layout === "logo-text"
+                      ? "Tagline / text"
+                      : s.layout === "sticky"
+                        ? "Sticky footer tagline"
+                        : "Text"
+                  }
+                >
                   <Textarea
                     rows={3}
                     value={s.text}
@@ -1005,6 +1030,62 @@ function FooterDesignCard() {
                     placeholder="A line about the studio…"
                   />
                 </Field>
+              )}
+              {s.layout === "sticky" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Background">
+                      <Input
+                        type="color"
+                        value={s.stickyBackgroundColor}
+                        onChange={(e) =>
+                          setS({ ...s, stickyBackgroundColor: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Text">
+                      <Input
+                        type="color"
+                        value={s.stickyTextColor}
+                        onChange={(e) =>
+                          setS({ ...s, stickyTextColor: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Accent">
+                      <Input
+                        type="color"
+                        value={s.stickyAccentColor}
+                        onChange={(e) =>
+                          setS({ ...s, stickyAccentColor: e.target.value })
+                        }
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Reveal strength">
+                    <Select
+                      value={s.stickyRevealStrength}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          stickyRevealStrength: e.target.value as FooterRevealStrength,
+                        })
+                      }
+                    >
+                      <option value="subtle">Subtle</option>
+                      <option value="standard">Standard</option>
+                      <option value="dramatic">Dramatic</option>
+                    </Select>
+                  </Field>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={s.stickyLargeText}
+                      onChange={(e) => setS({ ...s, stickyLargeText: e.target.checked })}
+                    />
+                    Show large brand text
+                  </label>
+                </div>
               )}
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -1074,6 +1155,59 @@ function FooterPreview({
           <span>Contact</span>
         </div>
         {social}
+      </div>
+    );
+  } else if (s.layout === "sticky") {
+    const stickySocial = s.showSocial ? (
+      <div className="flex items-center gap-3 text-current/70">
+        <Instagram className="h-4 w-4" aria-hidden="true" />
+        <Mail className="h-4 w-4" aria-hidden="true" />
+      </div>
+    ) : null;
+    body = (
+      <div
+        className="overflow-hidden rounded-md border p-4"
+        style={{
+          background:
+            `radial-gradient(circle at 12% 20%, ${s.stickyAccentColor}55, transparent 34%), ` +
+            `linear-gradient(135deg, ${s.stickyBackgroundColor}, ${s.stickyBackgroundColor})`,
+          color: s.stickyTextColor,
+        }}
+      >
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 space-y-2">
+              <p className="inline-flex rounded-full border border-current/20 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-current/70">
+                {siteTitle}
+              </p>
+              {s.stickyLargeText ? (
+                <p className="max-w-[9ch] text-4xl font-black leading-[0.86] tracking-normal">
+                  {siteTitle}
+                </p>
+              ) : (
+                <p className="text-base font-semibold">{siteTitle}</p>
+              )}
+            </div>
+            {stickySocial}
+          </div>
+          <p className="max-w-sm text-xs leading-5 text-current/70">
+            {s.text || "A polished sticky footer reveal with menu columns and studio details."}
+          </p>
+          <div className="grid grid-cols-3 gap-3 border-t border-current/20 pt-3 text-[10px]">
+            {["Navigate", "Explore", "More"].map((label) => (
+              <div key={label} className="space-y-1.5">
+                <p className="font-semibold uppercase tracking-[0.18em] text-current/50">
+                  {label}
+                </p>
+                <p className="text-current/70">Portfolio</p>
+                <p className="text-current/70">About</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-current/60">
+            © {year} {siteTitle}. All rights reserved.
+          </p>
+        </div>
       </div>
     );
   } else if (s.layout === "logo-text") {

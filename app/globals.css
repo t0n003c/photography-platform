@@ -217,6 +217,160 @@ html.js .pr-root.is-enhanced {
   }
 }
 
+/* Sticky footer reveal: CSS-only progressive enhancement inspired by the
+   21st.dev sticky footer reference. The fixed panel is clipped by the footer
+   shell, so it feels anchored while the page reveals it. */
+.sticky-site-footer {
+  --sticky-footer-bg: #08090d;
+  --sticky-footer-fg: #f8fafc;
+  --sticky-footer-accent: #8b5cf6;
+  --sticky-footer-reveal: clamp(34rem, 82svh, 52rem);
+  position: relative;
+  height: var(--sticky-footer-reveal);
+  margin-top: 5rem;
+  clip-path: inset(0);
+  overflow: hidden;
+  background: var(--sticky-footer-bg);
+  color: var(--sticky-footer-fg);
+}
+
+.sticky-site-footer__fixed {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  min-height: min(var(--sticky-footer-reveal), 100svh);
+  display: flex;
+  align-items: stretch;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--sticky-footer-accent) 38%, transparent), transparent 32%),
+    radial-gradient(circle at 82% 70%, color-mix(in srgb, var(--sticky-footer-accent) 24%, transparent), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--sticky-footer-bg) 88%, white 12%), var(--sticky-footer-bg) 58%);
+}
+
+.sticky-site-footer__fixed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  background-image:
+    linear-gradient(currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 76%, transparent);
+}
+
+.sticky-site-footer__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: min(var(--sticky-footer-reveal), 100svh);
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding-block: clamp(3rem, 8svh, 5.5rem);
+}
+
+.sticky-site-footer__brand {
+  max-width: 11ch;
+  font-size: clamp(3.8rem, 13vw, 12rem);
+  font-weight: 800;
+  line-height: 0.82;
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--sticky-footer-fg) 92%, var(--sticky-footer-accent) 8%);
+}
+
+.sticky-site-footer .footer-copyright {
+  margin: 0;
+}
+
+@supports not (clip-path: inset(0)) {
+  .sticky-site-footer {
+    height: auto;
+    clip-path: none;
+  }
+
+  .sticky-site-footer__fixed {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .sticky-site-footer {
+    margin-top: 3.5rem;
+    height: max(var(--sticky-footer-reveal), 42rem);
+  }
+
+  .sticky-site-footer__fixed {
+    height: 100svh;
+    min-height: 0;
+  }
+
+  .sticky-site-footer__content {
+    height: 100svh;
+    min-height: 0;
+  }
+
+  .sticky-site-footer__content {
+    padding-block: calc(4.75rem + env(safe-area-inset-top)) calc(1.75rem + env(safe-area-inset-bottom));
+    gap: 1rem;
+  }
+
+  .sticky-site-footer__main {
+    gap: 1.25rem;
+  }
+
+  .sticky-site-footer__intro > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.85rem;
+  }
+
+  .sticky-site-footer__tagline {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .sticky-site-footer__nav-grid {
+    gap: 1rem;
+  }
+
+  .sticky-site-footer__nav-grid nav > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.45rem;
+  }
+
+  .sticky-site-footer__links {
+    gap: 0.25rem;
+  }
+
+  .sticky-site-footer__bottom {
+    gap: 0.85rem;
+    padding-top: 0.9rem;
+  }
+
+  .sticky-site-footer__brand {
+    font-size: clamp(3rem, 15vw, 4.4rem);
+    line-height: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky-site-footer {
+    height: auto;
+    clip-path: none;
+  }
+
+  .sticky-site-footer__fixed {
+    position: relative;
+    height: auto;
+    min-height: auto;
+  }
+
+  .sticky-site-footer__content {
+    height: auto;
+    min-height: auto;
+  }
+}
+
 /* Agency viral hero: centered video hero, nav intentionally omitted. */
 @keyframes banner-agency-heading-in {
   0% {
@@ -3597,34 +3751,34 @@ html.js .pr-root.is-enhanced {
   --palmer-panel-shadow: -24px 0 80px rgba(0, 0, 0, 0.42);
 }
 
-main:has(.palmer-grid) + footer {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) {
   margin-top: 0;
   overflow: hidden;
 }
 
-main:has(.palmer-grid) + footer > .mx-auto {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) > .mx-auto {
   padding-block: 0.6rem;
 }
 
-main:has(.palmer-grid) + footer nav,
-main:has(.palmer-grid) + footer img,
-main:has(.palmer-grid) + footer [aria-label="Instagram"],
-main:has(.palmer-grid) + footer [aria-label="Email"],
-main:has(.palmer-grid) + footer p:not(.footer-copyright) {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) nav,
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) img,
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) [aria-label="Instagram"],
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) [aria-label="Email"],
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) p:not(.footer-copyright) {
   display: none;
 }
 
-main:has(.palmer-grid) + footer .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) .space-y-6 > :not([hidden]) ~ :not([hidden]) {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-main:has(.palmer-grid) + footer .gap-3,
-main:has(.palmer-grid) + footer .gap-8 {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) .gap-3,
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) .gap-8 {
   gap: 0.35rem;
 }
 
-main:has(.palmer-grid) + footer .footer-copyright {
+main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
   margin: 0;
   font-size: 0.72rem;
   line-height: 1.2;

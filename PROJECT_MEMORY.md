@@ -1246,6 +1246,12 @@ is gitignored):
   README and docs were refreshed so the current SeaweedFS Compose stack, `render-config`
   gallery contract, `components/blocks/*` renderers, and Testimonials page block are reflected
   instead of the older MinIO/layout-config wording.
+  Design Footer follow-up: the Design tab Footer card now includes a "Sticky animated footer"
+  layout inspired by the 21st.dev sticky footer reference. It stores the sticky footer background,
+  text, accent color, reveal strength, and large-brand toggle in the global
+  `page_config.config.footer` object. Public rendering uses a CSS clipped fixed footer reveal
+  in `components/layout/footer.tsx` / `app/globals.css`, with reduced-motion and unsupported
+  `clip-path` fallbacks that render as a normal footer instead of requiring JavaScript.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

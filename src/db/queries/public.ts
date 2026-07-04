@@ -430,12 +430,17 @@ async function loadDefaultPageConfig(
 }
 
 // ── Footer composition ───────────────────────────────────────────────────────
-export type FooterLayout = "menu" | "logo-text" | "instagram" | "text";
+export type FooterLayout = "menu" | "logo-text" | "instagram" | "text" | "sticky";
 export interface FooterConfig {
   layout: FooterLayout;
   text: string;
   instagramLimit: number;
   showSocial: boolean;
+  stickyBackgroundColor: string;
+  stickyTextColor: string;
+  stickyAccentColor: string;
+  stickyLargeText: boolean;
+  stickyRevealStrength: "subtle" | "standard" | "dramatic";
 }
 
 // Footer composition lives in the global page_config's `config.footer` jsonb,
@@ -451,6 +456,11 @@ export async function getFooterConfig(): Promise<FooterConfig> {
     instagramLimit:
       typeof f.instagramLimit === "number" ? f.instagramLimit : 6,
     showSocial: f.showSocial ?? true,
+    stickyBackgroundColor: f.stickyBackgroundColor ?? "#08090d",
+    stickyTextColor: f.stickyTextColor ?? "#f8fafc",
+    stickyAccentColor: f.stickyAccentColor ?? "#8b5cf6",
+    stickyLargeText: f.stickyLargeText ?? true,
+    stickyRevealStrength: f.stickyRevealStrength ?? "standard",
   };
 }
 
