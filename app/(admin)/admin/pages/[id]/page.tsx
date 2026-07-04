@@ -484,11 +484,16 @@ function makeBlock(type: BlockType): Block {
       networkShowLabels: true,
       routeStyle: "planning",
       routeProvider: "osrm",
+      routeTravelMode: "driving",
       routePointIds: [],
       routeStartId: "",
       routeEndId: "",
       routeShowAlternatives: true,
       routeShowCards: true,
+      routeShowStopList: true,
+      routeShowMapLinks: true,
+      routeSummaryPosition: "top-left",
+      routeSummaryStyle: "solid",
       routeShowLabels: true,
       routeLineColor: "#6366f1",
       routeInactiveLineColor: "#94a3b8",
@@ -4294,7 +4299,7 @@ function LeafEditor({
               </>
             ) : (block.displayMode ?? "interactive") === "route-planning" ? (
               <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <Field label="Route style">
                     <Select
                       value={block.routeStyle ?? "planning"}
@@ -4332,8 +4337,19 @@ function LeafEditor({
                       value={block.routeProvider ?? "osrm"}
                       onChange={(e) => set({ routeProvider: e.target.value as typeof block.routeProvider })}
                     >
-                      <option value="osrm">OSRM driving route</option>
+                      <option value="osrm">OSRM route</option>
                       <option value="straight">Estimated path only</option>
+                    </Select>
+                  </Field>
+                  <Field label="Travel mode">
+                    <Select
+                      value={block.routeTravelMode ?? "driving"}
+                      onChange={(e) => set({ routeTravelMode: e.target.value as typeof block.routeTravelMode })}
+                      disabled={(block.routeProvider ?? "osrm") !== "osrm"}
+                    >
+                      <option value="driving">Driving</option>
+                      <option value="walking">Walking</option>
+                      <option value="cycling">Cycling</option>
                     </Select>
                   </Field>
                 </div>
@@ -4557,18 +4573,37 @@ function LeafEditor({
                       onChange={(e) => set({ routeEndColor: e.target.value })}
                     />
                   </Field>
-                  {(block.routeStyle ?? "planning") === "basic" && (
-                    <Field label="Stop marker">
-                      <Input
-                        type="color"
-                        value={block.markerColor}
-                        onChange={(e) => set({ markerColor: e.target.value })}
-                      />
-                    </Field>
-                  )}
+                  <Field label="Stop marker">
+                    <Input
+                      type="color"
+                      value={block.markerColor}
+                      onChange={(e) => set({ markerColor: e.target.value })}
+                    />
+                  </Field>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Summary position">
+                    <Select
+                      value={block.routeSummaryPosition ?? "top-left"}
+                      onChange={(e) => set({ routeSummaryPosition: e.target.value as typeof block.routeSummaryPosition })}
+                    >
+                      <option value="top-left">Top left</option>
+                      <option value="top-right">Top right</option>
+                      <option value="bottom-left">Bottom left</option>
+                      <option value="bottom-right">Bottom right</option>
+                    </Select>
+                  </Field>
+                  <Field label="Summary style">
+                    <Select
+                      value={block.routeSummaryStyle ?? "solid"}
+                      onChange={(e) => set({ routeSummaryStyle: e.target.value as typeof block.routeSummaryStyle })}
+                    >
+                      <option value="solid">Solid</option>
+                      <option value="glass">Glass</option>
+                      <option value="minimal">Minimal</option>
+                    </Select>
+                  </Field>
                   <label className="flex h-9 items-center gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -4576,6 +4611,22 @@ function LeafEditor({
                       onChange={(e) => set({ routeShowCards: e.target.checked })}
                     />
                     Show route option buttons
+                  </label>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.routeShowStopList ?? true}
+                      onChange={(e) => set({ routeShowStopList: e.target.checked })}
+                    />
+                    Show numbered stop list
+                  </label>
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.routeShowMapLinks ?? true}
+                      onChange={(e) => set({ routeShowMapLinks: e.target.checked })}
+                    />
+                    Show map app links
                   </label>
                   <label className="flex h-9 items-center gap-2 text-sm">
                     <input

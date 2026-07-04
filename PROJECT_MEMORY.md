@@ -732,6 +732,9 @@ is gitignored):
   markers reuse the interactive map detail popup on desktop hover plus a mobile bottom sheet on tap.
   Follow-up: Route Planning markers now show numeric order directly inside every map dot, including
   start/end/stops, so users can tell first/second/third at a glance.
+  Follow-up: Route Planning now has public route polish controls: numbered stop list, Google/Apple
+  route links, driving/walking/cycling modes, summary position/style controls, and mobile stop cards
+  that pan to a stop and open its detail sheet.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.

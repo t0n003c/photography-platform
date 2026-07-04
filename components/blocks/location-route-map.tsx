@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import maplibregl, { type Map as MapLibreMap, type Marker } from "maplibre-gl";
-import { Clock, Loader2, MapPin, Route, X } from "lucide-react";
+import { Clock, ExternalLink, Loader2, MapPin, Navigation, Route, X } from "lucide-react";
 import type { LeafBlock } from "@/src/lib/blocks";
 import { cn } from "@/src/lib/utils";
 import {
@@ -74,6 +74,81 @@ function formatDistance(meters: number) {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
+type RouteTravelMode = NonNullable<LocationMapBlock["routeTravelMode"]>;
+type RouteSummaryPosition = NonNullable<LocationMapBlock["routeSummaryPosition"]>;
+type RouteSummaryStyle = NonNullable<LocationMapBlock["routeSummaryStyle"]>;
+
+const TRAVEL_MODE_LABEL: Record<RouteTravelMode, string> = {
+  driving: "Driving",
+  walking: "Walking",
+  cycling: "Cycling",
+};
+
+const GOOGLE_TRAVEL_MODE: Record<RouteTravelMode, string> = {
+  driving: "driving",
+  walking: "walking",
+  cycling: "bicycling",
+};
+
+const APPLE_DIR_FLAG: Record<RouteTravelMode, string> = {
+  driving: "d",
+  walking: "w",
+  cycling: "b",
+};
+
+const ESTIMATED_SPEED: Record<RouteTravelMode, number> = {
+  driving: 15,
+  walking: 1.4,
+  cycling: 5,
+};
+
+const SUMMARY_POSITION_CLASS: Record<RouteSummaryPosition, string> = {
+  "top-left": "left-3 top-3",
+  "top-right": "right-3 top-3 items-end",
+  "bottom-left": "bottom-3 left-3",
+  "bottom-right": "bottom-3 right-3 items-end",
+};
+
+function stopPanelPositionClass(summaryPosition: RouteSummaryPosition) {
+  return summaryPosition.endsWith("right") ? "left-3 top-3" : "right-3 top-3";
+}
+
+function routeTravelMode(block: LocationMapBlock): RouteTravelMode {
+  return block.routeTravelMode ?? "driving";
+}
+
+function coordinateText(point: LocationMapPoint) {
+  return `${point.lat},${point.lng}`;
+}
+
+function googleMapsRouteHref(points: LocationMapPoint[], travelMode: RouteTravelMode) {
+  if (points.length < 2) return null;
+  const [origin, ...rest] = points;
+  const destination = rest[rest.length - 1];
+  const waypoints = rest.slice(0, -1);
+  const params = new URLSearchParams({
+    api: "1",
+    origin: coordinateText(origin),
+    destination: coordinateText(destination),
+    travelmode: GOOGLE_TRAVEL_MODE[travelMode],
+  });
+  if (waypoints.length > 0) {
+    params.set("waypoints", waypoints.map(coordinateText).join("|"));
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function appleMapsRouteHref(points: LocationMapPoint[], travelMode: RouteTravelMode) {
+  if (points.length < 2) return null;
+  const [origin, ...destinations] = points;
+  const params = new URLSearchParams({
+    saddr: coordinateText(origin),
+    daddr: destinations.map(coordinateText).join(" to "),
+    dirflg: APPLE_DIR_FLAG[travelMode],
+  });
+  return `https://maps.apple.com/?${params.toString()}`;
+}
+
 function metersBetween(a: LocationMapPoint, b: LocationMapPoint) {
   const radius = 6371000;
   const lat1 = (a.lat * Math.PI) / 180;
@@ -86,7 +161,11 @@ function metersBetween(a: LocationMapPoint, b: LocationMapPoint) {
   return 2 * radius * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-function estimatedRoute(points: LocationMapPoint[], id = "estimated-0"): RouteOption {
+function estimatedRoute(
+  points: LocationMapPoint[],
+  travelMode: RouteTravelMode,
+  id = "estimated-0",
+): RouteOption {
   const coordinates = points.map((point) => [point.lng, point.lat] as [number, number]);
   const distance = points.slice(1).reduce(
     (sum, point, index) => sum + metersBetween(points[index], point),
@@ -96,7 +175,7 @@ function estimatedRoute(points: LocationMapPoint[], id = "estimated-0"): RouteOp
     id,
     coordinates,
     distance,
-    duration: distance / 15,
+    duration: distance / ESTIMATED_SPEED[travelMode],
     source: "estimated",
   };
 }
@@ -107,6 +186,8 @@ function fitCoordinates(
   reduceMotion: boolean,
   isMobile: boolean,
   showCards: boolean,
+  showStopList: boolean,
+  summaryPosition: RouteSummaryPosition,
 ) {
   if (coordinates.length === 0) return;
   if (coordinates.length === 1) {
@@ -119,10 +200,17 @@ function fitCoordinates(
   }
   const bounds = new maplibregl.LngLatBounds();
   coordinates.forEach((coordinate) => bounds.extend(coordinate));
+  const summaryOnLeft = summaryPosition.endsWith("left");
+  const summaryOnRight = summaryPosition.endsWith("right");
   map.fitBounds(bounds, {
     padding: isMobile
-      ? { top: 72, right: 48, bottom: showCards ? 118 : 64, left: 48 }
-      : { top: 84, right: 76, bottom: 86, left: showCards ? 210 : 76 },
+      ? { top: showStopList ? 128 : 72, right: 48, bottom: showCards ? 118 : 64, left: 48 }
+      : {
+          top: showStopList ? 118 : 84,
+          right: showStopList || (showCards && summaryOnRight) ? 220 : 76,
+          bottom: showCards && summaryPosition.startsWith("bottom") ? 118 : 86,
+          left: showCards && summaryOnLeft ? 220 : 76,
+        },
     maxZoom: 13,
     duration: reduceMotion ? 0 : 750,
   });
@@ -172,6 +260,21 @@ function resolveRouteStops(block: LocationMapBlock, mappedPoints: LocationMapPoi
   return [start, ...stopsBetween, end];
 }
 
+function routeMarkerColor(block: LocationMapBlock, index: number, total: number) {
+  const isPlanning = (block.routeStyle ?? "planning") === "planning";
+  if (!isPlanning) return block.markerColor;
+  if (index === 0) return block.routeStartColor;
+  if (index === total - 1) return block.routeEndColor;
+  return block.markerColor;
+}
+
+function routeStopRole(block: LocationMapBlock, index: number, total: number) {
+  if ((block.routeStyle ?? "planning") !== "planning") return "Route stop";
+  if (index === 0) return "Start";
+  if (index === total - 1) return "End";
+  return "Stop between";
+}
+
 function addRouteMarkers({
   map,
   routeStops,
@@ -188,8 +291,6 @@ function addRouteMarkers({
   popupRoots: Root[];
 }) {
   return routeStops.map((point, index) => {
-    const isPlanning = (block.routeStyle ?? "planning") === "planning";
-    const isStart = index === 0;
     const isEnd = index === routeStops.length - 1;
     const el = document.createElement("button");
     el.type = "button";
@@ -200,11 +301,7 @@ function addRouteMarkers({
     const dot = document.createElement("span");
     dot.className =
       "flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold text-white shadow-lg";
-    dot.style.background = isPlanning
-      ? isStart
-        ? block.routeStartColor
-        : block.routeEndColor
-      : block.markerColor;
+    dot.style.background = routeMarkerColor(block, index, routeStops.length);
     dot.textContent = String(index + 1);
     el.append(dot);
 
@@ -212,7 +309,7 @@ function addRouteMarkers({
       const label = document.createElement("span");
       label.className = cn(
         "pointer-events-none absolute left-1/2 whitespace-nowrap rounded-md border bg-[hsl(var(--background))]/95 px-2 py-1 text-xs font-medium text-[hsl(var(--foreground))] shadow-sm backdrop-blur",
-        isPlanning && isEnd
+        (block.routeStyle ?? "planning") === "planning" && isEnd
           ? "top-6 -translate-x-1/2"
           : "bottom-6 -translate-x-1/2",
       );
@@ -268,12 +365,16 @@ function RouteChoiceButton({
   index,
   isActive,
   isFastest,
+  summaryStyle,
+  travelMode,
   onClick,
 }: {
   route: RouteOption;
   index: number;
   isActive: boolean;
   isFastest: boolean;
+  summaryStyle: RouteSummaryStyle;
+  travelMode: RouteTravelMode;
   onClick: () => void;
 }) {
   return (
@@ -282,11 +383,21 @@ function RouteChoiceButton({
       onClick={onClick}
       className={cn(
         "inline-flex min-h-9 shrink-0 items-center justify-start gap-3 rounded-md border px-3 py-2 text-left text-sm font-medium shadow-sm transition",
-        isActive
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-[hsl(var(--background))]/90 text-[hsl(var(--foreground))] backdrop-blur hover:bg-[hsl(var(--muted))]",
+        summaryStyle === "solid" &&
+          (isActive
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-border bg-[hsl(var(--background))]/90 text-[hsl(var(--foreground))] backdrop-blur hover:bg-[hsl(var(--muted))]"),
+        summaryStyle === "glass" &&
+          (isActive
+            ? "border-primary/70 bg-primary/85 text-primary-foreground backdrop-blur-md"
+            : "border-white/50 bg-[hsl(var(--background))]/70 text-[hsl(var(--foreground))] backdrop-blur-md hover:bg-[hsl(var(--background))]/90"),
+        summaryStyle === "minimal" &&
+          (isActive
+            ? "border-primary/60 bg-[hsl(var(--background))]/90 text-[hsl(var(--foreground))] ring-1 ring-primary/30"
+            : "border-transparent bg-[hsl(var(--background))]/70 text-[hsl(var(--foreground))] shadow-none backdrop-blur hover:bg-[hsl(var(--background))]/95"),
       )}
     >
+      <span className="text-xs opacity-80">{TRAVEL_MODE_LABEL[travelMode]}</span>
       <span className="flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5" aria-hidden="true" />
         {formatDuration(route.duration)}
@@ -323,6 +434,96 @@ function RouteChoiceButton({
   );
 }
 
+function RoutePlanPanel({
+  block,
+  routeStops,
+  variant,
+  onSelectStop,
+}: {
+  block: LocationMapBlock;
+  routeStops: LocationMapPoint[];
+  variant: "desktop" | "mobile";
+  onSelectStop: (point: LocationMapPoint) => void;
+}) {
+  const showStopList = block.routeShowStopList ?? true;
+  const showMapLinks = block.routeShowMapLinks ?? true;
+  const travelMode = routeTravelMode(block);
+  const googleHref = googleMapsRouteHref(routeStops, travelMode);
+  const appleHref = appleMapsRouteHref(routeStops, travelMode);
+
+  if (!showStopList && !showMapLinks) return null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-[hsl(var(--background))]/95 text-[hsl(var(--foreground))] shadow-xl backdrop-blur-md",
+        variant === "desktop" ? "hidden w-72 flex-col gap-3 p-3 sm:flex" : "space-y-2 p-2 sm:hidden",
+      )}
+    >
+      {showStopList && (
+        <ol
+          className={cn(
+            variant === "desktop" ? "space-y-1.5" : "flex gap-2 overflow-x-auto pb-1",
+          )}
+          aria-label="Route stops"
+        >
+          {routeStops.map((point, index) => (
+            <li key={`${point.id}-${index}`} className={variant === "mobile" ? "min-w-[9rem]" : undefined}>
+              <button
+                type="button"
+                onClick={() => onSelectStop(point)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-border hover:bg-[hsl(var(--muted))]",
+                  variant === "mobile" && "bg-[hsl(var(--background))]/80 shadow-sm",
+                )}
+              >
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow"
+                  style={{ background: routeMarkerColor(block, index, routeStops.length) }}
+                >
+                  {index + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    {routeStopRole(block, index, routeStops.length)}
+                  </span>
+                  <span className="block truncate text-sm font-medium">{point.name}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {showMapLinks && (googleHref || appleHref) && (
+        <div className="grid grid-cols-2 gap-2">
+          {googleHref && (
+            <a
+              href={googleHref}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
+            >
+              <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
+              Google
+            </a>
+          )}
+          {appleHref && (
+            <a
+              href={appleHref}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border bg-[hsl(var(--background))] px-2 text-xs font-medium shadow-sm transition hover:bg-[hsl(var(--muted))]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              Apple
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LocationRouteMap({
   block,
   points,
@@ -352,6 +553,10 @@ export function LocationRouteMap({
     [block, mappedPoints],
   );
   const showCards = block.routeShowCards ?? true;
+  const showStopList = block.routeShowStopList ?? true;
+  const summaryPosition = block.routeSummaryPosition ?? "top-left";
+  const summaryStyle = block.routeSummaryStyle ?? "solid";
+  const travelMode = routeTravelMode(block);
 
   useEffect(() => {
     setIsMounted(true);
@@ -423,7 +628,7 @@ export function LocationRouteMap({
 
     setSelectedIndex(0);
     if ((block.routeStyle ?? "planning") === "basic" || block.routeProvider === "straight") {
-      setRoutes([estimatedRoute(routeStops)]);
+      setRoutes([estimatedRoute(routeStops, travelMode)]);
       setIsLoading(false);
       return;
     }
@@ -434,7 +639,7 @@ export function LocationRouteMap({
     const osrmCoordinates = routeStops
       .map((point) => `${point.lng},${point.lat}`)
       .join(";");
-    const url = `https://router.project-osrm.org/route/v1/driving/${osrmCoordinates}?overview=full&geometries=geojson&alternatives=${alternatives ? "true" : "false"}`;
+    const url = `https://router.project-osrm.org/route/v1/${travelMode}/${osrmCoordinates}?overview=full&geometries=geojson&alternatives=${alternatives ? "true" : "false"}`;
 
     async function loadRoutes() {
       try {
@@ -459,9 +664,9 @@ export function LocationRouteMap({
             };
           })
           .filter((route): route is RouteOption => Boolean(route));
-        setRoutes(nextRoutes.length > 0 ? nextRoutes : [estimatedRoute(routeStops)]);
+        setRoutes(nextRoutes.length > 0 ? nextRoutes : [estimatedRoute(routeStops, travelMode)]);
       } catch {
-        if (!controller.signal.aborted) setRoutes([estimatedRoute(routeStops)]);
+        if (!controller.signal.aborted) setRoutes([estimatedRoute(routeStops, travelMode)]);
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
       }
@@ -474,6 +679,7 @@ export function LocationRouteMap({
     block.routeShowAlternatives,
     block.routeStyle,
     routeStops,
+    travelMode,
   ]);
 
   useEffect(() => {
@@ -610,13 +816,35 @@ export function LocationRouteMap({
       routeStops.map((point) => [point.lng, point.lat] as [number, number]);
     if (!map || coordinates.length < 2) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const fit = () => fitCoordinates(map, coordinates, reduceMotion, isMobile, showCards);
+    const fit = () =>
+      fitCoordinates(
+        map,
+        coordinates,
+        reduceMotion,
+        isMobile,
+        showCards,
+        showStopList,
+        summaryPosition,
+      );
     if (map.isStyleLoaded()) fit();
     else map.once("load", fit);
     return () => {
       map.off("load", fit);
     };
-  }, [isMobile, routeStops, routes, selectedIndex, showCards]);
+  }, [isMobile, routeStops, routes, selectedIndex, showCards, showStopList, summaryPosition]);
+
+  const focusStop = (point: LocationMapPoint) => {
+    const map = mapRef.current;
+    if (map) {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      map.easeTo({
+        center: [point.lng, point.lat],
+        zoom: Math.max(map.getZoom(), isMobile ? 8.5 : 10),
+        duration: reduceMotion ? 0 : 420,
+      });
+    }
+    if (isMobile) setMobilePoint(point);
+  };
 
   if (routeStops.length < 2) {
     return (
@@ -639,6 +867,22 @@ export function LocationRouteMap({
           Loading map
         </div>
       )}
+      <div className={cn("absolute z-10 hidden sm:block", stopPanelPositionClass(summaryPosition))}>
+        <RoutePlanPanel
+          block={block}
+          routeStops={routeStops}
+          variant="desktop"
+          onSelectStop={focusStop}
+        />
+      </div>
+      <div className="absolute inset-x-3 top-3 z-10 sm:hidden">
+        <RoutePlanPanel
+          block={block}
+          routeStops={routeStops}
+          variant="mobile"
+          onSelectStop={focusStop}
+        />
+      </div>
       {isMobile && mobilePoint && (
         <div className="absolute inset-x-3 bottom-16 z-20 rounded-xl border bg-[hsl(var(--background))] shadow-2xl sm:hidden">
           <button
@@ -654,7 +898,10 @@ export function LocationRouteMap({
       )}
       {showCards && routes.length > 0 && (
         <>
-          <div className="absolute left-3 top-3 z-10 hidden max-w-[calc(100%-1.5rem)] flex-col gap-2 sm:flex">
+          <div className={cn(
+            "absolute z-10 hidden max-w-[calc(100%-1.5rem)] flex-col gap-2 sm:flex",
+            SUMMARY_POSITION_CLASS[summaryPosition],
+          )}>
             {routes.map((route, index) => (
               <RouteChoiceButton
                 key={route.id}
@@ -662,6 +909,8 @@ export function LocationRouteMap({
                 index={index}
                 isActive={index === selectedIndex}
                 isFastest={(block.routeStyle ?? "planning") === "planning" && index === 0}
+                summaryStyle={summaryStyle}
+                travelMode={travelMode}
                 onClick={() => setSelectedIndex(index)}
               />
             ))}
@@ -674,6 +923,8 @@ export function LocationRouteMap({
                 index={index}
                 isActive={index === selectedIndex}
                 isFastest={(block.routeStyle ?? "planning") === "planning" && index === 0}
+                summaryStyle={summaryStyle}
+                travelMode={travelMode}
                 onClick={() => setSelectedIndex(index)}
               />
             ))}
