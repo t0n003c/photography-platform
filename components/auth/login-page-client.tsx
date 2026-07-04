@@ -50,9 +50,11 @@ function errorMessage(error: unknown): string | null {
 export function LoginPageClient({
   siteName,
   loginDesign,
+  loginPhotoUrl,
 }: {
   siteName: string;
   loginDesign: LoginDesignConfig;
+  loginPhotoUrl?: string | null;
 }) {
   const router = useRouter();
   const session = useSession();
@@ -275,6 +277,7 @@ export function LoginPageClient({
         design={loginDesign}
         siteName={siteName}
         description={description}
+        photoUrl={loginPhotoUrl}
       >
         <div className="space-y-4">
           {error && (

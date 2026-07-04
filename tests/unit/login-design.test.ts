@@ -12,7 +12,7 @@ describe("login design config", () => {
   it("keeps supported visual settings and rejects invalid enums", () => {
     expect(
       normalizeLoginDesign({
-        layout: "gradient-card",
+        layout: "split-photo",
         headline: "Studio access",
         subtitle: "Welcome back",
         showBrand: false,
@@ -22,17 +22,26 @@ describe("login design config", () => {
         gradientFrom: "#ff0000",
         gradientTo: "#0000ff",
         cardAccent: "#00ff00",
+        hoverColor: "#ffaa00",
         primaryLabel: "Enter",
         passkeyLabel: "Use passkey",
+        photoId: "photo-login",
+        photoUrl: "https://example.com/login.jpg",
+        photoAlt: "Portrait session",
+        photoSide: "right",
       }),
     ).toMatchObject({
-      layout: "gradient-card",
+      layout: "split-photo",
       headline: "Studio access",
       showBrand: false,
       showIconRow: true,
       backgroundMode: "soft-gradient",
       gradientFrom: "#ff0000",
+      hoverColor: "#ffaa00",
       passkeyLabel: "Use passkey",
+      photoId: "photo-login",
+      photoUrl: "https://example.com/login.jpg",
+      photoSide: "right",
     });
 
     expect(

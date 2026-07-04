@@ -9,11 +9,15 @@ export default async function LoginPage() {
     getSiteSettings(),
     getLoginConfig(),
   ]);
+  const loginPhotoUrl =
+    loginDesign.photoUrl.trim() ||
+    (loginDesign.photoId ? "/api/v1/media/login-photo" : null);
 
   return (
     <LoginPageClient
       siteName={settings.siteTitle}
       loginDesign={loginDesign}
+      loginPhotoUrl={loginPhotoUrl}
     />
   );
 }

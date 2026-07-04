@@ -15,14 +15,19 @@ export function LoginShell({
   description,
   children,
   preview = false,
+  photoUrl,
 }: {
   design?: LoginDesignConfig;
   siteName: string;
   description: string;
   children: React.ReactNode;
   preview?: boolean;
+  photoUrl?: string | null;
 }) {
-  const isReference = design.layout === "gradient-card";
+  const isReference =
+    design.layout === "gradient-card" || design.layout === "split-photo";
+  const isSplit = design.layout === "split-photo";
+  const resolvedPhotoUrl = photoUrl || design.photoUrl.trim() || null;
   const background =
     design.backgroundMode === "custom"
       ? design.backgroundColor
@@ -34,6 +39,7 @@ export function LoginShell({
     "--login-from": design.gradientFrom,
     "--login-to": design.gradientTo,
     "--login-accent": design.cardAccent,
+    "--login-hover": design.hoverColor,
     background,
   } as CSSPropertiesWithVars;
 
@@ -54,19 +60,59 @@ export function LoginShell({
       )}
       <div
         className={cn(
-          "relative z-10 w-full max-w-sm",
+          "relative z-10 w-full",
+          isSplit ? "max-w-5xl" : "max-w-sm",
           isReference &&
             "rounded-[2rem] border border-white/25 bg-white/82 p-1 shadow-[0_28px_90px_rgb(15_23_42/0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-950/72",
         )}
       >
         <div
           className={cn(
-            "login-card overflow-hidden rounded-xl border bg-[hsl(var(--background))]",
+            "login-card relative isolate overflow-hidden rounded-xl border bg-[hsl(var(--background))]",
             isReference
               ? "login-card--reference rounded-[1.75rem] border-white/40 bg-white/92 shadow-inner dark:border-white/10 dark:bg-neutral-950/88"
               : "shadow-sm",
+            isSplit && "grid lg:grid-cols-2",
           )}
         >
+          {isReference && (
+            <div className="login-card-hover-color pointer-events-none absolute inset-0 z-0" />
+          )}
+          {isSplit && (
+            <div
+              className={cn(
+                "relative z-10 min-h-[240px] overflow-hidden bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] lg:min-h-[620px]",
+                design.photoSide === "right" && "lg:order-2",
+              )}
+            >
+              {resolvedPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={resolvedPhotoUrl}
+                  alt={design.photoAlt || "Login photograph"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full min-h-[240px] items-center justify-center p-8 text-center text-white lg:min-h-[620px]">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
+                      {siteName}
+                    </p>
+                    <p className="mt-4 text-3xl font-semibold leading-tight">
+                      Secure studio access
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/34 via-black/0 to-black/16" />
+            </div>
+          )}
+          <div
+            className={cn(
+              "relative z-10 flex min-w-0 flex-col",
+              isSplit && "justify-center",
+            )}
+          >
           <div
             className={cn(
               "border-b p-5 text-center",
@@ -113,6 +159,7 @@ export function LoginShell({
             )}
           </div>
           <div className={cn("p-5", isReference && "p-6")}>{children}</div>
+          </div>
         </div>
       </div>
     </section>
@@ -120,16 +167,16 @@ export function LoginShell({
 }
 
 export function loginControlClass(design: LoginDesignConfig) {
-  if (design.layout !== "gradient-card") return undefined;
+  if (design.layout === "simple") return undefined;
   return "h-11 rounded-xl border-white/60 bg-white/72 shadow-inner transition focus:bg-white dark:border-white/10 dark:bg-white/10 dark:focus:bg-white/15";
 }
 
 export function loginPrimaryButtonClass(design: LoginDesignConfig) {
-  if (design.layout !== "gradient-card") return undefined;
+  if (design.layout === "simple") return undefined;
   return "h-11 rounded-xl bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] text-white shadow-[0_14px_30px_rgb(15_23_42/0.22)] transition-transform hover:-translate-y-0.5 hover:opacity-100 active:translate-y-0";
 }
 
 export function loginSecondaryButtonClass(design: LoginDesignConfig) {
-  if (design.layout !== "gradient-card") return undefined;
+  if (design.layout === "simple") return undefined;
   return "h-11 rounded-xl border-white/60 bg-white/60 shadow-sm backdrop-blur hover:bg-white/82 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15";
 }

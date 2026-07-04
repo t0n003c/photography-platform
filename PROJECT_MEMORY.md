@@ -693,11 +693,13 @@ is gitignored):
   the Footer design card are now collapsible and closed by default, so the layout controls are easier
   to scan without changing the underlying config contract.
   Login design follow-up: Design now has a collapsed-by-default Login card stored in
-  `page_config.config.login` on the default global config. It is visual-only: layout (`simple`
-  or 21st.dev-inspired `gradient-card`), headline/subtitle, background mode/colors, accent,
+  `page_config.config.login` on the default global config. It is visual-only: layout (`simple`,
+  21st.dev-inspired `gradient-card`, or `split-photo`), headline/subtitle, background
+  mode/colors, accent, hover color wash, side photo URL/library photo, photo side/alt text,
   site-name/icon-row toggles, and button labels. `/login` is now a server wrapper that loads
   site settings + login design and passes them into the client auth component; password, passkey,
-  biometric, TOTP, and Turnstile behavior remain unchanged.
+  biometric, TOTP, and Turnstile behavior remain unchanged. A selected library login photo is
+  served through `/api/v1/media/login-photo`, scoped only to the configured login photo.
   Settings tab follow-up: General, Branding, Email, and Integrations are now collapsible sections.
   They default open on desktop and closed on mobile to reduce narrow-screen scrolling.
   Pages editor follow-up: Contact form is now a real page-builder block option. It reuses the

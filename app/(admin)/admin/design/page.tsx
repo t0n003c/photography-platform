@@ -8,6 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { LivePreview } from "@/components/admin/live-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
+import { PhotoPicker, type PhotoOption } from "@/components/admin/photo-picker";
 import {
   LoginShell,
   loginControlClass,
@@ -21,6 +22,7 @@ import {
   normalizeLoginDesign,
   type LoginDesignConfig,
 } from "@/src/lib/login-design";
+import type { PhotoDTO } from "@/src/db/queries/photos";
 
 type Scope =
   | "home"
@@ -57,6 +59,21 @@ interface PageConfig {
 
 function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
+}
+
+function toPhotoOption(photo: PhotoDTO): PhotoOption {
+  const webp = photo.variants
+    .filter((variant) => variant.format === "webp")
+    .sort((a, b) => a.width - b.width);
+  const thumb =
+    webp.find((variant) => variant.sizeBucket === "thumb") ??
+    webp[0] ??
+    photo.variants[0];
+  return {
+    id: photo.id,
+    label: photo.altText || "Untitled photo",
+    thumbUrl: thumb?.url ?? null,
+  };
 }
 
 const SCOPE_LABEL: Record<Scope, string> = {
@@ -470,6 +487,7 @@ function LoginDesignCard() {
   const [isDefault, setIsDefault] = useState(false);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
   const [siteTitle, setSiteTitle] = useState("Your studio");
+  const [photos, setPhotos] = useState<PhotoOption[]>([]);
   const [s, setS] = useState<LoginDesignConfig>(DEFAULT_LOGIN_DESIGN);
 
   useEffect(() => {
@@ -479,10 +497,14 @@ function LoginDesignCard() {
       api
         .get<{ data: { siteTitle: string } }>("/api/v1/admin/settings")
         .catch(() => ({ data: { siteTitle: "Your studio" } })),
+      api
+        .get<{ data: PhotoDTO[] }>("/api/v1/admin/photos?limit=80")
+        .catch(() => ({ data: [] as PhotoDTO[] })),
     ])
-      .then(([cfgRes, setRes]) => {
+      .then(([cfgRes, setRes, photoRes]) => {
         if (!active) return;
         setSiteTitle(setRes.data.siteTitle || "Your studio");
+        setPhotos(photoRes.data.map(toPhotoOption));
         const globals = cfgRes.data.filter((c) => c.scope === "global");
         const pick = globals.find((c) => c.isDefault) ?? globals[0] ?? null;
         if (!pick) return;
@@ -556,6 +578,7 @@ function LoginDesignCard() {
                 >
                   <option value="simple">Simple card</option>
                   <option value="gradient-card">Gradient card</option>
+                  <option value="split-photo">Photo + login</option>
                 </Select>
               </Field>
               <Field label="Background">
@@ -619,7 +642,7 @@ function LoginDesignCard() {
                   type="color"
                   value={s.gradientFrom}
                   onChange={(e) => setS({ ...s, gradientFrom: e.target.value })}
-                  disabled={s.backgroundMode === "default" && s.layout !== "gradient-card"}
+                  disabled={s.backgroundMode === "default" && s.layout === "simple"}
                 />
               </Field>
               <Field label="Gradient to">
@@ -627,7 +650,7 @@ function LoginDesignCard() {
                   type="color"
                   value={s.gradientTo}
                   onChange={(e) => setS({ ...s, gradientTo: e.target.value })}
-                  disabled={s.backgroundMode === "default" && s.layout !== "gradient-card"}
+                  disabled={s.backgroundMode === "default" && s.layout === "simple"}
                 />
               </Field>
               <Field label="Accent">
@@ -637,7 +660,57 @@ function LoginDesignCard() {
                   onChange={(e) => setS({ ...s, cardAccent: e.target.value })}
                 />
               </Field>
+              <Field label="Hover color">
+                <Input
+                  type="color"
+                  value={s.hoverColor}
+                  onChange={(e) => setS({ ...s, hoverColor: e.target.value })}
+                  disabled={s.layout === "simple"}
+                />
+              </Field>
             </div>
+
+            {s.layout === "split-photo" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Photo side">
+                    <Select
+                      value={s.photoSide}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          photoSide: e.target.value as LoginDesignConfig["photoSide"],
+                        })
+                      }
+                    >
+                      <option value="left">Photo left</option>
+                      <option value="right">Photo right</option>
+                    </Select>
+                  </Field>
+                  <Field label="Photo alt text">
+                    <Input
+                      value={s.photoAlt}
+                      onChange={(e) => setS({ ...s, photoAlt: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Custom photo URL">
+                  <Input
+                    value={s.photoUrl}
+                    onChange={(e) => setS({ ...s, photoUrl: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </Field>
+                <Field label="Library photo">
+                  <PhotoPicker
+                    photos={photos}
+                    value={s.photoId}
+                    onChange={(photoId) => setS({ ...s, photoId })}
+                    containerClassName="max-h-48"
+                  />
+                </Field>
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex h-9 items-center gap-2 text-sm">
@@ -670,7 +743,7 @@ function LoginDesignCard() {
             <p className="mb-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))]">
               Live preview
             </p>
-            <LoginDesignPreview s={s} siteTitle={siteTitle} />
+            <LoginDesignPreview s={s} siteTitle={siteTitle} photos={photos} />
           </div>
         </div>
       )}
@@ -681,16 +754,26 @@ function LoginDesignCard() {
 function LoginDesignPreview({
   s,
   siteTitle,
+  photos,
 }: {
   s: LoginDesignConfig;
   siteTitle: string;
+  photos: PhotoOption[];
 }) {
   const inputClass = loginControlClass(s);
   const primaryButtonClass = loginPrimaryButtonClass(s);
   const secondaryButtonClass = loginSecondaryButtonClass(s);
+  const pickedPhoto = photos.find((photo) => photo.id === s.photoId);
+  const previewPhotoUrl = s.photoUrl.trim() || pickedPhoto?.thumbUrl || null;
 
   return (
-    <LoginShell design={s} siteName={siteTitle} description={s.subtitle} preview>
+    <LoginShell
+      design={s}
+      siteName={siteTitle}
+      description={s.subtitle}
+      preview
+      photoUrl={previewPhotoUrl}
+    >
       <div className="space-y-4">
         <Field label="Email">
           <Input value="owner@example.com" readOnly className={inputClass} />
