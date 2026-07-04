@@ -1292,6 +1292,11 @@ is gitignored):
   still animate by falling back to a multi-word loop instead of silently rendering a static
   final word. The typed highlight no longer reserves the widest typed word; the black mark now
   shrinks and grows with the currently typed characters like the reference.
+  Pages About block follow-up: ToraMochie/Reflector About Elements is represented as a new
+  Pages-tab `about` block, not a banner/team variant. It has Simple, Modern, and Classic layouts
+  based on the reference `about.css` / `about.js`: Josefin Sans typography, Reflector
+  a-btn-2/a-btn-6 CTA styles, Modern sticky portrait/contact detail composition, and Classic
+  staggered three-image collage.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

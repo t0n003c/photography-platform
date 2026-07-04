@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import {
+  Josefin_Sans,
   Playfair_Display,
   Cormorant_Garamond,
   Montserrat,
@@ -16,11 +17,12 @@ import "./globals.css";
 
 // Self-hosted display fonts for the page builder's heading/subheading blocks.
 // Loaded once here; selectable per block via CSS classes in globals.css.
+const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin", display: "swap" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-cormorant", display: "swap" });
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
-const fontVars = `${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${spaceGrotesk.variable}`;
+const fontVars = `${josefin.variable} ${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${spaceGrotesk.variable}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();

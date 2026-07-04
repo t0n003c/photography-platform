@@ -90,7 +90,7 @@ const newBlockId = () =>
 
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
+  "heading", "subheading", "richtext", "image", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "locationMap", "scrollShowcase", "instagram", "columns",
 ];
@@ -119,6 +119,14 @@ function makeBookSliderPage(index = 0) {
     caption: "",
     linkLabel: "",
     linkHref: "",
+  };
+}
+
+function makeAboutLink(label = "Link", href = "#") {
+  return {
+    id: newBlockId(),
+    label,
+    href,
   };
 }
 
@@ -301,6 +309,47 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
+    case "about": return {
+      id,
+      type,
+      layout: "simple",
+      sectionEyebrow: "ABOUT",
+      sectionTitle: "SIMPLE",
+      eyebrow: "",
+      headline: "HI, I'M REFLECTOR",
+      body:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices. Ut mollis vel felis in sollicitudin.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in. Nam ac nunc sed dui semper vestibulum nec in nisi.",
+      quote: "Cum sociis natoque penatibus et magnis disrient",
+      ctaLabel: "learn more",
+      ctaHref: "/about",
+      primaryPhotoId: null,
+      secondaryPhotoId: null,
+      tertiaryPhotoId: null,
+      contactTitle: "CONTACT",
+      address: "231 Main Street Chicago, IL",
+      phoneLabel: "Ph:",
+      phoneNumber: "3122299000",
+      facebookUrl: "",
+      twitterUrl: "",
+      instagramUrl: "",
+      pressTitle: "PRESS",
+      pressLinks: [
+        makeAboutLink("Shoot Beyond like never before", "#"),
+        makeAboutLink("Shoot Beyond like never before", "#"),
+        makeAboutLink("How to make best photo", "#"),
+      ],
+      awardsTitle: "AWARDS",
+      awardLinks: [
+        makeAboutLink("International Photography Award", "#"),
+        makeAboutLink("The Good Design Award", "#"),
+      ],
+      collaboratorsTitle: "COLLABORATORS",
+      collaboratorsText:
+        "The New York Times, Apple, Wired, Cosmopolitan, The Atlantic, The Undefeated, Fast Company, Washington Post, Slate, Texas Monthly Magazine, Red Music Academy, LA Magazine.",
+      showContactForm: true,
+      contactFormTitle: "CONTACT ME",
+      submitLabel: "Send",
+    };
     case "imageComparison": return {
       id,
       type,
@@ -882,6 +931,8 @@ function blockSummary(block: Block): string {
         block.comparisonOrientation === "vertical" ? "Vertical" : "Horizontal";
       return `${comparisonKind} · ${block.leftLabel || "Before"} / ${block.rightLabel || "After"}`;
     }
+    case "about":
+      return `${block.layout} · ${block.headline || block.sectionTitle || "About"}`;
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
@@ -2578,6 +2629,300 @@ function LeafEditor({
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
         </div>
       );
+    case "about": {
+      const layout = block.layout ?? "simple";
+      const pressLinks = block.pressLinks ?? [];
+      const awardLinks = block.awardLinks ?? [];
+      const updateLink = (
+        key: "pressLinks" | "awardLinks",
+        index: number,
+        patch: Partial<(typeof pressLinks)[number]>,
+      ) => {
+        const links = key === "pressLinks" ? pressLinks : awardLinks;
+        set({
+          [key]: links.map((link, i) =>
+            i === index ? { ...link, ...patch } : link,
+          ),
+        } as Partial<LeafBlock>);
+      };
+      const removeLink = (key: "pressLinks" | "awardLinks", index: number) => {
+        const links = key === "pressLinks" ? pressLinks : awardLinks;
+        set({ [key]: links.filter((_, i) => i !== index) } as Partial<LeafBlock>);
+      };
+      const addLink = (key: "pressLinks" | "awardLinks") => {
+        const links = key === "pressLinks" ? pressLinks : awardLinks;
+        set({ [key]: [...links, makeAboutLink("Link", "#")] } as Partial<LeafBlock>);
+      };
+      const renderLinks = (key: "pressLinks" | "awardLinks", links: typeof pressLinks) => (
+        <div className="space-y-2">
+          {links.map((link, index) => (
+            <div key={link.id} className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                value={link.label}
+                onChange={(e) => updateLink(key, index, { label: e.target.value })}
+                placeholder="Label"
+              />
+              <Input
+                value={link.href}
+                onChange={(e) => updateLink(key, index, { href: e.target.value })}
+                placeholder="/about or https://..."
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeLink(key, index)}
+                aria-label="Remove link"
+                className="h-9 w-9"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => addLink(key)}
+            className="w-full justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add link
+          </Button>
+        </div>
+      );
+
+      return (
+        <div className="space-y-3">
+          <SettingsGroup title="Layout">
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Field label="Style">
+                <Select
+                  value={layout}
+                  onChange={(e) => {
+                    const next = e.target.value as typeof block.layout;
+                    set({
+                      layout: next,
+                      sectionTitle:
+                        next === "modern"
+                          ? "MODERN"
+                          : next === "classic"
+                            ? "CLASSIC"
+                            : "SIMPLE",
+                      headline:
+                        next === "modern"
+                          ? "ABOUT ME"
+                          : next === "classic"
+                            ? "GET TO KNOW ME BETTER"
+                            : "HI, I'M REFLECTOR",
+                      eyebrow: next === "classic" ? "GET TO KNOW ME" : "",
+                      ctaLabel: next === "classic" ? "CONTACT US" : "learn more",
+                    });
+                  }}
+                >
+                  <option value="simple">Simple</option>
+                  <option value="modern">Modern</option>
+                  <option value="classic">Classic</option>
+                </Select>
+              </Field>
+              <Field label="Top label">
+                <Input
+                  value={block.sectionEyebrow ?? ""}
+                  onChange={(e) => set({ sectionEyebrow: e.target.value })}
+                />
+              </Field>
+              <Field label="Top title">
+                <Input
+                  value={block.sectionTitle ?? ""}
+                  onChange={(e) => set({ sectionTitle: e.target.value })}
+                />
+              </Field>
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title="Text">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Small label">
+                <Input
+                  value={block.eyebrow ?? ""}
+                  onChange={(e) => set({ eyebrow: e.target.value })}
+                  placeholder={layout === "classic" ? "GET TO KNOW ME" : ""}
+                />
+              </Field>
+              <Field label="Headline">
+                <Input
+                  value={block.headline ?? ""}
+                  onChange={(e) => set({ headline: e.target.value })}
+                />
+              </Field>
+            </div>
+            {layout === "classic" && (
+              <Field label="Quote">
+                <Input
+                  value={block.quote ?? ""}
+                  onChange={(e) => set({ quote: e.target.value })}
+                />
+              </Field>
+            )}
+            <Field label="Body text">
+              <Textarea
+                rows={5}
+                value={block.body ?? ""}
+                onChange={(e) => set({ body: e.target.value })}
+              />
+            </Field>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Button label">
+                <Input
+                  value={block.ctaLabel ?? ""}
+                  onChange={(e) => set({ ctaLabel: e.target.value })}
+                />
+              </Field>
+              <Field label="Button link">
+                <Input
+                  value={block.ctaHref ?? ""}
+                  onChange={(e) => set({ ctaHref: e.target.value })}
+                />
+              </Field>
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title="Photos">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label={layout === "classic" ? "Photo 1" : "Portrait photo"}>
+                <PhotoPicker
+                  photos={photos}
+                  value={block.primaryPhotoId ?? null}
+                  onChange={(photoId) => set({ primaryPhotoId: photoId })}
+                  containerClassName="max-h-64"
+                />
+              </Field>
+              {layout === "classic" && (
+                <>
+                  <Field label="Photo 2">
+                    <PhotoPicker
+                      photos={photos}
+                      value={block.secondaryPhotoId ?? null}
+                      onChange={(photoId) => set({ secondaryPhotoId: photoId })}
+                      containerClassName="max-h-64"
+                    />
+                  </Field>
+                  <Field label="Photo 3">
+                    <PhotoPicker
+                      photos={photos}
+                      value={block.tertiaryPhotoId ?? null}
+                      onChange={(photoId) => set({ tertiaryPhotoId: photoId })}
+                      containerClassName="max-h-64"
+                    />
+                  </Field>
+                </>
+              )}
+            </div>
+          </SettingsGroup>
+
+          {layout === "modern" && (
+            <SettingsGroup title="Modern details">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Contact title">
+                  <Input
+                    value={block.contactTitle ?? ""}
+                    onChange={(e) => set({ contactTitle: e.target.value })}
+                  />
+                </Field>
+                <Field label="Address">
+                  <Input
+                    value={block.address ?? ""}
+                    onChange={(e) => set({ address: e.target.value })}
+                  />
+                </Field>
+                <Field label="Phone label">
+                  <Input
+                    value={block.phoneLabel ?? ""}
+                    onChange={(e) => set({ phoneLabel: e.target.value })}
+                  />
+                </Field>
+                <Field label="Phone number">
+                  <Input
+                    value={block.phoneNumber ?? ""}
+                    onChange={(e) => set({ phoneNumber: e.target.value })}
+                  />
+                </Field>
+                <Field label="Facebook URL">
+                  <Input
+                    value={block.facebookUrl ?? ""}
+                    onChange={(e) => set({ facebookUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="X/Twitter URL">
+                  <Input
+                    value={block.twitterUrl ?? ""}
+                    onChange={(e) => set({ twitterUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Instagram URL">
+                  <Input
+                    value={block.instagramUrl ?? ""}
+                    onChange={(e) => set({ instagramUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Contact form">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showContactForm ?? true}
+                      onChange={(e) => set({ showContactForm: e.target.checked })}
+                    />
+                    Show embedded form
+                  </label>
+                </Field>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Press title">
+                  <Input
+                    value={block.pressTitle ?? ""}
+                    onChange={(e) => set({ pressTitle: e.target.value })}
+                  />
+                </Field>
+                <Field label="Awards title">
+                  <Input
+                    value={block.awardsTitle ?? ""}
+                    onChange={(e) => set({ awardsTitle: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <Field label="Press links">{renderLinks("pressLinks", pressLinks)}</Field>
+              <Field label="Award links">{renderLinks("awardLinks", awardLinks)}</Field>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Collaborators title">
+                  <Input
+                    value={block.collaboratorsTitle ?? ""}
+                    onChange={(e) => set({ collaboratorsTitle: e.target.value })}
+                  />
+                </Field>
+                <Field label="Form title">
+                  <Input
+                    value={block.contactFormTitle ?? ""}
+                    onChange={(e) => set({ contactFormTitle: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <Field label="Collaborators text">
+                <Textarea
+                  rows={3}
+                  value={block.collaboratorsText ?? ""}
+                  onChange={(e) => set({ collaboratorsText: e.target.value })}
+                />
+              </Field>
+              <Field label="Submit label">
+                <Input
+                  value={block.submitLabel ?? ""}
+                  onChange={(e) => set({ submitLabel: e.target.value })}
+                />
+              </Field>
+            </SettingsGroup>
+          )}
+        </div>
+      );
+    }
     case "imageComparison": {
       const isVerticalComparison = block.comparisonOrientation === "vertical";
       return (

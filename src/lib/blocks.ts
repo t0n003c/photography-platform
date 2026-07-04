@@ -83,6 +83,49 @@ const ImageBlock = z.object({
   width: z.enum(["normal", "wide", "full"]).default("normal"),
   rounded: z.boolean().default(true),
 });
+const AboutLink = z.object({
+  id,
+  label: z.string().default("Link"),
+  href: z.string().default("#"),
+});
+const AboutBlock = z.object({
+  ...baseBlock,
+  type: z.literal("about"),
+  layout: z.enum(["simple", "modern", "classic"]).default("simple"),
+  sectionEyebrow: z.string().default("ABOUT"),
+  sectionTitle: z.string().default("SIMPLE"),
+  eyebrow: z.string().default(""),
+  headline: z.string().default("HI, I'M REFLECTOR"),
+  body: z.string().default(
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in.",
+  ),
+  quote: z.string().default("Cum sociis natoque penatibus et magnis disrient"),
+  ctaLabel: z.string().default("learn more"),
+  ctaHref: z.string().default("/about"),
+  primaryPhotoId: z.string().nullable().default(null),
+  secondaryPhotoId: z.string().nullable().default(null),
+  tertiaryPhotoId: z.string().nullable().default(null),
+  contactTitle: z.string().default("CONTACT"),
+  address: z.string().default("231 Main Street Chicago, IL"),
+  phoneLabel: z.string().default("Ph:"),
+  phoneNumber: z.string().default("3122299000"),
+  facebookUrl: z.string().default(""),
+  twitterUrl: z.string().default(""),
+  instagramUrl: z.string().default(""),
+  pressTitle: z.string().default("PRESS"),
+  pressLinks: z.array(AboutLink).default([]),
+  awardsTitle: z.string().default("AWARDS"),
+  awardLinks: z.array(AboutLink).default([]),
+  collaboratorsTitle: z.string().default("COLLABORATORS"),
+  collaboratorsText: z
+    .string()
+    .default(
+      "The New York Times, Apple, Wired, Cosmopolitan, The Atlantic, The Undefeated, Fast Company, Washington Post, Slate, Texas Monthly Magazine, Red Music Academy, LA Magazine.",
+    ),
+  showContactForm: z.boolean().default(true),
+  contactFormTitle: z.string().default("CONTACT ME"),
+  submitLabel: z.string().default("Send"),
+});
 const ImageComparisonBlock = z.object({
   ...baseBlock,
   type: z.literal("imageComparison"),
@@ -697,6 +740,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   SubheadingBlock,
   RichTextBlock,
   ImageBlock,
+  AboutBlock,
   ImageComparisonBlock,
   FeatureCarouselBlock,
   BookSliderBlock,
@@ -758,6 +802,11 @@ export function collectPhotoIds(blocks: Block[]): string[] {
   const visitLeaf = (b: LeafBlock) => {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
+    if (b.type === "about") {
+      if (b.primaryPhotoId) ids.push(b.primaryPhotoId);
+      if (b.secondaryPhotoId) ids.push(b.secondaryPhotoId);
+      if (b.tertiaryPhotoId) ids.push(b.tertiaryPhotoId);
+    }
     if (b.type === "imageComparison") {
       if (b.leftPhotoId) ids.push(b.leftPhotoId);
       if (b.rightPhotoId) ids.push(b.rightPhotoId);
@@ -811,6 +860,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   subheading: "Subheading",
   richtext: "Text",
   image: "Image",
+  about: "About",
   imageComparison: "Image comparison",
   featureCarousel: "Feature carousel",
   bookSlider: "Book slider",
