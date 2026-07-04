@@ -31,6 +31,39 @@ describe("page builder blocks", () => {
     expect(blocks.some((block) => block.type === "contactForm")).toBe(true);
   });
 
+  it("keeps location map blocks with selected locations", () => {
+    const blocks = parseBlocks([
+      {
+        id: "map",
+        type: "locationMap",
+        title: "Field notes",
+        subtitle: "Places with work nearby.",
+        locationIds: ["loc-a", "loc-b"],
+        height: "lg",
+        mapTheme: "dark",
+        markerColor: "#22c55e",
+        showLabels: false,
+        showControls: false,
+        popupMode: "hover",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "map",
+      type: "locationMap",
+      title: "Field notes",
+      locationIds: ["loc-a", "loc-b"],
+      height: "lg",
+      mapTheme: "dark",
+      markerColor: "#22c55e",
+      showLabels: false,
+      showControls: false,
+      popupMode: "hover",
+    });
+    expect(collectPhotoIds(blocks)).toEqual([]);
+  });
+
   it("keeps Prisma hero banner settings and collects its photo", () => {
     const blocks = parseBlocks([
       {

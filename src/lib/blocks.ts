@@ -492,6 +492,21 @@ const LocationIndexBlock = z.object({
   type: z.literal("locationIndex"),
   title: z.string().default("By location"),
 });
+const LocationMapBlock = z.object({
+  ...baseBlock,
+  type: z.literal("locationMap"),
+  title: z.string().default("Explore locations"),
+  subtitle: z
+    .string()
+    .default("Tap a marker to preview the work photographed in each place."),
+  locationIds: z.array(z.string()).default([]),
+  height: z.enum(["sm", "md", "lg", "screen"]).default("md"),
+  mapTheme: z.enum(["auto", "light", "dark", "liberty", "bright"]).default("auto"),
+  markerColor: z.string().default("#f43f5e"),
+  showLabels: z.boolean().default(true),
+  showControls: z.boolean().default(true),
+  popupMode: z.enum(["click", "hover"]).default("click"),
+});
 // Cinematic, scroll-driven showcase: each published category becomes a
 // full-screen pinned panel (cover photo background + a few of its photos that
 // fly into a cluster + its name as a giant title). Auto-sourced like the index
@@ -642,6 +657,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   DividerBlock,
   CategoryIndexBlock,
   LocationIndexBlock,
+  LocationMapBlock,
   ScrollShowcaseBlock,
   InstagramBlock,
   FaqBlock,
@@ -748,6 +764,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   columns: "Columns",
   categoryIndex: "Category index",
   locationIndex: "Location index",
+  locationMap: "Location map",
   scrollShowcase: "Scroll showcase",
   instagram: "Instagram feed",
   faq: "FAQ",

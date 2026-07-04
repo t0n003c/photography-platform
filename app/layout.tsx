@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { orgJsonLd } from "@/src/lib/seo";
 import { getEnv } from "@/src/lib/env";
 import { getSiteSettings } from "@/src/db/queries/settings";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 // Self-hosted display fonts for the page builder's heading/subheading blocks.

@@ -707,6 +707,10 @@ is gitignored):
   Pages editor follow-up: Contact form is now a real page-builder block option. It reuses the
   existing spam-protected contact submission flow and supports stacked, split, card, and minimal
   presentation styles with editable intro/heading/button text.
+  Pages editor follow-up: Location Map is now a page-builder block that renders published
+  locations with saved latitude/longitude pins, OpenFreeMap/MapLibre basemaps, map marker labels,
+  rich cover-photo popups, directions/open-location actions, desktop popups, and mobile bottom
+  sheet details. The Taxonomy > Locations editor exposes optional latitude/longitude fields.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.

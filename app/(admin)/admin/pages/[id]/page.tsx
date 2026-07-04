@@ -88,7 +88,7 @@ const newBlockId = () =>
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
-  "scrollShowcase", "instagram", "columns",
+  "locationMap", "scrollShowcase", "instagram", "columns",
 ];
 
 function makeTestimonialItem() {
@@ -440,6 +440,19 @@ function makeBlock(type: BlockType): Block {
     case "divider": return makeDividerBlock(id);
     case "categoryIndex": return { id, type, title: "By category" };
     case "locationIndex": return { id, type, title: "By location" };
+    case "locationMap": return {
+      id,
+      type,
+      title: "Explore locations",
+      subtitle: "Tap a marker to preview the work photographed in each place.",
+      locationIds: [],
+      height: "md",
+      mapTheme: "auto",
+      markerColor: "#f43f5e",
+      showLabels: true,
+      showControls: true,
+      popupMode: "click",
+    };
     case "scrollShowcase": return {
       id,
       type,
@@ -481,7 +494,7 @@ export default function PageEditor() {
       api
         .get<{ data: { id: string; name: string; photoCount?: number }[] }>("/api/v1/admin/categories")
         .catch(() => ({ data: [] })),
-      api.get<{ data: { id: string; name: string }[] }>("/api/v1/admin/locations").catch(() => ({ data: [] })),
+      api.get<{ data: { id: string; name: string; photoCount?: number }[] }>("/api/v1/admin/locations").catch(() => ({ data: [] })),
       api.get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries").catch(() => ({ data: [] })),
     ])
       .then(([p, ph, cats, locs, gals]) => {
@@ -506,7 +519,7 @@ export default function PageEditor() {
         );
         setTargets({
           category: cats.data.map((c) => ({ id: c.id, label: c.name, photoCount: c.photoCount ?? 0 })),
-          location: locs.data.map((l) => ({ id: l.id, label: l.name })),
+          location: locs.data.map((l) => ({ id: l.id, label: l.name, photoCount: l.photoCount ?? 0 })),
           gallery: gals.data.map((g) => ({ id: g.id, label: g.title })),
         });
       })
@@ -3905,6 +3918,153 @@ function LeafEditor({
     case "categoryIndex":
     case "locationIndex":
       return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
+    case "locationMap": {
+      const locs = targets.location ?? [];
+      const chosen = block.locationIds ?? [];
+      const unchosen = locs.filter((loc) => !chosen.includes(loc.id));
+      const labelOf = (id: string) => locs.find((loc) => loc.id === id)?.label ?? "(removed)";
+      const photoCountOf = (id: string) => locs.find((loc) => loc.id === id)?.photoCount ?? 0;
+      const locationOptionLabel = (loc: Opt) =>
+        `${loc.label} (${loc.photoCount ?? 0} ${(loc.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
+      return (
+        <div className="space-y-4">
+          <SettingsGroup
+            title="Map content"
+            description="Empty selected locations means all published locations with coordinates."
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title">
+                <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+              </Field>
+              <Field label="Subtitle">
+                <Input value={block.subtitle} onChange={(e) => set({ subtitle: e.target.value })} />
+              </Field>
+            </div>
+            <div className="space-y-2 rounded-md border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                  Locations
+                </p>
+                {chosen.length > 0 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => set({ locationIds: [] })}
+                  >
+                    Use all
+                  </Button>
+                )}
+              </div>
+              {chosen.length === 0 ? (
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Showing all mapped published locations.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {chosen.map((id) => (
+                    <div
+                      key={id}
+                      className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
+                    >
+                      <span className="min-w-0 truncate">
+                        {labelOf(id)} ({photoCountOf(id)})
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => set({ locationIds: chosen.filter((x) => x !== id) })}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {unchosen.length > 0 && (
+                <Select
+                  value=""
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    set({ locationIds: [...chosen, e.target.value] });
+                  }}
+                >
+                  <option value="">+ Add specific location...</option>
+                  {unchosen.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {locationOptionLabel(loc)}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title="Map appearance">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Height">
+                <Select
+                  value={block.height}
+                  onChange={(e) => set({ height: e.target.value as typeof block.height })}
+                >
+                  <option value="sm">Small</option>
+                  <option value="md">Medium</option>
+                  <option value="lg">Large</option>
+                  <option value="screen">Almost full screen</option>
+                </Select>
+              </Field>
+              <Field label="Basemap style">
+                <Select
+                  value={block.mapTheme}
+                  onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
+                >
+                  <option value="auto">Auto light/dark</option>
+                  <option value="light">Light Positron</option>
+                  <option value="dark">Dark</option>
+                  <option value="liberty">Liberty</option>
+                  <option value="bright">Bright</option>
+                </Select>
+              </Field>
+              <Field label="Marker color">
+                <Input
+                  type="color"
+                  value={block.markerColor}
+                  onChange={(e) => set({ markerColor: e.target.value })}
+                />
+              </Field>
+              <Field label="Popup behavior">
+                <Select
+                  value={block.popupMode}
+                  onChange={(e) => set({ popupMode: e.target.value as typeof block.popupMode })}
+                >
+                  <option value="click">Click marker</option>
+                  <option value="hover">Hover marker</option>
+                </Select>
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showLabels}
+                  onChange={(e) => set({ showLabels: e.target.checked })}
+                />
+                Show marker labels
+              </label>
+              <label className="flex h-9 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={block.showControls}
+                  onChange={(e) => set({ showControls: e.target.checked })}
+                />
+                Show map controls
+              </label>
+            </div>
+          </SettingsGroup>
+        </div>
+      );
+    }
     case "scrollShowcase": {
       const cats = targets.category ?? [];
       // Blocks created before categoryIds existed (or via raw inserts) won't have

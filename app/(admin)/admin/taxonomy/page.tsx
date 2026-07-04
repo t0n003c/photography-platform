@@ -28,6 +28,8 @@ interface Location {
   slug: string;
   name: string;
   region: string | null;
+  lat: number | null;
+  lng: number | null;
   sortOrder: number;
   isPublished: boolean;
   photoCount?: number;
@@ -43,6 +45,8 @@ interface FormState {
   name: string;
   description: string;
   region: string;
+  lat: string;
+  lng: string;
   isPublished: boolean;
 }
 
@@ -51,6 +55,8 @@ const EMPTY_FORM: FormState = {
   name: "",
   description: "",
   region: "",
+  lat: "",
+  lng: "",
   isPublished: true,
 };
 
@@ -60,6 +66,13 @@ function slugify(s: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function coordinateValue(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function EditorModal({
@@ -138,13 +151,41 @@ function EditorModal({
             />
           </Field>
         ) : (
-          <Field label="Region" htmlFor="tax-region">
-            <Input
-              id="tax-region"
-              value={form.region}
-              onChange={(e) => setForm({ ...form, region: e.target.value })}
-            />
-          </Field>
+          <div className="space-y-4">
+            <Field label="Region" htmlFor="tax-region">
+              <Input
+                id="tax-region"
+                value={form.region}
+                onChange={(e) => setForm({ ...form, region: e.target.value })}
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Latitude" htmlFor="tax-lat" hint="Optional. Used by map blocks.">
+                <Input
+                  id="tax-lat"
+                  type="number"
+                  step="any"
+                  min={-90}
+                  max={90}
+                  value={form.lat}
+                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                  placeholder="34.0522"
+                />
+              </Field>
+              <Field label="Longitude" htmlFor="tax-lng" hint="Optional. Used by map blocks.">
+                <Input
+                  id="tax-lng"
+                  type="number"
+                  step="any"
+                  min={-180}
+                  max={180}
+                  value={form.lng}
+                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                  placeholder="-118.2437"
+                />
+              </Field>
+            </div>
+          </div>
         )}
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -240,6 +281,8 @@ function TaxonomyCard<T extends Category | Location>({
               slug: form.slug,
               name: form.name,
               region: form.region,
+              lat: coordinateValue(form.lat) ?? undefined,
+              lng: coordinateValue(form.lng) ?? undefined,
               isPublished: form.isPublished,
             };
       // The create endpoint returns only { id, slug }, so build the list item
@@ -269,6 +312,8 @@ function TaxonomyCard<T extends Category | Location>({
               slug: form.slug,
               name: form.name,
               region: form.region,
+              lat: coordinateValue(form.lat),
+              lng: coordinateValue(form.lng),
               isPublished: form.isPublished,
             };
       // The update endpoint returns only { id }, so merge the submitted fields
@@ -300,6 +345,8 @@ function TaxonomyCard<T extends Category | Location>({
     name: item.name,
     description: "description" in item ? (item.description ?? "") : "",
     region: "region" in item ? (item.region ?? "") : "",
+    lat: "lat" in item && item.lat != null ? String(item.lat) : "",
+    lng: "lng" in item && item.lng != null ? String(item.lng) : "",
     isPublished: item.isPublished,
   });
 

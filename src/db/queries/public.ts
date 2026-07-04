@@ -33,7 +33,13 @@ export interface LocationSummary {
   slug: string;
   name: string;
   region: string | null;
+  lat: number | null;
+  lng: number | null;
   coverPhotoId: string | null;
+}
+export interface LocationMapItem extends LocationSummary {
+  photoCount: number;
+  cover: PhotoDTO | null;
 }
 export interface GallerySummary {
   id: string;
@@ -132,6 +138,8 @@ export async function getPublishedLocations(): Promise<LocationSummary[]> {
         slug: location.slug,
         name: location.name,
         region: location.region,
+        lat: location.lat,
+        lng: location.lng,
         coverPhotoId: location.coverPhotoId,
       })
       .from(location)
@@ -149,12 +157,77 @@ export async function getLocationBySlug(
       slug: location.slug,
       name: location.name,
       region: location.region,
+      lat: location.lat,
+      lng: location.lng,
       coverPhotoId: location.coverPhotoId,
     })
     .from(location)
     .where(and(eq(location.slug, slug), eq(location.isPublished, true)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+export async function getPublishedLocationMapItems(
+  locationIds: string[] = [],
+): Promise<LocationMapItem[]> {
+  const selectedIds = [...new Set(locationIds.filter(Boolean))];
+  const rows = await db
+    .select({
+      id: location.id,
+      slug: location.slug,
+      name: location.name,
+      region: location.region,
+      lat: location.lat,
+      lng: location.lng,
+      coverPhotoId: location.coverPhotoId,
+      sortOrder: location.sortOrder,
+    })
+    .from(location)
+    .where(
+      and(
+        eq(location.isPublished, true),
+        selectedIds.length ? inArray(location.id, selectedIds) : undefined,
+      ),
+    )
+    .orderBy(asc(location.sortOrder), asc(location.name));
+
+  const order = new Map(selectedIds.map((id, index) => [id, index]));
+  const ordered = selectedIds.length
+    ? [...rows].sort(
+        (a, b) => (order.get(a.id) ?? 9999) - (order.get(b.id) ?? 9999),
+      )
+    : rows;
+
+  if (ordered.length === 0) return [];
+  const ids = ordered.map((item) => item.id);
+  const counts = await db
+    .select({ id: photoLocation.locationId, n: photo.id })
+    .from(photoLocation)
+    .innerJoin(photo, eq(photoLocation.photoId, photo.id))
+    .where(
+      and(
+        inArray(photoLocation.locationId, ids),
+        eq(photo.processingStatus, "ready"),
+        isNull(photo.deletedAt),
+      ),
+    );
+  const countMap = new Map<string, number>();
+  for (const row of counts) {
+    countMap.set(row.id, (countMap.get(row.id) ?? 0) + 1);
+  }
+
+  const items = await Promise.all(
+    ordered.map(async (item) => {
+      const { photos } = await getLocationPhotos(item.id, null, 1);
+      return {
+        ...item,
+        photoCount: countMap.get(item.id) ?? 0,
+        cover: photos[0] ?? null,
+      };
+    }),
+  );
+
+  return items;
 }
 
 export async function getLocationPhotos(

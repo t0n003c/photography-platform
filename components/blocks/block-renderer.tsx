@@ -16,6 +16,7 @@ import {
   LocationIndexBlock,
   InstagramBlock,
 } from "@/components/blocks/index-blocks";
+import { LocationMapBlock } from "@/components/blocks/location-map-block";
 import { ScrollShowcaseBlock } from "@/components/blocks/scroll-showcase";
 import { ContactForm } from "@/components/forms/contact-form";
 import { collectPhotoIds, type Block, type LeafBlock } from "@/src/lib/blocks";
@@ -578,6 +579,8 @@ function LeafView({
       return <CategoryIndexBlock block={block} />;
     case "locationIndex":
       return <LocationIndexBlock block={block} />;
+    case "locationMap":
+      return <LocationMapBlock block={block} />;
     case "scrollShowcase":
       return <ScrollShowcaseBlock block={block} />;
     case "instagram":
@@ -672,6 +675,7 @@ const FULL_BLEED = new Set([
   "divider",
   "categoryIndex",
   "locationIndex",
+  "locationMap",
   "scrollShowcase",
   "instagram",
   "logos",

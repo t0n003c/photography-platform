@@ -19,6 +19,9 @@ export function middleware(request: NextRequest) {
   // Cloudflare Turnstile (login bot-protection widget) loads a script + iframe
   // from this origin and posts to it; allow it in the relevant directives.
   const turnstile = "https://challenges.cloudflare.com";
+  // Location map blocks use OpenFreeMap vector styles/tiles. OpenFreeMap is
+  // no-key and allows commercial use; keep CSP scoped to the tile host.
+  const openFreeMap = "https://tiles.openfreemap.org";
   const csp = [
     "default-src 'self'",
     // Next dev needs eval; prod is nonce-only. Turnstile's api.js is allowed by
@@ -28,13 +31,13 @@ export function middleware(request: NextRequest) {
     // ignore 'unsafe-inline' and block React/Tailwind inline styles. Style-based
     // XSS is low-risk; scripts remain strict nonce-only.
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob: ${openFreeMap}`,
     // Banner Prisma Hero can use an admin-provided HTTPS background video URL.
     "media-src 'self' blob: https:",
     "font-src 'self'",
-    `connect-src 'self' ${turnstile}`,
+    `connect-src 'self' ${turnstile} ${openFreeMap}`,
     `frame-src 'self' ${turnstile}`,
-    "worker-src 'self'",
+    "worker-src 'self' blob:",
     "manifest-src 'self'",
     // 'self' (not 'none') so the admin Design editor can embed public pages in
     // its live-preview iframe. Still blocks cross-origin clickjacking.
