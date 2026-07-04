@@ -171,11 +171,36 @@ export async function Footer() {
   }
 
   if (footer.layout === "sticky") {
-    const revealHeight = {
-      subtle: "clamp(28rem, 68svh, 42rem)",
-      standard: "clamp(34rem, 82svh, 52rem)",
-      dramatic: "clamp(40rem, 100svh, 64rem)",
-    }[footer.stickyRevealStrength];
+    const stickyContentWeight =
+      stickyColumns.length +
+      stickyColumns.reduce((total, column) => total + column.links.length, 0) +
+      (footer.text ? 2 : 0) +
+      (footer.showSocial ? 1 : 0) +
+      (footer.stickyLargeText ? 1 : 0);
+    const stickyDensity =
+      stickyContentWeight <= 10
+        ? "compact"
+        : stickyContentWeight <= 18
+          ? "balanced"
+          : "roomy";
+    const revealHeights = {
+      compact: {
+        subtle: "clamp(22rem, 42svh, 30rem)",
+        standard: "clamp(25rem, 50svh, 34rem)",
+        dramatic: "clamp(30rem, 62svh, 42rem)",
+      },
+      balanced: {
+        subtle: "clamp(26rem, 54svh, 36rem)",
+        standard: "clamp(30rem, 64svh, 44rem)",
+        dramatic: "clamp(36rem, 78svh, 54rem)",
+      },
+      roomy: {
+        subtle: "clamp(30rem, 64svh, 42rem)",
+        standard: "clamp(34rem, 82svh, 52rem)",
+        dramatic: "clamp(40rem, 100svh, 64rem)",
+      },
+    } as const;
+    const revealHeight = revealHeights[stickyDensity][footer.stickyRevealStrength];
     const stickyStyle = {
       "--sticky-footer-bg": footer.stickyBackgroundColor,
       "--sticky-footer-fg": footer.stickyTextColor,
@@ -184,7 +209,13 @@ export async function Footer() {
     } as CSSProperties;
 
     return (
-      <footer className="sticky-site-footer" style={stickyStyle}>
+      <footer
+        className={cn(
+          "sticky-site-footer",
+          stickyDensity === "compact" && "sticky-site-footer--compact",
+        )}
+        style={stickyStyle}
+      >
         <div className="sticky-site-footer__fixed">
           <Container className="sticky-site-footer__content">
             <div className="sticky-site-footer__main">

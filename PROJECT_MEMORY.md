@@ -1271,6 +1271,10 @@ is gitignored):
   uses custom columns first and only falls back to Menus -> Footer menu when no custom columns
   are saved. The Design preview now mirrors custom columns instead of hard-coding Product /
   Solutions / Resources / Company.
+  Follow-up: Sticky footer desktop spacing now adapts to sparse content. Public rendering
+  calculates a compact/balanced/roomy density from column/link count plus intro content; compact
+  footers get a shorter reveal height and pack the main content with the bottom row instead of
+  stretching sparse links across a mostly empty panel.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
