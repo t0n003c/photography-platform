@@ -8,6 +8,7 @@ import { BannerBlock } from "@/components/blocks/banner-block";
 import { FeatureCarouselBlock } from "@/components/blocks/feature-carousel-block";
 import { ImageComparisonBlock } from "@/components/blocks/image-comparison-block";
 import { AboutBlock } from "@/components/blocks/about-block";
+import { PortfolioListBlock } from "@/components/blocks/portfolio-list-block";
 import { BookSliderBlock } from "@/components/blocks/book-slider-block";
 import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-block";
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
@@ -578,6 +579,8 @@ function LeafView({
       return <FeatureCarouselBlock block={block} photoMap={photoMap} />;
     case "about":
       return <AboutBlock block={block} photoMap={photoMap} />;
+    case "portfolioList":
+      return <PortfolioListBlock block={block} photoMap={photoMap} />;
     case "bookSlider":
       return <BookSliderBlock block={block} photoMap={photoMap} />;
     case "testimonials":
@@ -677,6 +680,7 @@ const FULL_BLEED = new Set([
   "banner",
   "imageComparison",
   "about",
+  "portfolioList",
   "featureCarousel",
   "bookSlider",
   "gallery",

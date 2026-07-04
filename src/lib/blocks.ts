@@ -83,6 +83,31 @@ const ImageBlock = z.object({
   width: z.enum(["normal", "wide", "full"]).default("normal"),
   rounded: z.boolean().default(true),
 });
+const PortfolioListItem = z.object({
+  id,
+  title: z.string().default("Free Feelings"),
+  category: z.string().default("Women"),
+  description: z.string().default("A short project description for this portfolio entry."),
+  linkLabel: z.string().default("Read More"),
+  linkHref: z.string().default("#"),
+  photoId: z.string().nullable().default(null),
+  hoverPhotoId: z.string().nullable().default(null),
+});
+const PortfolioListBlock = z.object({
+  ...baseBlock,
+  type: z.literal("portfolioList"),
+  style: z
+    .enum(["modern", "category-cards", "distortion", "animated-masonry", "mix-masonry"])
+    .default("modern"),
+  eyebrow: z.string().default("PORTFOLIO LIST"),
+  title: z.string().default("MODERN"),
+  body: z.string().default(""),
+  items: z.array(PortfolioListItem).default([]),
+  backgroundColor: z.string().default("#242625"),
+  textColor: z.string().default("#f8f3df"),
+  accentColor: z.string().default("#d8c98d"),
+  showBackground: z.boolean().default(true),
+});
 const AboutLink = z.object({
   id,
   label: z.string().default("Link"),
@@ -740,6 +765,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   SubheadingBlock,
   RichTextBlock,
   ImageBlock,
+  PortfolioListBlock,
   AboutBlock,
   ImageComparisonBlock,
   FeatureCarouselBlock,
@@ -802,6 +828,12 @@ export function collectPhotoIds(blocks: Block[]): string[] {
   const visitLeaf = (b: LeafBlock) => {
     if (b.hidden) return;
     if (b.type === "image" && b.photoId) ids.push(b.photoId);
+    if (b.type === "portfolioList") {
+      for (const item of b.items) {
+        if (item.photoId) ids.push(item.photoId);
+        if (item.hoverPhotoId) ids.push(item.hoverPhotoId);
+      }
+    }
     if (b.type === "about") {
       if (b.primaryPhotoId) ids.push(b.primaryPhotoId);
       if (b.secondaryPhotoId) ids.push(b.secondaryPhotoId);
@@ -860,6 +892,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   subheading: "Subheading",
   richtext: "Text",
   image: "Image",
+  portfolioList: "Portfolio list",
   about: "About",
   imageComparison: "Image comparison",
   featureCarousel: "Feature carousel",

@@ -1490,6 +1490,418 @@ html.js .pr-root.is-enhanced {
   }
 }
 
+/* ToraMochie / Reflector Portfolio List reference variants. */
+.portfolio-list-block {
+  --portfolio-bg: #242625;
+  --portfolio-text: #f8f3df;
+  --portfolio-accent: #d8c98d;
+  background: var(--portfolio-bg);
+  color: var(--portfolio-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow-x: clip;
+  padding: clamp(4.75rem, 8vw, 8rem) 0;
+}
+
+.portfolio-list-no-bg {
+  background: transparent;
+}
+
+.portfolio-list-container {
+  margin: 0 auto;
+  width: min(100% - 3rem, 73.125rem);
+}
+
+.portfolio-list-heading {
+  margin: 0 auto clamp(3rem, 6vw, 5rem);
+  max-width: 42rem;
+  text-align: center;
+}
+
+.portfolio-list-eyebrow {
+  color: color-mix(in oklab, var(--portfolio-text) 68%, transparent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.portfolio-list-heading h2 {
+  color: var(--portfolio-text);
+  font-size: clamp(1.35rem, 2vw, 1.82rem);
+  font-weight: 700;
+  letter-spacing: 4.2px;
+  line-height: 1.25;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.portfolio-list-heading p {
+  color: color-mix(in oklab, var(--portfolio-text) 72%, transparent);
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.7;
+  margin: 18px auto 0;
+}
+
+.portfolio-list-empty {
+  border: 1px dashed color-mix(in oklab, var(--portfolio-text) 28%, transparent);
+  color: color-mix(in oklab, var(--portfolio-text) 64%, transparent);
+  display: grid;
+  min-height: 16rem;
+  place-items: center;
+}
+
+.portfolio-list-image {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.08), transparent 44%),
+    color-mix(in oklab, var(--portfolio-bg) 88%, var(--portfolio-text));
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+
+.portfolio-list-placeholder {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.1), transparent 42%),
+    linear-gradient(315deg, rgb(0 0 0 / 0.1), transparent 46%),
+    color-mix(in oklab, var(--portfolio-bg) 86%, var(--portfolio-text));
+  height: 100%;
+  min-height: inherit;
+  width: 100%;
+}
+
+.portfolio-list-image img {
+  transition: transform 1s ease, filter 350ms ease, clip-path 1s cubic-bezier(.075, .82, .165, 1);
+}
+
+.portfolio-card-copy h3,
+.portfolio-category-card h3,
+.portfolio-mix-title {
+  color: var(--portfolio-accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.35;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.portfolio-card-copy p {
+  color: color-mix(in oklab, var(--portfolio-text) 68%, transparent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  line-height: 1.5;
+  margin: 5px 0 0;
+  text-transform: uppercase;
+}
+
+.portfolio-modern-grid {
+  align-items: start;
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4.7rem) clamp(1.4rem, 3.5vw, 4rem);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.portfolio-modern-item {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.portfolio-modern-item.is-even {
+  padding-top: clamp(3rem, 7vw, 6rem);
+}
+
+.portfolio-modern-item .portfolio-list-image {
+  aspect-ratio: 1.25 / 1;
+  margin-bottom: 18px;
+}
+
+.portfolio-modern-item:nth-child(2n) .portfolio-list-image {
+  aspect-ratio: .82 / 1;
+}
+
+.portfolio-modern-item:nth-child(3n) .portfolio-list-image {
+  aspect-ratio: 1.45 / .9;
+}
+
+.portfolio-modern-item:hover img,
+.portfolio-animated-masonry .portfolio-masonry-item:hover img,
+.portfolio-mix-item:hover img {
+  transform: scale(1.035) translateZ(0);
+}
+
+.portfolio-category-grid {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portfolio-category-card {
+  color: inherit;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.portfolio-category-card .portfolio-list-image {
+  aspect-ratio: 3 / 4;
+  margin-bottom: 22px;
+}
+
+.portfolio-category-card:hover img {
+  clip-path: inset(5% 5% 5% 5%);
+  filter: grayscale(1);
+}
+
+.portfolio-distortion-feature {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: clamp(32rem, 50vw, 45rem);
+}
+
+.portfolio-distortion-copy {
+  align-content: center;
+  background: color-mix(in oklab, var(--portfolio-bg) 86%, black);
+  display: grid;
+  padding: clamp(3rem, 7vw, 7rem) clamp(2rem, 6vw, 6rem);
+}
+
+.portfolio-distortion-category {
+  color: color-mix(in oklab, var(--portfolio-text) 70%, transparent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 22px;
+  text-transform: uppercase;
+}
+
+.portfolio-distortion-copy h3 {
+  color: var(--portfolio-text);
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  margin: 0;
+  max-width: 48rem;
+  text-transform: uppercase;
+}
+
+.portfolio-distortion-copy p {
+  color: color-mix(in oklab, var(--portfolio-text) 74%, transparent);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.7;
+  margin: 24px 0 0;
+  max-width: 34rem;
+}
+
+.portfolio-read-more {
+  color: var(--portfolio-accent);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  margin-top: 34px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.portfolio-read-more span::after {
+  background: currentColor;
+  content: "";
+  display: inline-block;
+  height: 1px;
+  margin-left: 12px;
+  transform: translateY(-3px);
+  width: 34px;
+}
+
+.portfolio-distortion-media {
+  min-height: clamp(28rem, 50vw, 45rem);
+  position: relative;
+}
+
+.portfolio-distortion-media .portfolio-list-image {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.portfolio-distortion-overlay {
+  inset: 0;
+  opacity: 0;
+  pointer-events: auto;
+  position: absolute;
+  transition: opacity 260ms ease;
+  z-index: 2;
+}
+
+.portfolio-distortion-overlay.is-ready {
+  opacity: 1;
+}
+
+.portfolio-animated-masonry {
+  display: grid;
+  gap: clamp(2rem, 4vw, 4.5rem) 30px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portfolio-masonry-item {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.portfolio-masonry-item .portfolio-list-image {
+  aspect-ratio: 1 / 1.12;
+  clip-path: inset(0);
+  margin-bottom: 18px;
+}
+
+.portfolio-masonry-item.shape-1 {
+  padding-top: clamp(2rem, 5vw, 5rem);
+}
+
+.portfolio-masonry-item.shape-1 .portfolio-list-image {
+  aspect-ratio: 1.45 / 1;
+}
+
+.portfolio-masonry-item.shape-2 .portfolio-list-image {
+  aspect-ratio: .82 / 1.2;
+}
+
+.portfolio-masonry-item.shape-3 {
+  padding-top: clamp(4rem, 8vw, 7rem);
+}
+
+.portfolio-animated-masonry .portfolio-masonry-item:hover img {
+  clip-path: inset(5% 5% 5% 5%);
+}
+
+.portfolio-mix-grid {
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5.6rem);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.portfolio-mix-item {
+  color: inherit;
+  display: block;
+  grid-column: span 4;
+  position: relative;
+  text-decoration: none;
+}
+
+.portfolio-mix-item .portfolio-list-image {
+  aspect-ratio: 1.55 / 1;
+}
+
+.portfolio-mix-item.mix-1,
+.portfolio-mix-item.mix-4 {
+  grid-column: span 5;
+  padding-top: clamp(2rem, 5vw, 5rem);
+}
+
+.portfolio-mix-item.mix-2 {
+  grid-column: span 3;
+}
+
+.portfolio-mix-item.mix-3 {
+  grid-column: 2 / span 4;
+}
+
+.portfolio-mix-title {
+  background: color-mix(in oklab, var(--portfolio-bg) 82%, black);
+  bottom: -26px;
+  left: 0;
+  padding: 7px 11px 6px;
+  position: absolute;
+  right: 0;
+}
+
+@media (max-width: 1100px) {
+  .portfolio-modern-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portfolio-animated-masonry {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-list-block {
+    padding: 4rem 0;
+  }
+
+  .portfolio-list-container {
+    width: min(100% - 2rem, 73.125rem);
+  }
+
+  .portfolio-list-heading {
+    margin-bottom: 2.75rem;
+  }
+
+  .portfolio-modern-grid,
+  .portfolio-category-grid,
+  .portfolio-animated-masonry,
+  .portfolio-mix-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-modern-item.is-even,
+  .portfolio-masonry-item.shape-1,
+  .portfolio-masonry-item.shape-3,
+  .portfolio-mix-item.mix-1,
+  .portfolio-mix-item.mix-4 {
+    padding-top: 0;
+  }
+
+  .portfolio-modern-item .portfolio-list-image,
+  .portfolio-modern-item:nth-child(2n) .portfolio-list-image,
+  .portfolio-modern-item:nth-child(3n) .portfolio-list-image {
+    aspect-ratio: 4 / 5;
+  }
+
+  .portfolio-distortion-feature {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-distortion-copy {
+    order: 2;
+    padding: 2.5rem 1.85rem;
+  }
+
+  .portfolio-distortion-media {
+    min-height: 100vw;
+    order: 1;
+  }
+
+  .portfolio-mix-item,
+  .portfolio-mix-item.mix-1,
+  .portfolio-mix-item.mix-2,
+  .portfolio-mix-item.mix-3,
+  .portfolio-mix-item.mix-4 {
+    grid-column: auto;
+  }
+
+  .portfolio-mix-title {
+    bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-list-image img,
+  .portfolio-distortion-overlay {
+    transition: none;
+  }
+}
+
 /* Logo wall marquee (the row is rendered twice; translate -50% loops seamlessly). */
 @keyframes logo-marquee {
   from { transform: translateX(0); }

@@ -90,7 +90,7 @@ const newBlockId = () =>
 
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
+  "heading", "subheading", "richtext", "image", "portfolioList", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
   "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "locationMap", "scrollShowcase", "instagram", "columns",
 ];
@@ -119,6 +119,30 @@ function makeBookSliderPage(index = 0) {
     caption: "",
     linkLabel: "",
     linkHref: "",
+  };
+}
+
+function makePortfolioListItem(index = 0) {
+  const examples = [
+    ["Free Feelings", "Women", "A quiet portrait story with soft motion and intimate color."],
+    ["Purple of Mendy", "Women", "A saturated editorial frame built around movement and mood."],
+    ["Behind you", "Women", "A small cinematic project with a warm low-light palette."],
+    ["On the top", "Women", "A breezy outdoor story shaped by sky, gesture, and silhouette."],
+    ["Under water", "Friendship", "A playful session with bright color and graphic composition."],
+    ["Derek stopped", "Man", "A close portrait study with restrained atmosphere."],
+    ["Another life", "Hugs", "An affectionate collection focused on connection."],
+    ["Alisa's Fairy Tail", "Women", "A whimsical portrait sequence with a storybook edge."],
+  ];
+  const [title, category, description] = examples[index % examples.length];
+  return {
+    id: newBlockId(),
+    title,
+    category,
+    description,
+    linkLabel: "Read More",
+    linkHref: "#",
+    photoId: null,
+    hoverPhotoId: null,
   };
 }
 
@@ -309,6 +333,19 @@ function makeBlock(type: BlockType): Block {
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
+    case "portfolioList": return {
+      id,
+      type,
+      style: "modern",
+      eyebrow: "PORTFOLIO LIST",
+      title: "MODERN",
+      body: "",
+      items: Array.from({ length: 8 }, (_, index) => makePortfolioListItem(index)),
+      backgroundColor: "#242625",
+      textColor: "#f8f3df",
+      accentColor: "#d8c98d",
+      showBackground: true,
+    };
     case "about": return {
       id,
       type,
@@ -933,6 +970,8 @@ function blockSummary(block: Block): string {
     }
     case "about":
       return `${block.layout} · ${block.headline || block.sectionTitle || "About"}`;
+    case "portfolioList":
+      return `${block.style} · ${block.items.length} items`;
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
@@ -2629,6 +2668,241 @@ function LeafEditor({
           <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
         </div>
       );
+    case "portfolioList": {
+      const items = block.items ?? [];
+      const updateItem = (
+        index: number,
+        patch: Partial<(typeof items)[number]>,
+      ) => {
+        set({
+          items: items.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
+      const style = block.style ?? "modern";
+      return (
+        <div className="space-y-4">
+          <SettingsGroup title="Layout">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Style">
+                <Select
+                  value={style}
+                  onChange={(e) => {
+                    const next = e.target.value as typeof block.style;
+                    set({
+                      style: next,
+                      title:
+                        next === "category-cards"
+                          ? "CATEGORY LIST"
+                          : next === "distortion"
+                            ? "DISTORTION STYLE"
+                            : next === "animated-masonry"
+                              ? "MASONRY STYLE"
+                              : next === "mix-masonry"
+                                ? "MIX MASONRY"
+                                : "MODERN",
+                    });
+                  }}
+                >
+                  <option value="modern">Modern list</option>
+                  <option value="category-cards">Category cards</option>
+                  <option value="distortion">Distortion feature</option>
+                  <option value="animated-masonry">Animated masonry</option>
+                  <option value="mix-masonry">Mix masonry</option>
+                </Select>
+              </Field>
+              <Field label="Top label">
+                <Input
+                  value={block.eyebrow ?? ""}
+                  onChange={(e) => set({ eyebrow: e.target.value })}
+                />
+              </Field>
+              <Field label="Title">
+                <Input
+                  value={block.title ?? ""}
+                  onChange={(e) => set({ title: e.target.value })}
+                />
+              </Field>
+              <Field label="Background">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showBackground ?? true}
+                    onChange={(e) => set({ showBackground: e.target.checked })}
+                  />
+                  Show dark panel
+                </label>
+              </Field>
+              <Field label="Background color">
+                <Input
+                  type="color"
+                  value={block.backgroundColor ?? "#242625"}
+                  onChange={(e) => set({ backgroundColor: e.target.value })}
+                  disabled={block.showBackground === false}
+                />
+              </Field>
+              <Field label="Text color">
+                <Input
+                  type="color"
+                  value={block.textColor ?? "#f8f3df"}
+                  onChange={(e) => set({ textColor: e.target.value })}
+                />
+              </Field>
+              <Field label="Accent color">
+                <Input
+                  type="color"
+                  value={block.accentColor ?? "#d8c98d"}
+                  onChange={(e) => set({ accentColor: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Intro text">
+              <Textarea
+                rows={2}
+                value={block.body ?? ""}
+                onChange={(e) => set({ body: e.target.value })}
+              />
+            </Field>
+          </SettingsGroup>
+
+          <SettingsGroup title="Portfolio items">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => set({ items: [...items, makePortfolioListItem(items.length)] })}
+              >
+                <Plus className="h-4 w-4" />
+                Add item
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  set({
+                    items: [
+                      ...items,
+                      ...Array.from({ length: 3 }, (_, addIndex) =>
+                        makePortfolioListItem(items.length + addIndex),
+                      ),
+                    ],
+                  })
+                }
+              >
+                <Plus className="h-4 w-4" />
+                Add 3 items
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {items.map((item, index) => (
+                <div key={item.id} className="space-y-3 rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 text-sm font-medium">
+                      {item.title || `Portfolio item ${index + 1}`}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() => set({ items: swapAt(items, index, index - 1) })}
+                      aria-label="Move item up"
+                      className="h-8 w-8"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === items.length - 1}
+                      onClick={() => set({ items: swapAt(items, index, index + 1) })}
+                      aria-label="Move item down"
+                      className="h-8 w-8"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        set({ items: items.filter((_, itemIndex) => itemIndex !== index) })
+                      }
+                      aria-label="Remove item"
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    <Field label="Cover photo">
+                      <PhotoPicker
+                        photos={photos}
+                        value={item.photoId ?? null}
+                        onChange={(photoId) => updateItem(index, { photoId })}
+                        containerClassName="max-h-52"
+                      />
+                    </Field>
+                    <Field label="Hover photo">
+                      <PhotoPicker
+                        photos={photos}
+                        value={item.hoverPhotoId ?? null}
+                        onChange={(photoId) => updateItem(index, { hoverPhotoId: photoId })}
+                        containerClassName="max-h-52"
+                      />
+                    </Field>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label="Title">
+                      <Input
+                        value={item.title ?? ""}
+                        onChange={(e) => updateItem(index, { title: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Category">
+                      <Input
+                        value={item.category ?? ""}
+                        onChange={(e) => updateItem(index, { category: e.target.value })}
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Description">
+                        <Textarea
+                          rows={2}
+                          value={item.description ?? ""}
+                          onChange={(e) => updateItem(index, { description: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Link label">
+                      <Input
+                        value={item.linkLabel ?? ""}
+                        onChange={(e) => updateItem(index, { linkLabel: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Link URL">
+                      <Input
+                        value={item.linkHref ?? ""}
+                        onChange={(e) => updateItem(index, { linkHref: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              {items.length === 0 && (
+                <p className="rounded-md border border-dashed p-4 text-sm text-[hsl(var(--muted-foreground))]">
+                  Add portfolio items to render this block.
+                </p>
+              )}
+            </div>
+          </SettingsGroup>
+        </div>
+      );
+    }
     case "about": {
       const layout = block.layout ?? "simple";
       const pressLinks = block.pressLinks ?? [];

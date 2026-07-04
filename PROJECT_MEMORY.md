@@ -1297,6 +1297,12 @@ is gitignored):
   based on the reference `about.css` / `about.js`: Josefin Sans typography, Reflector
   a-btn-2/a-btn-6 CTA styles, Modern sticky portrait/contact detail composition, and Classic
   staggered three-image collage.
+  Pages Portfolio List follow-up: ToraMochie/Reflector Portfolio List is represented as a new
+  Pages-tab `portfolioList` block. It stores manual portfolio items with title/category/description,
+  link, cover photo, and optional hover photo. Public variants match the reference shortcode family:
+  Modern list, Category cards, Distortion feature, Animated masonry, and Mix masonry. The distortion
+  variant progressively overlays a Three.js displacement-style hover transition on top of the static
+  image fallback and disables the overlay for reduced motion.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
