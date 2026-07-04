@@ -44,6 +44,10 @@ const HEIGHT_CLASS: Record<LocationMapBlock["height"], string> = {
 const ROUTE_LAYER_PREFIX = "location-route-layer";
 const ROUTE_SOURCE_PREFIX = "location-route-source";
 
+function firstSymbolLayerId(map: MapLibreMap) {
+  return map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
+}
+
 function resolveTheme(theme: LocationMapBlock["mapTheme"]) {
   if (theme === "light" || theme === "dark" || theme === "liberty" || theme === "bright") {
     return theme;
@@ -211,78 +215,6 @@ function simplifyRouteCoordinates(
     .map((index) => coordinates[index]);
 }
 
-function clearRouteCanvas(canvas: HTMLCanvasElement | null) {
-  if (!canvas) return;
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  context.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawProjectedRoute(
-  context: CanvasRenderingContext2D,
-  map: MapLibreMap,
-  coordinates: [number, number][],
-  color: string,
-  width: number,
-  alpha = 1,
-) {
-  if (coordinates.length < 2) return;
-  context.save();
-  context.globalAlpha = alpha;
-  context.strokeStyle = color;
-  context.lineWidth = width;
-  context.lineCap = "round";
-  context.lineJoin = "round";
-  context.beginPath();
-  coordinates.forEach((coordinate, index) => {
-    const point = map.project(coordinate);
-    if (index === 0) context.moveTo(point.x, point.y);
-    else context.lineTo(point.x, point.y);
-  });
-  context.stroke();
-  context.restore();
-}
-
-function drawRouteCanvas({
-  canvas,
-  map,
-  routes,
-  selectedIndex,
-  activeColor,
-  inactiveColor,
-}: {
-  canvas: HTMLCanvasElement;
-  map: MapLibreMap;
-  routes: RouteOption[];
-  selectedIndex: number;
-  activeColor: string;
-  inactiveColor: string;
-}) {
-  const rect = canvas.getBoundingClientRect();
-  const pixelRatio = window.devicePixelRatio || 1;
-  const width = Math.max(1, Math.round(rect.width * pixelRatio));
-  const height = Math.max(1, Math.round(rect.height * pixelRatio));
-  if (canvas.width !== width) canvas.width = width;
-  if (canvas.height !== height) canvas.height = height;
-
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  context.clearRect(0, 0, rect.width, rect.height);
-
-  routes.forEach((route, index) => {
-    if (index === selectedIndex) return;
-    drawProjectedRoute(context, map, route.coordinates, "#ffffff", 5, 0.36);
-    drawProjectedRoute(context, map, route.coordinates, inactiveColor, 2.5, 0.72);
-  });
-
-  const activeRoute = routes[selectedIndex] ?? routes[0];
-  if (activeRoute) {
-    drawProjectedRoute(context, map, activeRoute.coordinates, "#ffffff", 7.5, 0.86);
-    drawProjectedRoute(context, map, activeRoute.coordinates, activeColor, 4.25);
-  }
-}
-
 function fitCoordinates(
   map: MapLibreMap,
   coordinates: [number, number][],
@@ -329,10 +261,12 @@ function clearRouteLayers(
   });
   routeIds.forEach((routeId) => {
     const layerId = `${ROUTE_LAYER_PREFIX}-${routeId}`;
+    const hitLayerId = `${layerId}-hit`;
     const casingLayerId = `${layerId}-casing`;
     const sourceId = `${ROUTE_SOURCE_PREFIX}-${routeId}`;
     if (map.getLayer(layerId)) map.removeLayer(layerId);
     if (map.getLayer(casingLayerId)) map.removeLayer(casingLayerId);
+    if (map.getLayer(hitLayerId)) map.removeLayer(hitLayerId);
     if (map.getSource(sourceId)) map.removeSource(sourceId);
   });
 }
@@ -637,7 +571,6 @@ export function LocationRouteMap({
   points: LocationMapPoint[];
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const routeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const currentStyleUrlRef = useRef<string | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -792,11 +725,18 @@ export function LocationRouteMap({
     const map = mapRef.current;
     if (!map) return;
 
+    let frame = 0;
+    let retryTimer = 0;
+    const queueRetry = () => {
+      window.clearTimeout(retryTimer);
+      retryTimer = window.setTimeout(scheduleSync, 80);
+    };
+
     const syncLayers = () => {
-      if (!map.isStyleLoaded()) return;
-      clearRouteLayers(map, routeLayerIdsRef.current, routeLayerEventsRef.current);
-      routeLayerIdsRef.current = [];
-      routeLayerEventsRef.current = [];
+      if (!map.getStyle()?.layers?.length) {
+        queueRetry();
+        return;
+      }
 
       const sortedRoutes = routes
         .map((route, index) => ({ route, index }))
@@ -806,141 +746,140 @@ export function LocationRouteMap({
           return 0;
         });
 
-      sortedRoutes.forEach(({ route, index }) => {
-        const isSelected = index === selectedIndex;
-        const sourceId = `${ROUTE_SOURCE_PREFIX}-${route.id}`;
-        const layerId = `${ROUTE_LAYER_PREFIX}-${route.id}`;
-        const casingLayerId = `${layerId}-casing`;
-        map.addSource(sourceId, {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: route.coordinates,
-            },
-          },
-        });
-        map.addLayer({
-          id: casingLayerId,
-          type: "line",
-          source: sourceId,
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": isSelected ? "#ffffff" : "#0f172a",
-            "line-width": isSelected ? 9 : 6,
-            "line-opacity": 0.01,
-            "line-blur": isSelected ? 0.25 : 0.5,
-          },
-        });
-        map.addLayer({
-          id: layerId,
-          type: "line",
-          source: sourceId,
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": isSelected
-              ? block.routeLineColor
-              : block.routeInactiveLineColor,
-            "line-width": isSelected ? 6 : 4,
-            "line-opacity": 0.01,
-          },
-        });
+      try {
+        clearRouteLayers(map, routeLayerIdsRef.current, routeLayerEventsRef.current);
+        routeLayerIdsRef.current = [];
+        routeLayerEventsRef.current = [];
+        const beforeId = firstSymbolLayerId(map);
 
-        const clickHandler = () => setSelectedIndex(index);
-        const enterHandler = () => {
-          map.getCanvas().style.cursor = "pointer";
-        };
-        const leaveHandler = () => {
-          map.getCanvas().style.cursor = "";
-        };
-        map.on("click", layerId, clickHandler);
-        map.on("click", casingLayerId, clickHandler);
-        map.on("mouseenter", layerId, enterHandler);
-        map.on("mouseenter", casingLayerId, enterHandler);
-        map.on("mouseleave", layerId, leaveHandler);
-        map.on("mouseleave", casingLayerId, leaveHandler);
-        routeLayerEventsRef.current.push(
-          { layerId, type: "click", handler: clickHandler },
-          { layerId: casingLayerId, type: "click", handler: clickHandler },
-          { layerId, type: "mouseenter", handler: enterHandler },
-          { layerId: casingLayerId, type: "mouseenter", handler: enterHandler },
-          { layerId, type: "mouseleave", handler: leaveHandler },
-          { layerId: casingLayerId, type: "mouseleave", handler: leaveHandler },
-        );
-        routeLayerIdsRef.current.push(route.id);
-      });
+        sortedRoutes.forEach(({ route, index }) => {
+          const isSelected = index === selectedIndex;
+          const sourceId = `${ROUTE_SOURCE_PREFIX}-${route.id}`;
+          const layerId = `${ROUTE_LAYER_PREFIX}-${route.id}`;
+          const hitLayerId = `${layerId}-hit`;
+          const casingLayerId = `${layerId}-casing`;
+          map.addSource(sourceId, {
+            type: "geojson",
+            data: {
+              type: "Feature",
+              properties: {},
+              geometry: {
+                type: "LineString",
+                coordinates: route.coordinates,
+              },
+            },
+          });
+          map.addLayer(
+            {
+              id: hitLayerId,
+              type: "line",
+              source: sourceId,
+              layout: {
+                "line-cap": "round",
+                "line-join": "round",
+              },
+              paint: {
+                "line-color": isSelected
+                  ? block.routeLineColor
+                  : block.routeInactiveLineColor,
+                "line-width": isSelected ? 12 : 9,
+                "line-opacity": 0.01,
+              },
+            },
+            beforeId,
+          );
+          map.addLayer(
+            {
+              id: casingLayerId,
+              type: "line",
+              source: sourceId,
+              layout: {
+                "line-cap": "round",
+                "line-join": "round",
+              },
+              paint: {
+                "line-color": isSelected ? "#ffffff" : "#0f172a",
+                "line-width": isSelected ? 6.5 : 4.25,
+                "line-opacity": isSelected ? 0.9 : 0.32,
+                "line-blur": isSelected ? 0.1 : 0.35,
+              },
+            },
+            beforeId,
+          );
+          map.addLayer(
+            {
+              id: layerId,
+              type: "line",
+              source: sourceId,
+              layout: {
+                "line-cap": "round",
+                "line-join": "round",
+              },
+              paint: {
+                "line-color": isSelected
+                  ? block.routeLineColor
+                  : block.routeInactiveLineColor,
+                "line-width": isSelected ? 3.5 : 2,
+                "line-opacity": isSelected ? 1 : 0.72,
+              },
+            },
+            beforeId,
+          );
+
+          const clickHandler = () => setSelectedIndex(index);
+          const enterHandler = () => {
+            map.getCanvas().style.cursor = "pointer";
+          };
+          const leaveHandler = () => {
+            map.getCanvas().style.cursor = "";
+          };
+          map.on("click", hitLayerId, clickHandler);
+          map.on("click", layerId, clickHandler);
+          map.on("click", casingLayerId, clickHandler);
+          map.on("mouseenter", hitLayerId, enterHandler);
+          map.on("mouseenter", layerId, enterHandler);
+          map.on("mouseenter", casingLayerId, enterHandler);
+          map.on("mouseleave", hitLayerId, leaveHandler);
+          map.on("mouseleave", layerId, leaveHandler);
+          map.on("mouseleave", casingLayerId, leaveHandler);
+          routeLayerEventsRef.current.push(
+            { layerId: hitLayerId, type: "click", handler: clickHandler },
+            { layerId, type: "click", handler: clickHandler },
+            { layerId: casingLayerId, type: "click", handler: clickHandler },
+            { layerId: hitLayerId, type: "mouseenter", handler: enterHandler },
+            { layerId, type: "mouseenter", handler: enterHandler },
+            { layerId: casingLayerId, type: "mouseenter", handler: enterHandler },
+            { layerId: hitLayerId, type: "mouseleave", handler: leaveHandler },
+            { layerId, type: "mouseleave", handler: leaveHandler },
+            { layerId: casingLayerId, type: "mouseleave", handler: leaveHandler },
+          );
+          routeLayerIdsRef.current.push(route.id);
+        });
+      } catch {
+        clearRouteLayers(map, routeLayerIdsRef.current, routeLayerEventsRef.current);
+        routeLayerIdsRef.current = [];
+        routeLayerEventsRef.current = [];
+        queueRetry();
+      }
     };
 
-    let frame = 0;
-    const scheduleSync = () => {
+    function scheduleSync() {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(syncLayers);
-    };
-    if (map.isStyleLoaded()) syncLayers();
+    }
+
+    scheduleSync();
     map.on("load", scheduleSync);
     map.on("style.load", scheduleSync);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(retryTimer);
       map.off("load", scheduleSync);
       map.off("style.load", scheduleSync);
       clearRouteLayers(map, routeLayerIdsRef.current, routeLayerEventsRef.current);
       routeLayerIdsRef.current = [];
       routeLayerEventsRef.current = [];
-    };
-  }, [
-    block.routeInactiveLineColor,
-    block.routeLineColor,
-    routes,
-    selectedIndex,
-  ]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    const canvas = routeCanvasRef.current;
-    if (!map || !canvas || routes.length === 0) {
-      clearRouteCanvas(canvas);
-      return;
-    }
-
-    let frame = 0;
-    const draw = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        drawRouteCanvas({
-          canvas,
-          map,
-          routes,
-          selectedIndex,
-          activeColor: block.routeLineColor,
-          inactiveColor: block.routeInactiveLineColor,
-        });
-      });
-    };
-
-    draw();
-    map.on("move", draw);
-    map.on("resize", draw);
-    map.on("pitch", draw);
-    map.on("rotate", draw);
-    window.addEventListener("resize", draw);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      map.off("move", draw);
-      map.off("resize", draw);
-      map.off("pitch", draw);
-      map.off("rotate", draw);
-      window.removeEventListener("resize", draw);
-      clearRouteCanvas(canvas);
     };
   }, [
     block.routeInactiveLineColor,
@@ -1043,11 +982,6 @@ export function LocationRouteMap({
           Loading map
         </div>
       )}
-      <canvas
-        ref={routeCanvasRef}
-        className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-        aria-hidden="true"
-      />
       <div className={cn("absolute z-10 hidden sm:block", stopPanelPositionClass(summaryPosition))}>
         <RoutePlanPanel
           block={block}

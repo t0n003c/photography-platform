@@ -735,10 +735,12 @@ is gitignored):
   Follow-up: Route Planning now has public route polish controls: numbered stop list, Google/Apple
   route links, driving/walking/cycling modes, summary position/style controls, and mobile stop cards
   that pan to a stop and open its detail sheet.
-  Follow-up: Route Planning visible route lines render on a lightweight canvas overlay with
-  MapLibre line layers kept as invisible hit targets. Long OSRM routes are capped at 360 display
-  points while preserving stop anchors. Avoid projected SVG route overlays here; large SVG path
-  strings lag during map pan/zoom.
+  Follow-up: Route Planning visible route lines render as native MapLibre line layers with a
+  separate invisible wide hit layer for clicks/hovers. Long OSRM routes are capped at 360 display
+  points while preserving stop anchors. Avoid SVG/canvas route overlays here; they lag during map
+  pan/zoom because they reproject the route outside the map renderer. Route layers retry until the
+  style layer stack is ready and insert before the first symbol layer so they render above the
+  basemap but below labels.
   Follow-up audit: Contact form blocks now have focused unit coverage for parser/default behavior
   and contact page presets. Folders are merged into the Library tab as a Folders view, and the
   separate Folders sidebar item is removed.
