@@ -497,12 +497,11 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 
 ---
 
-## 13. Store (light catalog + manual invoice checkout)
+## 13. Store (light catalog + optional hosted checkout)
 
 > Product catalog, public browse/cart, manual invoice order requests, issued invoices,
-> and manual payment receipts are active. Hosted payment capture remains deliberately
-> unwired from public checkout, but the settings/schema foundation now records Stripe
-> readiness and future checkout identifiers.
+> manual payment receipts, and optional Stripe Checkout are active. Hosted checkout is
+> enabled only when Settings -> Payments has all required Stripe values.
 
 ### 13.1 `product`
 
@@ -524,8 +523,8 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 | status                       | text                     | `draft`\|`pending`\|`paid`\|`fulfilled`\|`cancelled` |
 | subtotal_cents / total_cents | integer                  |                                                      |
 | currency                     | text                     |                                                      |
-| payment_provider             | text NULL                | currently `'manual'`; `'stripe'` later               |
-| payment_ref                  | text NULL                | manual note or external charge id (future)           |
+| payment_provider             | text NULL                | `'manual'` or `'stripe'`                             |
+| payment_ref                  | text NULL                | manual note, Stripe session id, or external ref      |
 | store_settings_snapshot      | jsonb                    | saved checkout copy/tax/shipping settings            |
 | created_at / updated_at      | timestamptz              |                                                      |
 
@@ -544,25 +543,25 @@ rewrite historical order requests.
 (`draft`\|`issued`\|`paid`\|`void`), `amount_cents`, `currency`, `notes`,
 `payment_instructions`, `public_token_hash`, `issued_at`, `sent_at`, `due_at`, manual receipt
 fields (`paid_at`, `paid_amount_cents`, `payment_method`, `payment_reference`,
-`payment_note`, `receipt_sent_at`), future hosted-payment fields
+`payment_note`, `receipt_sent_at`), hosted-payment fields
 (`online_payment_provider`, `online_payment_status`, `online_payment_session_id`,
 `online_payment_intent_id`, `online_payment_url`, `online_payment_expires_at`),
 `pdf_storage_key`, timestamps.
 
 ### 13.5 Store payment settings (`site_settings`)
 
-Store checkout settings live on the singleton `site_settings` row. Public checkout currently
-uses manual invoice requests. Hosted payment readiness adds:
+Store checkout settings live on the singleton `site_settings` row. Hosted payment readiness
+adds:
 
-| Field                         | Type      | Notes                                                    |
-| ----------------------------- | --------- | -------------------------------------------------------- |
-| store_online_payments_enabled | boolean   | readiness flag only; does not switch public checkout yet |
-| store_payment_provider        | text      | `manual`\|`stripe`; default `manual`                     |
-| store_payment_mode            | text      | `test`\|`live`; default `test`                           |
-| stripe_publishable_key        | text NULL | non-secret Stripe key                                    |
-| stripe_secret_key_enc         | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                 |
-| stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                 |
-| stripe_statement_descriptor   | text NULL | optional Stripe statement descriptor                     |
+| Field                         | Type      | Notes                                                                  |
+| ----------------------------- | --------- | ---------------------------------------------------------------------- |
+| store_online_payments_enabled | boolean   | permits hosted checkout only when provider + Stripe fields are ready   |
+| store_payment_provider        | text      | `manual`\|`stripe`; default `manual`                                   |
+| store_payment_mode            | text      | `test`\|`live`; default `test`                                         |
+| stripe_publishable_key        | text NULL | non-secret Stripe key                                                  |
+| stripe_secret_key_enc         | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                               |
+| stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
+| stripe_statement_descriptor   | text NULL | optional Stripe statement descriptor                                   |
 
 ---
 
@@ -667,4 +666,5 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/shipping/fulfillment — fully deferred with `PaymentProvider` stub.
+- Store tax/VAT automation, refunds, and fulfillment workflow — deferred beyond the current
+  manual invoice + optional Stripe Checkout slice.

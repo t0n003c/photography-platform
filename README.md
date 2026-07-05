@@ -16,9 +16,9 @@ upload→`sharp`→derivatives media pipeline, the public portfolio (categories 
 with multiple gallery layouts, private client galleries with expiring share links, and a
 full admin **CMS** (upload, library, galleries, page builder, layout/design editor,
 settings, menus). The page builder includes curated blocks such as galleries, banners,
-contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout currently
-uses **manual invoice requests**; hosted payments have a Stripe-ready provider/settings
-foundation but remain intentionally unwired from public checkout. See
+contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout supports
+**manual invoice requests** by default, with optional Stripe Checkout enabled from
+Settings -> Payments only when the account, keys, and webhook secret are configured. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 
 ## Stack

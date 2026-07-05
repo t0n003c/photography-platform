@@ -28,7 +28,7 @@ photography-platform/
 │   │   ├── nature/               # Category route (Nature)
 │   │   ├── locations/            # Location/travel portfolio routes
 │   │   ├── product/[slug]/       # Product detail pages with add-to-cart actions
-│   │   ├── cart/                 # Browser-local cart + manual invoice request checkout
+│   │   ├── cart/                 # Browser-local cart + manual or hosted Stripe checkout
 │   │   ├── contact/              # Contact form (spam-protected)
 │   │   └── g/[token]/            # Private client gallery via expiring share link
 │   ├── (admin)/                  # Auth-gated admin UI (uploads, galleries, policy)
@@ -40,7 +40,7 @@ photography-platform/
 │   │   ├── contact/              # Contact form submission + spam check
 │   │   ├── products/             # Public product browse/detail API
 │   │   ├── cart/                 # Resolve browser cart lines against current product pricing
-│   │   ├── checkout/             # Manual invoice order request while hosted payments are deferred
+│   │   ├── checkout/             # Manual invoice request or hosted Stripe session
 │   │   └── admin/orders/         # Admin recent manual order requests
 │   ├── layout.tsx                # Root layout (theme provider, fonts, PWA shell)
 │   ├── manifest.ts               # PWA web app manifest
@@ -66,9 +66,9 @@ photography-platform/
 │   ├── email/                    # EmailProvider abstraction
 │   │   ├── provider.ts          # EmailProvider interface
 │   │   └── drivers/            # smtp.ts + resend.ts
-│   ├── payments/                 # PaymentProvider seam + Stripe readiness helpers
+│   ├── payments/                 # PaymentProvider seam + Stripe checkout/webhook helpers
 │   │   ├── provider.ts          # PaymentProvider interface + readiness types
-│   │   └── drivers/            # stripe.ts (stub, not implemented)
+│   │   └── drivers/            # stripe.ts
 │   ├── layout-config/            # Legacy descriptor type; new work uses src/lib/render-config.ts
 │   ├── validation/               # Shared Zod schemas (client/server/worker)
 │   ├── redis/                    # Redis/Valkey client (sessions, cache, rate limit)
@@ -140,9 +140,8 @@ photography-platform/
 - **Drivers** (`src/storage/drivers`, `src/email/drivers`, `src/payments/drivers`) sit
   behind their respective `provider.ts` interfaces. **SeaweedFS through the S3-compatible
   driver is the default storage path**; switching to the filesystem alternate, or SMTP→Resend, is a config/driver swap
-  with no call-site changes. The payments seam has Stripe readiness settings and future
-  invoice tracking fields; current checkout creates pending manual-invoice orders while
-  hosted payment capture remains deliberately deferred.
+  with no call-site changes. The payments seam keeps manual checkout as the fallback and
+  enables Stripe Checkout sessions/webhook reconciliation when Settings -> Payments is ready.
 
 - **`app/` is routing only.** Business logic lives in `src/`; route handlers and Server
   Components call into `src/` modules. This keeps the worker able to reuse the exact

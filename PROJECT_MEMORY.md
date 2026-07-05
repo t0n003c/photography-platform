@@ -38,8 +38,8 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
 2. **Private client galleries** — access-controlled pages where a client views/downloads
    their shoot, via real auth + expiring shareable links, favorites, download controls.
 3. **Light print store** — product management, public product browsing, browser-local
-   cart, manual invoice requests, and manual receipts are underway. Hosted payments have
-   a Stripe-ready settings/schema foundation but remain unwired from public checkout.
+   cart, manual invoice requests, manual receipts, and optional Stripe Checkout when
+   Settings -> Payments is fully configured.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + `PaymentProvider` foundation                                           | Stripe settings/schema ready; hosted checkout not implemented                                                       |
+| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Stripe sessions/webhooks active when Settings -> Payments is ready; refunds/tax/fulfillment still deferred          |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -257,9 +257,10 @@ is gitignored):
   `STORAGE_FS_PATH`.
 - **Email:** `EMAIL_DRIVER` (`smtp`|`resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`,
   `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` (SECRET), `RESEND_API_KEY` (SECRET).
-- **Payments (hosted checkout deferred):** `PAYMENTS_DRIVER`, `STRIPE_PUBLISHABLE_KEY`,
-  `STRIPE_SECRET_KEY` (SECRET), `STRIPE_WEBHOOK_SECRET` (SECRET). Stripe keys can also be
-  stored encrypted through Settings → Payments.
+- **Payments:** `PAYMENTS_DRIVER`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`
+  (SECRET), `STRIPE_WEBHOOK_SECRET` (SECRET). Stripe keys can also be stored encrypted
+  through Settings -> Payments. Hosted checkout activates only when Stripe is selected,
+  online payments are enabled, and publishable/secret/webhook values are present.
 - **Integrations:** `IG_ACCESS_TOKEN` (SECRET, Instagram), `TURNSTILE_SITE_KEY`,
   `TURNSTILE_SECRET_KEY` (SECRET — NAS needs real Turnstile keys).
 - **Video:** `VIDEO_RENDER_ENABLED`, `INSTALL_REMOTION_DEPS`.
@@ -471,8 +472,9 @@ is gitignored):
 - **GHCR packages:** the public image manifests for `photography-platform-web:latest` and
   `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
   fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
-- **Payments:** manual invoice checkout/receipts are active. Stripe provider settings and
-  future invoice payment tracking fields exist, but hosted checkout/webhooks are not wired yet.
+- **Payments:** manual invoice checkout/receipts remain active. Optional Stripe Checkout
+  now creates hosted sessions for cart orders and issued public invoices, and signed
+  webhooks reconcile paid/expired invoice state when Settings -> Payments is ready.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -505,8 +507,8 @@ is gitignored):
 
 - **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
   `main` still builds/publishes images and runs the full CI/Lighthouse stack.
-- **Implement hosted payments** when needed via the existing `PaymentProvider` seam (Stripe
-  likely first driver); provider settings and invoice session/intent fields already exist.
+- **Store payment follow-ups:** refunds, tax/VAT automation, fulfillment workflow, and
+  Stripe operational hardening beyond Checkout session/webhook reconciliation.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
@@ -1222,6 +1224,15 @@ is gitignored):
   secret inputs replace encrypted values and `null` clears them. `src/payments` now exposes
   a readiness helper, while `/api/v1/checkout` still uses the existing manual invoice path
   until hosted Stripe checkout/webhooks are approved.
+  Follow-up: Hosted Stripe Checkout is now wired behind Settings -> Payments readiness.
+  Public cart checkout creates a Stripe Checkout session, a pending order, and an issued
+  invoice when Stripe is ready; otherwise the manual invoice path remains the fallback.
+  Issued public invoice pages show a Pay online action when hosted checkout is ready.
+  `/api/v1/invoices/[token]/checkout` creates invoice-specific Checkout sessions, and
+  `/api/v1/webhooks/stripe` verifies `stripe-signature` before marking sessions paid or
+  expired. Paid webhooks update order/invoice state idempotently and enqueue the existing
+  receipt email when appropriate. Stripe still does not handle refunds, tax/VAT automation,
+  or fulfillment workflow in-app.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
   and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and

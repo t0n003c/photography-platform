@@ -51,6 +51,13 @@ export type OrderStatus =
   | "cancelled";
 
 export type InvoiceStatus = "draft" | "issued" | "paid" | "void";
+export type OnlinePaymentStatus =
+  | "requires_payment"
+  | "pending"
+  | "paid"
+  | "failed"
+  | "expired"
+  | "refunded";
 
 export interface AdminInvoiceDTO {
   id: string;
@@ -69,6 +76,12 @@ export interface AdminInvoiceDTO {
   paymentReference: string | null;
   paymentNote: string | null;
   receiptSentAt: string | null;
+  onlinePaymentProvider: "stripe" | null;
+  onlinePaymentStatus: OnlinePaymentStatus | null;
+  onlinePaymentSessionId: string | null;
+  onlinePaymentIntentId: string | null;
+  onlinePaymentUrl: string | null;
+  onlinePaymentExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,6 +162,12 @@ function invoiceToDTO(row: typeof invoice.$inferSelect): AdminInvoiceDTO {
     paymentReference: row.paymentReference,
     paymentNote: row.paymentNote,
     receiptSentAt: row.receiptSentAt?.toISOString() ?? null,
+    onlinePaymentProvider: row.onlinePaymentProvider as "stripe" | null,
+    onlinePaymentStatus: row.onlinePaymentStatus as OnlinePaymentStatus | null,
+    onlinePaymentSessionId: row.onlinePaymentSessionId,
+    onlinePaymentIntentId: row.onlinePaymentIntentId,
+    onlinePaymentUrl: row.onlinePaymentUrl,
+    onlinePaymentExpiresAt: row.onlinePaymentExpiresAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -249,6 +268,103 @@ export async function createManualCheckoutOrder(
 
   return {
     orderId,
+    clientId,
+    status: "pending",
+    subtotalCents: summary.subtotalCents,
+    taxCents: summary.taxCents,
+    shippingCents: summary.shippingCents,
+    totalCents: summary.totalCents,
+    currency: summary.currency,
+    itemCount: summary.lines.reduce((sum, line) => sum + line.quantity, 0),
+    createdAt: createdAt.toISOString(),
+    checkoutSettings: summary.checkoutSettings,
+  };
+}
+
+export interface HostedCheckoutRefs {
+  orderId: string;
+  invoiceId: string;
+  invoiceNumber: string;
+}
+
+export interface HostedCheckoutSessionRecord {
+  id: string;
+  url: string;
+  paymentIntentId?: string | null;
+  expiresAt?: Date | null;
+}
+
+export function createHostedCheckoutRefs(): HostedCheckoutRefs {
+  return {
+    orderId: newId(),
+    invoiceId: newId(),
+    invoiceNumber: invoiceNumber(),
+  };
+}
+
+export async function createHostedCheckoutOrder(
+  summary: CartSummaryDTO,
+  customer: CheckoutCustomerInput,
+  refs: HostedCheckoutRefs,
+  session: HostedCheckoutSessionRecord,
+): Promise<ManualCheckoutOrderDTO> {
+  const clientId = await createCheckoutClient(customer);
+  const createdAt = new Date();
+
+  await db.transaction(async (tx) => {
+    await tx.insert(orderTable).values({
+      id: refs.orderId,
+      clientId,
+      email: customer.email.trim().toLowerCase(),
+      status: "pending",
+      subtotalCents: summary.subtotalCents,
+      taxCents: summary.taxCents,
+      shippingCents: summary.shippingCents,
+      totalCents: summary.totalCents,
+      currency: summary.currency,
+      paymentProvider: "stripe",
+      paymentRef: session.id,
+      storeSettingsSnapshot: summary.checkoutSettings,
+      createdAt,
+      updatedAt: createdAt,
+    });
+
+    await tx.insert(orderItem).values(
+      summary.lines.map((line) => ({
+        id: newId(),
+        orderId: refs.orderId,
+        productId: line.product.id,
+        photoId: line.product.photoId,
+        description: lineDescription(line.product.name, line.selectedOptions),
+        options: line.selectedOptions,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPriceCents,
+        lineTotalCents: line.lineTotalCents,
+      })),
+    );
+
+    await tx.insert(invoice).values({
+      id: refs.invoiceId,
+      orderId: refs.orderId,
+      number: refs.invoiceNumber,
+      status: "issued",
+      amountCents: summary.totalCents,
+      currency: summary.currency,
+      paymentInstructions: "Pay securely online by card.",
+      issuedAt: createdAt,
+      onlinePaymentProvider: "stripe",
+      onlinePaymentStatus: "pending",
+      onlinePaymentSessionId: session.id,
+      onlinePaymentIntentId: session.paymentIntentId ?? null,
+      onlinePaymentUrl: session.url,
+      onlinePaymentExpiresAt: session.expiresAt ?? null,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  });
+
+  return {
+    orderId: refs.orderId,
     clientId,
     status: "pending",
     subtotalCents: summary.subtotalCents,
@@ -582,6 +698,152 @@ export async function recordInvoicePaymentAdmin(
     invoiceToken:
       input.sendReceipt && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
   };
+}
+
+export async function attachInvoiceOnlineCheckoutSession(
+  invoiceId: string,
+  session: HostedCheckoutSessionRecord,
+): Promise<AdminOrderDTO | null> {
+  const invoiceRows = await db
+    .select()
+    .from(invoice)
+    .where(eq(invoice.id, invoiceId))
+    .limit(1);
+  const current = invoiceRows[0];
+  if (!current || current.status === "paid" || current.status === "void") return null;
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(invoice)
+      .set({
+        onlinePaymentProvider: "stripe",
+        onlinePaymentStatus: "pending",
+        onlinePaymentSessionId: session.id,
+        onlinePaymentIntentId: session.paymentIntentId ?? null,
+        onlinePaymentUrl: session.url,
+        onlinePaymentExpiresAt: session.expiresAt ?? null,
+      })
+      .where(eq(invoice.id, invoiceId));
+    await tx
+      .update(orderTable)
+      .set({
+        paymentProvider: "stripe",
+        paymentRef: session.id,
+      })
+      .where(eq(orderTable.id, current.orderId));
+  });
+
+  return getOrderAdmin(current.orderId);
+}
+
+async function invoiceByOnlinePayment(input: {
+  invoiceId?: string | null;
+  sessionId?: string | null;
+  paymentIntentId?: string | null;
+}) {
+  if (input.invoiceId) {
+    const rows = await db
+      .select()
+      .from(invoice)
+      .where(eq(invoice.id, input.invoiceId))
+      .limit(1);
+    if (rows[0]) return rows[0];
+  }
+  if (input.sessionId) {
+    const rows = await db
+      .select()
+      .from(invoice)
+      .where(eq(invoice.onlinePaymentSessionId, input.sessionId))
+      .limit(1);
+    if (rows[0]) return rows[0];
+  }
+  if (input.paymentIntentId) {
+    const rows = await db
+      .select()
+      .from(invoice)
+      .where(eq(invoice.onlinePaymentIntentId, input.paymentIntentId))
+      .limit(1);
+    if (rows[0]) return rows[0];
+  }
+  return null;
+}
+
+export async function recordStripeCheckoutPaid(input: {
+  invoiceId?: string | null;
+  sessionId: string;
+  paymentIntentId?: string | null;
+  amountPaidCents?: number | null;
+}): Promise<
+  | {
+      order: AdminOrderDTO;
+      invoice: AdminInvoiceDTO;
+      wasAlreadyPaid: boolean;
+    }
+  | null
+> {
+  const current = await invoiceByOnlinePayment(input);
+  if (!current) return null;
+  const wasAlreadyPaid = current.status === "paid";
+  const paidAt = current.paidAt ?? new Date();
+  const paidAmountCents =
+    input.amountPaidCents && input.amountPaidCents > 0
+      ? input.amountPaidCents
+      : (current.paidAmountCents ?? current.amountCents);
+
+  if (!wasAlreadyPaid) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(invoice)
+        .set({
+          status: "paid",
+          paidAt,
+          paidAmountCents,
+          paymentMethod: "Stripe Checkout",
+          paymentReference: input.paymentIntentId ?? input.sessionId,
+          paymentNote: "Paid online via Stripe Checkout.",
+          onlinePaymentProvider: "stripe",
+          onlinePaymentStatus: "paid",
+          onlinePaymentSessionId: input.sessionId,
+          onlinePaymentIntentId:
+            input.paymentIntentId ?? current.onlinePaymentIntentId ?? null,
+        })
+        .where(eq(invoice.id, current.id));
+      await tx
+        .update(orderTable)
+        .set({
+          status: "paid",
+          paymentProvider: "stripe",
+          paymentRef: input.paymentIntentId ?? input.sessionId,
+        })
+        .where(eq(orderTable.id, current.orderId));
+    });
+  }
+
+  const order = await getOrderAdmin(current.orderId);
+  if (!order?.invoice) return null;
+  return {
+    order,
+    invoice: order.invoice,
+    wasAlreadyPaid,
+  };
+}
+
+export async function recordStripeCheckoutExpired(input: {
+  invoiceId?: string | null;
+  sessionId?: string | null;
+}): Promise<AdminOrderDTO | null> {
+  const current = await invoiceByOnlinePayment(input);
+  if (!current || current.status === "paid" || current.status === "void") {
+    return current ? getOrderAdmin(current.orderId) : null;
+  }
+  await db
+    .update(invoice)
+    .set({
+      onlinePaymentStatus: "expired",
+      onlinePaymentUrl: null,
+    })
+    .where(eq(invoice.id, current.id));
+  return getOrderAdmin(current.orderId);
 }
 
 export async function getPublicInvoiceByToken(

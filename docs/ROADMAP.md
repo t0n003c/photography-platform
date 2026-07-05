@@ -12,7 +12,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Lock the stack: Next.js 15 App Router + TS, PostgreSQL 16, Drizzle, Better Auth (password + TOTP + passkeys, rate-limit, lockout, sessions), Redis/Valkey, BullMQ worker, sharp pipeline.
 - [x] Decide topology: single Next.js app (public + admin + API) + separate worker process, same codebase.
 - [x] Decide deployment target: NAS (Synology/Unraid) under Docker; NPM + Cloudflare Tunnel external; no public inbound ports.
-- [x] Define provider abstractions: `StorageProvider` (**SeaweedFS/S3 default**, filesystem alternate driver), `EmailProvider` (SMTP/Resend), `PaymentProvider` (stub, deferred).
+- [x] Define provider abstractions: `StorageProvider` (**SeaweedFS/S3 default**, filesystem alternate driver), `EmailProvider` (SMTP/Resend), `PaymentProvider` (manual default; Stripe driver added later).
 - [x] Author `DEPLOYMENT.md` (topology, compose plan, volumes, env, networking, backups, upgrade, run-book).
 - [x] Author this `ROADMAP.md` (phased plan).
 - [x] Cross-reference companion docs: `MEDIA-ARCHITECTURE.md`, `SECURITY.md`, `CACHING-STRATEGY.md` (authored alongside Phase 0).
@@ -108,7 +108,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 ## Phase 6 — Integrations & hardening ✅ (completed 2026-06-15)
 
 - [x] Email flows: contact notifications + gallery invites via `EmailProvider` (log default / SMTP / Resend), enqueued through BullMQ, sent by the worker.
-- [x] `PaymentProvider` / invoice seams (factory + `isPaymentsEnabled`; manual invoice checkout active; Stripe settings/schema foundation added, hosted checkout still unwired).
+- [x] `PaymentProvider` / invoice seams (factory + `isPaymentsEnabled`; manual invoice checkout active; Stripe settings/schema foundation added).
 - [x] Security pass against `SECURITY.md` (audit) + fixes: fail-closed prod secret (`instrumentation.ts`), contact dual rate-limit keys, XFF trusted only outside prod, token-resolution rate-limit ordering. Vitest + 37 unit tests.
 - [~] Performance: Lighthouse CI budgets (`lighthouserc.json`) wired; **the actual Lighthouse run needs a browser/CI — run `npx @lhci/cli autorun` against the built app**.
 - [x] Caching per `CACHING-STRATEGY.md`: middleware enforces private `no-store` (admin/login/client-gallery/auth) + CDN `s-maxage`+SWR on public read APIs; media route immutable vs no-store; CSP report endpoint.
@@ -151,7 +151,8 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ## Deferred / Out of scope (require explicit sign-off)
 
-- [ ] Real payments / checkout (live Stripe checkout sessions, webhook reconciliation, refunds, tax, fulfillment).
+- [x] Live Stripe checkout sessions + signed webhook reconciliation for cart orders and issued invoices.
+- [ ] Store operations still deferred: refunds, tax/VAT automation, fulfillment workflow.
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 

@@ -73,14 +73,29 @@ describe("store checkout settings", () => {
       paymentMode: "live",
       stripePublishableKey: "pk_live_demo",
       stripeSecretKeySet: true,
-      stripeWebhookSecretSet: false,
+      stripeWebhookSecretSet: true,
       stripeStatementDescriptor: "A very long studio statement descriptor",
     });
     expect(settings.stripeStatementDescriptor).toHaveLength(22);
     expect(storePaymentStatus(settings)).toMatchObject({
-      activeCheckoutPath: "manual",
+      activeCheckoutPath: "hosted",
       readyForHostedCheckout: true,
       label: "Stripe settings ready",
+    });
+  });
+
+  it("requires a Stripe webhook secret before hosted checkout becomes active", () => {
+    const settings = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "stripe",
+      stripePublishableKey: "pk_test_demo",
+      stripeSecretKeySet: true,
+      stripeWebhookSecretSet: false,
+    });
+    expect(storePaymentStatus(settings)).toMatchObject({
+      activeCheckoutPath: "manual",
+      readyForHostedCheckout: false,
+      missing: ["Stripe webhook secret"],
     });
   });
 });

@@ -41,6 +41,11 @@ const emptySummary: CartSummaryDTO = {
   currency: "USD",
   hasMixedCurrency: false,
   checkoutSettings: publicStoreCheckoutSettings(STORE_CHECKOUT_DEFAULTS),
+  payment: {
+    hostedCheckoutAvailable: false,
+    provider: "manual",
+    activeCheckoutPath: "manual",
+  },
 };
 
 function formatMoney(cents: number, currency: string) {
@@ -179,7 +184,14 @@ export function StoreCartPage() {
         }),
       });
       if (!res.ok) throw new Error(await readError(res));
-      const body = (await res.json()) as { data: StoreOrderConfirmation };
+      const body = (await res.json()) as {
+        data: StoreOrderConfirmation & { checkoutUrl?: string | null };
+      };
+      if (body.data.checkoutUrl) {
+        replaceCart([]);
+        window.location.assign(body.data.checkoutUrl);
+        return;
+      }
       try {
         sessionStorage.setItem(
           storeOrderConfirmationStorageKey(body.data.orderId),
@@ -312,7 +324,11 @@ export function StoreCartPage() {
             </div>
 
             <form className="tora-cart-checkout" onSubmit={submit}>
-              <h2>Request invoice</h2>
+              <h2>
+                {summary.payment.hostedCheckoutAvailable
+                  ? "Secure checkout"
+                  : "Request invoice"}
+              </h2>
               <p>{summary.checkoutSettings.checkoutInstructions}</p>
               <label>
                 Name
@@ -380,7 +396,13 @@ export function StoreCartPage() {
                   summary.optionErrors.length > 0
                 }
               >
-                {submitting ? "Submitting..." : "Submit order request"}
+                {submitting
+                  ? summary.payment.hostedCheckoutAvailable
+                    ? "Opening checkout..."
+                    : "Submitting..."
+                  : summary.payment.hostedCheckoutAvailable
+                    ? "Continue to secure payment"
+                    : "Submit order request"}
               </button>
             </form>
           </div>

@@ -3,13 +3,16 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CheckCircle2, FileText } from "lucide-react";
 import { InvoicePrintActions } from "@/components/invoice/invoice-print-actions";
+import { StripePaymentButton } from "@/components/invoice/stripe-payment-button";
 import { getPublicInvoiceByToken } from "@/src/db/queries/orders";
 import type { AdminOrderDTO } from "@/src/db/queries/orders";
 import {
   getSiteSettings,
   getSiteSettingsRow,
   getStoreCheckoutSettings,
+  getStorePaymentSettings,
 } from "@/src/db/queries/settings";
+import { storePaymentStatus } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -50,16 +53,24 @@ export default async function PublicInvoicePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [data, settings, settingsRow, checkoutSettings] = await Promise.all([
-    getPublicInvoiceByToken(token),
-    getSiteSettings(),
-    getSiteSettingsRow(),
-    getStoreCheckoutSettings(),
-  ]);
+  const [data, settings, settingsRow, checkoutSettings, paymentSettings] =
+    await Promise.all([
+      getPublicInvoiceByToken(token),
+      getSiteSettings(),
+      getSiteSettingsRow(),
+      getStoreCheckoutSettings(),
+      getStorePaymentSettings(),
+    ]);
   if (!data) notFound();
 
   const { invoice, order } = data;
   const isPaid = invoice.status === "paid";
+  const paymentStatus = storePaymentStatus(paymentSettings);
+  const canPayOnline =
+    !isPaid &&
+    invoice.status === "issued" &&
+    paymentStatus.readyForHostedCheckout &&
+    invoice.amountCents > 0;
   const statusLabel = isPaid ? "Payment received" : "Payment due";
   const paidAmount = invoice.paidAmountCents ?? invoice.amountCents;
   const contactEmail =
@@ -89,7 +100,10 @@ export default async function PublicInvoicePage({
           </span>
         </div>
 
-        <InvoicePrintActions label={printLabel} />
+        <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
+          <InvoicePrintActions label={printLabel} />
+          {canPayOnline && <StripePaymentButton token={token} />}
+        </div>
 
         <div className="rounded-2xl border bg-[hsl(var(--card))] p-5 shadow-sm sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="mb-6 hidden items-start justify-between gap-6 border-b pb-5 print:flex">

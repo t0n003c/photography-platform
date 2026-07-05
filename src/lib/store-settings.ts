@@ -24,7 +24,7 @@ export interface StorePaymentSettings {
 }
 
 export interface StorePaymentStatus {
-  activeCheckoutPath: "manual";
+  activeCheckoutPath: "manual" | "hosted";
   readyForHostedCheckout: boolean;
   missing: string[];
   label: string;
@@ -155,9 +155,10 @@ export function storePaymentStatus(settings: StorePaymentSettings): StorePayment
   if (!normalized.onlinePaymentsEnabled) missing.push("online payment readiness");
   if (!normalized.stripePublishableKey) missing.push("Stripe publishable key");
   if (!normalized.stripeSecretKeySet) missing.push("Stripe secret key");
+  if (!normalized.stripeWebhookSecretSet) missing.push("Stripe webhook secret");
 
   return {
-    activeCheckoutPath: "manual",
+    activeCheckoutPath: missing.length === 0 ? "hosted" : "manual",
     readyForHostedCheckout: missing.length === 0,
     missing,
     label:

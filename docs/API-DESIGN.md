@@ -387,18 +387,20 @@ Response `201` (raw token shown exactly once):
 (DATA-MODEL §15). Success: `202`. High spam score: store as `spam`, return `202` anyway
 (don't tip off bots), do not email admin.
 
-### 4.12 Store / manual invoice checkout `[public]` / `[admin]`
+### 4.12 Store / checkout `[public]` / `[admin]`
 
-> Product browse/cart/order-request are live. `PaymentProvider` has a Stripe-ready
-> settings/schema foundation, but public checkout still creates manual invoice requests;
-> no real charges are captured yet.
+> Product browse/cart/order-request are live. Public checkout stays manual unless
+> Settings -> Payments is fully Stripe-ready; then cart orders and issued invoices can
+> create hosted Stripe Checkout sessions.
 
 | Method       | Path                   | Auth   | Purpose                                                                                                          |
 | ------------ | ---------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
 | GET          | `/products`            | public | list active products                                                                                             |
 | GET          | `/products/{id}`       | public | product detail                                                                                                   |
 | POST         | `/cart`                | public | resolve browser-local cart lines, selected options, and current active product pricing                           |
-| POST         | `/checkout`            | public | creates `order` (status `pending`) + `order_item` rows, including selected options, for manual invoice follow-up |
+| POST         | `/checkout`            | public | creates a manual invoice request, or a Stripe Checkout session + pending order/invoice when hosted payments are ready |
+| POST         | `/invoices/{token}/checkout` | public | creates a Stripe Checkout session for an issued public invoice token |
+| POST         | `/webhooks/stripe`     | public | verifies Stripe signatures and reconciles paid/expired Checkout sessions |
 | GET          | `/admin/products`      | admin  | list products                                                                                                    |
 | POST         | `/admin/products`      | admin  | create product                                                                                                   |
 | PATCH/DELETE | `/admin/products/{id}` | admin  | update/delete product; delete requires fresh auth                                                                |
@@ -409,7 +411,9 @@ Cart and checkout line items accept `options` as an option-id to choice-id map. 
 product options must resolve against the current active product definition, or checkout returns
 `409 PRODUCT_OPTIONS_REQUIRED`.
 
-`POST /checkout` with `PAYMENTS_DRIVER=stub` returns a manual request confirmation:
+`POST /checkout` returns a manual request confirmation when hosted payments are not ready.
+When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`, and the
+client redirects to Stripe Checkout.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,

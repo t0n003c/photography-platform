@@ -114,10 +114,13 @@ cp .env.example .env
 - **Settings encryption** — `SETTINGS_ENCRYPTION_KEY` (64 hex chars / 32 bytes; `openssl rand -hex 32`). Encrypts editable secrets stored in the DB by the **Settings** tab (the SMTP password / Resend key). **Optional** — when unset, a key is derived from `BETTER_AUTH_SECRET` so dev boots; set a dedicated value in production. Rotating it invalidates stored secrets (re-enter them in the UI).
 - **Storage (S3 / SeaweedFS)** — `STORAGE_DRIVER` (`minio` default — the generic S3 driver name, now pointed at SeaweedFS; `filesystem` alternate), `S3_ENDPOINT` (`http://seaweedfs:8333`), `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE=true`, and `STORAGE_FS_PATH` (filesystem driver only). **There are no `MINIO_ROOT_*` vars** — SeaweedFS reads its identities from `docker/seaweedfs/s3.json`, and `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` **must match** the keys in that file.
 - **Email** — `EMAIL_DRIVER` (`log` default, `smtp`, `resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`, `RESEND_API_KEY`. These are the **fallback**; the **Settings → Email** tab overrides them at runtime (SMTP/Resend config in `site_settings`, secret encrypted). "Send test email" verifies the live config.
-- **Payments** — `PAYMENTS_DRIVER` (`stub` until hosted checkout is deliberately wired),
-  `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Stripe keys can
-  also be managed from **Settings → Payments**, where secret values are encrypted in
-  `site_settings` by `SETTINGS_ENCRYPTION_KEY`; env values are optional fallbacks.
+- **Payments** — `PAYMENTS_DRIVER` (`stub` by default), `STRIPE_PUBLISHABLE_KEY`,
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Stripe keys can also be managed from
+  **Settings -> Payments**, where secret values are encrypted in `site_settings` by
+  `SETTINGS_ENCRYPTION_KEY`; env values are optional fallbacks. Hosted checkout activates
+  only when Stripe is selected, online payments are enabled, and publishable/secret/webhook
+  values are present. Configure Stripe to send Checkout events to
+  `/api/v1/webhooks/stripe`.
 - **Worker** — `WORKER_HEALTH_PORT` (default `9091`), `RUN_MIGRATIONS` (default `true`; set `false` to run migrations out-of-band).
 - **Tunnel** — `TUNNEL_TOKEN` (only when using the `tunnel` profile; critical secret).
 - **Seed** — `SEED_OWNER_EMAIL`, `SEED_OWNER_PASSWORD`.

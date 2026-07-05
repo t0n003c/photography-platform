@@ -149,15 +149,19 @@ Each section presents 2-3 realistic options, then a clearly marked **Recommendat
 
 ---
 
-## 12. Payments (manual active; hosted checkout deferred)
+## 12. Payments (manual active; optional Stripe Checkout)
 
-| Option                                                   | Pros                                                                                                                                                   | Cons                                                                                                       |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| **Manual invoices now; Stripe provider foundation next** | Manual payment workflow avoids PCI scope while supporting real store operations; Stripe settings/schema can be wired later without reworking invoices. | Stripe is not merchant-of-record — _you_ handle sales tax/VAT obligations.                                 |
-| **Lemon Squeezy / Paddle (merchant of record)**          | MoR handles global sales tax/VAT for you — big admin relief for a solo seller.                                                                         | Higher fees; more opinionated/hosted checkout; less flexible than raw Stripe.                              |
-| **Build payments now**                                   | —                                                                                                                                                      | Premature: out of scope, adds compliance/PCI surface and maintenance before there's revenue to justify it. |
+| Option                                              | Pros                                                                                                                                       | Cons                                                                          |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| **Manual invoices default + optional Stripe**       | Manual workflow remains simple; Stripe Checkout can be enabled when keys/webhook are ready without storing card data in this app.          | Stripe is not merchant-of-record — _you_ handle sales tax/VAT obligations.    |
+| **Lemon Squeezy / Paddle (merchant of record)**     | MoR handles global sales tax/VAT for you — big admin relief for a solo seller.                                                             | Higher fees; more opinionated/hosted checkout; less flexible than raw Stripe. |
+| **Direct card capture inside the app**              | Full control over the payment experience.                                                                                                  | Not worth the PCI/compliance burden for this product.                         |
 
-**Recommendation: Keep public checkout manual until Stripe checkout/webhooks are a deliberate phase** — manual invoices and receipts now cover the current store need without adding PCI surface. Stripe remains the likely first hosted driver because it fits a self-hosted app well; the app now stores Stripe readiness in encrypted settings and has invoice fields for future session/intent tracking. **Lemon Squeezy/Paddle remain a deliberate future alternative** if offloading global tax/VAT compliance outweighs their higher fees.
+**Recommendation: Keep manual invoices as the fallback and use Stripe Checkout for hosted
+card payments when deliberately configured** — the app creates Checkout sessions for cart
+orders and issued invoices, verifies Stripe webhooks, and reconciles paid/expired invoice
+state without touching card data. **Lemon Squeezy/Paddle remain a deliberate future
+alternative** if offloading global tax/VAT compliance outweighs their higher fees.
 
 ---
 
@@ -176,6 +180,6 @@ Each section presents 2-3 realistic options, then a clearly marked **Recommendat
 | Job queue                     | **BullMQ**                                                        | Robust retries/backoff/concurrency for heavy image jobs, kept off the primary DB and request path.                                                               |
 | PWA                           | **Serwist**                                                       | Maintained, App-Router-aware installable PWA without a hand-rolled service worker.                                                                               |
 | Email                         | **`EmailProvider`: SMTP + Resend**                                | SMTP for portability/zero lock-in; Resend driver for deliverability when wanted.                                                                                 |
-| Payments                      | **Manual invoice checkout + Stripe-ready foundation**             | Manual receipts active; hosted checkout/webhooks deferred until justified; MoR option preserved.                                                                 |
+| Payments                      | **Manual invoice checkout + optional Stripe Checkout**            | Manual receipts active; hosted Stripe sessions/webhooks are available when configured; MoR option preserved.                                                      |
 | Topology                      | **web + worker processes, shared Postgres/Valkey**                | Long CPU-bound media jobs run out-of-band so the site stays responsive.                                                                                          |
 | Deployment                    | **Docker Compose on NAS, NPM + Cloudflare Tunnel**                | Reproducible, portable, no exposed inbound ports; runs on owned hardware.                                                                                        |

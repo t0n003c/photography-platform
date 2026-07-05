@@ -45,7 +45,7 @@ edge CDN for cacheable HTML/ISR pages and image bytes.
 | Storage        | `StorageProvider` abstraction; **SeaweedFS (S3) core/default**, filesystem driver alternate (ADR-0024)                        |
 | PWA            | Serwist (offline shell, manifest, thumbnail caching)                                                                          |
 | Email          | `EmailProvider` interface — SMTP + Resend drivers                                                                             |
-| Payments       | Manual invoice checkout active; `PaymentProvider` has Stripe-ready settings/schema foundation, hosted checkout still deferred |
+| Payments       | Manual invoice checkout active; optional Stripe Checkout sessions/webhooks when Settings -> Payments is ready                 |
 
 ## 2. Component Diagram
 
@@ -81,7 +81,7 @@ flowchart TB
 
     subgraph external["External providers"]
         EMAIL["Email provider<br/>(SMTP / Resend)"]
-        PAY["Payment provider<br/>(Stripe) — FOUNDATION / DEFERRED"]
+        PAY["Payment provider<br/>(Stripe Checkout)<br/>optional hosted sessions"]
     end
 
     B <--> CF
@@ -100,13 +100,11 @@ flowchart TB
     WK --> store
     WK --> EMAIL
 
-    API -. seam only .-> PAY
+    API -. optional hosted checkout .-> PAY
 
     PUB --> PG
     PUB --> store
 
-    classDef stub stroke-dasharray: 5 5;
-    class PAY stub;
 ```
 
 NPM and the Cloudflare Tunnel are **external to the Compose application** in the sense
@@ -250,7 +248,7 @@ they are logically separated:
 - `queue/` — BullMQ queue definitions + job contracts (typed payloads shared so
   producer `web` and consumer `worker` cannot drift).
 - `email/` — `EmailProvider` (SMTP + Resend).
-- `payments/` — `PaymentProvider` **stub**.
+- `payments/` — `PaymentProvider` drivers and webhook helpers.
 - `auth/` — Better Auth config + policy.
 - `validation/` — Zod schemas shared client/server/worker.
 - `lib/render-config.ts` — active gallery render/preview config contract. The older

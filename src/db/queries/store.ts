@@ -12,10 +12,14 @@ import {
   type ProductOptionSelectionInput,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
-import { getStoreCheckoutSettings } from "@/src/db/queries/settings";
+import {
+  getStoreCheckoutSettings,
+  getStorePaymentSettings,
+} from "@/src/db/queries/settings";
 import {
   calculateStoreTotals,
   publicStoreCheckoutSettings,
+  storePaymentStatus,
   type PublicStoreCheckoutSettings,
 } from "@/src/lib/store-settings";
 
@@ -70,6 +74,11 @@ export interface CartSummaryDTO {
   currency: string;
   hasMixedCurrency: boolean;
   checkoutSettings: PublicStoreCheckoutSettings;
+  payment: {
+    hostedCheckoutAvailable: boolean;
+    provider: "manual" | "stripe";
+    activeCheckoutPath: "manual" | "hosted";
+  };
 }
 
 export function productSalePrice(
@@ -224,7 +233,11 @@ function resolveSelectedOptions(
 export async function resolveCartItems(
   items: CartItemInput[],
 ): Promise<CartSummaryDTO> {
-  const checkoutSettings = await getStoreCheckoutSettings();
+  const [checkoutSettings, paymentSettings] = await Promise.all([
+    getStoreCheckoutSettings(),
+    getStorePaymentSettings(),
+  ]);
+  const paymentStatus = storePaymentStatus(paymentSettings);
   const normalized = normalizeCartItems(items);
   const products = await listActiveProductsByIds(
     normalized.map((item) => item.productId),
@@ -270,6 +283,11 @@ export async function resolveCartItems(
     currency: currencies[0] ?? "USD",
     hasMixedCurrency: currencies.length > 1,
     checkoutSettings: publicStoreCheckoutSettings(checkoutSettings),
+    payment: {
+      hostedCheckoutAvailable: paymentStatus.readyForHostedCheckout,
+      provider: paymentSettings.paymentProvider,
+      activeCheckoutPath: paymentStatus.activeCheckoutPath,
+    },
   };
 }
 

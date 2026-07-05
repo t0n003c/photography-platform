@@ -43,7 +43,7 @@ interface SettingsDTO {
   stripeWebhookSecretSet: boolean;
   stripeStatementDescriptor: string;
   storePaymentStatus: {
-    activeCheckoutPath: "manual";
+    activeCheckoutPath: "manual" | "hosted";
     readyForHostedCheckout: boolean;
     missing: string[];
     label: string;
@@ -101,6 +101,7 @@ function paymentStatusFor(settings: {
   onlinePaymentsEnabled: boolean;
   stripePublishableKey: string;
   stripeSecretKeySet: boolean;
+  stripeWebhookSecretSet: boolean;
 }) {
   if (settings.paymentProvider !== "stripe") {
     return {
@@ -115,9 +116,10 @@ function paymentStatusFor(settings: {
   if (!settings.onlinePaymentsEnabled) missing.push("online payment readiness");
   if (!settings.stripePublishableKey?.trim()) missing.push("Stripe publishable key");
   if (!settings.stripeSecretKeySet) missing.push("Stripe secret key");
+  if (!settings.stripeWebhookSecretSet) missing.push("Stripe webhook secret");
 
   return {
-    activeCheckoutPath: "manual" as const,
+    activeCheckoutPath: missing.length === 0 ? ("hosted" as const) : ("manual" as const),
     readyForHostedCheckout: missing.length === 0,
     missing,
     label:
@@ -285,6 +287,7 @@ export default function SettingsPage() {
                   onlinePaymentsEnabled: next.storeOnlinePaymentsEnabled,
                   stripePublishableKey: next.stripePublishableKey,
                   stripeSecretKeySet: next.stripeSecretKeySet,
+                  stripeWebhookSecretSet: next.stripeWebhookSecretSet,
                 }),
               };
             })()
@@ -355,6 +358,7 @@ export default function SettingsPage() {
     onlinePaymentsEnabled: s.storeOnlinePaymentsEnabled,
     stripePublishableKey: s.stripePublishableKey,
     stripeSecretKeySet: s.stripeSecretKeySet,
+    stripeWebhookSecretSet: s.stripeWebhookSecretSet,
   });
   const stripeSelected = s.storePaymentProvider === "stripe";
 
@@ -541,8 +545,8 @@ export default function SettingsPage() {
               Current checkout: manual invoice requests
             </p>
             <p className="mt-1 text-[hsl(var(--muted-foreground))]">
-              These settings prepare hosted payments for the next checkout phase. Manual
-              invoices remain the active public checkout path.
+              Enable Stripe when the account, webhook, and keys are ready. Manual
+              invoice recording remains available in Store admin.
             </p>
           </div>
 
@@ -590,11 +594,11 @@ export default function SettingsPage() {
             />
             <span>
               <span className="block font-medium">
-                Mark hosted payments ready for checkout wiring
+                Enable hosted Stripe checkout
               </span>
               <span className="block text-xs text-[hsl(var(--muted-foreground))]">
-                This does not turn on public Stripe checkout yet; it records that the
-                account settings are ready for the next phase.
+                When all Stripe fields are present, public cart and invoice pages can
+                send clients to Stripe Checkout.
               </span>
             </span>
           </label>
@@ -656,8 +660,7 @@ export default function SettingsPage() {
               </p>
             ) : (
               <p className="mt-1 text-[hsl(var(--muted-foreground))]">
-                Hosted payment details are recorded. Public checkout is still manual
-                until the hosted checkout route is implemented.
+                Hosted Stripe checkout is ready for public cart and invoice payments.
               </p>
             )}
           </div>

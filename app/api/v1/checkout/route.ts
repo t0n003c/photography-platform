@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { created, parseJson, problem } from "@/src/lib/http";
-import { isPaymentsEnabled } from "@/src/payments";
-import { createManualCheckoutOrder } from "@/src/db/queries/orders";
+import { getPaymentProvider, PaymentProviderError } from "@/src/payments";
+import {
+  createHostedCheckoutOrder,
+  createHostedCheckoutRefs,
+  createManualCheckoutOrder,
+} from "@/src/db/queries/orders";
 import { resolveCartItems } from "@/src/db/queries/store";
 import { enqueueEmail } from "@/src/email/send";
 import {
@@ -11,6 +15,11 @@ import {
 import { getEnv } from "@/src/lib/env";
 import { getSiteSettings, getStoreCheckoutSettings } from "@/src/db/queries/settings";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
+import {
+  checkoutLineItemsFromCartSummary,
+  checkoutLineItemsTotal,
+} from "@/src/payments/store-line-items";
+import { issueInvoiceToken } from "@/src/auth/invoice-token";
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +78,12 @@ function buildConfirmation(opts: {
   };
 }
 
-// POST /api/v1/checkout — creates a pending manual-invoice order while the
-// PaymentProvider seam is stubbed. A real driver can replace the enabled branch
-// with getPaymentProvider().createCheckout(...).
+function checkoutUrlFor(token: string, suffix: string) {
+  return `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(token)}${suffix}`;
+}
+
+// POST /api/v1/checkout — creates a pending manual-invoice order by default,
+// or a hosted Stripe Checkout session when Settings -> Payments is ready.
 export async function POST(req: Request) {
   const parsed = await parseJson(req, CheckoutSchema);
   if ("error" in parsed) return parsed.error;
@@ -114,12 +126,58 @@ export async function POST(req: Request) {
     );
   }
 
-  if (isPaymentsEnabled()) {
-    return problem(
-      501,
-      "PAYMENT_CHECKOUT_NOT_WIRED",
-      "Hosted checkout is not wired to the cart flow yet.",
-    );
+  if (summary.payment.hostedCheckoutAvailable) {
+    const refs = createHostedCheckoutRefs();
+    const invoiceToken = issueInvoiceToken(refs.invoiceId);
+    const lineItems = checkoutLineItemsFromCartSummary(summary);
+    if (checkoutLineItemsTotal(lineItems) !== summary.totalCents) {
+      return problem(
+        500,
+        "CHECKOUT_TOTAL_MISMATCH",
+        "Checkout totals could not be prepared.",
+      );
+    }
+    try {
+      const provider = await getPaymentProvider();
+      const session = await provider.createCheckout({
+        orderId: refs.orderId,
+        invoiceId: refs.invoiceId,
+        customerEmail: parsed.data.customer.email.trim().toLowerCase(),
+        currency: summary.currency,
+        lineItems,
+        successUrl: checkoutUrlFor(invoiceToken, "?payment=success"),
+        cancelUrl: checkoutUrlFor(invoiceToken, "?payment=cancelled"),
+        metadata: {
+          source: "cart",
+          orderId: refs.orderId,
+          invoiceId: refs.invoiceId,
+        },
+      });
+      const order = await createHostedCheckoutOrder(
+        summary,
+        parsed.data.customer,
+        refs,
+        session,
+      );
+      const confirmation = buildConfirmation({
+        order,
+        summary,
+        customer: parsed.data.customer,
+      });
+      return created({
+        data: {
+          ...confirmation,
+          receiptUrl: `/invoice/${encodeURIComponent(invoiceToken)}`,
+          checkoutUrl: session.url,
+        },
+        message: "Stripe checkout session created.",
+      });
+    } catch (err) {
+      if (err instanceof PaymentProviderError) {
+        return problem(502, err.code, err.message);
+      }
+      return problem(502, "PAYMENT_PROVIDER_ERROR", "Could not start checkout.");
+    }
   }
 
   const order = await createManualCheckoutOrder(summary, parsed.data.customer);

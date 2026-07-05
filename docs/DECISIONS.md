@@ -175,20 +175,23 @@ This is the running decision log for the self-hosted photography platform.
 
 ---
 
-## ADR-0012: Payments — deferred; PaymentProvider seam only (Stripe-bound)
+## ADR-0012: Payments — manual default with optional Stripe Checkout
 
 - **Status:** Accepted
 - **Date:** 2026-06-14
-- **Context:** A light print store is in scope to be **architected** for invoicing/payments **later**, not built now. Introducing real payment processing prematurely adds PCI/compliance surface and maintenance before there's revenue to justify it.
-- **Decision:** Ship only a **`PaymentProvider` interface stub** plus **schema headroom** in PostgreSQL for an order/invoice model. **No money-processing code** is implemented now. When activated, **Stripe** is the planned first driver (API + webhooks fit a self-hosted app).
-- **2026-07 update:** Manual invoices and receipts are active. The Stripe foundation now
-  includes encrypted Settings → Payments fields plus invoice columns for future hosted
-  payment session/intent tracking, but public checkout still stays on manual invoice
-  requests until a separate hosted-checkout/webhook phase is approved.
+- **Context:** A light print store needed to start with low-risk manual invoices, while leaving
+  room for hosted card checkout once the operator is ready to configure a payment account.
+- **Decision:** Keep manual invoice checkout as the default, and expose hosted payments through
+  a `PaymentProvider` interface. Stripe Checkout is the first concrete driver because hosted
+  Checkout + signed webhooks fit a self-hosted app without storing card data.
+- **2026-07 update:** Manual invoices and receipts are active. Hosted Stripe Checkout is
+  now available when Settings -> Payments has Stripe selected, online payments enabled,
+  and publishable/secret/webhook values present. Cart checkout and issued public invoices
+  create Stripe Checkout sessions; signed webhooks reconcile paid/expired invoice state.
 - **Consequences:**
-  - Zero payment/PCI surface enters the system until a deliberate future decision.
-  - The print store can grow into invoicing/checkout without rearchitecting — only a driver and UI are added.
-  - Product management, public product browsing, browser-local cart, and manual invoice order requests may ship before payments; purchase CTAs must avoid pretending hosted payment capture is active until a payment driver is deliberately enabled.
+  - Card data stays with Stripe Checkout; this app stores only session/intent references and invoice state.
+  - Manual invoice requests remain the default/fallback when Stripe readiness is incomplete.
+  - Product management, public product browsing, browser-local cart, and manual invoice order requests continue to work without hosted payments.
   - Stripe (not a merchant of record) would leave sales-tax/VAT obligations to the operator — to be weighed at activation.
 - **Alternatives considered:** **Lemon Squeezy / Paddle** (merchant-of-record handling global tax/VAT — major admin relief, at higher fees and more opinionated checkout; preserved as a deliberate future alternative); **building payments now** (premature scope, compliance/maintenance burden ahead of revenue — rejected).
 
