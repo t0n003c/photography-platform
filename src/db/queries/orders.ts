@@ -1,4 +1,4 @@
-import { and, desc, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { client, order as orderTable, orderItem } from "@/src/db/schema";
 import { newId } from "@/src/lib/id";
@@ -21,6 +21,8 @@ export interface ManualCheckoutOrderDTO {
   itemCount: number;
 }
 
+export type OrderStatus = "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
+
 export interface AdminOrderItemDTO {
   id: string;
   productId: string | null;
@@ -35,8 +37,10 @@ export interface AdminOrderDTO {
   id: string;
   clientId: string | null;
   clientName: string | null;
+  clientPhone: string | null;
+  clientNotes: string | null;
   email: string | null;
-  status: "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
+  status: OrderStatus;
   subtotalCents: number;
   totalCents: number;
   currency: string;
@@ -63,7 +67,16 @@ async function findExistingClientByEmail(email: string) {
 
 async function createCheckoutClient(customer: CheckoutCustomerInput) {
   const existingId = await findExistingClientByEmail(customer.email);
-  if (existingId) return existingId;
+  if (existingId) {
+    const updates: Partial<typeof client.$inferInsert> = {};
+    if (customer.name?.trim()) updates.name = customer.name.trim();
+    if (customer.phone?.trim()) updates.phone = customer.phone.trim();
+    if (customer.notes?.trim()) updates.notes = customer.notes.trim();
+    if (Object.keys(updates).length > 0) {
+      await db.update(client).set(updates).where(eq(client.id, existingId));
+    }
+    return existingId;
+  }
 
   const id = newId();
   await db.insert(client).values({
@@ -136,7 +149,13 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
     db.select().from(orderItem).where(inArray(orderItem.orderId, orderIds)),
     clientIds.length
       ? db
-          .select({ id: client.id, name: client.name, email: client.email })
+          .select({
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            notes: client.notes,
+          })
           .from(client)
           .where(inArray(client.id, clientIds))
       : Promise.resolve([]),
@@ -164,6 +183,8 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       id: row.id,
       clientId: row.clientId,
       clientName: clientRow?.name ?? null,
+      clientPhone: clientRow?.phone ?? null,
+      clientNotes: clientRow?.notes ?? null,
       email: row.email ?? clientRow?.email ?? null,
       status: row.status,
       subtotalCents: row.subtotalCents,
@@ -176,4 +197,66 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       items: itemsByOrder.get(row.id) ?? [],
     };
   });
+}
+
+export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
+  const rows = await db
+    .select()
+    .from(orderTable)
+    .where(eq(orderTable.id, id))
+    .limit(1);
+  if (!rows[0]) return null;
+
+  const [itemRows, clientRows] = await Promise.all([
+    db.select().from(orderItem).where(eq(orderItem.orderId, id)),
+    rows[0].clientId
+      ? db
+          .select({
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            notes: client.notes,
+          })
+          .from(client)
+          .where(eq(client.id, rows[0].clientId))
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
+
+  const row = rows[0];
+  const clientRow = clientRows[0] ?? null;
+  return {
+    id: row.id,
+    clientId: row.clientId,
+    clientName: clientRow?.name ?? null,
+    clientPhone: clientRow?.phone ?? null,
+    clientNotes: clientRow?.notes ?? null,
+    email: row.email ?? clientRow?.email ?? null,
+    status: row.status,
+    subtotalCents: row.subtotalCents,
+    totalCents: row.totalCents,
+    currency: row.currency,
+    paymentProvider: row.paymentProvider,
+    paymentRef: row.paymentRef,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    items: itemRows.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      photoId: item.photoId,
+      description: item.description,
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      lineTotalCents: item.lineTotalCents,
+    })),
+  };
+}
+
+export async function updateOrderStatusAdmin(
+  id: string,
+  status: OrderStatus,
+): Promise<AdminOrderDTO | null> {
+  await db.update(orderTable).set({ status }).where(eq(orderTable.id, id));
+  return getOrderAdmin(id);
 }

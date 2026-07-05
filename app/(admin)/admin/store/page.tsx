@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
-import { Loader2, Plus, ShoppingBag } from "lucide-react";
+import { Copy, Eye, Loader2, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,6 +37,8 @@ interface ProductRow {
 interface OrderRow {
   id: string;
   clientName: string | null;
+  clientPhone: string | null;
+  clientNotes: string | null;
   email: string | null;
   status: "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
   subtotalCents: number;
@@ -45,13 +47,19 @@ interface OrderRow {
   paymentProvider: string | null;
   paymentRef: string | null;
   createdAt: string;
+  updatedAt: string;
   items: {
     id: string;
+    productId: string | null;
+    photoId: string | null;
     description: string | null;
     quantity: number;
+    unitPriceCents: number;
     lineTotalCents: number;
   }[];
 }
+
+type OrderStatus = OrderRow["status"];
 
 interface ProductFormValues {
   name: string;
@@ -140,6 +148,32 @@ function orderTone(status: OrderRow["status"]): ComponentProps<typeof Badge>["to
   if (status === "paid" || status === "fulfilled") return "green";
   if (status === "cancelled") return "red";
   return "neutral";
+}
+
+function orderSummary(row: OrderRow) {
+  const lines = row.items.map(
+    (item) =>
+      `- ${item.quantity} x ${item.description || "Product"} @ ${formatMoney(
+        item.unitPriceCents,
+        row.currency,
+      )} = ${formatMoney(item.lineTotalCents, row.currency)}`,
+  );
+  return [
+    `Order ${row.id}`,
+    `Status: ${row.status}`,
+    `Customer: ${row.clientName || "Unknown"}`,
+    `Email: ${row.email || "n/a"}`,
+    `Phone: ${row.clientPhone || "n/a"}`,
+    "",
+    "Items:",
+    ...(lines.length ? lines : ["- No items"]),
+    "",
+    `Subtotal: ${formatMoney(row.subtotalCents, row.currency)}`,
+    `Total: ${formatMoney(row.totalCents, row.currency)}`,
+    row.clientNotes ? `Notes: ${row.clientNotes}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function photoUrl(photo: PhotoDTO | null | undefined) {
@@ -423,6 +457,141 @@ function ProductModal({
   );
 }
 
+function OrderDetailModal({
+  order,
+  saving,
+  onClose,
+  onCopy,
+  onStatusChange,
+}: {
+  order: OrderRow;
+  saving: boolean;
+  onClose: () => void;
+  onCopy: (order: OrderRow) => void;
+  onStatusChange: (status: OrderStatus) => Promise<void>;
+}) {
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  return (
+    <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,46rem)]">
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-xs text-[hsl(var(--muted-foreground))]">
+              {order.id}
+            </p>
+            <h3 className="mt-1 text-lg font-semibold">
+              {order.clientName || order.email || "Unknown customer"}
+            </h3>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Received {formatDate(order.createdAt)}
+            </p>
+          </div>
+          <Badge tone={orderTone(order.status)} className="capitalize">
+            {order.status}
+          </Badge>
+        </div>
+
+        <div className="grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+              Email
+            </p>
+            <p>{order.email || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+              Phone
+            </p>
+            <p>{order.clientPhone || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+              Payment
+            </p>
+            <p>{order.paymentProvider || "manual"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+              Last updated
+            </p>
+            <p>{formatDate(order.updatedAt)}</p>
+          </div>
+          {order.clientNotes && (
+            <div className="sm:col-span-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                Notes
+              </p>
+              <p className="whitespace-pre-wrap">{order.clientNotes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead className="bg-[hsl(var(--muted))] text-left text-[hsl(var(--muted-foreground))]">
+              <tr>
+                <th className="px-3 py-2 font-medium">Item</th>
+                <th className="px-3 py-2 text-right font-medium">Qty</th>
+                <th className="px-3 py-2 text-right font-medium">Unit</th>
+                <th className="px-3 py-2 text-right font-medium">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.id} className="border-t">
+                  <td className="px-3 py-2">{item.description || "Product"}</td>
+                  <td className="px-3 py-2 text-right">{item.quantity}</td>
+                  <td className="px-3 py-2 text-right">
+                    {formatMoney(item.unitPriceCents, order.currency)}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {formatMoney(item.lineTotalCents, order.currency)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <Field label="Order status" htmlFor="order-status">
+            <Select
+              id="order-status"
+              value={order.status}
+              disabled={saving}
+              onChange={(event) => onStatusChange(event.target.value as OrderStatus)}
+            >
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="cancelled">Cancelled</option>
+            </Select>
+          </Field>
+          <Button type="button" variant="outline" onClick={() => onCopy(order)}>
+            <Copy className="h-4 w-4" />
+            Copy summary
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            {itemCount} item{itemCount === 1 ? "" : "s"}
+          </p>
+          <div className="text-right">
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Subtotal {formatMoney(order.subtotalCents, order.currency)}
+            </p>
+            <p className="text-lg font-semibold">
+              Total {formatMoney(order.totalCents, order.currency)}
+            </p>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function StorePage() {
   const { toast } = useToast();
   const { runWithStepUp } = useStepUp();
@@ -433,6 +602,8 @@ export default function StorePage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category).filter(Boolean))],
@@ -495,6 +666,35 @@ export default function StorePage() {
       toast(errMsg(err), "error");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const updateOrderStatus = async (row: OrderRow, status: OrderStatus) => {
+    if (row.status === status) return;
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.patch<{ data: OrderRow }>(`/api/v1/admin/orders/${row.id}`, {
+        status,
+      });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data : order)),
+      );
+      setSelectedOrder(res.data);
+      toast("Order status updated", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+      throw err;
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const copyOrder = async (row: OrderRow) => {
+    try {
+      await navigator.clipboard.writeText(orderSummary(row));
+      toast("Order summary copied", "success");
+    } catch {
+      toast("Could not copy order summary", "error");
     }
   };
 
@@ -659,6 +859,7 @@ export default function StorePage() {
                       <th className="px-3 py-2 font-medium">Total</th>
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="px-3 py-2 font-medium">Received</th>
+                      <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
@@ -700,6 +901,19 @@ export default function StorePage() {
                         <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
                           {formatDate(row.createdAt)}
                         </td>
+                        <td className="px-3 py-3">
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedOrder(row)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -727,6 +941,16 @@ export default function StorePage() {
           photos={photos}
           onClose={() => setEditing(null)}
           onSubmit={(values) => update(editing.id, values)}
+        />
+      )}
+
+      {selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          saving={updatingOrderId === selectedOrder.id}
+          onClose={() => setSelectedOrder(null)}
+          onCopy={copyOrder}
+          onStatusChange={(status) => updateOrderStatus(selectedOrder, status)}
         />
       )}
     </div>

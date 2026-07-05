@@ -1147,6 +1147,12 @@ is gitignored):
   Admin `/admin/store` now shows a compact Recent order requests section via
   `/api/v1/admin/orders`. Hosted checkout and real payment capture remain deliberately deferred
   behind the `PaymentProvider` seam.
+  Follow-up: manual order requests are now manageable from the Store tab. Admin order DTOs include
+  client phone/notes, `/api/v1/admin/orders/[id]` supports GET and status PATCH
+  (`draft`/`pending`/`paid`/`fulfilled`/`cancelled`) with audit logging, and `/admin/store`
+  opens an order detail modal with customer info, itemized totals, status selector, and a copy
+  summary helper. Repeated checkout requests from the same email refresh the existing client's
+  latest name/phone/notes so the detail modal has current contact context.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

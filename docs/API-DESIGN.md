@@ -356,6 +356,7 @@ Response `201` (raw token shown exactly once):
 | POST | `/admin/products` | admin | create product |
 | PATCH/DELETE | `/admin/products/{id}` | admin | update/delete product; delete requires fresh auth |
 | GET | `/admin/orders` | admin | view recent manual order requests |
+| GET/PATCH | `/admin/orders/{id}` | admin | view an order request and update status |
 
 `POST /checkout` with `PAYMENTS_DRIVER=stub` returns a manual request confirmation:
 ```json
