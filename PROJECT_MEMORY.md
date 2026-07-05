@@ -1184,6 +1184,15 @@ is gitignored):
   JSON snapshot. Cart totals now include subtotal/tax/shipping/total, checkout
   persists the snapshot, confirmation pages/emails reuse the saved copy, and Store
   order details/copy summaries show the saved tax/shipping breakdown.
+  Follow-up: Store invoice workflow has a first manual-payment slice. Migration
+  `0016_real_wallow.sql` adds invoice notes, payment instructions, sent timestamp,
+  and hashed public invoice tokens. `/admin/store` order details can save an invoice
+  draft or send a secure invoice email; sending moves open orders to `invoiced` and
+  creates a one-time raw token link for `/invoice/[token]`. Public invoice pages are
+  SSR/noindex, itemized, mobile-safe, and show the saved totals/payment instructions.
+  Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
+  when migrations are present; generated SQL was applied directly to Docker Postgres
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` and `0016`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

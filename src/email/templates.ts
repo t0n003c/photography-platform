@@ -1,5 +1,6 @@
 import type { EmailMessage } from "@/src/email/provider";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
+import type { AdminOrderDTO, AdminInvoiceDTO } from "@/src/db/queries/orders";
 
 function escape(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -230,5 +231,86 @@ ${totalsText(opts.order)}
 
 Review: ${opts.adminUrl}`,
     replyTo: opts.order.customerEmail,
+  };
+}
+
+export function storeInvoiceIssued(opts: {
+  to: string;
+  order: AdminOrderDTO;
+  invoice: AdminInvoiceDTO;
+  invoiceUrl: string;
+  siteName: string;
+}): EmailMessage {
+  const customerName = opts.order.clientName?.trim();
+  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
+  const invoiceOrder: StoreOrderConfirmation = {
+    orderId: opts.order.id,
+    status: "pending",
+    customerName: opts.order.clientName,
+    customerEmail: opts.order.email ?? opts.to,
+    subtotalCents: opts.order.subtotalCents,
+    taxCents: opts.order.taxCents,
+    shippingCents: opts.order.shippingCents,
+    totalCents: opts.order.totalCents,
+    currency: opts.order.currency,
+    itemCount: opts.order.items.reduce((sum, item) => sum + item.quantity, 0),
+    createdAt: opts.order.createdAt,
+    receiptUrl: opts.invoiceUrl,
+    checkoutSettings: opts.order.storeSettingsSnapshot,
+    lines: opts.order.items.map((item) => ({
+      productId: item.productId ?? "",
+      productSlug: "",
+      productName: item.description?.split(" — ")[0] || "Product",
+      sku: item.description ?? "Order item",
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      lineTotalCents: item.lineTotalCents,
+      selectedOptions: item.options,
+    })),
+  };
+  const dueDate = opts.invoice.dueAt
+    ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
+        new Date(opts.invoice.dueAt),
+      )
+    : null;
+  const body = `
+    <p>${greeting}</p>
+    <p>Your invoice <strong>${escape(opts.invoice.number)}</strong> is ready.</p>
+    ${
+      dueDate
+        ? `<p style="color:#666;font-size:13px">Due ${escape(dueDate)}</p>`
+        : ""
+    }
+    <table style="width:100%;border-collapse:collapse;margin:18px 0">
+      <thead>
+        <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
+          <th align="left" style="padding-bottom:8px">Item</th>
+          <th align="center" style="padding-bottom:8px">Qty</th>
+          <th align="right" style="padding-bottom:8px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${orderLinesHtml(invoiceOrder)}</tbody>
+    </table>
+    ${totalsHtml(invoiceOrder)}
+    ${
+      opts.invoice.paymentInstructions
+        ? `<p style="white-space:pre-wrap">${escape(opts.invoice.paymentInstructions)}</p>`
+        : ""
+    }
+    <p><a href="${escape(opts.invoiceUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View invoice</a></p>
+    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.invoiceUrl)}</p>`;
+  return {
+    to: opts.to,
+    subject: `Invoice ${opts.invoice.number} from ${opts.siteName}`,
+    html: layout("Your invoice is ready", body),
+    text: `${customerName ? `Hi ${customerName},` : "Hi,"}
+
+Your invoice ${opts.invoice.number} is ready.
+${dueDate ? `Due: ${dueDate}\n` : ""}
+${orderLinesText(invoiceOrder)}
+
+${totalsText(invoiceOrder)}
+${opts.invoice.paymentInstructions ? `\n${opts.invoice.paymentInstructions}\n` : ""}
+View invoice: ${opts.invoiceUrl}`,
   };
 }

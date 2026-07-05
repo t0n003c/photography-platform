@@ -4,7 +4,9 @@ import {
   galleryInvite,
   manualOrderAdminNotification,
   manualOrderCustomerConfirmation,
+  storeInvoiceIssued,
 } from "@/src/email/templates";
+import type { AdminOrderDTO } from "@/src/db/queries/orders";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
 
 const order: StoreOrderConfirmation = {
@@ -47,6 +49,39 @@ const order: StoreOrderConfirmation = {
           priceDeltaCents: 4500,
         },
       ],
+    },
+  ],
+};
+
+const adminOrder: AdminOrderDTO = {
+  id: order.orderId,
+  clientId: "client-1",
+  clientName: order.customerName,
+  clientPhone: "555-0101",
+  clientNotes: null,
+  email: order.customerEmail,
+  status: "invoiced",
+  subtotalCents: order.subtotalCents,
+  taxCents: order.taxCents,
+  shippingCents: order.shippingCents,
+  totalCents: order.totalCents,
+  currency: order.currency,
+  paymentProvider: "manual",
+  paymentRef: "Manual invoice requested",
+  storeSettingsSnapshot: order.checkoutSettings,
+  invoice: null,
+  createdAt: order.createdAt,
+  updatedAt: order.createdAt,
+  items: [
+    {
+      id: "item-1",
+      productId: "product-1",
+      photoId: null,
+      description: "Fine Art Print — Size: 16 x 20",
+      options: order.lines[0].selectedOptions,
+      quantity: 1,
+      unitPriceCents: 13900,
+      lineTotalCents: 13900,
     },
   ],
 };
@@ -139,5 +174,34 @@ describe("manual order email templates", () => {
     });
     expect(msg.html).not.toContain("<script>");
     expect(msg.html).not.toContain("<img");
+  });
+});
+
+describe("storeInvoiceIssued", () => {
+  it("builds a client invoice email with secure link and totals", () => {
+    const msg = storeInvoiceIssued({
+      to: "riley@example.com",
+      order: adminOrder,
+      invoice: {
+        id: "invoice-1",
+        number: "INV-20260705-ABC123",
+        status: "issued",
+        amountCents: 16247,
+        currency: "USD",
+        notes: "Thank you.",
+        paymentInstructions: "Pay by card after confirmation.",
+        issuedAt: "2026-07-05T20:00:00.000Z",
+        sentAt: "2026-07-05T20:00:00.000Z",
+        dueAt: "2026-07-20T12:00:00.000Z",
+        createdAt: "2026-07-05T20:00:00.000Z",
+        updatedAt: "2026-07-05T20:00:00.000Z",
+      },
+      invoiceUrl: "https://example.com/invoice/secret-token",
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("INV-20260705-ABC123");
+    expect(msg.html).toContain("https://example.com/invoice/secret-token");
+    expect(msg.text ?? "").toContain("Pay by card after confirmation.");
+    expect(msg.text ?? "").toContain("Total: $162.47");
   });
 });

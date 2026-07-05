@@ -5,6 +5,7 @@ import {
   Copy,
   Eye,
   Loader2,
+  Mail,
   PackageCheck,
   Plus,
   Search,
@@ -30,6 +31,21 @@ import {
 } from "@/src/lib/store-options";
 
 type ProductKind = "print" | "digital" | "bundle";
+
+interface InvoiceRow {
+  id: string;
+  number: string;
+  status: "draft" | "issued" | "paid" | "void";
+  amountCents: number;
+  currency: string;
+  notes: string | null;
+  paymentInstructions: string | null;
+  issuedAt: string | null;
+  sentAt: string | null;
+  dueAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface ProductRow {
   id: string;
@@ -57,7 +73,7 @@ interface OrderRow {
   clientPhone: string | null;
   clientNotes: string | null;
   email: string | null;
-  status: "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
+  status: "draft" | "pending" | "invoiced" | "paid" | "fulfilled" | "cancelled";
   subtotalCents: number;
   taxCents: number;
   shippingCents: number;
@@ -65,6 +81,7 @@ interface OrderRow {
   currency: string;
   paymentProvider: string | null;
   paymentRef: string | null;
+  invoice: InvoiceRow | null;
   createdAt: string;
   updatedAt: string;
   items: {
@@ -85,11 +102,23 @@ type OrderFilter = "all" | "open" | OrderStatus;
 const ORDER_STATUS_OPTIONS: OrderStatus[] = [
   "draft",
   "pending",
+  "invoiced",
   "paid",
   "fulfilled",
   "cancelled",
 ];
-const OPEN_ORDER_STATUSES = new Set<OrderStatus>(["draft", "pending", "paid"]);
+const OPEN_ORDER_STATUSES = new Set<OrderStatus>([
+  "draft",
+  "pending",
+  "invoiced",
+  "paid",
+]);
+
+interface InvoiceFormValues {
+  dueAt: string;
+  notes: string;
+  paymentInstructions: string;
+}
 
 interface ProductFormValues {
   name: string;
@@ -180,8 +209,14 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function dateInputValue(value: string | null | undefined) {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
 function orderTone(status: OrderRow["status"]): ComponentProps<typeof Badge>["tone"] {
   if (status === "pending" || status === "draft") return "amber";
+  if (status === "invoiced") return "blue";
   if (status === "paid" || status === "fulfilled") return "green";
   if (status === "cancelled") return "red";
   return "neutral";
@@ -221,6 +256,8 @@ function orderSearchText(row: OrderRow) {
     row.email,
     row.clientPhone,
     row.status,
+    row.invoice?.number,
+    row.invoice?.status,
     row.clientNotes,
     ...row.items.map((item) => itemSearchText(item, row.currency)),
   ]
@@ -255,6 +292,7 @@ function orderSummary(row: OrderRow) {
     `Tax: ${formatMoney(row.taxCents, row.currency)}`,
     `Shipping: ${formatMoney(row.shippingCents, row.currency)}`,
     `Total: ${formatMoney(row.totalCents, row.currency)}`,
+    row.invoice ? `Invoice: ${row.invoice.number} (${row.invoice.status})` : null,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
     .filter(Boolean)
@@ -749,26 +787,41 @@ function OrderDetailModal({
   onClose,
   onCopy,
   onStatusChange,
+  onInvoiceSubmit,
 }: {
   order: OrderRow;
   saving: boolean;
   onClose: () => void;
   onCopy: (order: OrderRow) => void;
   onStatusChange: (status: OrderStatus) => Promise<void>;
+  onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
 }) {
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
+    dueAt: "",
+    notes: "",
+    paymentInstructions: "",
+  });
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
     0,
   );
   const nextStatus: OrderStatus | null =
-    order.status === "draft" || order.status === "pending"
+    order.status === "draft" || order.status === "pending" || order.status === "invoiced"
       ? "paid"
       : order.status === "paid"
         ? "fulfilled"
         : null;
+  useEffect(() => {
+    setInvoiceForm({
+      dueAt: dateInputValue(order.invoice?.dueAt),
+      notes: order.invoice?.notes ?? "",
+      paymentInstructions: order.invoice?.paymentInstructions ?? "",
+    });
+  }, [order.id, order.invoice]);
+
   return (
-    <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,46rem)]">
+    <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -878,6 +931,7 @@ function OrderDetailModal({
             >
               <option value="draft">Draft</option>
               <option value="pending">Pending</option>
+              <option value="invoiced">Invoiced</option>
               <option value="paid">Paid</option>
               <option value="fulfilled">Fulfilled</option>
               <option value="cancelled">Cancelled</option>
@@ -898,6 +952,115 @@ function OrderDetailModal({
             <Button type="button" variant="outline" onClick={() => onCopy(order)}>
               <Copy className="h-4 w-4" />
               Copy summary
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-lg border p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-medium">Invoice</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Save invoice details, then send a secure invoice link by email.
+              </p>
+            </div>
+            {order.invoice ? (
+              <Badge tone={order.invoice.status === "paid" ? "green" : "blue"}>
+                {order.invoice.number} · {order.invoice.status}
+              </Badge>
+            ) : (
+              <Badge tone="neutral">No invoice yet</Badge>
+            )}
+          </div>
+
+          {order.invoice && (
+            <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+              <span>Created {formatDate(order.invoice.createdAt)}</span>
+              <span>
+                Issued {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
+              </span>
+              <span>Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}</span>
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Due date" htmlFor="invoice-due-at">
+              <Input
+                id="invoice-due-at"
+                type="date"
+                value={invoiceForm.dueAt}
+                disabled={saving}
+                onChange={(event) =>
+                  setInvoiceForm((current) => ({
+                    ...current,
+                    dueAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field
+              label="Payment instructions"
+              htmlFor="invoice-payment-instructions"
+              hint="Shown on the invoice and sent in the email."
+            >
+              <Textarea
+                id="invoice-payment-instructions"
+                rows={3}
+                value={invoiceForm.paymentInstructions}
+                disabled={saving}
+                placeholder="Example: Pay by Zelle, check, or card after confirmation."
+                onChange={(event) =>
+                  setInvoiceForm((current) => ({
+                    ...current,
+                    paymentInstructions: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <Field label="Invoice notes" htmlFor="invoice-notes">
+            <Textarea
+              id="invoice-notes"
+              rows={3}
+              value={invoiceForm.notes}
+              disabled={saving}
+              placeholder="Optional client-facing notes for this invoice."
+              onChange={(event) =>
+                setInvoiceForm((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
+            />
+          </Field>
+
+          {!order.email && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              Add a customer email before sending this invoice.
+            </p>
+          )}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => onInvoiceSubmit(invoiceForm, false)}
+            >
+              Save draft
+            </Button>
+            <Button
+              type="button"
+              disabled={saving || !order.email}
+              onClick={() => onInvoiceSubmit(invoiceForm, true)}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              Send invoice
             </Button>
           </div>
         </div>
@@ -1051,6 +1214,33 @@ export default function StorePage() {
     } catch (err) {
       toast(errMsg(err), "error");
       throw err;
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const saveInvoice = async (
+    row: OrderRow,
+    values: InvoiceFormValues,
+    sendEmail: boolean,
+  ) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{
+        data: { order: OrderRow; invoiceUrl: string | null };
+      }>(`/api/v1/admin/orders/${row.id}/invoice`, {
+        dueAt: values.dueAt || null,
+        notes: values.notes.trim() || null,
+        paymentInstructions: values.paymentInstructions.trim() || null,
+        sendEmail,
+      });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data.order : order)),
+      );
+      setSelectedOrder(res.data.order);
+      toast(sendEmail ? "Invoice sent" : "Invoice saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
     } finally {
       setUpdatingOrderId(null);
     }
@@ -1476,6 +1666,9 @@ export default function StorePage() {
           onClose={() => setSelectedOrder(null)}
           onCopy={copyOrder}
           onStatusChange={(status) => updateOrderStatus(selectedOrder, status)}
+          onInvoiceSubmit={(values, sendEmail) =>
+            saveInvoice(selectedOrder, values, sendEmail)
+          }
         />
       )}
     </div>

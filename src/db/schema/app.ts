@@ -640,7 +640,7 @@ export const order = pgTable("order", {
   }),
   email: text("email"),
   status: text("status", {
-    enum: ["draft", "pending", "paid", "fulfilled", "cancelled"],
+    enum: ["draft", "pending", "invoiced", "paid", "fulfilled", "cancelled"],
   })
     .notNull()
     .default("draft"),
@@ -690,7 +690,11 @@ export const invoice = pgTable("invoice", {
     .default("draft"),
   amountCents: integer("amount_cents").notNull().default(0),
   currency: text("currency").notNull().default("USD"),
+  notes: text("notes"),
+  paymentInstructions: text("payment_instructions"),
+  publicTokenHash: text("public_token_hash").unique(),
   issuedAt: timestamp("issued_at", { withTimezone: true }),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
   dueAt: timestamp("due_at", { withTimezone: true }),
   pdfStorageKey: text("pdf_storage_key"),
   createdAt: createdAt(),

@@ -12,7 +12,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const StatusSchema = z.object({
-  status: z.enum(["draft", "pending", "paid", "fulfilled", "cancelled"]),
+  status: z.enum(["draft", "pending", "invoiced", "paid", "fulfilled", "cancelled"]),
 });
 
 export async function GET(
