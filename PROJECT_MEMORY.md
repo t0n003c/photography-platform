@@ -1164,6 +1164,12 @@ is gitignored):
   options route shoppers to the product page, browser-local cart lines are keyed by product +
   selected option IDs, `/api/v1/cart` prices option deltas, and `/api/v1/checkout` blocks stale
   or missing required selections before creating manual-invoice orders.
+  Follow-up: Store order triage is now more usable for manual fulfillment. `/admin/store`
+  shows product option counts, order status filter chips (`open`, `all`, and each status),
+  a search box across customer/order/item/option text, visible-vs-total counts, separate
+  option chips under each order item, richer copied summaries with indented option rows,
+  one-click next-step status actions in the order detail modal, and mobile order cards
+  that avoid sideways table scanning for manual fulfillment.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

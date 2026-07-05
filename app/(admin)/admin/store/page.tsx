@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
-import { Copy, Eye, Loader2, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  Loader2,
+  PackageCheck,
+  Plus,
+  Search,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +78,16 @@ interface OrderRow {
 }
 
 type OrderStatus = OrderRow["status"];
+type OrderFilter = "all" | "open" | OrderStatus;
+
+const ORDER_STATUS_OPTIONS: OrderStatus[] = [
+  "draft",
+  "pending",
+  "paid",
+  "fulfilled",
+  "cancelled",
+];
+const OPEN_ORDER_STATUSES = new Set<OrderStatus>(["draft", "pending", "paid"]);
 
 interface ProductFormValues {
   name: string;
@@ -166,14 +185,60 @@ function orderTone(status: OrderRow["status"]): ComponentProps<typeof Badge>["to
   return "neutral";
 }
 
+function orderItemTitle(item: OrderRow["items"][number]) {
+  if (!item.description) return "Product";
+  if (item.options.length === 0) return item.description;
+  return item.description.split(" — ")[0] || item.description;
+}
+
+function optionLine(option: SelectedProductOption, currency: string) {
+  const delta =
+    option.priceDeltaCents === 0
+      ? ""
+      : ` (${option.priceDeltaCents > 0 ? "+" : "-"}${formatMoney(
+          Math.abs(option.priceDeltaCents),
+          currency,
+        )})`;
+  return `${option.optionName}: ${option.valueLabel}${delta}`;
+}
+
+function itemSearchText(item: OrderRow["items"][number], currency: string) {
+  return [
+    orderItemTitle(item),
+    item.description,
+    ...item.options.map((option) => optionLine(option, currency)),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function orderSearchText(row: OrderRow) {
+  return [
+    row.id,
+    row.clientName,
+    row.email,
+    row.clientPhone,
+    row.status,
+    row.clientNotes,
+    ...row.items.map((item) => itemSearchText(item, row.currency)),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 function orderSummary(row: OrderRow) {
-  const lines = row.items.map(
-    (item) =>
-      `- ${item.quantity} x ${item.description || "Product"} @ ${formatMoney(
-        item.unitPriceCents,
-        row.currency,
-      )} = ${formatMoney(item.lineTotalCents, row.currency)}`,
-  );
+  const lines = row.items.flatMap((item) => {
+    const head = `- ${item.quantity} x ${orderItemTitle(item)} @ ${formatMoney(
+      item.unitPriceCents,
+      row.currency,
+    )} = ${formatMoney(item.lineTotalCents, row.currency)}`;
+    if (item.options.length === 0) return [head];
+    return [
+      head,
+      ...item.options.map((option) => `  ${optionLine(option, row.currency)}`),
+    ];
+  });
   return [
     `Order ${row.id}`,
     `Status: ${row.status}`,
@@ -688,6 +753,16 @@ function OrderDetailModal({
   onStatusChange: (status: OrderStatus) => Promise<void>;
 }) {
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const selectedOptionCount = order.items.reduce(
+    (sum, item) => sum + item.options.length,
+    0,
+  );
+  const nextStatus: OrderStatus | null =
+    order.status === "draft" || order.status === "pending"
+      ? "paid"
+      : order.status === "paid"
+        ? "fulfilled"
+        : null;
   return (
     <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,46rem)]">
       <div className="space-y-5">
@@ -701,6 +776,12 @@ function OrderDetailModal({
             </h3>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
               Received {formatDate(order.createdAt)}
+            </p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {selectedOptionCount > 0
+                ? ` · ${selectedOptionCount} selected option${selectedOptionCount === 1 ? "" : "s"}`
+                : ""}
             </p>
           </div>
           <Badge tone={orderTone(order.status)} className="capitalize">
@@ -756,7 +837,20 @@ function OrderDetailModal({
             <tbody>
               {order.items.map((item) => (
                 <tr key={item.id} className="border-t">
-                  <td className="px-3 py-2">{item.description || "Product"}</td>
+                  <td className="px-3 py-2">
+                    <div className="space-y-1">
+                      <p className="font-medium">{orderItemTitle(item)}</p>
+                      {item.options.length > 0 && (
+                        <div className="grid gap-1 text-xs text-[hsl(var(--muted-foreground))]">
+                          {item.options.map((option) => (
+                            <span key={`${item.id}-${option.optionId}`}>
+                              {optionLine(option, order.currency)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-right">{item.quantity}</td>
                   <td className="px-3 py-2 text-right">
                     {formatMoney(item.unitPriceCents, order.currency)}
@@ -785,10 +879,23 @@ function OrderDetailModal({
               <option value="cancelled">Cancelled</option>
             </Select>
           </Field>
-          <Button type="button" variant="outline" onClick={() => onCopy(order)}>
-            <Copy className="h-4 w-4" />
-            Copy summary
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {nextStatus && (
+              <Button
+                type="button"
+                variant="default"
+                disabled={saving}
+                onClick={() => onStatusChange(nextStatus)}
+              >
+                <PackageCheck className="h-4 w-4" />
+                Mark {nextStatus}
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={() => onCopy(order)}>
+              <Copy className="h-4 w-4" />
+              Copy summary
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
@@ -821,11 +928,41 @@ export default function StorePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>("open");
+  const [orderQuery, setOrderQuery] = useState("");
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category).filter(Boolean))],
     [products],
   );
+
+  const orderCounts = useMemo(() => {
+    const counts = Object.fromEntries(
+      ORDER_STATUS_OPTIONS.map((status) => [status, 0]),
+    ) as Record<OrderStatus, number>;
+    for (const order of orders) {
+      counts[order.status] += 1;
+    }
+    const open = orders.filter((order) => OPEN_ORDER_STATUSES.has(order.status)).length;
+    return { counts, open };
+  }, [orders]);
+
+  const visibleOrders = useMemo(() => {
+    const query = orderQuery.trim().toLowerCase();
+    return orders.filter((order) => {
+      if (orderFilter === "open" && !OPEN_ORDER_STATUSES.has(order.status))
+        return false;
+      if (
+        orderFilter !== "all" &&
+        orderFilter !== "open" &&
+        order.status !== orderFilter
+      ) {
+        return false;
+      }
+      if (query && !orderSearchText(order).includes(query)) return false;
+      return true;
+    });
+  }, [orderFilter, orderQuery, orders]);
 
   const load = async () => {
     setLoading(true);
@@ -999,6 +1136,12 @@ export default function StorePage() {
                             <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
                               {product.sku} · /product/{product.slug}
                             </p>
+                            {product.options.length > 0 && (
+                              <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                                {product.options.length} option
+                                {product.options.length === 1 ? "" : "s"} configured
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -1071,84 +1214,226 @@ export default function StorePage() {
                   Manual invoice requests submitted from the public cart.
                 </p>
               </div>
-              <Badge tone="neutral">{orders.length} total</Badge>
+              <Badge tone="neutral">
+                {visibleOrders.length} of {orders.length} shown
+              </Badge>
             </div>
+            {orders.length > 0 && (
+              <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    {
+                      value: "open" as OrderFilter,
+                      label: "Open",
+                      count: orderCounts.open,
+                    },
+                    { value: "all" as OrderFilter, label: "All", count: orders.length },
+                    ...ORDER_STATUS_OPTIONS.map((status) => ({
+                      value: status as OrderFilter,
+                      label: status,
+                      count: orderCounts.counts[status],
+                    })),
+                  ].map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      variant={orderFilter === item.value ? "default" : "outline"}
+                      size="sm"
+                      className="capitalize"
+                      onClick={() => setOrderFilter(item.value)}
+                    >
+                      {item.label}
+                      <span className="text-[0.68rem] opacity-75">{item.count}</span>
+                    </Button>
+                  ))}
+                </div>
+                <label className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+                  <Input
+                    value={orderQuery}
+                    onChange={(event) => setOrderQuery(event.target.value)}
+                    placeholder="Search orders"
+                    className="pl-9"
+                  />
+                </label>
+              </div>
+            )}
             {orders.length === 0 ? (
               <div className="rounded-md border border-dashed p-6 text-sm text-[hsl(var(--muted-foreground))]">
                 No order requests yet.
               </div>
+            ) : visibleOrders.length === 0 ? (
+              <div className="rounded-md border border-dashed p-6 text-sm text-[hsl(var(--muted-foreground))]">
+                No order requests match the current filter.
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[54rem] text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
-                      <th className="px-3 py-2 font-medium">Customer</th>
-                      <th className="px-3 py-2 font-medium">Items</th>
-                      <th className="px-3 py-2 font-medium">Total</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Received</th>
-                      <th className="px-3 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((row) => (
-                      <tr key={row.id} className="border-b last:border-0">
-                        <td className="px-3 py-3">
-                          <p className="font-medium">
+              <>
+                <div className="space-y-3 md:hidden">
+                  {visibleOrders.map((row) => (
+                    <div key={row.id} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="break-words font-medium">
                             {row.clientName || row.email || "Unknown"}
                           </p>
                           {row.email && (
-                            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                            <p className="break-words text-xs text-[hsl(var(--muted-foreground))]">
                               {row.email}
                             </p>
                           )}
-                          <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                            {row.id}
+                        </div>
+                        <Badge
+                          tone={orderTone(row.status)}
+                          className="shrink-0 capitalize"
+                        >
+                          {row.status}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-3 space-y-2 text-sm">
+                        {row.items.length === 0 ? (
+                          <p className="text-[hsl(var(--muted-foreground))]">
+                            No items
                           </p>
-                        </td>
-                        <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
-                          {row.items.length === 0 ? (
-                            "—"
-                          ) : (
-                            <div className="space-y-1">
-                              {row.items.map((item) => (
-                                <div key={item.id}>
-                                  {item.quantity} × {item.description || "Product"} ·{" "}
-                                  {formatMoney(item.lineTotalCents, row.currency)}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 font-medium">
-                          {formatMoney(row.totalCents, row.currency)}
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge tone={orderTone(row.status)} className="capitalize">
-                            {row.status}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
-                          {formatDate(row.createdAt)}
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex justify-end">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedOrder(row)}
+                        ) : (
+                          row.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-md bg-[hsl(var(--muted))] p-2"
                             >
-                              <Eye className="h-4 w-4" />
-                              View
-                            </Button>
-                          </div>
-                        </td>
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="min-w-0 break-words">
+                                  {item.quantity} × {orderItemTitle(item)}
+                                </p>
+                                <span className="shrink-0 font-medium">
+                                  {formatMoney(item.lineTotalCents, row.currency)}
+                                </span>
+                              </div>
+                              {item.options.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {item.options.map((option) => (
+                                    <span
+                                      key={`${item.id}-${option.optionId}`}
+                                      className="rounded border bg-[hsl(var(--background))] px-1.5 py-0.5 text-[0.68rem] text-[hsl(var(--muted-foreground))]"
+                                    >
+                                      {optionLine(option, row.currency)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-sm">
+                        <div>
+                          <p className="font-medium">
+                            {formatMoney(row.totalCents, row.currency)}
+                          </p>
+                          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                            {formatDate(row.createdAt)}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedOrder(row)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[54rem] text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
+                        <th className="px-3 py-2 font-medium">Customer</th>
+                        <th className="px-3 py-2 font-medium">Items</th>
+                        <th className="px-3 py-2 font-medium">Total</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">Received</th>
+                        <th className="px-3 py-2" />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {visibleOrders.map((row) => (
+                        <tr key={row.id} className="border-b last:border-0">
+                          <td className="px-3 py-3">
+                            <p className="font-medium">
+                              {row.clientName || row.email || "Unknown"}
+                            </p>
+                            {row.email && (
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {row.email}
+                              </p>
+                            )}
+                            <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                              {row.id}
+                            </p>
+                          </td>
+                          <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
+                            {row.items.length === 0 ? (
+                              "—"
+                            ) : (
+                              <div className="space-y-1">
+                                {row.items.map((item) => (
+                                  <div key={item.id} className="space-y-1">
+                                    <div>
+                                      {item.quantity} × {orderItemTitle(item)} ·{" "}
+                                      {formatMoney(item.lineTotalCents, row.currency)}
+                                    </div>
+                                    {item.options.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {item.options.map((option) => (
+                                          <span
+                                            key={`${item.id}-${option.optionId}`}
+                                            className="rounded border px-1.5 py-0.5 text-[0.68rem]"
+                                          >
+                                            {optionLine(option, row.currency)}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 font-medium">
+                            {formatMoney(row.totalCents, row.currency)}
+                          </td>
+                          <td className="px-3 py-3">
+                            <Badge tone={orderTone(row.status)} className="capitalize">
+                              {row.status}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
+                            {formatDate(row.createdAt)}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedOrder(row)}
+                              >
+                                <Eye className="h-4 w-4" />
+                                View
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
