@@ -6,6 +6,7 @@ import { writeAudit } from "@/src/lib/audit";
 import { getEnv } from "@/src/lib/env";
 import { enqueueEmail } from "@/src/email/send";
 import { storeInvoiceIssued } from "@/src/email/templates";
+import { issueInvoiceToken } from "@/src/auth/invoice-token";
 import { getSiteSettings } from "@/src/db/queries/settings";
 import { getOrderAdmin, saveInvoiceAdmin } from "@/src/db/queries/orders";
 
@@ -27,6 +28,31 @@ function parseDueDate(value: string | null | undefined) {
   const raw = value.trim();
   const parsed = new Date(raw.includes("T") ? raw : `${raw}T12:00:00.000Z`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const a = await requireRole("admin");
+  if (a.error) return a.error;
+  const { id } = await ctx.params;
+  const current = await getOrderAdmin(id);
+  if (!current) return notFound();
+  if (!current.invoice) {
+    return problem(404, "INVOICE_NOT_FOUND", "Create an invoice first.");
+  }
+
+  const token = issueInvoiceToken(current.invoice.id);
+  const invoiceUrl = `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(
+    token,
+  )}`;
+  return ok({
+    data: {
+      invoiceUrl,
+      kind: current.invoice.status === "paid" ? "receipt" : "invoice",
+    },
+  });
 }
 
 export async function POST(

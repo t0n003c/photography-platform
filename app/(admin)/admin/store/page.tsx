@@ -5,6 +5,8 @@ import {
   Copy,
   CreditCard,
   Eye,
+  ExternalLink,
+  Link as LinkIcon,
   Loader2,
   Mail,
   PackageCheck,
@@ -814,6 +816,7 @@ function OrderDetailModal({
   onStatusChange,
   onInvoiceSubmit,
   onPaymentSubmit,
+  onInvoiceLinkAction,
 }: {
   order: OrderRow;
   saving: boolean;
@@ -822,6 +825,7 @@ function OrderDetailModal({
   onStatusChange: (status: OrderStatus) => Promise<void>;
   onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
   onPaymentSubmit: (values: PaymentFormValues, sendReceipt: boolean) => Promise<void>;
+  onInvoiceLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
 }) {
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
     dueAt: "",
@@ -1096,6 +1100,28 @@ function OrderDetailModal({
           )}
 
           <div className="flex flex-wrap justify-end gap-2">
+            {order.invoice && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => onInvoiceLinkAction(order, "open")}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open {invoicePaid ? "receipt" : "invoice"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => onInvoiceLinkAction(order, "copy")}
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  Copy link
+                </Button>
+              </>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -1457,6 +1483,23 @@ export default function StorePage() {
       toast(errMsg(err), "error");
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const useInvoiceLink = async (row: OrderRow, action: "open" | "copy") => {
+    try {
+      const res = await api.get<{
+        data: { invoiceUrl: string; kind: "invoice" | "receipt" };
+      }>(`/api/v1/admin/orders/${row.id}/invoice`);
+      if (action === "open") {
+        window.open(res.data.invoiceUrl, "_blank", "noopener,noreferrer");
+        toast(`Opened ${res.data.kind}`, "success");
+      } else {
+        await navigator.clipboard.writeText(res.data.invoiceUrl);
+        toast(`${res.data.kind === "receipt" ? "Receipt" : "Invoice"} link copied`, "success");
+      }
+    } catch (err) {
+      toast(errMsg(err), "error");
     }
   };
 
@@ -1886,6 +1929,7 @@ export default function StorePage() {
           onPaymentSubmit={(values, sendReceipt) =>
             recordPayment(selectedOrder, values, sendReceipt)
           }
+          onInvoiceLinkAction={useInvoiceLink}
         />
       )}
     </div>

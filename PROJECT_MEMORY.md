@@ -1199,6 +1199,13 @@ is gitignored):
   pages render as secure receipts with payment details and amount paid. New invoice
   and receipt emails use signed invoice tokens from `src/auth/invoice-token.ts` so a
   receipt link can be regenerated without storing a raw public token.
+  Follow-up: Public invoices/receipts are print-ready. `/invoice/[token]` now pulls
+  site title/logo/tagline/contact from Settings, has client-side Print / Save PDF
+  and Copy link controls, and uses print-specific CSS/classes so the printed page
+  drops navigation/actions and includes a compact branded document header/footer.
+  `/admin/store` order details can open or copy the current invoice/receipt link via
+  `GET /api/v1/admin/orders/[id]/invoice`, which returns a regenerated signed public
+  link for the existing invoice.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
   and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and
