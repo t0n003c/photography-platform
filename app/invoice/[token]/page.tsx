@@ -49,10 +49,13 @@ function invoiceItemTitle(item: AdminOrderDTO["items"][number]) {
 
 export default async function PublicInvoicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<{ payment?: string }>;
 }) {
   const { token } = await params;
+  const query = await searchParams;
   const [data, settings, settingsRow, checkoutSettings, paymentSettings] =
     await Promise.all([
       getPublicInvoiceByToken(token),
@@ -65,12 +68,44 @@ export default async function PublicInvoicePage({
 
   const { invoice, order } = data;
   const isPaid = invoice.status === "paid";
+  const paymentQuery = query?.payment;
   const paymentStatus = storePaymentStatus(paymentSettings);
+  const hostedPaymentExpired = invoice.onlinePaymentStatus === "expired";
   const canPayOnline =
     !isPaid &&
     invoice.status === "issued" &&
     paymentStatus.readyForHostedCheckout &&
     invoice.amountCents > 0;
+  const paymentNotice =
+    paymentQuery === "success" && isPaid
+      ? {
+          tone: "green",
+          title: "Payment received",
+          body: "Thank you. This invoice is now marked paid.",
+        }
+      : paymentQuery === "success"
+        ? {
+            tone: "blue",
+            title: "Payment is being confirmed",
+            body: "Stripe sent you back successfully. If the status still says payment due, refresh in a moment while the webhook finishes.",
+          }
+        : paymentQuery === "cancelled"
+          ? {
+              tone: "amber",
+              title: "Checkout was cancelled",
+              body: canPayOnline
+                ? "No payment was recorded. You can start a fresh secure checkout when you are ready."
+                : "No payment was recorded. Contact the studio if you need a new secure checkout link.",
+            }
+          : hostedPaymentExpired
+            ? {
+                tone: "amber",
+                title: "Previous payment link expired",
+                body: canPayOnline
+                  ? "Use Pay online to generate a fresh secure checkout link."
+                  : "Contact the studio if you need a new secure checkout link.",
+              }
+            : null;
   const statusLabel = isPaid ? "Payment received" : "Payment due";
   const paidAmount = invoice.paidAmountCents ?? invoice.amountCents;
   const contactEmail =
@@ -102,8 +137,29 @@ export default async function PublicInvoicePage({
 
         <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
           <InvoicePrintActions label={printLabel} />
-          {canPayOnline && <StripePaymentButton token={token} />}
+          {canPayOnline && (
+            <StripePaymentButton
+              token={token}
+              label={hostedPaymentExpired ? "Get fresh payment link" : "Pay online"}
+            />
+          )}
         </div>
+
+        {paymentNotice && (
+          <div
+            className={[
+              "rounded-xl border px-4 py-3 text-sm print:hidden",
+              paymentNotice.tone === "green"
+                ? "border-green-200 bg-green-50 text-green-900 dark:border-green-900/50 dark:bg-green-950/35 dark:text-green-200"
+                : paymentNotice.tone === "blue"
+                  ? "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/35 dark:text-blue-200"
+                  : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-200",
+            ].join(" ")}
+          >
+            <p className="font-semibold">{paymentNotice.title}</p>
+            <p className="mt-1">{paymentNotice.body}</p>
+          </div>
+        )}
 
         <div className="rounded-2xl border bg-[hsl(var(--card))] p-5 shadow-sm sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="mb-6 hidden items-start justify-between gap-6 border-b pb-5 print:flex">

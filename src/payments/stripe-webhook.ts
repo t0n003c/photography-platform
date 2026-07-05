@@ -37,6 +37,8 @@ export function verifyStripeWebhookSignature(
 export interface StripeCheckoutSessionEvent {
   id: string;
   type: string;
+  api_version?: string | null;
+  livemode?: boolean;
   data: {
     object: {
       id?: string;

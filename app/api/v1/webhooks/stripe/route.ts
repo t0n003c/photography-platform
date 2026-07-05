@@ -8,6 +8,10 @@ import {
   recordStripeCheckoutPaid,
 } from "@/src/db/queries/orders";
 import {
+  beginStripeWebhookEvent,
+  finishStripeWebhookEvent,
+} from "@/src/db/queries/payment-events";
+import {
   type StripeCheckoutSessionEvent,
   verifyStripeWebhookSignature,
 } from "@/src/payments/stripe-webhook";
@@ -47,49 +51,90 @@ export async function POST(req: Request) {
   } catch {
     return problem(400, "INVALID_STRIPE_EVENT", "Stripe event payload is invalid.");
   }
+  if (!event.id) {
+    return problem(400, "INVALID_STRIPE_EVENT", "Stripe event id is missing.");
+  }
 
-  if (
-    event.type === "checkout.session.completed" ||
-    event.type === "checkout.session.async_payment_succeeded"
-  ) {
-    const session = sessionObject(event);
-    if (session.payment_status && session.payment_status !== "paid") {
-      return ok({ received: true, ignored: "payment_not_paid" });
-    }
-    if (!session.id) {
-      return ok({ received: true, ignored: "missing_session_id" });
-    }
-    const result = await recordStripeCheckoutPaid({
-      invoiceId: session.metadata?.invoiceId ?? null,
-      sessionId: session.id,
-      paymentIntentId: session.payment_intent ?? null,
-      amountPaidCents: session.amount_total ?? null,
-    });
-    if (result && !result.wasAlreadyPaid && result.order.email) {
-      const settings = await getSiteSettings();
-      const token = issueInvoiceToken(result.invoice.id);
-      await enqueueEmail(
-        storeReceiptIssued({
-          to: result.order.email,
-          order: result.order,
-          invoice: result.invoice,
-          receiptUrl: `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(
-            token,
-          )}`,
-          siteName: settings.siteTitle,
-        }),
-      );
-    }
-  } else if (event.type === "checkout.session.expired") {
-    const session = sessionObject(event);
-    if (!session.id) {
-      return ok({ received: true, ignored: "missing_session_id" });
-    }
-    await recordStripeCheckoutExpired({
-      invoiceId: session.metadata?.invoiceId ?? null,
-      sessionId: session.id,
+  const session = sessionObject(event);
+  const eventRef = {
+    invoiceId: session.metadata?.invoiceId ?? null,
+    sessionId: session.id ?? null,
+    paymentIntentId: session.payment_intent ?? null,
+  };
+  const eventState = await beginStripeWebhookEvent({
+    id: event.id,
+    type: event.type,
+    livemode: event.livemode ?? null,
+    apiVersion: event.api_version ?? null,
+    ...eventRef,
+  });
+  if (eventState.action === "skip") {
+    return ok({
+      received: true,
+      duplicate: true,
+      status: eventState.status,
     });
   }
 
-  return ok({ received: true });
+  try {
+    let ignored: string | null = null;
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      if (session.payment_status && session.payment_status !== "paid") {
+        ignored = "payment_not_paid";
+      } else if (!session.id) {
+        ignored = "missing_session_id";
+      } else {
+        const result = await recordStripeCheckoutPaid({
+          invoiceId: session.metadata?.invoiceId ?? null,
+          sessionId: session.id,
+          paymentIntentId: session.payment_intent ?? null,
+          amountPaidCents: session.amount_total ?? null,
+        });
+        if (!result) {
+          ignored = "invoice_not_found";
+        } else if (!result.wasAlreadyPaid && result.order.email) {
+          const settings = await getSiteSettings();
+          const token = issueInvoiceToken(result.invoice.id);
+          await enqueueEmail(
+            storeReceiptIssued({
+              to: result.order.email,
+              order: result.order,
+              invoice: result.invoice,
+              receiptUrl: `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(
+                token,
+              )}`,
+              siteName: settings.siteTitle,
+            }),
+          );
+        }
+      }
+    } else if (event.type === "checkout.session.expired") {
+      if (!session.id) {
+        ignored = "missing_session_id";
+      } else {
+        await recordStripeCheckoutExpired({
+          invoiceId: session.metadata?.invoiceId ?? null,
+          sessionId: session.id,
+        });
+      }
+    } else {
+      ignored = "unhandled_event_type";
+    }
+
+    await finishStripeWebhookEvent(
+      event.id,
+      ignored ? "ignored" : "processed",
+      eventRef,
+    );
+    return ok({ received: true, ...(ignored ? { ignored } : {}) });
+  } catch (err) {
+    await finishStripeWebhookEvent(event.id, "failed", {
+      ...eventRef,
+      error: err instanceof Error ? err.message : "Webhook processing failed.",
+    });
+    return problem(500, "STRIPE_WEBHOOK_FAILED", "Stripe webhook processing failed.");
+  }
 }

@@ -563,6 +563,25 @@ adds:
 | stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
 | stripe_statement_descriptor   | text NULL | optional Stripe statement descriptor                                   |
 
+### 13.6 `stripe_webhook_event`
+
+Stores Stripe event IDs for webhook idempotency and operator audit:
+
+| Field                | Type        | Notes                                           |
+| -------------------- | ----------- | ----------------------------------------------- |
+| id                   | text PK     | Stripe event id, e.g. `evt_...`                 |
+| type                 | text        | Stripe event type                               |
+| livemode             | boolean     | copied from Stripe                              |
+| api_version          | text NULL   | copied from Stripe                              |
+| invoice_id           | text FK     | nullable link to `invoice`                      |
+| session_id           | text NULL   | Checkout session id                             |
+| payment_intent_id    | text NULL   | Stripe PaymentIntent id                         |
+| status               | text        | `processing`\|`processed`\|`ignored`\|`failed`  |
+| error                | text NULL   | last processing error, if any                   |
+| received_at          | timestamptz | when the event first reached the app            |
+| processed_at         | timestamptz | when processing/ignore/failure was recorded     |
+| created_at/updated_at | timestamptz | standard timestamps                            |
+
 ---
 
 ## 14. Audit Log

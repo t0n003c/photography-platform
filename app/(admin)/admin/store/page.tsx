@@ -12,6 +12,7 @@ import {
   PackageCheck,
   Plus,
   ReceiptText,
+  RefreshCw,
   Search,
   ShoppingBag,
   Trash2,
@@ -53,6 +54,19 @@ interface InvoiceRow {
   paymentReference: string | null;
   paymentNote: string | null;
   receiptSentAt: string | null;
+  onlinePaymentProvider: "stripe" | null;
+  onlinePaymentStatus:
+    | "requires_payment"
+    | "pending"
+    | "paid"
+    | "failed"
+    | "expired"
+    | "refunded"
+    | null;
+  onlinePaymentSessionId: string | null;
+  onlinePaymentIntentId: string | null;
+  onlinePaymentUrl: string | null;
+  onlinePaymentExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -240,6 +254,27 @@ function orderTone(status: OrderRow["status"]): ComponentProps<typeof Badge>["to
   return "neutral";
 }
 
+function onlinePaymentTone(
+  status: InvoiceRow["onlinePaymentStatus"],
+): ComponentProps<typeof Badge>["tone"] {
+  if (status === "paid") return "green";
+  if (status === "pending" || status === "requires_payment") return "blue";
+  if (status === "expired" || status === "failed") return "amber";
+  if (status === "refunded") return "red";
+  return "neutral";
+}
+
+function onlinePaymentLabel(status: InvoiceRow["onlinePaymentStatus"]) {
+  if (!status) return "No hosted payment";
+  return status.replace(/_/g, " ");
+}
+
+function shortRef(value: string | null | undefined) {
+  if (!value) return "—";
+  if (value.length <= 18) return value;
+  return `${value.slice(0, 10)}...${value.slice(-6)}`;
+}
+
 function orderItemTitle(item: OrderRow["items"][number]) {
   if (!item.description) return "Product";
   if (item.options.length === 0) return item.description;
@@ -278,6 +313,9 @@ function orderSearchText(row: OrderRow) {
     row.invoice?.status,
     row.invoice?.paymentMethod,
     row.invoice?.paymentReference,
+    row.invoice?.onlinePaymentStatus,
+    row.invoice?.onlinePaymentSessionId,
+    row.invoice?.onlinePaymentIntentId,
     row.clientNotes,
     ...row.items.map((item) => itemSearchText(item, row.currency)),
   ]
@@ -319,6 +357,15 @@ function orderSummary(row: OrderRow) {
     row.invoice?.paymentMethod ? `Payment method: ${row.invoice.paymentMethod}` : null,
     row.invoice?.paymentReference
       ? `Payment reference: ${row.invoice.paymentReference}`
+      : null,
+    row.invoice?.onlinePaymentStatus
+      ? `Hosted payment: ${onlinePaymentLabel(row.invoice.onlinePaymentStatus)}`
+      : null,
+    row.invoice?.onlinePaymentSessionId
+      ? `Stripe session: ${row.invoice.onlinePaymentSessionId}`
+      : null,
+    row.invoice?.onlinePaymentIntentId
+      ? `Stripe payment intent: ${row.invoice.onlinePaymentIntentId}`
       : null,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
@@ -817,6 +864,8 @@ function OrderDetailModal({
   onInvoiceSubmit,
   onPaymentSubmit,
   onInvoiceLinkAction,
+  onCheckoutLinkAction,
+  onRefreshCheckout,
 }: {
   order: OrderRow;
   saving: boolean;
@@ -826,6 +875,8 @@ function OrderDetailModal({
   onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
   onPaymentSubmit: (values: PaymentFormValues, sendReceipt: boolean) => Promise<void>;
   onInvoiceLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
+  onCheckoutLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
+  onRefreshCheckout: (order: OrderRow) => Promise<void>;
 }) {
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
     dueAt: "",
@@ -845,6 +896,7 @@ function OrderDetailModal({
     0,
   );
   const invoicePaid = order.invoice?.status === "paid";
+  const canRefreshCheckout = order.invoice?.status === "issued";
   const nextStatus: OrderStatus | null =
     order.status === "draft" || order.status === "pending" || order.status === "invoiced"
       ? "paid"
@@ -1038,6 +1090,101 @@ function OrderDetailModal({
               <span>
                 Receipt {order.invoice.receiptSentAt ? formatDate(order.invoice.receiptSentAt) : "—"}
               </span>
+            </div>
+          )}
+
+          {order.invoice?.onlinePaymentProvider && (
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Hosted Stripe payment</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    Session and webhook state for this invoice.
+                  </p>
+                </div>
+                <Badge
+                  tone={onlinePaymentTone(order.invoice.onlinePaymentStatus)}
+                  className="capitalize"
+                >
+                  {onlinePaymentLabel(order.invoice.onlinePaymentStatus)}
+                </Badge>
+              </div>
+              <div className="grid gap-2 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-2">
+                <div>
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    Session
+                  </span>
+                  <p className="font-mono" title={order.invoice.onlinePaymentSessionId ?? ""}>
+                    {shortRef(order.invoice.onlinePaymentSessionId)}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    Payment intent
+                  </span>
+                  <p className="font-mono" title={order.invoice.onlinePaymentIntentId ?? ""}>
+                    {shortRef(order.invoice.onlinePaymentIntentId)}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    Expires
+                  </span>
+                  <p>
+                    {order.invoice.onlinePaymentExpiresAt
+                      ? formatDate(order.invoice.onlinePaymentExpiresAt)
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-[hsl(var(--foreground))]">
+                    Checkout URL
+                  </span>
+                  <p className="truncate">
+                    {order.invoice.onlinePaymentUrl ? "Active link stored" : "No active link"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                {order.invoice.onlinePaymentUrl && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={saving}
+                      onClick={() => onCheckoutLinkAction(order, "open")}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open checkout
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={saving}
+                      onClick={() => onCheckoutLinkAction(order, "copy")}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      Copy checkout
+                    </Button>
+                  </>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || !canRefreshCheckout}
+                  onClick={() => onRefreshCheckout(order)}
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Refresh payment link
+                </Button>
+              </div>
             </div>
           )}
 
@@ -1503,6 +1650,48 @@ export default function StorePage() {
     }
   };
 
+  const useCheckoutLink = async (row: OrderRow, action: "open" | "copy") => {
+    const checkoutUrl = row.invoice?.onlinePaymentUrl;
+    if (!checkoutUrl) {
+      toast("No active Stripe checkout link is stored for this invoice.", "error");
+      return;
+    }
+    try {
+      if (action === "open") {
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+        toast("Opened Stripe checkout", "success");
+      } else {
+        await navigator.clipboard.writeText(checkoutUrl);
+        toast("Stripe checkout link copied", "success");
+      }
+    } catch {
+      toast("Could not use the checkout link in this browser.", "error");
+    }
+  };
+
+  const refreshCheckout = async (row: OrderRow) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{
+        data: { order: OrderRow; checkoutUrl: string; invoiceUrl: string };
+      }>(`/api/v1/admin/orders/${row.id}/checkout`, { openNow: false });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data.order : order)),
+      );
+      setSelectedOrder(res.data.order);
+      try {
+        await navigator.clipboard.writeText(res.data.checkoutUrl);
+        toast("Payment link refreshed and copied", "success");
+      } catch {
+        toast("Payment link refreshed", "success");
+      }
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const copyOrder = async (row: OrderRow) => {
     try {
       await navigator.clipboard.writeText(orderSummary(row));
@@ -1668,7 +1857,7 @@ export default function StorePage() {
               <div>
                 <h2 className="font-medium">Recent order requests</h2>
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Manual invoice requests submitted from the public cart.
+                  Public cart orders, manual invoices, and hosted Stripe checkout.
                 </p>
               </div>
               <Badge tone="neutral">
@@ -1746,6 +1935,16 @@ export default function StorePage() {
                           {row.status}
                         </Badge>
                       </div>
+                      {row.invoice?.onlinePaymentStatus && (
+                        <div className="mt-2">
+                          <Badge
+                            tone={onlinePaymentTone(row.invoice.onlinePaymentStatus)}
+                            className="capitalize"
+                          >
+                            Stripe {onlinePaymentLabel(row.invoice.onlinePaymentStatus)}
+                          </Badge>
+                        </div>
+                      )}
 
                       <div className="mt-3 space-y-2 text-sm">
                         {row.items.length === 0 ? (
@@ -1865,9 +2064,23 @@ export default function StorePage() {
                             {formatMoney(row.totalCents, row.currency)}
                           </td>
                           <td className="px-3 py-3">
-                            <Badge tone={orderTone(row.status)} className="capitalize">
-                              {row.status}
-                            </Badge>
+                            <div className="flex flex-col items-start gap-1">
+                              <Badge
+                                tone={orderTone(row.status)}
+                                className="capitalize"
+                              >
+                                {row.status}
+                              </Badge>
+                              {row.invoice?.onlinePaymentStatus && (
+                                <Badge
+                                  tone={onlinePaymentTone(row.invoice.onlinePaymentStatus)}
+                                  className="capitalize"
+                                >
+                                  Stripe{" "}
+                                  {onlinePaymentLabel(row.invoice.onlinePaymentStatus)}
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
                             {formatDate(row.createdAt)}
@@ -1930,6 +2143,8 @@ export default function StorePage() {
             recordPayment(selectedOrder, values, sendReceipt)
           }
           onInvoiceLinkAction={useInvoiceLink}
+          onCheckoutLinkAction={useCheckoutLink}
+          onRefreshCheckout={refreshCheckout}
         />
       )}
     </div>

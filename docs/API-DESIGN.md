@@ -406,6 +406,7 @@ Response `201` (raw token shown exactly once):
 | PATCH/DELETE | `/admin/products/{id}` | admin  | update/delete product; delete requires fresh auth                                                                |
 | GET          | `/admin/orders`        | admin  | view recent manual order requests                                                                                |
 | GET/PATCH    | `/admin/orders/{id}`   | admin  | view an order request and update status                                                                          |
+| POST         | `/admin/orders/{id}/checkout` | admin | refresh a hosted Stripe Checkout link for an unpaid issued invoice |
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
 product options must resolve against the current active product definition, or checkout returns
@@ -421,6 +422,10 @@ The admin Settings API also exposes the hosted-payment readiness fields
 presence, and `stripe_statement_descriptor`) through sanitized camelCase DTO fields.
 Secret values are write-only: a non-empty value replaces the encrypted key, `null` clears it,
 and GET only returns `*Set` booleans.
+
+Stripe webhook event IDs are stored in `stripe_webhook_event` before invoice state changes.
+Processed/ignored duplicate event IDs return success without applying the mutation again;
+previously failed event IDs may be retried.
 
 ```json
 {

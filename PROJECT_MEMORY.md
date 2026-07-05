@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Stripe sessions/webhooks active when Settings -> Payments is ready; refunds/tax/fulfillment still deferred          |
+| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Admin link refresh/status visibility + webhook event idempotency; refunds/tax/fulfillment still deferred           |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -475,6 +475,7 @@ is gitignored):
 - **Payments:** manual invoice checkout/receipts remain active. Optional Stripe Checkout
   now creates hosted sessions for cart orders and issued public invoices, and signed
   webhooks reconcile paid/expired invoice state when Settings -> Payments is ready.
+  `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -1233,6 +1234,13 @@ is gitignored):
   expired. Paid webhooks update order/invoice state idempotently and enqueue the existing
   receipt email when appropriate. Stripe still does not handle refunds, tax/VAT automation,
   or fulfillment workflow in-app.
+  Follow-up: Stripe payment operations were hardened. Migration `0019_yellow_phalanx.sql`
+  adds `stripe_webhook_event` so duplicate/replayed Stripe event IDs do not re-apply
+  payment mutations; previously failed events can retry. Admin -> Store now shows hosted
+  Stripe status, session IDs, payment intent IDs, checkout expiry/link state, and can refresh
+  an unpaid issued invoice's payment link via `POST /api/v1/admin/orders/[id]/checkout`.
+  Public invoice pages show success/cancel/expired notices and label expired sessions as
+  fresh payment links. Test-mode validation lives in `docs/STRIPE-TEST-RUNBOOK.md`.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
   and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and

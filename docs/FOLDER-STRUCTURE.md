@@ -88,6 +88,7 @@ photography-platform/
 ├── public/                       # Static assets (icons, PWA assets, favicons, robots)
 │
 ├── docs/                         # Project documentation (ARCHITECTURE, this file, etc.)
+│   ├── STRIPE-TEST-RUNBOOK.md     # Test-mode checkout/webhook validation steps
 │
 ├── docker/                       # Container + orchestration definitions
 │   ├── Dockerfile.web            # Build/run image for the Next.js web process

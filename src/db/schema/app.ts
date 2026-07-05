@@ -736,6 +736,39 @@ export const invoice = pgTable("invoice", {
   updatedAt: updatedAt(),
 });
 
+export const stripeWebhookEvent = pgTable(
+  "stripe_webhook_event",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    livemode: boolean("livemode"),
+    apiVersion: text("api_version"),
+    invoiceId: text("invoice_id").references(() => invoice.id, {
+      onDelete: "set null",
+    }),
+    sessionId: text("session_id"),
+    paymentIntentId: text("payment_intent_id"),
+    status: text("status", {
+      enum: ["processing", "processed", "ignored", "failed"],
+    })
+      .notNull()
+      .default("processing"),
+    error: text("error"),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("stripe_webhook_event_status_idx").on(t.status),
+    index("stripe_webhook_event_invoice_idx").on(t.invoiceId),
+    index("stripe_webhook_event_session_idx").on(t.sessionId),
+    index("stripe_webhook_event_received_idx").on(t.receivedAt),
+  ],
+);
+
 // ── §14 Audit log (append-only) ──────────────────────────────────────────────
 export const auditLog = pgTable(
   "audit_log",

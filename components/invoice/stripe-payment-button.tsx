@@ -13,7 +13,13 @@ async function readError(res: Response) {
   }
 }
 
-export function StripePaymentButton({ token }: { token: string }) {
+export function StripePaymentButton({
+  token,
+  label = "Pay online",
+}: {
+  token: string;
+  label?: string;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +51,7 @@ export function StripePaymentButton({ token }: { token: string }) {
         ) : (
           <CreditCard className="h-4 w-4" aria-hidden />
         )}
-        {pending ? "Opening checkout..." : "Pay online"}
+        {pending ? "Opening checkout..." : label}
       </Button>
       {error && (
         <p className="mt-2 max-w-xs text-sm text-red-600 dark:text-red-300">
