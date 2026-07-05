@@ -16,6 +16,7 @@ import {
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
 import type { ProductOption, SelectedProductOption } from "@/src/lib/store-options";
+import type { PublicStoreCheckoutSettings } from "@/src/lib/store-settings";
 
 // Application tables (DATA-MODEL §4–§15). Drizzle is the source of truth.
 // Conventions: text ULID PKs, timestamptz, money in integer cents, enums typed
@@ -494,6 +495,21 @@ export const siteSettings = pgTable("site_settings", {
   smtpUser: text("smtp_user"),
   smtpPasswordEnc: text("smtp_password_enc"), // AES-256-GCM ciphertext
   resendApiKeyEnc: text("resend_api_key_enc"), // AES-256-GCM ciphertext
+  // Store checkout settings
+  storeNotifyEmail: text("store_notify_email"),
+  storeCheckoutLabel: text("store_checkout_label")
+    .notNull()
+    .default("Manual invoice checkout"),
+  storeCheckoutInstructions: text("store_checkout_instructions"),
+  storeConfirmationMessage: text("store_confirmation_message"),
+  storeTaxEnabled: boolean("store_tax_enabled").notNull().default(false),
+  storeTaxRateBps: integer("store_tax_rate_bps").notNull().default(0),
+  storeShippingMode: text("store_shipping_mode", {
+    enum: ["manual", "free", "flat"],
+  })
+    .notNull()
+    .default("manual"),
+  storeShippingFlatCents: integer("store_shipping_flat_cents").notNull().default(0),
   // Integrations
   igAccessTokenEnc: text("ig_access_token_enc"), // Instagram Graph API token (AES-256-GCM)
   // Bot protection: require Cloudflare Turnstile at login (keys live in env).
@@ -629,10 +645,16 @@ export const order = pgTable("order", {
     .notNull()
     .default("draft"),
   subtotalCents: integer("subtotal_cents").notNull().default(0),
+  taxCents: integer("tax_cents").notNull().default(0),
+  shippingCents: integer("shipping_cents").notNull().default(0),
   totalCents: integer("total_cents").notNull().default(0),
   currency: text("currency").notNull().default("USD"),
   paymentProvider: text("payment_provider"),
   paymentRef: text("payment_ref"),
+  storeSettingsSnapshot: jsonb("store_settings_snapshot")
+    .$type<PublicStoreCheckoutSettings>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

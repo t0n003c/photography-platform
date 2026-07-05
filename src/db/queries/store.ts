@@ -12,6 +12,12 @@ import {
   type ProductOptionSelectionInput,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
+import { getStoreCheckoutSettings } from "@/src/db/queries/settings";
+import {
+  calculateStoreTotals,
+  publicStoreCheckoutSettings,
+  type PublicStoreCheckoutSettings,
+} from "@/src/lib/store-settings";
 
 export type ProductRow = typeof product.$inferSelect;
 
@@ -58,9 +64,12 @@ export interface CartSummaryDTO {
   unavailableProductIds: string[];
   optionErrors: CartOptionError[];
   subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
   totalCents: number;
   currency: string;
   hasMixedCurrency: boolean;
+  checkoutSettings: PublicStoreCheckoutSettings;
 }
 
 export function productSalePrice(
@@ -215,6 +224,7 @@ function resolveSelectedOptions(
 export async function resolveCartItems(
   items: CartItemInput[],
 ): Promise<CartSummaryDTO> {
+  const checkoutSettings = await getStoreCheckoutSettings();
   const normalized = normalizeCartItems(items);
   const products = await listActiveProductsByIds(
     normalized.map((item) => item.productId),
@@ -246,6 +256,7 @@ export async function resolveCartItems(
   });
   const currencies = [...new Set(lines.map((line) => line.product.currency))];
   const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
+  const totals = calculateStoreTotals(subtotalCents, checkoutSettings);
   return {
     lines,
     unavailableProductIds: normalized
@@ -253,9 +264,12 @@ export async function resolveCartItems(
       .filter((id) => !productsById.has(id)),
     optionErrors,
     subtotalCents,
-    totalCents: subtotalCents,
+    taxCents: totals.taxCents,
+    shippingCents: totals.shippingCents,
+    totalCents: totals.totalCents,
     currency: currencies[0] ?? "USD",
     hasMixedCurrency: currencies.length > 1,
+    checkoutSettings: publicStoreCheckoutSettings(checkoutSettings),
   };
 }
 

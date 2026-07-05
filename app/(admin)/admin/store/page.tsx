@@ -59,6 +59,8 @@ interface OrderRow {
   email: string | null;
   status: "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
   subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
   totalCents: number;
   currency: string;
   paymentProvider: string | null;
@@ -250,6 +252,8 @@ function orderSummary(row: OrderRow) {
     ...(lines.length ? lines : ["- No items"]),
     "",
     `Subtotal: ${formatMoney(row.subtotalCents, row.currency)}`,
+    `Tax: ${formatMoney(row.taxCents, row.currency)}`,
+    `Shipping: ${formatMoney(row.shippingCents, row.currency)}`,
     `Total: ${formatMoney(row.totalCents, row.currency)}`,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
@@ -905,6 +909,12 @@ function OrderDetailModal({
           <div className="text-right">
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
               Subtotal {formatMoney(order.subtotalCents, order.currency)}
+            </p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Tax {formatMoney(order.taxCents, order.currency)}
+            </p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Shipping {formatMoney(order.shippingCents, order.currency)}
             </p>
             <p className="text-lg font-semibold">
               Total {formatMoney(order.totalCents, order.currency)}

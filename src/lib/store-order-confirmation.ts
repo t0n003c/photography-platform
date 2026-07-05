@@ -1,4 +1,5 @@
 import type { SelectedProductOption } from "@/src/lib/store-options";
+import type { PublicStoreCheckoutSettings } from "@/src/lib/store-settings";
 
 export const STORE_ORDER_CONFIRMATION_STORAGE_PREFIX = "photog-order-confirmation-v1:";
 
@@ -19,11 +20,14 @@ export interface StoreOrderConfirmation {
   customerName: string | null;
   customerEmail: string;
   subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
   totalCents: number;
   currency: string;
   itemCount: number;
   createdAt: string;
   receiptUrl: string;
+  checkoutSettings: PublicStoreCheckoutSettings;
   lines: StoreOrderConfirmationLine[];
 }
 

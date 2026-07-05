@@ -7,6 +7,10 @@ import {
   storeOrderConfirmationStorageKey,
   type StoreOrderConfirmation,
 } from "@/src/lib/store-order-confirmation";
+import {
+  normalizeStoreCheckoutSettings,
+  publicStoreCheckoutSettings,
+} from "@/src/lib/store-settings";
 
 interface StoreOrderConfirmationPageProps {
   orderId: string | null;
@@ -26,11 +30,30 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function shippingText(confirmation: StoreOrderConfirmation) {
+  if (confirmation.shippingCents > 0) {
+    return formatMoney(confirmation.shippingCents, confirmation.currency);
+  }
+  if (confirmation.checkoutSettings.shippingMode === "free") return "Free";
+  if (confirmation.checkoutSettings.shippingMode === "manual") {
+    return "Quoted after review";
+  }
+  return formatMoney(0, confirmation.currency);
+}
+
 function parseConfirmation(value: string | null, orderId: string) {
   if (!value) return null;
   try {
     const parsed = JSON.parse(value) as StoreOrderConfirmation;
-    return parsed.orderId === orderId ? parsed : null;
+    if (parsed.orderId !== orderId) return null;
+    return {
+      ...parsed,
+      taxCents: parsed.taxCents ?? 0,
+      shippingCents: parsed.shippingCents ?? 0,
+      checkoutSettings: publicStoreCheckoutSettings(
+        normalizeStoreCheckoutSettings(parsed.checkoutSettings ?? {}),
+      ),
+    };
   } catch {
     return null;
   }
@@ -74,7 +97,10 @@ export function StoreOrderConfirmationPage({
         <header className="tora-cart-page__heading">
           <ShoppingBag aria-hidden className="h-6 w-6" />
           <div>
-            <p>Manual invoice checkout</p>
+            <p>
+              {confirmation?.checkoutSettings.checkoutLabel ??
+                "Manual invoice checkout"}
+            </p>
             <h1>Order confirmation</h1>
           </div>
         </header>
@@ -122,11 +148,8 @@ export function StoreOrderConfirmationPage({
 
             <div className="tora-order-confirmation__message">
               <h3>What happens next</h3>
-              <p>
-                Your request has been saved for manual review. The studio will follow up
-                with invoice, payment, or fulfillment details. A confirmation email has
-                been sent with this same summary.
-              </p>
+              <p>{confirmation.checkoutSettings.confirmationMessage}</p>
+              <p>A confirmation email has been sent with this same summary.</p>
             </div>
 
             <div className="tora-order-confirmation__items">
@@ -151,6 +174,31 @@ export function StoreOrderConfirmationPage({
                   </strong>
                 </article>
               ))}
+            </div>
+
+            <div className="tora-order-confirmation__totals">
+              <div>
+                <span>Subtotal</span>
+                <strong>
+                  {formatMoney(confirmation.subtotalCents, confirmation.currency)}
+                </strong>
+              </div>
+              <div>
+                <span>Tax</span>
+                <strong>
+                  {formatMoney(confirmation.taxCents, confirmation.currency)}
+                </strong>
+              </div>
+              <div>
+                <span>Shipping</span>
+                <strong>{shippingText(confirmation)}</strong>
+              </div>
+              <div>
+                <span>Total</span>
+                <strong>
+                  {formatMoney(confirmation.totalCents, confirmation.currency)}
+                </strong>
+              </div>
             </div>
 
             <div className="tora-order-confirmation__actions">

@@ -3,6 +3,11 @@ import { db } from "@/src/db/client";
 import { siteSettings } from "@/src/db/schema";
 import { cached, invalidate } from "@/src/lib/cache";
 import { decryptSecret } from "@/src/lib/secrets";
+import {
+  normalizeStoreCheckoutSettings,
+  STORE_CHECKOUT_DEFAULTS,
+  type StoreCheckoutSettings,
+} from "@/src/lib/store-settings";
 
 export const SITE_SETTINGS_ID = "site";
 const CACHE_KEY = "pub:site_settings";
@@ -19,6 +24,7 @@ export const SETTINGS_DEFAULTS = {
   weekStartsOn: 0,
   iconStorageKey: null as string | null,
   logoStorageKey: null as string | null,
+  storeCheckout: STORE_CHECKOUT_DEFAULTS,
 };
 
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
@@ -111,6 +117,27 @@ export async function getEmailConfig(): Promise<ResolvedEmailConfig | null> {
       : undefined,
     resendApiKey: decryptSecret(row.resendApiKeyEnc) ?? undefined,
   };
+}
+
+export async function getStoreCheckoutSettings(): Promise<StoreCheckoutSettings> {
+  const row = await getSiteSettingsRow();
+  return normalizeStoreCheckoutSettings({
+    notifyEmail: row?.storeNotifyEmail ?? SETTINGS_DEFAULTS.storeCheckout.notifyEmail,
+    checkoutLabel:
+      row?.storeCheckoutLabel ?? SETTINGS_DEFAULTS.storeCheckout.checkoutLabel,
+    checkoutInstructions:
+      row?.storeCheckoutInstructions ??
+      SETTINGS_DEFAULTS.storeCheckout.checkoutInstructions,
+    confirmationMessage:
+      row?.storeConfirmationMessage ??
+      SETTINGS_DEFAULTS.storeCheckout.confirmationMessage,
+    taxEnabled: row?.storeTaxEnabled ?? SETTINGS_DEFAULTS.storeCheckout.taxEnabled,
+    taxRateBps: row?.storeTaxRateBps ?? SETTINGS_DEFAULTS.storeCheckout.taxRateBps,
+    shippingMode:
+      row?.storeShippingMode ?? SETTINGS_DEFAULTS.storeCheckout.shippingMode,
+    shippingFlatCents:
+      row?.storeShippingFlatCents ?? SETTINGS_DEFAULTS.storeCheckout.shippingFlatCents,
+  });
 }
 
 // Instagram Graph API token (decrypted), or null. Read directly (not cached)

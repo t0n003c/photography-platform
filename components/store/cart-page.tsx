@@ -18,6 +18,10 @@ import {
   storeOrderConfirmationStorageKey,
   type StoreOrderConfirmation,
 } from "@/src/lib/store-order-confirmation";
+import {
+  publicStoreCheckoutSettings,
+  STORE_CHECKOUT_DEFAULTS,
+} from "@/src/lib/store-settings";
 
 interface CheckoutForm {
   name: string;
@@ -31,9 +35,12 @@ const emptySummary: CartSummaryDTO = {
   unavailableProductIds: [],
   optionErrors: [],
   subtotalCents: 0,
+  taxCents: 0,
+  shippingCents: 0,
   totalCents: 0,
   currency: "USD",
   hasMixedCurrency: false,
+  checkoutSettings: publicStoreCheckoutSettings(STORE_CHECKOUT_DEFAULTS),
 };
 
 function formatMoney(cents: number, currency: string) {
@@ -50,6 +57,15 @@ async function readError(res: Response) {
   } catch {
     return "Something went wrong.";
   }
+}
+
+function shippingSummaryText(summary: CartSummaryDTO) {
+  if (summary.shippingCents > 0) {
+    return formatMoney(summary.shippingCents, summary.currency);
+  }
+  if (summary.checkoutSettings.shippingMode === "free") return "Free";
+  if (summary.checkoutSettings.shippingMode === "manual") return "Quoted after review";
+  return formatMoney(0, summary.currency);
 }
 
 export function StoreCartPage() {
@@ -194,7 +210,7 @@ export function StoreCartPage() {
         <header className="tora-cart-page__heading">
           <ShoppingBag aria-hidden className="h-6 w-6" />
           <div>
-            <p>Manual invoice checkout</p>
+            <p>{summary.checkoutSettings.checkoutLabel}</p>
             <h1>Your cart</h1>
           </div>
         </header>
@@ -297,10 +313,7 @@ export function StoreCartPage() {
 
             <form className="tora-cart-checkout" onSubmit={submit}>
               <h2>Request invoice</h2>
-              <p>
-                Submit your details and a pending order will be saved for manual
-                follow-up.
-              </p>
+              <p>{summary.checkoutSettings.checkoutInstructions}</p>
               <label>
                 Name
                 <input
@@ -336,10 +349,26 @@ export function StoreCartPage() {
                 />
               </label>
               <div className="tora-cart-summary">
-                <span>
-                  {itemCount} item{itemCount === 1 ? "" : "s"}
-                </span>
-                <strong>{formatMoney(summary.totalCents, summary.currency)}</strong>
+                <div>
+                  <span>
+                    Subtotal · {itemCount} item{itemCount === 1 ? "" : "s"}
+                  </span>
+                  <strong>
+                    {formatMoney(summary.subtotalCents, summary.currency)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Tax</span>
+                  <strong>{formatMoney(summary.taxCents, summary.currency)}</strong>
+                </div>
+                <div>
+                  <span>Shipping</span>
+                  <strong>{shippingSummaryText(summary)}</strong>
+                </div>
+                <div className="is-total">
+                  <span>Total</span>
+                  <strong>{formatMoney(summary.totalCents, summary.currency)}</strong>
+                </div>
               </div>
               {error && <p className="tora-cart-error">{error}</p>}
               <button

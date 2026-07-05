@@ -27,6 +27,14 @@ interface SettingsDTO {
   smtpUser: string;
   smtpPasswordSet: boolean;
   resendApiKeySet: boolean;
+  storeNotifyEmail: string;
+  storeCheckoutLabel: string;
+  storeCheckoutInstructions: string;
+  storeConfirmationMessage: string;
+  storeTaxEnabled: boolean;
+  storeTaxRateBps: number;
+  storeShippingMode: "manual" | "free" | "flat";
+  storeShippingFlatCents: number;
   igAccessTokenSet: boolean;
 }
 
@@ -35,17 +43,47 @@ function errMsg(err: unknown): string {
 }
 
 const LOCALES = [
-  "en", "en-US", "en-GB", "fr", "fr-FR", "de", "es", "es-ES", "it", "pt",
-  "pt-BR", "nl", "ja", "ko", "zh", "zh-CN", "vi", "ru",
+  "en",
+  "en-US",
+  "en-GB",
+  "fr",
+  "fr-FR",
+  "de",
+  "es",
+  "es-ES",
+  "it",
+  "pt",
+  "pt-BR",
+  "nl",
+  "ja",
+  "ko",
+  "zh",
+  "zh-CN",
+  "vi",
+  "ru",
 ];
 
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function centsToAmount(cents: number) {
+  return (Math.max(0, cents) / 100).toFixed(2);
+}
+
+function amountToCents(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * 100)) : 0;
+}
+
+function bpsToPercent(bps: number) {
+  return (Math.max(0, bps) / 100).toString();
+}
+
+function percentToBps(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed)
+    ? Math.min(Math.max(Math.round(parsed * 100), 0), 10000)
+    : 0;
+}
+
+function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(() => {
     if (typeof window === "undefined") return true;
     return !window.matchMedia("(max-width: 639px)").matches;
@@ -78,17 +116,28 @@ function useTimezones(): string[] {
   return useMemo(() => {
     try {
       // Supported in modern browsers; fall back to a short common list.
-      const fn = (Intl as unknown as {
-        supportedValuesOf?: (k: string) => string[];
-      }).supportedValuesOf;
+      const fn = (
+        Intl as unknown as {
+          supportedValuesOf?: (k: string) => string[];
+        }
+      ).supportedValuesOf;
       if (fn) return fn("timeZone");
     } catch {
       /* ignore */
     }
     return [
-      "UTC", "America/New_York", "America/Chicago", "America/Denver",
-      "America/Los_Angeles", "Europe/London", "Europe/Paris", "Europe/Berlin",
-      "Asia/Tokyo", "Asia/Shanghai", "Asia/Ho_Chi_Minh", "Australia/Sydney",
+      "UTC",
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "Europe/London",
+      "Europe/Paris",
+      "Europe/Berlin",
+      "Asia/Tokyo",
+      "Asia/Shanghai",
+      "Asia/Ho_Chi_Minh",
+      "Australia/Sydney",
     ];
   }, []);
 }
@@ -146,6 +195,14 @@ export default function SettingsPage() {
         smtpPort: s.smtpPort,
         smtpSecure: s.smtpSecure,
         smtpUser: s.smtpUser,
+        storeNotifyEmail: s.storeNotifyEmail,
+        storeCheckoutLabel: s.storeCheckoutLabel,
+        storeCheckoutInstructions: s.storeCheckoutInstructions,
+        storeConfirmationMessage: s.storeConfirmationMessage,
+        storeTaxEnabled: s.storeTaxEnabled,
+        storeTaxRateBps: s.storeTaxRateBps,
+        storeShippingMode: s.storeShippingMode,
+        storeShippingFlatCents: s.storeShippingFlatCents,
       };
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
@@ -311,6 +368,96 @@ export default function SettingsPage() {
         </div>
       </SettingsSection>
 
+      {/* Store */}
+      <SettingsSection title="Store">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Checkout label">
+              <Input
+                value={s.storeCheckoutLabel}
+                onChange={(e) => update("storeCheckoutLabel", e.target.value)}
+                placeholder="Manual invoice checkout"
+              />
+            </Field>
+            <Field label="Order notification email">
+              <Input
+                type="email"
+                value={s.storeNotifyEmail}
+                onChange={(e) => update("storeNotifyEmail", e.target.value)}
+                placeholder="Leave blank to use contact email"
+              />
+            </Field>
+          </div>
+          <Field label="Checkout instructions">
+            <Textarea
+              value={s.storeCheckoutInstructions}
+              onChange={(e) => update("storeCheckoutInstructions", e.target.value)}
+              rows={3}
+              placeholder="Shown above the checkout form and in the order confirmation."
+            />
+          </Field>
+          <Field label="Confirmation message">
+            <Textarea
+              value={s.storeConfirmationMessage}
+              onChange={(e) => update("storeConfirmationMessage", e.target.value)}
+              rows={3}
+              placeholder="Shown on the confirmation page and customer email."
+            />
+          </Field>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex items-center gap-2 rounded-lg border p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={s.storeTaxEnabled}
+                onChange={(e) => update("storeTaxEnabled", e.target.checked)}
+              />
+              Collect tax at checkout
+            </label>
+            <Field label="Tax rate (%)">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={0.01}
+                value={bpsToPercent(s.storeTaxRateBps)}
+                onChange={(e) =>
+                  update("storeTaxRateBps", percentToBps(e.target.value))
+                }
+                disabled={!s.storeTaxEnabled}
+              />
+            </Field>
+            <Field label="Shipping mode">
+              <Select
+                value={s.storeShippingMode}
+                onChange={(e) =>
+                  update(
+                    "storeShippingMode",
+                    e.target.value as SettingsDTO["storeShippingMode"],
+                  )
+                }
+              >
+                <option value="manual">Quote after review</option>
+                <option value="free">Free shipping</option>
+                <option value="flat">Flat rate</option>
+              </Select>
+            </Field>
+            <Field label="Flat shipping amount">
+              <Input
+                type="number"
+                min={0}
+                step={0.01}
+                value={centsToAmount(s.storeShippingFlatCents)}
+                onChange={(e) =>
+                  update("storeShippingFlatCents", amountToCents(e.target.value))
+                }
+                disabled={s.storeShippingMode !== "flat"}
+              />
+            </Field>
+          </div>
+        </div>
+      </SettingsSection>
+
       {/* Branding */}
       <SettingsSection title="Branding">
         <div className="space-y-3">
@@ -351,8 +498,7 @@ export default function SettingsPage() {
                 Upload site icon
               </Button>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                PNG, JPEG, WebP, SVG or ICO · up to 1 MB. Used as favicon and app
-                icon.
+                PNG, JPEG, WebP, SVG or ICO · up to 1 MB. Used as favicon and app icon.
               </p>
             </div>
           </div>
@@ -476,8 +622,8 @@ export default function SettingsPage() {
             />
           </Field>
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Powers the <strong>Instagram feed</strong> page block. Create a
-            long-lived token in the{" "}
+            Powers the <strong>Instagram feed</strong> page block. Create a long-lived
+            token in the{" "}
             <a
               href="https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login"
               target="_blank"
@@ -486,8 +632,8 @@ export default function SettingsPage() {
             >
               Meta / Instagram developer console
             </a>
-            . Until connected, the Instagram block shows your most recent library
-            photos instead. The token is stored encrypted.
+            . Until connected, the Instagram block shows your most recent library photos
+            instead. The token is stored encrypted.
           </p>
         </div>
       </SettingsSection>

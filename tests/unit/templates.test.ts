@@ -13,11 +13,22 @@ const order: StoreOrderConfirmation = {
   customerName: "Riley",
   customerEmail: "riley@example.com",
   subtotalCents: 13900,
-  totalCents: 13900,
+  taxCents: 1147,
+  shippingCents: 1200,
+  totalCents: 16247,
   currency: "USD",
   itemCount: 1,
   createdAt: "2026-07-05T19:00:00.000Z",
   receiptUrl: "/cart/confirmation?order=01TESTORDER",
+  checkoutSettings: {
+    checkoutLabel: "Manual invoice checkout",
+    checkoutInstructions: "Submit your details.",
+    confirmationMessage: "The studio will follow up with invoice details.",
+    taxEnabled: true,
+    taxRateBps: 825,
+    shippingMode: "flat",
+    shippingFlatCents: 1200,
+  },
   lines: [
     {
       productId: "product-1",
@@ -100,7 +111,9 @@ describe("manual order email templates", () => {
     expect(msg.subject).toContain("01TESTORDER");
     expect(msg.html).toContain("Fine Art Print");
     expect(msg.html).toContain("Size: 16 x 20");
-    expect(msg.text ?? "").toContain("Total: $139.00");
+    expect(msg.text ?? "").toContain("Tax: $11.47");
+    expect(msg.text ?? "").toContain("Shipping: $12.00");
+    expect(msg.text ?? "").toContain("Total: $162.47");
   });
 
   it("builds an admin notification with replyTo set to the customer", () => {

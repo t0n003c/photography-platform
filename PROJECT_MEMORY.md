@@ -1177,6 +1177,13 @@ is gitignored):
   itemized lines/options and enqueue two existing email-queue messages: a customer
   receipt-style confirmation and an admin new-order notification that links to
   `/admin/store`.
+  Follow-up: Store settings and checkout totals are configurable from Settings →
+  Store. Migration `0015_bizarre_iron_patriot.sql` adds checkout copy, tax,
+  shipping, and store notification settings to `site_settings`, plus
+  `order.tax_cents`, `order.shipping_cents`, and an `order.store_settings_snapshot`
+  JSON snapshot. Cart totals now include subtotal/tax/shipping/total, checkout
+  persists the snapshot, confirmation pages/emails reuse the saved copy, and Store
+  order details/copy summaries show the saved tax/shipping breakdown.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

@@ -8,6 +8,11 @@ import {
   selectedOptionsLabel,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
+import {
+  normalizeStoreCheckoutSettings,
+  publicStoreCheckoutSettings,
+  type PublicStoreCheckoutSettings,
+} from "@/src/lib/store-settings";
 
 export interface CheckoutCustomerInput {
   name?: string | null;
@@ -21,10 +26,13 @@ export interface ManualCheckoutOrderDTO {
   clientId: string | null;
   status: "pending";
   subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
   totalCents: number;
   currency: string;
   itemCount: number;
   createdAt: string;
+  checkoutSettings: PublicStoreCheckoutSettings;
 }
 
 export type OrderStatus = "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
@@ -49,10 +57,13 @@ export interface AdminOrderDTO {
   email: string | null;
   status: OrderStatus;
   subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
   totalCents: number;
   currency: string;
   paymentProvider: string | null;
   paymentRef: string | null;
+  storeSettingsSnapshot: PublicStoreCheckoutSettings;
   createdAt: string;
   updatedAt: string;
   items: AdminOrderItemDTO[];
@@ -61,6 +72,16 @@ export interface AdminOrderDTO {
 function lineDescription(name: string, options: SelectedProductOption[]) {
   const label = selectedOptionsLabel(options);
   return label ? `${name} — ${label}` : name;
+}
+
+function orderSettingsSnapshot(input: unknown): PublicStoreCheckoutSettings {
+  return publicStoreCheckoutSettings(
+    normalizeStoreCheckoutSettings(
+      input && typeof input === "object"
+        ? (input as Partial<PublicStoreCheckoutSettings>)
+        : {},
+    ),
+  );
 }
 
 async function findExistingClientByEmail(email: string) {
@@ -116,10 +137,13 @@ export async function createManualCheckoutOrder(
       email: customer.email.trim().toLowerCase(),
       status: "pending",
       subtotalCents: summary.subtotalCents,
+      taxCents: summary.taxCents,
+      shippingCents: summary.shippingCents,
       totalCents: summary.totalCents,
       currency: summary.currency,
       paymentProvider: "manual",
       paymentRef: "Manual invoice requested",
+      storeSettingsSnapshot: summary.checkoutSettings,
       createdAt,
       updatedAt: createdAt,
     });
@@ -144,10 +168,13 @@ export async function createManualCheckoutOrder(
     clientId,
     status: "pending",
     subtotalCents: summary.subtotalCents,
+    taxCents: summary.taxCents,
+    shippingCents: summary.shippingCents,
     totalCents: summary.totalCents,
     currency: summary.currency,
     itemCount: summary.lines.reduce((sum, line) => sum + line.quantity, 0),
     createdAt: createdAt.toISOString(),
+    checkoutSettings: summary.checkoutSettings,
   };
 }
 
@@ -206,10 +233,13 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       email: row.email ?? clientRow?.email ?? null,
       status: row.status,
       subtotalCents: row.subtotalCents,
+      taxCents: row.taxCents,
+      shippingCents: row.shippingCents,
       totalCents: row.totalCents,
       currency: row.currency,
       paymentProvider: row.paymentProvider,
       paymentRef: row.paymentRef,
+      storeSettingsSnapshot: orderSettingsSnapshot(row.storeSettingsSnapshot),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       items: itemsByOrder.get(row.id) ?? [],
@@ -249,10 +279,13 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
     email: row.email ?? clientRow?.email ?? null,
     status: row.status,
     subtotalCents: row.subtotalCents,
+    taxCents: row.taxCents,
+    shippingCents: row.shippingCents,
     totalCents: row.totalCents,
     currency: row.currency,
     paymentProvider: row.paymentProvider,
     paymentRef: row.paymentRef,
+    storeSettingsSnapshot: orderSettingsSnapshot(row.storeSettingsSnapshot),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     items: itemRows.map((item) => ({

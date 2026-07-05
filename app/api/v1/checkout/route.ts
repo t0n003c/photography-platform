@@ -9,7 +9,7 @@ import {
   manualOrderCustomerConfirmation,
 } from "@/src/email/templates";
 import { getEnv } from "@/src/lib/env";
-import { getSiteSettings } from "@/src/db/queries/settings";
+import { getSiteSettings, getStoreCheckoutSettings } from "@/src/db/queries/settings";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
 
 export const dynamic = "force-dynamic";
@@ -48,11 +48,14 @@ function buildConfirmation(opts: {
     customerName: opts.customer.name?.trim() || null,
     customerEmail: opts.customer.email.trim().toLowerCase(),
     subtotalCents: opts.order.subtotalCents,
+    taxCents: opts.order.taxCents,
+    shippingCents: opts.order.shippingCents,
     totalCents: opts.order.totalCents,
     currency: opts.order.currency,
     itemCount: opts.order.itemCount,
     createdAt: opts.order.createdAt,
     receiptUrl,
+    checkoutSettings: opts.order.checkoutSettings,
     lines: opts.summary.lines.map((line) => ({
       productId: line.product.id,
       productSlug: line.product.slug,
@@ -122,7 +125,11 @@ export async function POST(req: Request) {
   const order = await createManualCheckoutOrder(summary, parsed.data.customer);
   const env = getEnv();
   const baseUrl = trimSlash(env.APP_BASE_URL);
-  const adminNotifyTo = env.CONTACT_NOTIFY_EMAIL?.trim() || env.EMAIL_FROM;
+  const storeSettings = await getStoreCheckoutSettings();
+  const adminNotifyTo =
+    storeSettings.notifyEmail?.trim() ||
+    env.CONTACT_NOTIFY_EMAIL?.trim() ||
+    env.EMAIL_FROM;
   const confirmation = buildConfirmation({
     order,
     summary,

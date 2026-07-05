@@ -41,6 +41,14 @@ export async function GET() {
       smtpUser: row?.smtpUser ?? "",
       smtpPasswordSet: Boolean(row?.smtpPasswordEnc),
       resendApiKeySet: Boolean(row?.resendApiKeyEnc),
+      storeNotifyEmail: row?.storeNotifyEmail ?? "",
+      storeCheckoutLabel: row?.storeCheckoutLabel ?? "Manual invoice checkout",
+      storeCheckoutInstructions: row?.storeCheckoutInstructions ?? "",
+      storeConfirmationMessage: row?.storeConfirmationMessage ?? "",
+      storeTaxEnabled: row?.storeTaxEnabled ?? false,
+      storeTaxRateBps: row?.storeTaxRateBps ?? 0,
+      storeShippingMode: row?.storeShippingMode ?? "manual",
+      storeShippingFlatCents: row?.storeShippingFlatCents ?? 0,
       igAccessTokenSet: Boolean(row?.igAccessTokenEnc),
       captchaEnabled: row?.captchaEnabled ?? false,
       captchaConfigured: captchaConfigured(),
@@ -62,6 +70,14 @@ const PatchSchema = z.object({
   smtpPort: z.number().int().min(1).max(65535).optional(),
   smtpSecure: z.boolean().optional(),
   smtpUser: z.string().max(255).nullable().optional(),
+  storeNotifyEmail: z.string().max(200).nullable().optional(),
+  storeCheckoutLabel: z.string().min(1).max(80).optional(),
+  storeCheckoutInstructions: z.string().max(1000).nullable().optional(),
+  storeConfirmationMessage: z.string().max(1000).nullable().optional(),
+  storeTaxEnabled: z.boolean().optional(),
+  storeTaxRateBps: z.number().int().min(0).max(10000).optional(),
+  storeShippingMode: z.enum(["manual", "free", "flat"]).optional(),
+  storeShippingFlatCents: z.number().int().min(0).max(100_000_000).optional(),
   // Secrets: a non-empty string sets/replaces; null clears; undefined leaves.
   smtpPassword: z.string().nullable().optional(),
   resendApiKey: z.string().nullable().optional(),
@@ -79,15 +95,11 @@ export async function PATCH(req: Request) {
   const body = parsed.data;
 
   const updates: Partial<typeof siteSettings.$inferInsert> = {};
-  const setIf = <K extends keyof typeof body>(
-    key: K,
-    col: keyof typeof updates,
-  ) => {
+  const setIf = <K extends keyof typeof body>(key: K, col: keyof typeof updates) => {
     if (body[key] !== undefined) {
       // empty string for nullable text fields becomes null
       const v = body[key];
-      (updates as Record<string, unknown>)[col as string] =
-        v === "" ? null : v;
+      (updates as Record<string, unknown>)[col as string] = v === "" ? null : v;
     }
   };
 
@@ -105,6 +117,20 @@ export async function PATCH(req: Request) {
   if (body.smtpSecure !== undefined) updates.smtpSecure = body.smtpSecure;
   if (body.captchaEnabled !== undefined) updates.captchaEnabled = body.captchaEnabled;
   setIf("smtpUser", "smtpUser");
+  setIf("storeNotifyEmail", "storeNotifyEmail");
+  setIf("storeCheckoutLabel", "storeCheckoutLabel");
+  setIf("storeCheckoutInstructions", "storeCheckoutInstructions");
+  setIf("storeConfirmationMessage", "storeConfirmationMessage");
+  if (body.storeTaxEnabled !== undefined) {
+    updates.storeTaxEnabled = body.storeTaxEnabled;
+  }
+  if (body.storeTaxRateBps !== undefined) {
+    updates.storeTaxRateBps = body.storeTaxRateBps;
+  }
+  setIf("storeShippingMode", "storeShippingMode");
+  if (body.storeShippingFlatCents !== undefined) {
+    updates.storeShippingFlatCents = body.storeShippingFlatCents;
+  }
 
   if (body.smtpPassword !== undefined) {
     updates.smtpPasswordEnc = body.smtpPassword

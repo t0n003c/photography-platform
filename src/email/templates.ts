@@ -76,6 +76,41 @@ function orderLinesText(order: StoreOrderConfirmation) {
     .join("\n");
 }
 
+function shippingText(order: StoreOrderConfirmation) {
+  if (order.shippingCents > 0) return formatMoney(order.shippingCents, order.currency);
+  if (order.checkoutSettings.shippingMode === "free") return "Free";
+  if (order.checkoutSettings.shippingMode === "manual") return "Quoted after review";
+  return formatMoney(0, order.currency);
+}
+
+function totalsHtml(order: StoreOrderConfirmation) {
+  return `<table style="width:100%;border-collapse:collapse;margin:10px 0 0">
+    <tbody>
+      <tr><td style="padding:4px 0;color:#666">Subtotal</td><td style="padding:4px 0;text-align:right">${escape(
+        formatMoney(order.subtotalCents, order.currency),
+      )}</td></tr>
+      <tr><td style="padding:4px 0;color:#666">Tax</td><td style="padding:4px 0;text-align:right">${escape(
+        formatMoney(order.taxCents, order.currency),
+      )}</td></tr>
+      <tr><td style="padding:4px 0;color:#666">Shipping</td><td style="padding:4px 0;text-align:right">${escape(
+        shippingText(order),
+      )}</td></tr>
+      <tr><td style="padding:10px 0 0;font-size:18px"><strong>Total</strong></td><td style="padding:10px 0 0;text-align:right;font-size:18px"><strong>${escape(
+        formatMoney(order.totalCents, order.currency),
+      )}</strong></td></tr>
+    </tbody>
+  </table>`;
+}
+
+function totalsText(order: StoreOrderConfirmation) {
+  return [
+    `Subtotal: ${formatMoney(order.subtotalCents, order.currency)}`,
+    `Tax: ${formatMoney(order.taxCents, order.currency)}`,
+    `Shipping: ${shippingText(order)}`,
+    `Total: ${formatMoney(order.totalCents, order.currency)}`,
+  ].join("\n");
+}
+
 // Admin notification for a new (non-spam) contact submission.
 export function contactNotification(opts: {
   to: string;
@@ -127,7 +162,7 @@ export function manualOrderCustomerConfirmation(opts: {
   const greeting = name ? `Hi ${escape(name)},` : "Hi,";
   const body = `
     <p>${greeting}</p>
-    <p>We received your manual invoice request. The studio will review it and follow up with payment or fulfillment details.</p>
+    <p>${escape(opts.order.checkoutSettings.confirmationMessage)}</p>
     <p style="color:#666;font-size:13px">Order ${escape(opts.order.orderId)}</p>
     <table style="width:100%;border-collapse:collapse;margin:18px 0">
       <thead>
@@ -139,22 +174,20 @@ export function manualOrderCustomerConfirmation(opts: {
       </thead>
       <tbody>${orderLinesHtml(opts.order)}</tbody>
     </table>
-    <p style="font-size:18px"><strong>Total: ${escape(
-      formatMoney(opts.order.totalCents, opts.order.currency),
-    )}</strong></p>`;
+    ${totalsHtml(opts.order)}`;
   return {
     to: opts.to,
     subject: `Order request received: ${opts.order.orderId}`,
     html: layout("Order request received", body),
     text: `${name ? `Hi ${name},` : "Hi,"}
 
-We received your manual invoice request. The studio will review it and follow up with payment or fulfillment details.
+${opts.order.checkoutSettings.confirmationMessage}
 
 Order ${opts.order.orderId}
 
 ${orderLinesText(opts.order)}
 
-Total: ${formatMoney(opts.order.totalCents, opts.order.currency)}
+${totalsText(opts.order)}
 
 ${opts.siteName}`,
   };
@@ -181,9 +214,7 @@ export function manualOrderAdminNotification(opts: {
       </thead>
       <tbody>${orderLinesHtml(opts.order)}</tbody>
     </table>
-    <p style="font-size:18px"><strong>Total: ${escape(
-      formatMoney(opts.order.totalCents, opts.order.currency),
-    )}</strong></p>
+    ${totalsHtml(opts.order)}
     <p><a href="${escape(opts.adminUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Review in Store admin</a></p>`;
   return {
     to: opts.to,
@@ -195,7 +226,7 @@ Order ${opts.order.orderId}
 
 ${orderLinesText(opts.order)}
 
-Total: ${formatMoney(opts.order.totalCents, opts.order.currency)}
+${totalsText(opts.order)}
 
 Review: ${opts.adminUrl}`,
     replyTo: opts.order.customerEmail,
