@@ -6,6 +6,10 @@ import {
   isGrantActive,
   type Grant,
 } from "@/src/auth/grant";
+import {
+  issueInvoiceToken,
+  verifyInvoiceToken,
+} from "@/src/auth/invoice-token";
 
 describe("hashToken", () => {
   it("is deterministic: same input → same 64-char hex", () => {
@@ -73,5 +77,17 @@ describe("isGrantActive", () => {
       expiresAt: new Date(Date.now() + 60_000),
     } as any as Grant;
     expect(isGrantActive(g)).toBe(true);
+  });
+});
+
+describe("invoice tokens", () => {
+  it("round-trips a signed invoice id", () => {
+    const token = issueInvoiceToken("invoice-123");
+    expect(verifyInvoiceToken(token)).toBe("invoice-123");
+  });
+
+  it("rejects tampered signatures", () => {
+    const token = issueInvoiceToken("invoice-123");
+    expect(verifyInvoiceToken(`${token}x`)).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import {
   manualOrderAdminNotification,
   manualOrderCustomerConfirmation,
   storeInvoiceIssued,
+  storeReceiptIssued,
 } from "@/src/email/templates";
 import type { AdminOrderDTO } from "@/src/db/queries/orders";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
@@ -193,6 +194,12 @@ describe("storeInvoiceIssued", () => {
         issuedAt: "2026-07-05T20:00:00.000Z",
         sentAt: "2026-07-05T20:00:00.000Z",
         dueAt: "2026-07-20T12:00:00.000Z",
+        paidAt: null,
+        paidAmountCents: null,
+        paymentMethod: null,
+        paymentReference: null,
+        paymentNote: null,
+        receiptSentAt: null,
         createdAt: "2026-07-05T20:00:00.000Z",
         updatedAt: "2026-07-05T20:00:00.000Z",
       },
@@ -203,5 +210,41 @@ describe("storeInvoiceIssued", () => {
     expect(msg.html).toContain("https://example.com/invoice/secret-token");
     expect(msg.text ?? "").toContain("Pay by card after confirmation.");
     expect(msg.text ?? "").toContain("Total: $162.47");
+  });
+});
+
+describe("storeReceiptIssued", () => {
+  it("builds a paid receipt email with payment details", () => {
+    const msg = storeReceiptIssued({
+      to: "riley@example.com",
+      order: { ...adminOrder, status: "paid" },
+      invoice: {
+        id: "invoice-1",
+        number: "INV-20260705-ABC123",
+        status: "paid",
+        amountCents: 16247,
+        currency: "USD",
+        notes: null,
+        paymentInstructions: "Pay by card after confirmation.",
+        issuedAt: "2026-07-05T20:00:00.000Z",
+        sentAt: "2026-07-05T20:00:00.000Z",
+        dueAt: "2026-07-20T12:00:00.000Z",
+        paidAt: "2026-07-10T18:00:00.000Z",
+        paidAmountCents: 16247,
+        paymentMethod: "Check",
+        paymentReference: "1042",
+        paymentNote: "Paid in full.",
+        receiptSentAt: "2026-07-10T18:05:00.000Z",
+        createdAt: "2026-07-05T20:00:00.000Z",
+        updatedAt: "2026-07-10T18:05:00.000Z",
+      },
+      receiptUrl: "https://example.com/invoice/signed-receipt",
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("Receipt");
+    expect(msg.html).toContain("Amount paid: $162.47");
+    expect(msg.html).toContain("Reference: 1042");
+    expect(msg.text ?? "").toContain("Method: Check");
+    expect(msg.text ?? "").toContain("https://example.com/invoice/signed-receipt");
   });
 });

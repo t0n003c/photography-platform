@@ -63,9 +63,9 @@ export async function POST(
 
   let invoiceUrl: string | null = null;
   const invoice = result.order.invoice;
-  if (parsed.data.sendEmail && result.rawToken && invoice && result.order.email) {
+  if (parsed.data.sendEmail && result.invoiceToken && invoice && result.order.email) {
     invoiceUrl = `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(
-      result.rawToken,
+      result.invoiceToken,
     )}`;
     const settings = await getSiteSettings();
     await enqueueEmail(

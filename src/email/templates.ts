@@ -234,30 +234,25 @@ Review: ${opts.adminUrl}`,
   };
 }
 
-export function storeInvoiceIssued(opts: {
-  to: string;
-  order: AdminOrderDTO;
-  invoice: AdminInvoiceDTO;
-  invoiceUrl: string;
-  siteName: string;
-}): EmailMessage {
-  const customerName = opts.order.clientName?.trim();
-  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
-  const invoiceOrder: StoreOrderConfirmation = {
-    orderId: opts.order.id,
+function adminOrderToConfirmation(
+  order: AdminOrderDTO,
+  receiptUrl: string,
+): StoreOrderConfirmation {
+  return {
+    orderId: order.id,
     status: "pending",
-    customerName: opts.order.clientName,
-    customerEmail: opts.order.email ?? opts.to,
-    subtotalCents: opts.order.subtotalCents,
-    taxCents: opts.order.taxCents,
-    shippingCents: opts.order.shippingCents,
-    totalCents: opts.order.totalCents,
-    currency: opts.order.currency,
-    itemCount: opts.order.items.reduce((sum, item) => sum + item.quantity, 0),
-    createdAt: opts.order.createdAt,
-    receiptUrl: opts.invoiceUrl,
-    checkoutSettings: opts.order.storeSettingsSnapshot,
-    lines: opts.order.items.map((item) => ({
+    customerName: order.clientName,
+    customerEmail: order.email ?? "",
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    shippingCents: order.shippingCents,
+    totalCents: order.totalCents,
+    currency: order.currency,
+    itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    createdAt: order.createdAt,
+    receiptUrl,
+    checkoutSettings: order.storeSettingsSnapshot,
+    lines: order.items.map((item) => ({
       productId: item.productId ?? "",
       productSlug: "",
       productName: item.description?.split(" — ")[0] || "Product",
@@ -268,10 +263,28 @@ export function storeInvoiceIssued(opts: {
       selectedOptions: item.options,
     })),
   };
+}
+
+function emailDate(value: string | null) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
+export function storeInvoiceIssued(opts: {
+  to: string;
+  order: AdminOrderDTO;
+  invoice: AdminInvoiceDTO;
+  invoiceUrl: string;
+  siteName: string;
+}): EmailMessage {
+  const customerName = opts.order.clientName?.trim();
+  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
+  const invoiceOrder = adminOrderToConfirmation(opts.order, opts.invoiceUrl);
+  invoiceOrder.customerEmail = opts.order.email ?? opts.to;
   const dueDate = opts.invoice.dueAt
-    ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
-        new Date(opts.invoice.dueAt),
-      )
+    ? emailDate(opts.invoice.dueAt)
     : null;
   const body = `
     <p>${greeting}</p>
@@ -312,5 +325,75 @@ ${orderLinesText(invoiceOrder)}
 ${totalsText(invoiceOrder)}
 ${opts.invoice.paymentInstructions ? `\n${opts.invoice.paymentInstructions}\n` : ""}
 View invoice: ${opts.invoiceUrl}`,
+  };
+}
+
+export function storeReceiptIssued(opts: {
+  to: string;
+  order: AdminOrderDTO;
+  invoice: AdminInvoiceDTO;
+  receiptUrl: string;
+  siteName: string;
+}): EmailMessage {
+  const customerName = opts.order.clientName?.trim();
+  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
+  const receiptOrder = adminOrderToConfirmation(opts.order, opts.receiptUrl);
+  receiptOrder.customerEmail = opts.order.email ?? opts.to;
+  const paidDate = emailDate(opts.invoice.paidAt);
+  const paidAmount = formatMoney(
+    opts.invoice.paidAmountCents ?? opts.invoice.amountCents,
+    opts.invoice.currency,
+  );
+  const paymentDetails = [
+    paidDate ? `Paid ${paidDate}` : null,
+    opts.invoice.paymentMethod ? `Method: ${opts.invoice.paymentMethod}` : null,
+    opts.invoice.paymentReference
+      ? `Reference: ${opts.invoice.paymentReference}`
+      : null,
+  ].filter(Boolean) as string[];
+  const body = `
+    <p>${greeting}</p>
+    <p>Payment has been recorded for invoice <strong>${escape(opts.invoice.number)}</strong>.</p>
+    <p style="font-size:18px"><strong>Amount paid: ${escape(paidAmount)}</strong></p>
+    ${
+      paymentDetails.length
+        ? `<ul style="color:#666;font-size:13px;margin:8px 0 18px;padding-left:18px">${paymentDetails
+            .map((detail) => `<li>${escape(detail)}</li>`)
+            .join("")}</ul>`
+        : ""
+    }
+    <table style="width:100%;border-collapse:collapse;margin:18px 0">
+      <thead>
+        <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
+          <th align="left" style="padding-bottom:8px">Item</th>
+          <th align="center" style="padding-bottom:8px">Qty</th>
+          <th align="right" style="padding-bottom:8px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${orderLinesHtml(receiptOrder)}</tbody>
+    </table>
+    ${totalsHtml(receiptOrder)}
+    <p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View receipt</a></p>
+    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`;
+  return {
+    to: opts.to,
+    subject: `Receipt for ${opts.invoice.number} from ${opts.siteName}`,
+    html: layout("Payment received", body),
+    text: `${customerName ? `Hi ${customerName},` : "Hi,"}
+
+Payment has been recorded for invoice ${opts.invoice.number}.
+Amount paid: ${paidAmount}
+${paidDate ? `Paid: ${paidDate}\n` : ""}${
+      opts.invoice.paymentMethod ? `Method: ${opts.invoice.paymentMethod}\n` : ""
+    }${
+      opts.invoice.paymentReference
+        ? `Reference: ${opts.invoice.paymentReference}\n`
+        : ""
+    }
+${orderLinesText(receiptOrder)}
+
+${totalsText(receiptOrder)}
+
+View receipt: ${opts.receiptUrl}`,
   };
 }

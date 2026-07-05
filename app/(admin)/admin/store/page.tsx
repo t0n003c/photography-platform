@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   Copy,
+  CreditCard,
   Eye,
   Loader2,
   Mail,
   PackageCheck,
   Plus,
+  ReceiptText,
   Search,
   ShoppingBag,
   Trash2,
@@ -43,6 +45,12 @@ interface InvoiceRow {
   issuedAt: string | null;
   sentAt: string | null;
   dueAt: string | null;
+  paidAt: string | null;
+  paidAmountCents: number | null;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  paymentNote: string | null;
+  receiptSentAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +126,14 @@ interface InvoiceFormValues {
   dueAt: string;
   notes: string;
   paymentInstructions: string;
+}
+
+interface PaymentFormValues {
+  paidAt: string;
+  paidAmount: string;
+  paymentMethod: string;
+  paymentReference: string;
+  paymentNote: string;
 }
 
 interface ProductFormValues {
@@ -258,6 +274,8 @@ function orderSearchText(row: OrderRow) {
     row.status,
     row.invoice?.number,
     row.invoice?.status,
+    row.invoice?.paymentMethod,
+    row.invoice?.paymentReference,
     row.clientNotes,
     ...row.items.map((item) => itemSearchText(item, row.currency)),
   ]
@@ -293,6 +311,13 @@ function orderSummary(row: OrderRow) {
     `Shipping: ${formatMoney(row.shippingCents, row.currency)}`,
     `Total: ${formatMoney(row.totalCents, row.currency)}`,
     row.invoice ? `Invoice: ${row.invoice.number} (${row.invoice.status})` : null,
+    row.invoice?.paidAt
+      ? `Paid: ${formatMoney(row.invoice.paidAmountCents ?? row.totalCents, row.currency)} on ${formatDate(row.invoice.paidAt)}`
+      : null,
+    row.invoice?.paymentMethod ? `Payment method: ${row.invoice.paymentMethod}` : null,
+    row.invoice?.paymentReference
+      ? `Payment reference: ${row.invoice.paymentReference}`
+      : null,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
     .filter(Boolean)
@@ -788,6 +813,7 @@ function OrderDetailModal({
   onCopy,
   onStatusChange,
   onInvoiceSubmit,
+  onPaymentSubmit,
 }: {
   order: OrderRow;
   saving: boolean;
@@ -795,17 +821,26 @@ function OrderDetailModal({
   onCopy: (order: OrderRow) => void;
   onStatusChange: (status: OrderStatus) => Promise<void>;
   onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
+  onPaymentSubmit: (values: PaymentFormValues, sendReceipt: boolean) => Promise<void>;
 }) {
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
     dueAt: "",
     notes: "",
     paymentInstructions: "",
   });
+  const [paymentForm, setPaymentForm] = useState<PaymentFormValues>({
+    paidAt: "",
+    paidAmount: "",
+    paymentMethod: "",
+    paymentReference: "",
+    paymentNote: "",
+  });
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
     0,
   );
+  const invoicePaid = order.invoice?.status === "paid";
   const nextStatus: OrderStatus | null =
     order.status === "draft" || order.status === "pending" || order.status === "invoiced"
       ? "paid"
@@ -818,7 +853,14 @@ function OrderDetailModal({
       notes: order.invoice?.notes ?? "",
       paymentInstructions: order.invoice?.paymentInstructions ?? "",
     });
-  }, [order.id, order.invoice]);
+    setPaymentForm({
+      paidAt: dateInputValue(order.invoice?.paidAt ?? new Date().toISOString()),
+      paidAmount: centsToInput(order.invoice?.paidAmountCents ?? order.totalCents),
+      paymentMethod: order.invoice?.paymentMethod ?? "",
+      paymentReference: order.invoice?.paymentReference ?? "",
+      paymentNote: order.invoice?.paymentNote ?? "",
+    });
+  }, [order.id, order.invoice, order.totalCents]);
 
   return (
     <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
@@ -965,7 +1007,15 @@ function OrderDetailModal({
               </p>
             </div>
             {order.invoice ? (
-              <Badge tone={order.invoice.status === "paid" ? "green" : "blue"}>
+              <Badge
+                tone={
+                  order.invoice.status === "paid"
+                    ? "green"
+                    : order.invoice.status === "void"
+                      ? "red"
+                      : "blue"
+                }
+              >
                 {order.invoice.number} · {order.invoice.status}
               </Badge>
             ) : (
@@ -974,12 +1024,16 @@ function OrderDetailModal({
           </div>
 
           {order.invoice && (
-            <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+            <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-5">
               <span>Created {formatDate(order.invoice.createdAt)}</span>
               <span>
                 Issued {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
               </span>
               <span>Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}</span>
+              <span>Paid {order.invoice.paidAt ? formatDate(order.invoice.paidAt) : "—"}</span>
+              <span>
+                Receipt {order.invoice.receiptSentAt ? formatDate(order.invoice.receiptSentAt) : "—"}
+              </span>
             </div>
           )}
 
@@ -1052,7 +1106,7 @@ function OrderDetailModal({
             </Button>
             <Button
               type="button"
-              disabled={saving || !order.email}
+              disabled={saving || !order.email || invoicePaid}
               onClick={() => onInvoiceSubmit(invoiceForm, true)}
             >
               {saving ? (
@@ -1060,7 +1114,138 @@ function OrderDetailModal({
               ) : (
                 <Mail className="h-4 w-4" />
               )}
-              Send invoice
+              {invoicePaid ? "Invoice paid" : "Send invoice"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-lg border p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-medium">Payment receipt</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Record a manual payment and optionally send a receipt email.
+              </p>
+            </div>
+            {invoicePaid ? (
+              <Badge tone="green">
+                Paid{" "}
+                {formatMoney(
+                  order.invoice?.paidAmountCents ?? order.totalCents,
+                  order.currency,
+                )}
+              </Badge>
+            ) : (
+              <Badge tone="neutral">Awaiting payment</Badge>
+            )}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Paid date" htmlFor="payment-paid-at">
+              <Input
+                id="payment-paid-at"
+                type="date"
+                value={paymentForm.paidAt}
+                disabled={saving}
+                onChange={(event) =>
+                  setPaymentForm((current) => ({
+                    ...current,
+                    paidAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Amount paid" htmlFor="payment-paid-amount">
+              <Input
+                id="payment-paid-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={paymentForm.paidAmount}
+                disabled={saving}
+                onChange={(event) =>
+                  setPaymentForm((current) => ({
+                    ...current,
+                    paidAmount: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Method" htmlFor="payment-method">
+              <Input
+                id="payment-method"
+                value={paymentForm.paymentMethod}
+                disabled={saving}
+                placeholder="Zelle, check, cash, card"
+                onChange={(event) =>
+                  setPaymentForm((current) => ({
+                    ...current,
+                    paymentMethod: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Reference" htmlFor="payment-reference">
+              <Input
+                id="payment-reference"
+                value={paymentForm.paymentReference}
+                disabled={saving}
+                placeholder="Check number or transaction ID"
+                onChange={(event) =>
+                  setPaymentForm((current) => ({
+                    ...current,
+                    paymentReference: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Payment note" htmlFor="payment-note">
+              <Textarea
+                id="payment-note"
+                rows={3}
+                value={paymentForm.paymentNote}
+                disabled={saving}
+                placeholder="Optional note shown on the receipt."
+                onChange={(event) =>
+                  setPaymentForm((current) => ({
+                    ...current,
+                    paymentNote: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          {!order.email && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              Add a customer email before sending a receipt.
+            </p>
+          )}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => onPaymentSubmit(paymentForm, false)}
+            >
+              <CreditCard className="h-4 w-4" />
+              {invoicePaid ? "Update payment" : "Record payment"}
+            </Button>
+            <Button
+              type="button"
+              disabled={saving || !order.email}
+              onClick={() => onPaymentSubmit(paymentForm, true)}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ReceiptText className="h-4 w-4" />
+              )}
+              {invoicePaid ? "Send receipt" : "Record & send receipt"}
             </Button>
           </div>
         </div>
@@ -1239,6 +1424,35 @@ export default function StorePage() {
       );
       setSelectedOrder(res.data.order);
       toast(sendEmail ? "Invoice sent" : "Invoice saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const recordPayment = async (
+    row: OrderRow,
+    values: PaymentFormValues,
+    sendReceipt: boolean,
+  ) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{
+        data: { order: OrderRow; receiptUrl: string | null };
+      }>(`/api/v1/admin/orders/${row.id}/payment`, {
+        paidAt: values.paidAt || null,
+        paidAmountCents: inputToCents(values.paidAmount),
+        paymentMethod: values.paymentMethod.trim() || null,
+        paymentReference: values.paymentReference.trim() || null,
+        paymentNote: values.paymentNote.trim() || null,
+        sendReceipt,
+      });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data.order : order)),
+      );
+      setSelectedOrder(res.data.order);
+      toast(sendReceipt ? "Receipt sent" : "Payment recorded", "success");
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {
@@ -1668,6 +1882,9 @@ export default function StorePage() {
           onStatusChange={(status) => updateOrderStatus(selectedOrder, status)}
           onInvoiceSubmit={(values, sendEmail) =>
             saveInvoice(selectedOrder, values, sendEmail)
+          }
+          onPaymentSubmit={(values, sendReceipt) =>
+            recordPayment(selectedOrder, values, sendReceipt)
           }
         />
       )}

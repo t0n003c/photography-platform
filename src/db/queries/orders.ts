@@ -6,7 +6,8 @@ import {
   order as orderTable,
   orderItem,
 } from "@/src/db/schema";
-import { generateShareToken, hashToken } from "@/src/auth/grant";
+import { hashToken } from "@/src/auth/grant";
+import { issueInvoiceToken, verifyInvoiceToken } from "@/src/auth/invoice-token";
 import { newId } from "@/src/lib/id";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
 import {
@@ -62,6 +63,12 @@ export interface AdminInvoiceDTO {
   issuedAt: string | null;
   sentAt: string | null;
   dueAt: string | null;
+  paidAt: string | null;
+  paidAmountCents: number | null;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  paymentNote: string | null;
+  receiptSentAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -136,6 +143,12 @@ function invoiceToDTO(row: typeof invoice.$inferSelect): AdminInvoiceDTO {
     issuedAt: row.issuedAt?.toISOString() ?? null,
     sentAt: row.sentAt?.toISOString() ?? null,
     dueAt: row.dueAt?.toISOString() ?? null,
+    paidAt: row.paidAt?.toISOString() ?? null,
+    paidAmountCents: row.paidAmountCents,
+    paymentMethod: row.paymentMethod,
+    paymentReference: row.paymentReference,
+    paymentNote: row.paymentNote,
+    receiptSentAt: row.receiptSentAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -385,9 +398,14 @@ export async function updateOrderStatusAdmin(
   await db.transaction(async (tx) => {
     await tx.update(orderTable).set({ status }).where(eq(orderTable.id, id));
     if (status === "paid") {
+      const now = new Date();
       await tx
         .update(invoice)
-        .set({ status: "paid" })
+        .set({
+          status: "paid",
+          paidAt: now,
+          paidAmountCents: sql`coalesce(${invoice.paidAmountCents}, ${invoice.amountCents})`,
+        })
         .where(eq(invoice.orderId, id));
     } else if (status === "cancelled") {
       await tx
@@ -407,9 +425,7 @@ export async function saveInvoiceAdmin(
     paymentInstructions?: string | null;
     issue?: boolean;
   },
-): Promise<{ order: AdminOrderDTO; rawToken: string | null } | null> {
-  const token = input.issue ? generateShareToken() : null;
-
+): Promise<{ order: AdminOrderDTO; invoiceToken: string | null } | null> {
   await db.transaction(async (tx) => {
     const orderRows = await tx
       .select()
@@ -449,7 +465,6 @@ export async function saveInvoiceAdmin(
           dueAt: input.dueAt ?? null,
           issuedAt,
           sentAt,
-          ...(token ? { publicTokenHash: token.hash } : {}),
         })
         .where(eq(invoice.id, current.id));
     } else {
@@ -465,7 +480,6 @@ export async function saveInvoiceAdmin(
         dueAt: input.dueAt ?? null,
         issuedAt: issuedAt ?? null,
         sentAt: sentAt ?? null,
-        publicTokenHash: token?.hash ?? null,
       });
     }
 
@@ -479,18 +493,112 @@ export async function saveInvoiceAdmin(
 
   const order = await getOrderAdmin(orderId);
   if (!order) return null;
-  return { order, rawToken: token?.raw ?? null };
+  return {
+    order,
+    invoiceToken: input.issue && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
+  };
+}
+
+export async function recordInvoicePaymentAdmin(
+  orderId: string,
+  input: {
+    paidAt?: Date | null;
+    paidAmountCents?: number | null;
+    paymentMethod?: string | null;
+    paymentReference?: string | null;
+    paymentNote?: string | null;
+    sendReceipt?: boolean;
+  },
+): Promise<{ order: AdminOrderDTO; invoiceToken: string | null } | null> {
+  await db.transaction(async (tx) => {
+    const orderRows = await tx
+      .select()
+      .from(orderTable)
+      .where(eq(orderTable.id, orderId))
+      .limit(1);
+    const row = orderRows[0];
+    if (!row) return;
+
+    const invoiceRows = await tx
+      .select()
+      .from(invoice)
+      .where(eq(invoice.orderId, orderId))
+      .limit(1);
+    const current = invoiceRows[0];
+    const now = new Date();
+    const paidAt = input.paidAt ?? current?.paidAt ?? now;
+    const paidAmountCents =
+      input.paidAmountCents && input.paidAmountCents > 0
+        ? input.paidAmountCents
+        : (current?.paidAmountCents ?? row.totalCents);
+    const paymentMethod = cleanOptionalText(input.paymentMethod);
+    const paymentReference = cleanOptionalText(input.paymentReference);
+    const paymentNote = cleanOptionalText(input.paymentNote);
+    const receiptSentAt = input.sendReceipt ? now : current?.receiptSentAt;
+
+    if (current) {
+      await tx
+        .update(invoice)
+        .set({
+          status: "paid",
+          amountCents: row.totalCents,
+          currency: row.currency,
+          paidAt,
+          paidAmountCents,
+          paymentMethod,
+          paymentReference,
+          paymentNote,
+          receiptSentAt,
+        })
+        .where(eq(invoice.id, current.id));
+    } else {
+      await tx.insert(invoice).values({
+        id: newId(),
+        orderId,
+        number: invoiceNumber(),
+        status: "paid",
+        amountCents: row.totalCents,
+        currency: row.currency,
+        issuedAt: now,
+        paidAt,
+        paidAmountCents,
+        paymentMethod,
+        paymentReference,
+        paymentNote,
+        receiptSentAt,
+      });
+    }
+
+    await tx
+      .update(orderTable)
+      .set({ status: "paid" })
+      .where(eq(orderTable.id, orderId));
+  });
+
+  const order = await getOrderAdmin(orderId);
+  if (!order) return null;
+  return {
+    order,
+    invoiceToken:
+      input.sendReceipt && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
+  };
 }
 
 export async function getPublicInvoiceByToken(
   rawToken: string,
 ): Promise<PublicInvoiceDTO | null> {
-  const tokenHash = hashToken(rawToken);
-  const invoiceRows = await db
-    .select()
-    .from(invoice)
-    .where(eq(invoice.publicTokenHash, tokenHash))
-    .limit(1);
+  const signedInvoiceId = verifyInvoiceToken(rawToken);
+  const invoiceRows = signedInvoiceId
+    ? await db
+        .select()
+        .from(invoice)
+        .where(eq(invoice.id, signedInvoiceId))
+        .limit(1)
+    : await db
+        .select()
+        .from(invoice)
+        .where(eq(invoice.publicTokenHash, hashToken(rawToken)))
+        .limit(1);
   const invoiceRow = invoiceRows[0];
   if (!invoiceRow || invoiceRow.status === "draft" || invoiceRow.status === "void") {
     return null;

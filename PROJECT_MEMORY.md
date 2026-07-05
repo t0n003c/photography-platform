@@ -1188,11 +1188,21 @@ is gitignored):
   `0016_real_wallow.sql` adds invoice notes, payment instructions, sent timestamp,
   and hashed public invoice tokens. `/admin/store` order details can save an invoice
   draft or send a secure invoice email; sending moves open orders to `invoiced` and
-  creates a one-time raw token link for `/invoice/[token]`. Public invoice pages are
-  SSR/noindex, itemized, mobile-safe, and show the saved totals/payment instructions.
+  creates a signed invoice link for `/invoice/[token]` (the resolver still accepts
+  older hashed-token links). Public invoice pages are SSR/noindex, itemized,
+  mobile-safe, and show the saved totals/payment instructions.
+  Follow-up: Store payment/receipt workflow is now manual-payment complete.
+  Migration `0017_uneven_goliath.sql` adds paid date, amount paid, method,
+  reference, payment note, and receipt-sent timestamp to `invoice`. `/admin/store`
+  order details include a Payment receipt panel that records payment details, moves
+  the order/invoice to `paid`, and can send a receipt email. Paid public invoice
+  pages render as secure receipts with payment details and amount paid. New invoice
+  and receipt emails use signed invoice tokens from `src/auth/invoice-token.ts` so a
+  receipt link can be regenerated without storing a raw public token.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015` and `0016`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and
+  `0017`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

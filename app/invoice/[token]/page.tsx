@@ -48,7 +48,9 @@ export default async function PublicInvoicePage({
   if (!data) notFound();
 
   const { invoice, order } = data;
-  const statusLabel = invoice.status === "paid" ? "Paid" : "Payment due";
+  const isPaid = invoice.status === "paid";
+  const statusLabel = isPaid ? "Payment received" : "Payment due";
+  const paidAmount = invoice.paidAmountCents ?? invoice.amountCents;
 
   return (
     <main className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
@@ -61,7 +63,7 @@ export default async function PublicInvoicePage({
             Toramochie
           </Link>
           <span className="rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-[hsl(var(--muted-foreground))]">
-            Secure invoice
+            {isPaid ? "Secure receipt" : "Secure invoice"}
           </span>
         </div>
 
@@ -69,7 +71,7 @@ export default async function PublicInvoicePage({
           <div className="flex flex-col gap-6 border-b pb-6 md:flex-row md:items-start md:justify-between">
             <div className="flex gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--muted))]">
-                {invoice.status === "paid" ? (
+                {isPaid ? (
                   <CheckCircle2 className="h-6 w-6 text-green-600" aria-hidden />
                 ) : (
                   <FileText className="h-6 w-6" aria-hidden />
@@ -97,6 +99,12 @@ export default async function PublicInvoicePage({
                 <span className="text-[hsl(var(--muted-foreground))]">Due</span>
                 <strong>{formatDate(invoice.dueAt)}</strong>
               </div>
+              {isPaid && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-[hsl(var(--muted-foreground))]">Paid</span>
+                  <strong>{formatDate(invoice.paidAt)}</strong>
+                </div>
+              )}
               <div className="flex justify-between gap-4">
                 <span className="text-[hsl(var(--muted-foreground))]">Status</span>
                 <strong className="capitalize">{invoice.status}</strong>
@@ -190,13 +198,30 @@ export default async function PublicInvoicePage({
                   </p>
                 </div>
               )}
-              <div>
-                <h2 className="text-sm font-semibold">Payment instructions</h2>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-[hsl(var(--muted-foreground))]">
-                  {invoice.paymentInstructions ||
-                    "The studio will follow up with payment instructions."}
-                </p>
-              </div>
+              {isPaid ? (
+                <div>
+                  <h2 className="text-sm font-semibold">Payment receipt</h2>
+                  <div className="mt-2 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                    <p>Amount paid: {formatMoney(paidAmount, invoice.currency)}</p>
+                    <p>Paid: {formatDate(invoice.paidAt)}</p>
+                    {invoice.paymentMethod && <p>Method: {invoice.paymentMethod}</p>}
+                    {invoice.paymentReference && (
+                      <p>Reference: {invoice.paymentReference}</p>
+                    )}
+                    {invoice.paymentNote && (
+                      <p className="whitespace-pre-wrap">{invoice.paymentNote}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-sm font-semibold">Payment instructions</h2>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-[hsl(var(--muted-foreground))]">
+                    {invoice.paymentInstructions ||
+                      "The studio will follow up with payment instructions."}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-3 rounded-xl bg-[hsl(var(--muted))] p-4 text-sm">
@@ -216,6 +241,12 @@ export default async function PublicInvoicePage({
                 <span>Total</span>
                 <strong>{formatMoney(order.totalCents, order.currency)}</strong>
               </div>
+              {isPaid && (
+                <div className="flex justify-between gap-4 border-t pt-3">
+                  <span>Amount paid</span>
+                  <strong>{formatMoney(paidAmount, invoice.currency)}</strong>
+                </div>
+              )}
             </div>
           </div>
         </div>
