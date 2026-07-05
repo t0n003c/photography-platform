@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Admin link refresh/status visibility + webhook event idempotency; refunds/tax/fulfillment still deferred           |
+| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Admin link refresh/status visibility + webhook event idempotency; refunds/tax still deferred                       |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -472,10 +472,11 @@ is gitignored):
 - **GHCR packages:** the public image manifests for `photography-platform-web:latest` and
   `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
   fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
-- **Payments:** manual invoice checkout/receipts remain active. Optional Stripe Checkout
-  now creates hosted sessions for cart orders and issued public invoices, and signed
-  webhooks reconcile paid/expired invoice state when Settings -> Payments is ready.
-  `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety.
+- **Payments + fulfillment:** manual invoice checkout/receipts and fulfillment tracking
+  remain active. Optional Stripe Checkout now creates hosted sessions for cart orders
+  and issued public invoices, and signed webhooks reconcile paid/expired invoice state
+  when Settings -> Payments is ready. `stripe_webhook_event` stores Stripe event IDs
+  for duplicate/retry safety.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -508,8 +509,7 @@ is gitignored):
 
 - **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
   `main` still builds/publishes images and runs the full CI/Lighthouse stack.
-- **Store payment follow-ups:** refunds, tax/VAT automation, fulfillment workflow, and
-  Stripe operational hardening beyond Checkout session/webhook reconciliation.
+- **Store payment follow-ups:** refunds and tax/VAT automation.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
@@ -1232,8 +1232,7 @@ is gitignored):
   `/api/v1/invoices/[token]/checkout` creates invoice-specific Checkout sessions, and
   `/api/v1/webhooks/stripe` verifies `stripe-signature` before marking sessions paid or
   expired. Paid webhooks update order/invoice state idempotently and enqueue the existing
-  receipt email when appropriate. Stripe still does not handle refunds, tax/VAT automation,
-  or fulfillment workflow in-app.
+  receipt email when appropriate. Stripe still does not handle refunds or tax/VAT automation.
   Follow-up: Stripe payment operations were hardened. Migration `0019_yellow_phalanx.sql`
   adds `stripe_webhook_event` so duplicate/replayed Stripe event IDs do not re-apply
   payment mutations; previously failed events can retry. Admin -> Store now shows hosted
@@ -1241,10 +1240,17 @@ is gitignored):
   an unpaid issued invoice's payment link via `POST /api/v1/admin/orders/[id]/checkout`.
   Public invoice pages show success/cancel/expired notices and label expired sessions as
   fresh payment links. Test-mode validation lives in `docs/STRIPE-TEST-RUNBOOK.md`.
+  Follow-up: Store fulfillment basics are active. Migration
+  `0020_thankful_hemingway.sql` adds fulfillment status, carrier/tracking fields,
+  milestone timestamps, and private fulfillment notes to `order`. `/admin/store`
+  order details now include a Fulfillment panel with quick ready/shipped/delivered
+  actions, optional client update emails, and public invoice/receipt tracking display.
+  `/api/v1/admin/orders/[id]/fulfillment` records the change and writes audit metadata;
+  ready/shipped/delivered emails reuse the itemized order email layout. Refunds and
+  tax/VAT automation remain deferred.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and
-  `0017`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0020`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

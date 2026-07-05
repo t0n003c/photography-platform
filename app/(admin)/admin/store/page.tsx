@@ -105,6 +105,20 @@ interface OrderRow {
   currency: string;
   paymentProvider: string | null;
   paymentRef: string | null;
+  fulfillmentStatus:
+    | "unfulfilled"
+    | "in_progress"
+    | "ready"
+    | "shipped"
+    | "delivered"
+    | "cancelled";
+  fulfillmentCarrier: string | null;
+  fulfillmentTrackingNumber: string | null;
+  fulfillmentTrackingUrl: string | null;
+  fulfillmentReadyAt: string | null;
+  fulfillmentShippedAt: string | null;
+  fulfillmentDeliveredAt: string | null;
+  fulfillmentNotes: string | null;
   invoice: InvoiceRow | null;
   createdAt: string;
   updatedAt: string;
@@ -121,6 +135,7 @@ interface OrderRow {
 }
 
 type OrderStatus = OrderRow["status"];
+type FulfillmentStatus = OrderRow["fulfillmentStatus"];
 type OrderFilter = "all" | "open" | OrderStatus;
 
 const ORDER_STATUS_OPTIONS: OrderStatus[] = [
@@ -137,6 +152,19 @@ const OPEN_ORDER_STATUSES = new Set<OrderStatus>([
   "invoiced",
   "paid",
 ]);
+const FULFILLMENT_STATUS_OPTIONS: FulfillmentStatus[] = [
+  "unfulfilled",
+  "in_progress",
+  "ready",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
+const FULFILLMENT_EMAIL_STATUSES = new Set<FulfillmentStatus>([
+  "ready",
+  "shipped",
+  "delivered",
+]);
 
 interface InvoiceFormValues {
   dueAt: string;
@@ -150,6 +178,17 @@ interface PaymentFormValues {
   paymentMethod: string;
   paymentReference: string;
   paymentNote: string;
+}
+
+interface FulfillmentFormValues {
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentCarrier: string;
+  fulfillmentTrackingNumber: string;
+  fulfillmentTrackingUrl: string;
+  fulfillmentReadyAt: string;
+  fulfillmentShippedAt: string;
+  fulfillmentDeliveredAt: string;
+  fulfillmentNotes: string;
 }
 
 interface ProductFormValues {
@@ -269,6 +308,24 @@ function onlinePaymentLabel(status: InvoiceRow["onlinePaymentStatus"]) {
   return status.replace(/_/g, " ");
 }
 
+function fulfillmentTone(
+  status: FulfillmentStatus,
+): ComponentProps<typeof Badge>["tone"] {
+  if (status === "ready" || status === "shipped") return "blue";
+  if (status === "delivered") return "green";
+  if (status === "cancelled") return "red";
+  if (status === "in_progress") return "amber";
+  return "neutral";
+}
+
+function fulfillmentLabel(status: FulfillmentStatus) {
+  return status.replace(/_/g, " ");
+}
+
+function canEmailFulfillment(status: FulfillmentStatus) {
+  return FULFILLMENT_EMAIL_STATUSES.has(status);
+}
+
 function shortRef(value: string | null | undefined) {
   if (!value) return "—";
   if (value.length <= 18) return value;
@@ -316,6 +373,9 @@ function orderSearchText(row: OrderRow) {
     row.invoice?.onlinePaymentStatus,
     row.invoice?.onlinePaymentSessionId,
     row.invoice?.onlinePaymentIntentId,
+    row.fulfillmentStatus,
+    row.fulfillmentCarrier,
+    row.fulfillmentTrackingNumber,
     row.clientNotes,
     ...row.items.map((item) => itemSearchText(item, row.currency)),
   ]
@@ -367,6 +427,12 @@ function orderSummary(row: OrderRow) {
     row.invoice?.onlinePaymentIntentId
       ? `Stripe payment intent: ${row.invoice.onlinePaymentIntentId}`
       : null,
+    `Fulfillment: ${fulfillmentLabel(row.fulfillmentStatus)}`,
+    row.fulfillmentCarrier ? `Carrier: ${row.fulfillmentCarrier}` : null,
+    row.fulfillmentTrackingNumber
+      ? `Tracking: ${row.fulfillmentTrackingNumber}`
+      : null,
+    row.fulfillmentTrackingUrl ? `Tracking URL: ${row.fulfillmentTrackingUrl}` : null,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
     .filter(Boolean)
@@ -863,6 +929,7 @@ function OrderDetailModal({
   onStatusChange,
   onInvoiceSubmit,
   onPaymentSubmit,
+  onFulfillmentSubmit,
   onInvoiceLinkAction,
   onCheckoutLinkAction,
   onRefreshCheckout,
@@ -874,6 +941,10 @@ function OrderDetailModal({
   onStatusChange: (status: OrderStatus) => Promise<void>;
   onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
   onPaymentSubmit: (values: PaymentFormValues, sendReceipt: boolean) => Promise<void>;
+  onFulfillmentSubmit: (
+    values: FulfillmentFormValues,
+    sendEmail: boolean,
+  ) => Promise<void>;
   onInvoiceLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onCheckoutLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onRefreshCheckout: (order: OrderRow) => Promise<void>;
@@ -890,6 +961,16 @@ function OrderDetailModal({
     paymentReference: "",
     paymentNote: "",
   });
+  const [fulfillmentForm, setFulfillmentForm] = useState<FulfillmentFormValues>({
+    fulfillmentStatus: "unfulfilled",
+    fulfillmentCarrier: "",
+    fulfillmentTrackingNumber: "",
+    fulfillmentTrackingUrl: "",
+    fulfillmentReadyAt: "",
+    fulfillmentShippedAt: "",
+    fulfillmentDeliveredAt: "",
+    fulfillmentNotes: "",
+  });
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
@@ -897,6 +978,8 @@ function OrderDetailModal({
   );
   const invoicePaid = order.invoice?.status === "paid";
   const canRefreshCheckout = order.invoice?.status === "issued";
+  const fulfillmentCanEmail =
+    Boolean(order.email) && canEmailFulfillment(fulfillmentForm.fulfillmentStatus);
   const nextStatus: OrderStatus | null =
     order.status === "draft" || order.status === "pending" || order.status === "invoiced"
       ? "paid"
@@ -916,7 +999,26 @@ function OrderDetailModal({
       paymentReference: order.invoice?.paymentReference ?? "",
       paymentNote: order.invoice?.paymentNote ?? "",
     });
-  }, [order.id, order.invoice, order.totalCents]);
+    setFulfillmentForm({
+      fulfillmentStatus: order.fulfillmentStatus,
+      fulfillmentCarrier: order.fulfillmentCarrier ?? "",
+      fulfillmentTrackingNumber: order.fulfillmentTrackingNumber ?? "",
+      fulfillmentTrackingUrl: order.fulfillmentTrackingUrl ?? "",
+      fulfillmentReadyAt: dateInputValue(order.fulfillmentReadyAt),
+      fulfillmentShippedAt: dateInputValue(order.fulfillmentShippedAt),
+      fulfillmentDeliveredAt: dateInputValue(order.fulfillmentDeliveredAt),
+      fulfillmentNotes: order.fulfillmentNotes ?? "",
+    });
+  }, [order.id, order.invoice, order.totalCents, order]);
+
+  const submitFulfillmentStatus = (
+    status: FulfillmentStatus,
+    sendEmail: boolean,
+  ) => {
+    const values = { ...fulfillmentForm, fulfillmentStatus: status };
+    setFulfillmentForm(values);
+    return onFulfillmentSubmit(values, sendEmail);
+  };
 
   return (
     <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
@@ -939,9 +1041,17 @@ function OrderDetailModal({
                 : ""}
             </p>
           </div>
-          <Badge tone={orderTone(order.status)} className="capitalize">
-            {order.status}
-          </Badge>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Badge tone={orderTone(order.status)} className="capitalize">
+              {order.status}
+            </Badge>
+            <Badge
+              tone={fulfillmentTone(order.fulfillmentStatus)}
+              className="capitalize"
+            >
+              {fulfillmentLabel(order.fulfillmentStatus)}
+            </Badge>
+          </div>
         </div>
 
         <div className="grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-2">
@@ -1423,6 +1533,231 @@ function OrderDetailModal({
           </div>
         </div>
 
+        <div className="space-y-4 rounded-lg border p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-medium">Fulfillment</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Track preparation, delivery, and shipping details for this order.
+              </p>
+            </div>
+            <Badge
+              tone={fulfillmentTone(order.fulfillmentStatus)}
+              className="capitalize"
+            >
+              {fulfillmentLabel(order.fulfillmentStatus)}
+            </Badge>
+          </div>
+
+          <div className="grid gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+            <span>
+              Ready{" "}
+              {order.fulfillmentReadyAt
+                ? formatDate(order.fulfillmentReadyAt)
+                : "—"}
+            </span>
+            <span>
+              Shipped{" "}
+              {order.fulfillmentShippedAt
+                ? formatDate(order.fulfillmentShippedAt)
+                : "—"}
+            </span>
+            <span>
+              Delivered{" "}
+              {order.fulfillmentDeliveredAt
+                ? formatDate(order.fulfillmentDeliveredAt)
+                : "—"}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Fulfillment status" htmlFor="fulfillment-status">
+              <Select
+                id="fulfillment-status"
+                value={fulfillmentForm.fulfillmentStatus}
+                disabled={saving}
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentStatus: event.target.value as FulfillmentStatus,
+                  }))
+                }
+              >
+                {FULFILLMENT_STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {fulfillmentLabel(status)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Carrier" htmlFor="fulfillment-carrier">
+              <Input
+                id="fulfillment-carrier"
+                value={fulfillmentForm.fulfillmentCarrier}
+                disabled={saving}
+                placeholder="USPS, UPS, FedEx, local pickup"
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentCarrier: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Tracking number" htmlFor="fulfillment-tracking-number">
+              <Input
+                id="fulfillment-tracking-number"
+                value={fulfillmentForm.fulfillmentTrackingNumber}
+                disabled={saving}
+                placeholder="Tracking or handoff reference"
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentTrackingNumber: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Tracking URL" htmlFor="fulfillment-tracking-url">
+              <Input
+                id="fulfillment-tracking-url"
+                type="url"
+                value={fulfillmentForm.fulfillmentTrackingUrl}
+                disabled={saving}
+                placeholder="https://..."
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentTrackingUrl: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Ready date" htmlFor="fulfillment-ready-at">
+              <Input
+                id="fulfillment-ready-at"
+                type="date"
+                value={fulfillmentForm.fulfillmentReadyAt}
+                disabled={saving}
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentReadyAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Shipped date" htmlFor="fulfillment-shipped-at">
+              <Input
+                id="fulfillment-shipped-at"
+                type="date"
+                value={fulfillmentForm.fulfillmentShippedAt}
+                disabled={saving}
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentShippedAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Delivered date" htmlFor="fulfillment-delivered-at">
+              <Input
+                id="fulfillment-delivered-at"
+                type="date"
+                value={fulfillmentForm.fulfillmentDeliveredAt}
+                disabled={saving}
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentDeliveredAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <Field
+            label="Internal fulfillment notes"
+            htmlFor="fulfillment-notes"
+            hint="Private notes for packing, pickup, or handoff. Not shown to the customer."
+          >
+            <Textarea
+              id="fulfillment-notes"
+              rows={3}
+              value={fulfillmentForm.fulfillmentNotes}
+              disabled={saving}
+              placeholder="Packing notes, pickup window, vendor order ID..."
+              onChange={(event) =>
+                setFulfillmentForm((current) => ({
+                  ...current,
+                  fulfillmentNotes: event.target.value,
+                }))
+              }
+            />
+          </Field>
+
+          {!order.email && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              Add a customer email before sending a fulfillment update.
+            </p>
+          )}
+          {order.email && !canEmailFulfillment(fulfillmentForm.fulfillmentStatus) && (
+            <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
+              Email updates are available for ready, shipped, and delivered statuses.
+            </p>
+          )}
+
+          <div className="flex flex-wrap justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {(["ready", "shipped", "delivered"] as FulfillmentStatus[]).map(
+                (status) => (
+                  <Button
+                    key={status}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={saving}
+                    onClick={() => submitFulfillmentStatus(status, false)}
+                  >
+                    <PackageCheck className="h-4 w-4" />
+                    Mark {fulfillmentLabel(status)}
+                  </Button>
+                ),
+              )}
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving}
+                onClick={() => onFulfillmentSubmit(fulfillmentForm, false)}
+              >
+                <PackageCheck className="h-4 w-4" />
+                Save fulfillment
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !fulfillmentCanEmail}
+                onClick={() => onFulfillmentSubmit(fulfillmentForm, true)}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4" />
+                )}
+                Save & email update
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {itemCount} item{itemCount === 1 ? "" : "s"}
@@ -1626,6 +1961,38 @@ export default function StorePage() {
       );
       setSelectedOrder(res.data.order);
       toast(sendReceipt ? "Receipt sent" : "Payment recorded", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const saveFulfillment = async (
+    row: OrderRow,
+    values: FulfillmentFormValues,
+    sendEmail: boolean,
+  ) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{
+        data: { order: OrderRow; receiptUrl: string | null };
+      }>(`/api/v1/admin/orders/${row.id}/fulfillment`, {
+        fulfillmentStatus: values.fulfillmentStatus,
+        fulfillmentCarrier: values.fulfillmentCarrier.trim() || null,
+        fulfillmentTrackingNumber: values.fulfillmentTrackingNumber.trim() || null,
+        fulfillmentTrackingUrl: values.fulfillmentTrackingUrl.trim() || null,
+        fulfillmentReadyAt: values.fulfillmentReadyAt || null,
+        fulfillmentShippedAt: values.fulfillmentShippedAt || null,
+        fulfillmentDeliveredAt: values.fulfillmentDeliveredAt || null,
+        fulfillmentNotes: values.fulfillmentNotes.trim() || null,
+        sendEmail,
+      });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data.order : order)),
+      );
+      setSelectedOrder(res.data.order);
+      toast(sendEmail ? "Fulfillment update sent" : "Fulfillment saved", "success");
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {
@@ -1945,6 +2312,16 @@ export default function StorePage() {
                           </Badge>
                         </div>
                       )}
+                      {row.fulfillmentStatus !== "unfulfilled" && (
+                        <div className="mt-2">
+                          <Badge
+                            tone={fulfillmentTone(row.fulfillmentStatus)}
+                            className="capitalize"
+                          >
+                            Fulfillment {fulfillmentLabel(row.fulfillmentStatus)}
+                          </Badge>
+                        </div>
+                      )}
 
                       <div className="mt-3 space-y-2 text-sm">
                         {row.items.length === 0 ? (
@@ -2080,6 +2457,15 @@ export default function StorePage() {
                                   {onlinePaymentLabel(row.invoice.onlinePaymentStatus)}
                                 </Badge>
                               )}
+                              {row.fulfillmentStatus !== "unfulfilled" && (
+                                <Badge
+                                  tone={fulfillmentTone(row.fulfillmentStatus)}
+                                  className="capitalize"
+                                >
+                                  Fulfillment{" "}
+                                  {fulfillmentLabel(row.fulfillmentStatus)}
+                                </Badge>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
@@ -2141,6 +2527,9 @@ export default function StorePage() {
           }
           onPaymentSubmit={(values, sendReceipt) =>
             recordPayment(selectedOrder, values, sendReceipt)
+          }
+          onFulfillmentSubmit={(values, sendEmail) =>
+            saveFulfillment(selectedOrder, values, sendEmail)
           }
           onInvoiceLinkAction={useInvoiceLink}
           onCheckoutLinkAction={useCheckoutLink}

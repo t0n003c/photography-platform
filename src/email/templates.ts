@@ -397,3 +397,126 @@ ${totalsText(receiptOrder)}
 View receipt: ${opts.receiptUrl}`,
   };
 }
+
+type FulfillmentEmailOpts = {
+  to: string;
+  order: AdminOrderDTO;
+  receiptUrl: string | null;
+  siteName: string;
+};
+
+function fulfillmentTrackingHtml(order: AdminOrderDTO) {
+  const details = [
+    order.fulfillmentCarrier ? `Carrier: ${order.fulfillmentCarrier}` : null,
+    order.fulfillmentTrackingNumber
+      ? `Tracking: ${order.fulfillmentTrackingNumber}`
+      : null,
+  ].filter(Boolean) as string[];
+  if (!details.length && !order.fulfillmentTrackingUrl) return "";
+  return `<div style="background:#f6f6f6;border-radius:12px;padding:14px;margin:18px 0">
+    ${
+      details.length
+        ? `<ul style="color:#555;font-size:13px;margin:0;padding-left:18px">${details
+            .map((detail) => `<li>${escape(detail)}</li>`)
+            .join("")}</ul>`
+        : ""
+    }
+    ${
+      order.fulfillmentTrackingUrl
+        ? `<p style="margin:12px 0 0"><a href="${escape(order.fulfillmentTrackingUrl)}" style="display:inline-block;background:#111;color:#fff;padding:9px 16px;border-radius:999px;text-decoration:none">Track shipment</a></p>`
+        : ""
+    }
+  </div>`;
+}
+
+function fulfillmentTrackingText(order: AdminOrderDTO) {
+  return [
+    order.fulfillmentCarrier ? `Carrier: ${order.fulfillmentCarrier}` : null,
+    order.fulfillmentTrackingNumber
+      ? `Tracking: ${order.fulfillmentTrackingNumber}`
+      : null,
+    order.fulfillmentTrackingUrl ? `Track: ${order.fulfillmentTrackingUrl}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function fulfillmentEmail(
+  opts: FulfillmentEmailOpts & {
+    title: string;
+    subject: string;
+    lead: string;
+    ctaLabel: string;
+  },
+): EmailMessage {
+  const customerName = opts.order.clientName?.trim();
+  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
+  const emailOrder = adminOrderToConfirmation(opts.order, opts.receiptUrl ?? "");
+  emailOrder.customerEmail = opts.order.email ?? opts.to;
+  const body = `
+    <p>${greeting}</p>
+    <p>${escape(opts.lead)}</p>
+    <p style="color:#666;font-size:13px">Order ${escape(opts.order.id)}</p>
+    ${fulfillmentTrackingHtml(opts.order)}
+    <table style="width:100%;border-collapse:collapse;margin:18px 0">
+      <thead>
+        <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
+          <th align="left" style="padding-bottom:8px">Item</th>
+          <th align="center" style="padding-bottom:8px">Qty</th>
+          <th align="right" style="padding-bottom:8px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${orderLinesHtml(emailOrder)}</tbody>
+    </table>
+    ${
+      opts.receiptUrl
+        ? `<p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">${escape(opts.ctaLabel)}</a></p>
+    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`
+        : ""
+    }`;
+  const trackingText = fulfillmentTrackingText(opts.order);
+  return {
+    to: opts.to,
+    subject: opts.subject,
+    html: layout(opts.title, body),
+    text: `${customerName ? `Hi ${customerName},` : "Hi,"}
+
+${opts.lead}
+
+Order ${opts.order.id}
+${trackingText ? `\n${trackingText}\n` : ""}
+${orderLinesText(emailOrder)}
+
+${opts.receiptUrl ? `${opts.ctaLabel}: ${opts.receiptUrl}` : opts.siteName}`,
+  };
+}
+
+export function storeOrderReady(opts: FulfillmentEmailOpts): EmailMessage {
+  return fulfillmentEmail({
+    ...opts,
+    title: "Your order is ready",
+    subject: `Order ${opts.order.id} is ready`,
+    lead: "Your order is ready. The studio will follow up with any pickup or handoff details.",
+    ctaLabel: "View receipt",
+  });
+}
+
+export function storeOrderShipped(opts: FulfillmentEmailOpts): EmailMessage {
+  return fulfillmentEmail({
+    ...opts,
+    title: "Your order has shipped",
+    subject: `Order ${opts.order.id} has shipped`,
+    lead: "Your order has shipped. Tracking details are below when available.",
+    ctaLabel: "View receipt",
+  });
+}
+
+export function storeOrderDelivered(opts: FulfillmentEmailOpts): EmailMessage {
+  return fulfillmentEmail({
+    ...opts,
+    title: "Your order was delivered",
+    subject: `Order ${opts.order.id} was delivered`,
+    lead: "Your order has been marked delivered. Thank you for ordering from the studio.",
+    ctaLabel: "View receipt",
+  });
+}

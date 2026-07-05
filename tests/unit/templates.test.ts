@@ -4,6 +4,7 @@ import {
   galleryInvite,
   manualOrderAdminNotification,
   manualOrderCustomerConfirmation,
+  storeOrderShipped,
   storeInvoiceIssued,
   storeReceiptIssued,
 } from "@/src/email/templates";
@@ -69,6 +70,14 @@ const adminOrder: AdminOrderDTO = {
   currency: order.currency,
   paymentProvider: "manual",
   paymentRef: "Manual invoice requested",
+  fulfillmentStatus: "unfulfilled",
+  fulfillmentCarrier: null,
+  fulfillmentTrackingNumber: null,
+  fulfillmentTrackingUrl: null,
+  fulfillmentReadyAt: null,
+  fulfillmentShippedAt: null,
+  fulfillmentDeliveredAt: null,
+  fulfillmentNotes: null,
   storeSettingsSnapshot: order.checkoutSettings,
   invoice: null,
   createdAt: order.createdAt,
@@ -258,5 +267,30 @@ describe("storeReceiptIssued", () => {
     expect(msg.html).toContain("Reference: 1042");
     expect(msg.text ?? "").toContain("Method: Check");
     expect(msg.text ?? "").toContain("https://example.com/invoice/signed-receipt");
+  });
+});
+
+describe("store fulfillment emails", () => {
+  it("builds a shipped update with tracking details", () => {
+    const msg = storeOrderShipped({
+      to: "riley@example.com",
+      order: {
+        ...adminOrder,
+        status: "paid",
+        fulfillmentStatus: "shipped",
+        fulfillmentCarrier: "USPS",
+        fulfillmentTrackingNumber: "9400TEST",
+        fulfillmentTrackingUrl: "https://tools.usps.com/go/TrackConfirmAction",
+        fulfillmentReadyAt: "2026-07-11T12:00:00.000Z",
+        fulfillmentShippedAt: "2026-07-12T12:00:00.000Z",
+      },
+      receiptUrl: "https://example.com/invoice/signed-receipt",
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("has shipped");
+    expect(msg.html).toContain("Carrier: USPS");
+    expect(msg.html).toContain("9400TEST");
+    expect(msg.html).toContain("Track shipment");
+    expect(msg.text ?? "").toContain("View receipt: https://example.com/invoice/signed-receipt");
   });
 });

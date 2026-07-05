@@ -622,7 +622,7 @@ export const page = pgTable(
   ],
 );
 
-// ── §13 Store (DEFERRED stub tables) ─────────────────────────────────────────
+// ── §13 Store ────────────────────────────────────────────────────────────────
 export const product = pgTable("product", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(),
@@ -668,6 +668,27 @@ export const order = pgTable("order", {
   currency: text("currency").notNull().default("USD"),
   paymentProvider: text("payment_provider"),
   paymentRef: text("payment_ref"),
+  fulfillmentStatus: text("fulfillment_status", {
+    enum: [
+      "unfulfilled",
+      "in_progress",
+      "ready",
+      "shipped",
+      "delivered",
+      "cancelled",
+    ],
+  })
+    .notNull()
+    .default("unfulfilled"),
+  fulfillmentCarrier: text("fulfillment_carrier"),
+  fulfillmentTrackingNumber: text("fulfillment_tracking_number"),
+  fulfillmentTrackingUrl: text("fulfillment_tracking_url"),
+  fulfillmentReadyAt: timestamp("fulfillment_ready_at", { withTimezone: true }),
+  fulfillmentShippedAt: timestamp("fulfillment_shipped_at", { withTimezone: true }),
+  fulfillmentDeliveredAt: timestamp("fulfillment_delivered_at", {
+    withTimezone: true,
+  }),
+  fulfillmentNotes: text("fulfillment_notes"),
   storeSettingsSnapshot: jsonb("store_settings_snapshot")
     .$type<PublicStoreCheckoutSettings>()
     .notNull()

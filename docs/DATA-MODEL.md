@@ -500,8 +500,8 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ## 13. Store (light catalog + optional hosted checkout)
 
 > Product catalog, public browse/cart, manual invoice order requests, issued invoices,
-> manual payment receipts, and optional Stripe Checkout are active. Hosted checkout is
-> enabled only when Settings -> Payments has all required Stripe values.
+> manual payment receipts, fulfillment tracking, and optional Stripe Checkout are active.
+> Hosted checkout is enabled only when Settings -> Payments has all required Stripe values.
 
 ### 13.1 `product`
 
@@ -520,11 +520,19 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 | id                           | text PK                  |                                                      |
 | client_id                    | text FK → client.id NULL | placed by                                            |
 | email                        | text                     | guest email                                          |
-| status                       | text                     | `draft`\|`pending`\|`paid`\|`fulfilled`\|`cancelled` |
+| status                       | text                     | `draft`\|`pending`\|`invoiced`\|`paid`\|`fulfilled`\|`cancelled` |
 | subtotal_cents / total_cents | integer                  |                                                      |
 | currency                     | text                     |                                                      |
 | payment_provider             | text NULL                | `'manual'` or `'stripe'`                             |
 | payment_ref                  | text NULL                | manual note, Stripe session id, or external ref      |
+| fulfillment_status           | text                     | `unfulfilled`\|`in_progress`\|`ready`\|`shipped`\|`delivered`\|`cancelled` |
+| fulfillment_carrier          | text NULL                | client-facing carrier/pickup method                  |
+| fulfillment_tracking_number  | text NULL                | client-facing tracking or handoff reference          |
+| fulfillment_tracking_url     | text NULL                | optional tracking link                               |
+| fulfillment_ready_at         | timestamptz NULL         | auto-filled when marked ready/shipped/delivered      |
+| fulfillment_shipped_at       | timestamptz NULL         | auto-filled when marked shipped/delivered            |
+| fulfillment_delivered_at     | timestamptz NULL         | auto-filled when marked delivered                    |
+| fulfillment_notes            | text NULL                | internal admin notes; never shown on public receipts |
 | store_settings_snapshot      | jsonb                    | saved checkout copy/tax/shipping settings            |
 | created_at / updated_at      | timestamptz              |                                                      |
 
@@ -685,5 +693,5 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/VAT automation, refunds, and fulfillment workflow — deferred beyond the current
-  manual invoice + optional Stripe Checkout slice.
+- Store tax/VAT automation and refunds — deferred beyond the current manual invoice,
+  optional Stripe Checkout, and fulfillment basics slice.

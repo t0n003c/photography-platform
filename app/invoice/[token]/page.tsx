@@ -47,6 +47,10 @@ function invoiceItemTitle(item: AdminOrderDTO["items"][number]) {
   return item.description.split(" — ")[0] || item.description;
 }
 
+function fulfillmentLabel(status: AdminOrderDTO["fulfillmentStatus"]) {
+  return status.replace(/_/g, " ");
+}
+
 export default async function PublicInvoicePage({
   params,
   searchParams,
@@ -108,6 +112,14 @@ export default async function PublicInvoicePage({
             : null;
   const statusLabel = isPaid ? "Payment received" : "Payment due";
   const paidAmount = invoice.paidAmountCents ?? invoice.amountCents;
+  const hasFulfillmentDetails =
+    order.fulfillmentStatus !== "unfulfilled" ||
+    Boolean(order.fulfillmentCarrier) ||
+    Boolean(order.fulfillmentTrackingNumber) ||
+    Boolean(order.fulfillmentTrackingUrl) ||
+    Boolean(order.fulfillmentReadyAt) ||
+    Boolean(order.fulfillmentShippedAt) ||
+    Boolean(order.fulfillmentDeliveredAt);
   const contactEmail =
     settingsRow?.storeNotifyEmail?.trim() ||
     settingsRow?.emailFrom?.trim() ||
@@ -341,6 +353,43 @@ export default async function PublicInvoicePage({
                     {invoice.paymentInstructions ||
                       "The studio will follow up with payment instructions."}
                   </p>
+                </div>
+              )}
+              {hasFulfillmentDetails && (
+                <div>
+                  <h2 className="text-sm font-semibold">Fulfillment</h2>
+                  <div className="mt-2 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                    <p className="capitalize">
+                      Status: {fulfillmentLabel(order.fulfillmentStatus)}
+                    </p>
+                    {order.fulfillmentCarrier && (
+                      <p>Carrier: {order.fulfillmentCarrier}</p>
+                    )}
+                    {order.fulfillmentTrackingNumber && (
+                      <p>Tracking: {order.fulfillmentTrackingNumber}</p>
+                    )}
+                    {order.fulfillmentReadyAt && (
+                      <p>Ready: {formatDate(order.fulfillmentReadyAt)}</p>
+                    )}
+                    {order.fulfillmentShippedAt && (
+                      <p>Shipped: {formatDate(order.fulfillmentShippedAt)}</p>
+                    )}
+                    {order.fulfillmentDeliveredAt && (
+                      <p>Delivered: {formatDate(order.fulfillmentDeliveredAt)}</p>
+                    )}
+                    {order.fulfillmentTrackingUrl && (
+                      <p className="print:hidden">
+                        <a
+                          href={order.fulfillmentTrackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-[hsl(var(--foreground))] underline underline-offset-4"
+                        >
+                          Track shipment
+                        </a>
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -141,6 +141,13 @@
       "when": 1783292299175,
       "tag": "0019_yellow_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1783293966857,
+      "tag": "0020_thankful_hemingway",
+      "breakpoints": true
     }
   ]
 }

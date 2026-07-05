@@ -50,6 +50,14 @@ export type OrderStatus =
   | "fulfilled"
   | "cancelled";
 
+export type FulfillmentStatus =
+  | "unfulfilled"
+  | "in_progress"
+  | "ready"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
 export type InvoiceStatus = "draft" | "issued" | "paid" | "void";
 export type OnlinePaymentStatus =
   | "requires_payment"
@@ -112,6 +120,14 @@ export interface AdminOrderDTO {
   currency: string;
   paymentProvider: string | null;
   paymentRef: string | null;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentCarrier: string | null;
+  fulfillmentTrackingNumber: string | null;
+  fulfillmentTrackingUrl: string | null;
+  fulfillmentReadyAt: string | null;
+  fulfillmentShippedAt: string | null;
+  fulfillmentDeliveredAt: string | null;
+  fulfillmentNotes: string | null;
   storeSettingsSnapshot: PublicStoreCheckoutSettings;
   invoice: AdminInvoiceDTO | null;
   createdAt: string;
@@ -170,6 +186,19 @@ function invoiceToDTO(row: typeof invoice.$inferSelect): AdminInvoiceDTO {
     onlinePaymentExpiresAt: row.onlinePaymentExpiresAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function fulfillmentFieldsToDTO(row: typeof orderTable.$inferSelect) {
+  return {
+    fulfillmentStatus: row.fulfillmentStatus as FulfillmentStatus,
+    fulfillmentCarrier: row.fulfillmentCarrier,
+    fulfillmentTrackingNumber: row.fulfillmentTrackingNumber,
+    fulfillmentTrackingUrl: row.fulfillmentTrackingUrl,
+    fulfillmentReadyAt: row.fulfillmentReadyAt?.toISOString() ?? null,
+    fulfillmentShippedAt: row.fulfillmentShippedAt?.toISOString() ?? null,
+    fulfillmentDeliveredAt: row.fulfillmentDeliveredAt?.toISOString() ?? null,
+    fulfillmentNotes: row.fulfillmentNotes,
   };
 }
 
@@ -442,6 +471,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       currency: row.currency,
       paymentProvider: row.paymentProvider,
       paymentRef: row.paymentRef,
+      ...fulfillmentFieldsToDTO(row),
       storeSettingsSnapshot: orderSettingsSnapshot(row.storeSettingsSnapshot),
       invoice: invoiceRow ? invoiceToDTO(invoiceRow) : null,
       createdAt: row.createdAt.toISOString(),
@@ -490,6 +520,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
     currency: row.currency,
     paymentProvider: row.paymentProvider,
     paymentRef: row.paymentRef,
+    ...fulfillmentFieldsToDTO(row),
     storeSettingsSnapshot: orderSettingsSnapshot(row.storeSettingsSnapshot),
     invoice: invoiceRows[0] ? invoiceToDTO(invoiceRows[0]) : null,
     createdAt: row.createdAt.toISOString(),
@@ -698,6 +729,89 @@ export async function recordInvoicePaymentAdmin(
     invoiceToken:
       input.sendReceipt && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
   };
+}
+
+export async function updateOrderFulfillmentAdmin(
+  orderId: string,
+  input: {
+    fulfillmentStatus: FulfillmentStatus;
+    fulfillmentCarrier?: string | null;
+    fulfillmentTrackingNumber?: string | null;
+    fulfillmentTrackingUrl?: string | null;
+    fulfillmentReadyAt?: Date | null;
+    fulfillmentShippedAt?: Date | null;
+    fulfillmentDeliveredAt?: Date | null;
+    fulfillmentNotes?: string | null;
+  },
+): Promise<AdminOrderDTO | null> {
+  await db.transaction(async (tx) => {
+    const orderRows = await tx
+      .select()
+      .from(orderTable)
+      .where(eq(orderTable.id, orderId))
+      .limit(1);
+    const current = orderRows[0];
+    if (!current) return;
+
+    const now = new Date();
+    let readyAt =
+      input.fulfillmentReadyAt !== undefined
+        ? input.fulfillmentReadyAt
+        : current.fulfillmentReadyAt;
+    let shippedAt =
+      input.fulfillmentShippedAt !== undefined
+        ? input.fulfillmentShippedAt
+        : current.fulfillmentShippedAt;
+    let deliveredAt =
+      input.fulfillmentDeliveredAt !== undefined
+        ? input.fulfillmentDeliveredAt
+        : current.fulfillmentDeliveredAt;
+
+    if (
+      (input.fulfillmentStatus === "ready" ||
+        input.fulfillmentStatus === "shipped" ||
+        input.fulfillmentStatus === "delivered") &&
+      !readyAt
+    ) {
+      readyAt = now;
+    }
+    if (
+      (input.fulfillmentStatus === "shipped" ||
+        input.fulfillmentStatus === "delivered") &&
+      !shippedAt
+    ) {
+      shippedAt = now;
+    }
+    if (input.fulfillmentStatus === "delivered" && !deliveredAt) {
+      deliveredAt = now;
+    }
+
+    const currentStatus = current.status as OrderStatus;
+    const nextOrderStatus =
+      input.fulfillmentStatus === "delivered"
+        ? "fulfilled"
+        : currentStatus === "fulfilled"
+          ? "paid"
+          : currentStatus;
+
+    await tx
+      .update(orderTable)
+      .set({
+        status: nextOrderStatus,
+        fulfillmentStatus: input.fulfillmentStatus,
+        fulfillmentCarrier: cleanOptionalText(input.fulfillmentCarrier),
+        fulfillmentTrackingNumber: cleanOptionalText(input.fulfillmentTrackingNumber),
+        fulfillmentTrackingUrl: cleanOptionalText(input.fulfillmentTrackingUrl),
+        fulfillmentReadyAt: readyAt,
+        fulfillmentShippedAt: shippedAt,
+        fulfillmentDeliveredAt: deliveredAt,
+        fulfillmentNotes: cleanOptionalText(input.fulfillmentNotes),
+        updatedAt: now,
+      })
+      .where(eq(orderTable.id, orderId));
+  });
+
+  return getOrderAdmin(orderId);
 }
 
 export async function attachInvoiceOnlineCheckoutSession(

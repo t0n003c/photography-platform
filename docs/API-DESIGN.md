@@ -406,6 +406,7 @@ Response `201` (raw token shown exactly once):
 | PATCH/DELETE | `/admin/products/{id}` | admin  | update/delete product; delete requires fresh auth                                                                |
 | GET          | `/admin/orders`        | admin  | view recent manual order requests                                                                                |
 | GET/PATCH    | `/admin/orders/{id}`   | admin  | view an order request and update status                                                                          |
+| POST         | `/admin/orders/{id}/fulfillment` | admin | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email |
 | POST         | `/admin/orders/{id}/checkout` | admin | refresh a hosted Stripe Checkout link for an unpaid issued invoice |
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
