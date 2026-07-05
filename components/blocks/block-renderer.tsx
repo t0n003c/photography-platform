@@ -13,6 +13,7 @@ import { BookSliderBlock } from "@/components/blocks/book-slider-block";
 import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-block";
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
 import { PricingBlock } from "@/components/blocks/pricing-block";
+import { ShopBlock } from "@/components/blocks/shop-block";
 import {
   CategoryIndexBlock,
   LocationIndexBlock,
@@ -305,6 +306,28 @@ function LeafView({
         </div>
       );
     case "contactForm": {
+      if (block.style === "tora-contact") {
+        const heading = block.heading?.trim() || "GET IN TOUCH";
+        const body = block.body?.trim();
+
+        return (
+          <section className="tora-contact-section">
+            <div className="tora-contact-section__inner">
+              <div className="tora-contact-section__heading">
+                {block.eyebrow && <p>{block.eyebrow}</p>}
+                <h2>{heading}</h2>
+                {body && <div>{body}</div>}
+              </div>
+              <ContactForm
+                submitLabel={block.submitLabel || "SUBMIT NOW"}
+                variant="tora"
+                subjectFallback={heading}
+              />
+            </div>
+          </section>
+        );
+      }
+
       const intro = (
         <div className={`flex flex-col ${CONTACT_ALIGN[block.align] ?? CONTACT_ALIGN.left}`}>
           {block.eyebrow && (
@@ -589,6 +612,8 @@ function LeafView({
       return <TeamShowcaseBlock block={block} photoMap={photoMap} />;
     case "pricing":
       return <PricingBlock block={block} photoMap={photoMap} />;
+    case "shop":
+      return <ShopBlock block={block} />;
     case "categoryIndex":
       return <CategoryIndexBlock block={block} />;
     case "locationIndex":
@@ -687,6 +712,7 @@ const FULL_BLEED = new Set([
   "testimonials",
   "team",
   "pricing",
+  "shop",
   "spacer",
   "divider",
   "categoryIndex",
@@ -697,6 +723,9 @@ const FULL_BLEED = new Set([
   "logos",
 ]);
 function isFullBleed(block: Block): boolean {
+  if (block.type === "contactForm" && block.style === "tora-contact") {
+    return true;
+  }
   return FULL_BLEED.has(block.type);
 }
 

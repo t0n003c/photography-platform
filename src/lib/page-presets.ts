@@ -24,13 +24,21 @@ const BANNER_PRISMA_DEFAULTS = {
   agencyAccentText: "",
 };
 
+const GALLERY_TORA_PROPS_DEFAULTS = {
+  toraPropsShowBackground: true,
+  toraPropsBackgroundColor: "#252626",
+  toraPropsCaptionColor: "#edd8aa",
+  toraPropsShowCaptions: true,
+  toraPropsCaptionSource: "auto",
+} as const;
+
 // Starter blocks per page type. `gen` returns a fresh unique id per block.
 export function presetBlocks(type: PageType, gen: () => string): Block[] {
   switch (type) {
     case "portfolio":
       return [
         { id: gen(), type: "banner", source: "featured", photoId: null, photoIds: [], eyebrow: "", typewriterWords: "", headline: "Selected work", subhead: "", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", ...BANNER_PRISMA_DEFAULTS },
-        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] },
+        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "masonry", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS },
         { id: gen(), type: "cta", headline: "Like what you see?", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" },
       ];
     case "landing":
@@ -50,7 +58,7 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
             [{ id: gen(), type: "image", photoId: null, width: "normal", rounded: true }],
           ],
         },
-        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 9, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] },
+        { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 9, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS },
         { id: gen(), type: "cta", headline: "Book a session", buttonLabel: "Contact", buttonHref: "/contact", buttonStyle: "pill" },
       ];
     case "about":
@@ -86,7 +94,7 @@ export function homePresetBlocks(
 ): Block[] {
   return [
     { id: gen(), type: "banner", source: "featured", photoId: null, photoIds: [], eyebrow: "", typewriterWords: "", headline: opts.headline, subhead: opts.subhead, ctaLabel: "View portfolio", ctaHref: "/categories", height: "tall", overlay: "auto", focalX: 50, focalY: 50, zoom: 1, layout: "bottom-left", headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", ...BANNER_PRISMA_DEFAULTS },
-    { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, manualOrderPhotoIds: [], filterSorts: [], sortMode: "source", filterMode: "none", showOverlayText: true, customFilters: [] },
+    { id: gen(), type: "gallery", source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, manualOrderPhotoIds: [], filterSorts: [], sortMode: "source", filterMode: "none", showOverlayText: true, customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS },
     { id: gen(), type: "categoryIndex", title: "By category" },
     { id: gen(), type: "locationIndex", title: "By location" },
     { id: gen(), type: "instagram", title: "From the field", count: 6 },

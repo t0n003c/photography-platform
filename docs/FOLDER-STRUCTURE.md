@@ -27,17 +27,21 @@ photography-platform/
 │   │   ├── events/               # Category route (Events)
 │   │   ├── nature/               # Category route (Nature)
 │   │   ├── locations/            # Location/travel portfolio routes
-│   │   ├── store/                # Light print store (browse only; checkout deferred)
+│   │   ├── product/[slug]/       # Product detail pages with add-to-cart actions
+│   │   ├── cart/                 # Browser-local cart + manual invoice request checkout
 │   │   ├── contact/              # Contact form (spam-protected)
 │   │   └── g/[token]/            # Private client gallery via expiring share link
 │   ├── (admin)/                  # Auth-gated admin UI (uploads, galleries, policy)
-│   │   └── admin/                # Dashboard, gallery mgmt, layout editor, settings
+│   │   └── admin/                # Dashboard, gallery mgmt, Store, layout editor, settings
 │   ├── api/                      # Route handlers — the only mutation ingress
 │   │   ├── auth/                 # Better Auth handlers (password, TOTP, WebAuthn)
 │   │   ├── uploads/              # Validate original, persist, enqueue process job
 │   │   ├── galleries/            # Gallery + share-link CRUD, favorites
 │   │   ├── contact/              # Contact form submission + spam check
-│   │   └── payments/             # Payment seam endpoints — STUB / DEFERRED
+│   │   ├── products/             # Public product browse/detail API
+│   │   ├── cart/                 # Resolve browser cart lines against current product pricing
+│   │   ├── checkout/             # Manual invoice order request while payments are stubbed
+│   │   └── admin/orders/         # Admin recent manual order requests
 │   ├── layout.tsx                # Root layout (theme provider, fonts, PWA shell)
 │   ├── manifest.ts               # PWA web app manifest
 │   └── globals.css               # Tailwind base + global styles
@@ -137,7 +141,8 @@ photography-platform/
   behind their respective `provider.ts` interfaces. **SeaweedFS through the S3-compatible
   driver is the default storage path**; switching to the filesystem alternate, or SMTP→Resend, is a config/driver swap
   with no call-site changes. The payments driver is a **stub**: the interface and seams
-  exist, the implementation does not.
+  exist. Current checkout creates pending manual-invoice orders while hosted payment
+  capture remains deliberately deferred.
 
 - **`app/` is routing only.** Business logic lives in `src/`; route handlers and Server
   Components call into `src/` modules. This keeps the worker able to reuse the exact

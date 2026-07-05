@@ -1,7 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import { ok, notFound } from "@/src/lib/http";
-import { db } from "@/src/db/client";
-import { product } from "@/src/db/schema";
+import { getActiveProductById } from "@/src/db/queries/store";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +9,7 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const rows = await db
-    .select()
-    .from(product)
-    .where(and(eq(product.id, id), eq(product.isActive, true)))
-    .limit(1);
-  if (!rows[0]) return notFound();
-  return ok({ product: rows[0] });
+  const product = await getActiveProductById(id);
+  if (!product) return notFound();
+  return ok({ product });
 }

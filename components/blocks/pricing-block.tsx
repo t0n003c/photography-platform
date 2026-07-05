@@ -25,6 +25,9 @@ type CSSPropertiesWithVars = CSSProperties & {
 };
 
 const frequencies: Frequency[] = ["monthly", "yearly"];
+const DEFAULT_PRICING_TITLE = "Plans that Scale with You";
+const DEFAULT_PRICING_DESCRIPTION =
+  "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.";
 const toraPricingStyles = [
   "tora-classic",
   "tora-creative",
@@ -557,6 +560,97 @@ function ToraPricingBlock({
                     </div>
                   </div>
                 )}
+              </article>
+            );
+          })}
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function castingLine(value: string) {
+  const text = value.trim();
+  if (!text) return "";
+  return text.startsWith("/") ? text : `/${text}`;
+}
+
+function ToraCastingServicesBlock({
+  block,
+  plans,
+  dark,
+  photoMap,
+}: {
+  block: PricingBlockData;
+  plans: PricingPlan[];
+  dark: boolean;
+  photoMap?: PhotoMap;
+}) {
+  const rawTitle = block.heading.trim();
+  const title =
+    rawTitle && rawTitle !== DEFAULT_PRICING_TITLE
+      ? rawTitle
+      : "OFFERING CASTINGS FOR";
+  const rawDescription = block.description.trim();
+  const description =
+    rawDescription && rawDescription !== DEFAULT_PRICING_DESCRIPTION
+      ? rawDescription
+      : "";
+  const castingImageRatio = block.castingImageRatio ?? "reference";
+
+  return (
+    <section
+      className={cn(
+        "pricing-block tora-price-section tora-casting-services",
+        dark && "is-dark",
+        `tora-casting-services--ratio-${castingImageRatio}`,
+      )}
+    >
+      <Container className="tora-casting-services__container">
+        <div className="tora-casting-services__heading">
+          <h2>{title}</h2>
+          {description && <p>{description}</p>}
+        </div>
+
+        <div className="tora-casting-services__list">
+          {plans.map((plan, index) => {
+            const photo = planPhoto(photoMap, plan);
+            const lines = [
+              castingLine(plan.info),
+              ...plan.features
+                .filter((feature) => feature.text.trim())
+                .map((feature) => castingLine(feature.text)),
+            ].filter(Boolean);
+
+            return (
+              <article
+                key={plan.id}
+                className={cn(
+                  "tora-casting-services__row",
+                  index % 2 === 1 && "is-reverse",
+                )}
+              >
+                <div className="tora-casting-services__copy">
+                  <div className="tora-casting-services__top">
+                    <span className="tora-casting-services__number">
+                      /{String(index + 1).padStart(2, "0")}
+                    </span>
+                    <h3>{plan.name}</h3>
+                  </div>
+                  {lines.length > 0 && (
+                    <div className="tora-casting-services__lines">
+                      {lines.map((line, lineIndex) => (
+                        <p key={lineIndex}>{line}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <ToraImage
+                  photo={photo}
+                  sizes="(min-width: 992px) 48vw, 100vw"
+                  priority={index === 0}
+                  className="tora-casting-services__image"
+                />
               </article>
             );
           })}
@@ -1099,6 +1193,17 @@ export function PricingBlock({
         dark={dark}
         title={title}
         description={description}
+      />
+    );
+  }
+
+  if ((block.style ?? "standard") === "tora-casting-services") {
+    return (
+      <ToraCastingServicesBlock
+        block={block}
+        plans={plans}
+        dark={dark}
+        photoMap={photoMap}
       />
     );
   }

@@ -9,6 +9,7 @@ import {
   collectionPhoto,
   location,
   photoLocation,
+  product,
 } from "@/src/db/schema";
 import type { Grant } from "@/src/auth/grant";
 
@@ -128,7 +129,14 @@ export async function isPhotoPublic(photoId: string): Promise<boolean> {
       and(eq(photoLocation.photoId, photoId), eq(location.isPublished, true)),
     )
     .limit(1);
-  return inLocation.length > 0;
+  if (inLocation.length) return true;
+
+  const inProduct = await db
+    .select({ id: product.id })
+    .from(product)
+    .where(and(eq(product.photoId, photoId), eq(product.isActive, true)))
+    .limit(1);
+  return inProduct.length > 0;
 }
 
 /** Does an active grant authorize viewing this photo (it's in the grant's gallery)? */

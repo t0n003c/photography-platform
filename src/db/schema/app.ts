@@ -587,14 +587,20 @@ export const page = pgTable(
 // ── §13 Store (DEFERRED stub tables) ─────────────────────────────────────────
 export const product = pgTable("product", {
   id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
   sku: text("sku").notNull().unique(),
   name: text("name").notNull(),
   description: text("description"),
   kind: text("kind", { enum: ["print", "digital", "bundle"] }).notNull(),
   photoId: text("photo_id").references(() => photo.id, { onDelete: "set null" }),
   basePriceCents: integer("base_price_cents").notNull().default(0),
+  salePriceCents: integer("sale_price_cents"),
   currency: text("currency").notNull().default("USD"),
+  category: text("category"),
+  tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  isFeatured: boolean("is_featured").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

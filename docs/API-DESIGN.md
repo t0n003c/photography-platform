@@ -341,27 +341,33 @@ Response `201` (raw token shown exactly once):
 (DATA-MODEL §15). Success: `202`. High spam score: store as `spam`, return `202` anyway
 (don't tip off bots), do not email admin.
 
-### 4.12 Store Stub `[public]` / `[admin]` — DEFERRED
+### 4.12 Store / manual invoice checkout `[public]` / `[admin]`
 
-> Interface stub only. `PaymentProvider` is a no-op (Stripe-likely later). No real charges.
+> Product browse/cart/order-request are live. `PaymentProvider` remains a no-op
+> (Stripe-likely later), so no real charges are captured.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/products` | public | list active products |
 | GET | `/products/{id}` | public | product detail |
-| POST | `/cart` | public | create/replace cart (server-validated lines) |
-| GET | `/cart/{id}` | public | cart contents + computed totals |
-| POST | `/checkout` | public | **stub**: creates `order` (status `pending`), returns `501 Not Implemented` for payment step or a stub confirmation |
-| GET/PATCH | `/admin/orders`, `/admin/orders/{id}` | admin | view/update order status |
+| POST | `/cart` | public | resolve browser-local cart lines against current active products/prices |
+| POST | `/checkout` | public | creates `order` (status `pending`) + `order_item` rows for manual invoice follow-up |
+| GET | `/admin/products` | admin | list products |
+| POST | `/admin/products` | admin | create product |
+| PATCH/DELETE | `/admin/products/{id}` | admin | update/delete product; delete requires fresh auth |
+| GET | `/admin/orders` | admin | view recent manual order requests |
 
-`POST /checkout` explicitly returns a stub response indicating payment is not yet enabled:
+`POST /checkout` with `PAYMENTS_DRIVER=stub` returns a manual request confirmation:
 ```json
 {
-  "error": {
-    "code": "PAYMENTS_NOT_ENABLED",
-    "message": "Checkout is not available yet. An invoice will be sent manually.",
-    "requestId": "01J9..."
-  }
+  "data": {
+    "orderId": "01J9...",
+    "status": "pending",
+    "totalCents": 7900,
+    "currency": "USD",
+    "itemCount": 1
+  },
+  "message": "Order request received. A manual invoice can be sent for this order."
 }
 ```
 

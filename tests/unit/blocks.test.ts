@@ -8,7 +8,7 @@ describe("page builder blocks", () => {
       {
         id: "contact",
         type: "contactForm",
-        style: "split",
+        style: "tora-contact",
         heading: "Start here",
       },
     ]);
@@ -17,7 +17,7 @@ describe("page builder blocks", () => {
     expect(blocks[0]).toMatchObject({
       id: "contact",
       type: "contactForm",
-      style: "split",
+      style: "tora-contact",
       heading: "Start here",
       eyebrow: "Contact",
       submitLabel: "Send message",
@@ -29,6 +29,30 @@ describe("page builder blocks", () => {
     const blocks = presetBlocks("contact", () => "id");
 
     expect(blocks.some((block) => block.type === "contactForm")).toBe(true);
+  });
+
+  it("keeps and defaults shop blocks", () => {
+    const blocks = parseBlocks([
+      {
+        id: "shop",
+        type: "shop",
+        style: "tora-grid",
+        source: "featured",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "shop",
+      type: "shop",
+      style: "tora-grid",
+      source: "featured",
+      title: "SHOP",
+      limit: 12,
+      showSidebar: true,
+      showSaleBadge: true,
+      theme: "auto",
+    });
   });
 
   it("keeps location map blocks with selected locations", () => {

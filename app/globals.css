@@ -829,6 +829,113 @@ html.js .pr-root.is-enhanced {
 .font-montserrat { font-family: var(--font-montserrat), system-ui, sans-serif; }
 .font-grotesk { font-family: var(--font-space-grotesk), system-ui, sans-serif; }
 
+/* ToraMochie / Reflector Props catalog reference. Source behavior: dark showroom
+   band, 5/3/2 square tiles, 20px gutters, gold captions, click-to-lightbox. */
+.tora-props-catalog {
+  --tora-props-bg: #f3eadb;
+  --tora-props-caption: #8b6d35;
+  --tora-props-text: #181512;
+  --tora-props-tile: #fffaf2;
+  --tora-props-tile-border: rgba(91, 69, 34, 0.16);
+  --tora-props-tile-shadow: 0 18px 44px rgba(69, 47, 20, 0.11);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.74), transparent 34rem),
+    linear-gradient(180deg, var(--tora-props-bg) 0%, #eadfcb 100%);
+  color: var(--tora-props-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow-x: clip;
+  padding: clamp(3.5rem, 6vw, 5rem) 0 clamp(4rem, 7vw, 5.5rem);
+}
+
+.dark .tora-props-catalog {
+  --tora-props-bg: #252626;
+  --tora-props-caption: #edd8aa;
+  --tora-props-text: #f7f7f7;
+  --tora-props-tile: #f7f7f7;
+  --tora-props-tile-border: transparent;
+  --tora-props-tile-shadow: none;
+  background: var(--tora-props-bg);
+}
+
+.tora-props-catalog--custom-bg {
+  background: var(--tora-props-bg);
+}
+
+.tora-props-catalog--plain {
+  background: transparent;
+  color: hsl(var(--foreground));
+}
+
+.tora-props-catalog__inner {
+  margin: 0 auto;
+  width: min(100% - 30px, 1110px);
+}
+
+.tora-props-catalog__grid {
+  display: grid;
+  gap: 24px 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tora-props-catalog__item {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  min-width: 0;
+  padding: 0;
+  text-align: center;
+  text-decoration: none;
+}
+
+.tora-props-catalog__item:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 5px;
+}
+
+.tora-props-catalog__image {
+  aspect-ratio: 1 / 1;
+  background: var(--tora-props-tile);
+  border: 1px solid var(--tora-props-tile-border);
+  display: block;
+  overflow: hidden;
+  box-shadow: var(--tora-props-tile-shadow);
+  width: 100%;
+}
+
+.tora-props-catalog__caption {
+  color: var(--tora-props-caption);
+  display: block;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.35;
+  padding: 10px 5px 5px;
+}
+
+@media (min-width: 768px) {
+  .tora-props-catalog__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1120px) {
+  .tora-props-catalog__grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .tora-props-catalog {
+    padding: 35px 0 48px;
+  }
+
+  .tora-props-catalog__grid {
+    row-gap: 22px;
+  }
+}
+
 /* ToraMochie / Reflector About Elements reference. The source uses Josefin Sans,
    29px uppercase headings with 3.77px tracking, and minimal JS for the Modern
    portrait; here the portrait uses CSS sticky as the progressive equivalent. */
@@ -1172,6 +1279,1202 @@ html.js .pr-root.is-enhanced {
   margin-bottom: 1rem;
 }
 
+.tora-contact-section {
+  --tora-contact-bg: #f6f0e6;
+  --tora-contact-control: #fffaf2;
+  --tora-contact-text: #2c2925;
+  --tora-contact-muted: rgb(44 41 37 / 0.68);
+  --tora-contact-accent: #8b6d35;
+  background: var(--tora-contact-bg);
+  color: var(--tora-contact-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  padding: 7.3rem 0 7rem;
+}
+
+.dark .tora-contact-section {
+  --tora-contact-bg: #252626;
+  --tora-contact-control: #353535;
+  --tora-contact-text: #f7f7f7;
+  --tora-contact-muted: rgb(247 247 247 / 0.72);
+  --tora-contact-accent: #ddc59f;
+}
+
+.tora-contact-section__inner {
+  margin: 0 auto;
+  width: min(100% - 30px, 1110px);
+}
+
+.tora-contact-section__heading {
+  margin: 0 auto 5.15rem;
+  text-align: center;
+}
+
+.tora-contact-section__heading p,
+.tora-contact-section__heading h2 {
+  color: var(--tora-contact-text);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-contact-section__heading p {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 1.1rem;
+}
+
+.tora-contact-section__heading h2 {
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+}
+
+.tora-contact-section__heading div {
+  color: var(--tora-contact-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 1.4rem auto 0;
+  max-width: 650px;
+  text-transform: none;
+}
+
+.tora-contact-form {
+  position: relative;
+}
+
+.tora-contact-form__row {
+  display: grid;
+  gap: 30px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tora-contact-form__field {
+  margin-bottom: 40px;
+}
+
+.tora-contact-form input:not([type="submit"]),
+.tora-contact-form textarea {
+  background: var(--tora-contact-control);
+  border: 0;
+  border-bottom: 1px solid var(--tora-contact-accent);
+  border-radius: 0;
+  color: var(--tora-contact-text);
+  display: block;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.4;
+  outline: none;
+  padding: 6px 0 7px;
+  transition: border-color 350ms ease, background-color 350ms ease;
+  width: 100%;
+}
+
+.tora-contact-form input:not([type="submit"]) {
+  min-height: 35px;
+}
+
+.tora-contact-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.tora-contact-form input::placeholder,
+.tora-contact-form textarea::placeholder {
+  color: var(--tora-contact-muted);
+  opacity: 1;
+}
+
+.tora-contact-form input:focus,
+.tora-contact-form textarea:focus {
+  border-color: var(--tora-contact-text);
+}
+
+.tora-contact-form__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 38px;
+}
+
+.tora-contact-form button {
+  background: var(--tora-contact-control);
+  border: 1px solid var(--tora-contact-accent);
+  color: var(--tora-contact-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 4.2px;
+  line-height: 1;
+  min-width: 194px;
+  padding: 18px 30px 17px;
+  text-transform: uppercase;
+  transition: background-color 350ms ease, border-color 350ms ease, color 350ms ease;
+}
+
+.tora-contact-form button:hover:not(:disabled),
+.tora-contact-form button:focus-visible {
+  background: var(--tora-contact-accent);
+  color: var(--tora-contact-bg);
+}
+
+.tora-contact-form button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.tora-contact-form-status,
+.tora-contact-form-error {
+  border: 1px solid var(--tora-contact-accent);
+  color: var(--tora-contact-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.6;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.tora-contact-form-error {
+  border-color: #dc2626;
+  color: #dc2626;
+  margin-bottom: 1.5rem;
+}
+
+main:has(.tora-contact-section) + footer {
+  margin-top: 0;
+}
+
+main:has(.tora-contact-section) .py-4:has(.tora-contact-section) {
+  padding-bottom: 0;
+}
+
+main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-cart-page) + footer {
+  margin-top: 0;
+}
+
+main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-cart-page) .py-4:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-cart-page) {
+  padding-bottom: 0;
+}
+
+.tora-shop-block,
+.tora-shop-coming-soon {
+  --shop-bg: #252626;
+  --shop-panel: #2f2f2f;
+  --shop-panel-soft: #353535;
+  --shop-text: #f7f7f7;
+  --shop-muted: rgb(247 247 247 / 0.68);
+  --shop-subtle: rgb(247 247 247 / 0.42);
+  --shop-accent: #ddc59f;
+  background: var(--shop-bg);
+  color: var(--shop-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+}
+
+.tora-shop-block.is-light,
+.tora-shop-coming-soon.is-light {
+  --shop-bg: #f6f0e6;
+  --shop-panel: #fffaf2;
+  --shop-panel-soft: #efe3d2;
+  --shop-text: #2c2925;
+  --shop-muted: rgb(44 41 37 / 0.68);
+  --shop-subtle: rgb(44 41 37 / 0.42);
+  --shop-accent: #8b6d35;
+}
+
+.dark .tora-shop-block:not(.is-light),
+.dark .tora-shop-coming-soon:not(.is-light),
+.tora-shop-block.is-dark,
+.tora-shop-coming-soon.is-dark {
+  --shop-panel: #2f2f2f;
+  --shop-panel-soft: #353535;
+  --shop-muted: rgb(247 247 247 / 0.68);
+  --shop-subtle: rgb(247 247 247 / 0.42);
+}
+
+.tora-shop-block {
+  padding: 4.35rem 0 6.5rem;
+}
+
+.tora-shop-heading {
+  margin: 0 auto 3.4rem;
+  max-width: 1110px;
+  padding: 0 15px;
+  text-align: center;
+}
+
+.tora-shop-heading h2 {
+  color: var(--shop-text);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-shop-heading p {
+  color: var(--shop-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 1rem auto 0;
+  max-width: 640px;
+}
+
+.tora-shop-shell {
+  display: grid;
+  gap: 30px;
+  grid-template-columns: 360px minmax(0, 1fr);
+  margin: 0 auto;
+  max-width: 1270px;
+  padding: 0 15px;
+}
+
+.tora-shop-block.no-sidebar .tora-shop-shell {
+  display: block;
+  max-width: 1110px;
+}
+
+.tora-shop-sidebar {
+  display: grid;
+  gap: 30px;
+  height: max-content;
+}
+
+.tora-shop-sidebar__box {
+  border: 1px solid var(--shop-accent);
+  padding: 40px;
+}
+
+.tora-shop-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+}
+
+.tora-shop-search input {
+  background: var(--shop-panel);
+  border: 1px solid var(--shop-accent);
+  border-radius: 0;
+  color: var(--shop-text);
+  font-size: 17px;
+  font-weight: 300;
+  height: 41px;
+  outline: none;
+  padding: 0 20px;
+}
+
+.tora-shop-search input::placeholder {
+  color: var(--shop-muted);
+}
+
+.tora-shop-search button {
+  background: var(--shop-panel-soft);
+  border: 0;
+}
+
+.tora-shop-sidebar h3 {
+  color: var(--shop-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.4;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-shop-sidebar__rule {
+  background: var(--shop-accent);
+  height: 1px;
+  margin: 28px 0 25px;
+  opacity: 0.72;
+}
+
+.tora-shop-tags {
+  align-items: baseline;
+  color: var(--shop-accent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  line-height: 1.3;
+}
+
+.tora-shop-tags span {
+  font-size: 13px;
+  font-weight: 300;
+}
+
+.tora-shop-tags .is-medium {
+  font-size: 17px;
+}
+
+.tora-shop-tags .is-large {
+  font-size: 24px;
+}
+
+.tora-shop-main {
+  min-width: 0;
+}
+
+.tora-shop-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.tora-shop-toolbar p {
+  color: var(--shop-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tora-shop-toolbar select {
+  appearance: none;
+  background: var(--shop-panel);
+  border: 1px solid var(--shop-accent);
+  border-radius: 0;
+  color: var(--shop-text);
+  font-size: 17px;
+  font-weight: 300;
+  min-width: 232px;
+  padding: 12px 42px 12px 15px;
+}
+
+.tora-shop-grid {
+  display: grid;
+  gap: 44px 30px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tora-shop-card {
+  text-align: center;
+}
+
+.tora-shop-card__image {
+  aspect-ratio: 1;
+  background: var(--shop-panel);
+  color: var(--shop-muted);
+  display: block;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+}
+
+.tora-shop-card__image img {
+  transition: transform 520ms ease;
+}
+
+.tora-shop-card__image:hover img,
+.tora-shop-card__image:focus-visible img {
+  transform: scale(1.045);
+}
+
+.tora-shop-card__placeholder {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
+.tora-shop-card__sale {
+  background: var(--shop-bg);
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
+  padding: 15px 13px 13px;
+  position: absolute;
+  right: 0;
+  text-transform: uppercase;
+  top: 0;
+}
+
+.tora-shop-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  margin: 20px 0 0;
+  text-transform: uppercase;
+}
+
+.tora-shop-card h3 a {
+  color: var(--shop-text);
+  text-decoration: none;
+}
+
+.tora-shop-card__price {
+  color: var(--shop-muted);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+
+.tora-shop-card__price del {
+  color: var(--shop-subtle);
+  margin-right: 5px;
+}
+
+.tora-shop-card__price ins {
+  color: var(--shop-muted);
+  text-decoration: none;
+}
+
+.tora-add-to-cart {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.tora-add-to-cart__button,
+.tora-add-to-cart__link,
+.tora-cart-action {
+  align-items: center;
+  background: var(--shop-panel);
+  border: 1px solid var(--shop-accent);
+  border-radius: 0;
+  color: var(--shop-text);
+  display: inline-flex;
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  letter-spacing: 2.4px;
+  line-height: 1;
+  padding: 13px 17px 11px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+.tora-add-to-cart.is-compact .tora-add-to-cart__button,
+.tora-add-to-cart.is-compact .tora-add-to-cart__link {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  padding: 11px 13px 9px;
+}
+
+.tora-add-to-cart__button:hover,
+.tora-add-to-cart__button:focus-visible,
+.tora-add-to-cart__link:hover,
+.tora-add-to-cart__link:focus-visible,
+.tora-cart-action:hover,
+.tora-cart-action:focus-visible {
+  background: var(--shop-accent);
+  color: var(--shop-bg);
+}
+
+.tora-shop-empty {
+  border: 1px solid var(--shop-accent);
+  color: var(--shop-muted);
+  padding: 48px 30px;
+  text-align: center;
+}
+
+.tora-shop-empty h3 {
+  color: var(--shop-text);
+  font-size: 24px;
+  margin: 0 0 10px;
+}
+
+.tora-shop-empty p {
+  margin: 0;
+}
+
+.tora-shop-coming-soon {
+  align-items: center;
+  display: flex;
+  min-height: min(72vh, 720px);
+  padding: 7rem 15px;
+  text-align: center;
+}
+
+.tora-shop-coming-soon > div {
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+.tora-shop-coming-soon h2 {
+  color: var(--shop-text);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tora-shop-coming-soon p {
+  color: var(--shop-muted);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 1.15rem 0 0;
+}
+
+.tora-product-page,
+.tora-cart-page {
+  --shop-bg: #252626;
+  --shop-panel: #2f2f2f;
+  --shop-panel-soft: #353535;
+  --shop-text: #f7f7f7;
+  --shop-muted: rgb(247 247 247 / 0.68);
+  --shop-subtle: rgb(247 247 247 / 0.42);
+  --shop-accent: #ddc59f;
+  background: var(--shop-bg);
+  color: var(--shop-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  min-height: 72vh;
+  padding: 0 0 6.5rem;
+}
+
+.tora-product-page__crumb,
+.tora-cart-page__crumb {
+  align-items: center;
+  border-bottom: 1px solid var(--shop-accent);
+  border-top: 1px solid var(--shop-accent);
+  color: var(--shop-accent);
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 4.35rem;
+  padding: 28px max(15px, calc((100vw - 1270px) / 2));
+  text-transform: uppercase;
+}
+
+.tora-product-page__crumb a,
+.tora-cart-page__crumb a {
+  color: var(--shop-accent);
+  text-decoration: none;
+}
+
+.tora-product-page__inner {
+  display: grid;
+  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.92fr);
+  margin: 0 auto;
+  max-width: 880px;
+}
+
+.tora-product-page__image {
+  aspect-ratio: 3 / 2;
+  background: var(--shop-panel);
+  position: relative;
+}
+
+.tora-product-page__image > span {
+  background: var(--shop-bg);
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
+  padding: 15px 13px 13px;
+  position: absolute;
+  right: 0;
+  text-transform: uppercase;
+  top: 0;
+}
+
+.tora-product-page__summary {
+  color: var(--shop-muted);
+}
+
+.tora-product-page__kind {
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin: 0 0 14px;
+  text-transform: uppercase;
+}
+
+.tora-product-page h1 {
+  color: var(--shop-text);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-product-page__price {
+  color: var(--shop-muted);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 29px;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 10px 0 22px;
+}
+
+.tora-product-page__price del {
+  color: var(--shop-subtle);
+  margin-right: 8px;
+}
+
+.tora-product-page__price ins {
+  color: var(--shop-muted);
+  text-decoration: none;
+}
+
+.tora-product-page__description {
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 0 0 30px;
+}
+
+.tora-product-page .tora-add-to-cart {
+  justify-content: flex-start;
+  margin-top: 0;
+}
+
+.tora-product-page__meta {
+  border-top: 1px solid var(--shop-subtle);
+  display: grid;
+  gap: 12px;
+  margin: 34px 0 0;
+  padding-top: 22px;
+}
+
+.tora-product-page__meta div {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 90px minmax(0, 1fr);
+}
+
+.tora-product-page__meta dt {
+  color: var(--shop-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.tora-product-page__meta dd {
+  margin: 0;
+}
+
+.tora-cart-page__inner {
+  margin: 0 auto;
+  max-width: 1110px;
+  padding: 0 15px;
+}
+
+.tora-cart-page__heading {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  margin-bottom: 2.5rem;
+}
+
+.tora-cart-page__heading svg {
+  color: var(--shop-accent);
+}
+
+.tora-cart-page__heading p {
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.tora-cart-page__heading h1 {
+  color: var(--shop-text);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.2;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-cart-layout {
+  align-items: start;
+  display: grid;
+  gap: 34px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+
+.tora-cart-items {
+  display: grid;
+  gap: 18px;
+}
+
+.tora-cart-item {
+  align-items: center;
+  border: 1px solid var(--shop-subtle);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 132px minmax(0, 1fr) auto auto auto;
+  padding: 18px;
+}
+
+.tora-cart-item__image {
+  aspect-ratio: 1;
+  background: var(--shop-panel);
+  display: block;
+  overflow: hidden;
+}
+
+.tora-cart-item__body {
+  display: grid;
+  gap: 6px;
+}
+
+.tora-cart-item__body a {
+  color: var(--shop-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.tora-cart-item__body span {
+  color: var(--shop-muted);
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.tora-cart-item__body strong,
+.tora-cart-item__total,
+.tora-cart-summary strong {
+  color: var(--shop-muted);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.tora-cart-quantity {
+  align-items: center;
+  border: 1px solid var(--shop-accent);
+  display: inline-grid;
+  grid-template-columns: 36px 38px 36px;
+  min-height: 38px;
+  text-align: center;
+}
+
+.tora-cart-quantity button,
+.tora-cart-item__remove {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--shop-text);
+  display: inline-flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 36px;
+  transition: background-color 240ms ease, color 240ms ease, opacity 240ms ease;
+}
+
+.tora-cart-quantity button:not(:disabled):hover,
+.tora-cart-item__remove:hover {
+  background: var(--shop-accent);
+  color: var(--shop-bg);
+}
+
+.tora-cart-quantity button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.tora-cart-quantity span {
+  color: var(--shop-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tora-cart-item__total {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.tora-cart-item__remove {
+  border: 1px solid var(--shop-subtle);
+  height: 38px;
+  width: 38px;
+}
+
+.tora-cart-checkout,
+.tora-cart-empty,
+.tora-cart-success,
+.tora-cart-warning {
+  border: 1px solid var(--shop-accent);
+  color: var(--shop-muted);
+}
+
+.tora-cart-checkout {
+  display: grid;
+  gap: 16px;
+  padding: 30px;
+  position: sticky;
+  top: 88px;
+}
+
+.tora-cart-checkout h2,
+.tora-cart-empty h2 {
+  color: var(--shop-text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  line-height: 1.4;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-cart-checkout p,
+.tora-cart-empty p {
+  color: var(--shop-muted);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tora-cart-checkout label {
+  color: var(--shop-text);
+  display: grid;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.tora-cart-checkout input,
+.tora-cart-checkout textarea {
+  background: var(--shop-panel);
+  border: 1px solid var(--shop-subtle);
+  border-radius: 0;
+  color: var(--shop-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  outline: none;
+  padding: 12px 13px;
+}
+
+.tora-cart-checkout input:focus,
+.tora-cart-checkout textarea:focus {
+  border-color: var(--shop-accent);
+}
+
+.tora-cart-summary {
+  align-items: center;
+  border-top: 1px solid var(--shop-subtle);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 16px;
+}
+
+.tora-cart-summary span {
+  color: var(--shop-muted);
+  font-size: 14px;
+}
+
+.tora-cart-checkout button[type="submit"] {
+  background: var(--shop-accent);
+  border: 1px solid var(--shop-accent);
+  color: var(--shop-bg);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2.6px;
+  padding: 16px 18px 14px;
+  text-transform: uppercase;
+  transition: background-color 240ms ease, color 240ms ease, opacity 240ms ease;
+}
+
+.tora-cart-checkout button[type="submit"]:hover:not(:disabled),
+.tora-cart-checkout button[type="submit"]:focus-visible:not(:disabled) {
+  background: var(--shop-panel);
+  color: var(--shop-text);
+}
+
+.tora-cart-checkout button[type="submit"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tora-cart-empty {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  padding: 42px;
+}
+
+.tora-cart-success {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 22px 26px;
+}
+
+.tora-cart-success p {
+  color: var(--shop-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-cart-success strong {
+  color: var(--shop-accent);
+  font-size: 13px;
+  letter-spacing: 1.6px;
+}
+
+.tora-cart-success span,
+.tora-cart-warning,
+.tora-cart-error {
+  color: var(--shop-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tora-cart-warning {
+  padding: 16px 18px;
+}
+
+.tora-cart-error {
+  color: #ffb4a8;
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .tora-shop-shell {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .tora-shop-sidebar__box {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 900px) {
+  .tora-shop-shell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tora-shop-sidebar {
+    order: 2;
+  }
+
+  .tora-shop-main {
+    order: 1;
+  }
+}
+
+@media (max-width: 576px) {
+  .tora-shop-block {
+    padding: 3rem 0 4.5rem;
+  }
+
+  .tora-shop-heading {
+    margin-bottom: 2.2rem;
+  }
+
+  .tora-shop-heading h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-shop-heading p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .tora-shop-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .tora-shop-toolbar select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tora-shop-grid {
+    gap: 42px;
+    grid-template-columns: 1fr;
+  }
+
+  .tora-shop-card h3 {
+    margin-top: 18px;
+  }
+
+  .tora-shop-sidebar__box {
+    padding: 24px;
+  }
+
+  .tora-shop-search {
+    grid-template-columns: minmax(0, 1fr) 48px;
+  }
+
+  .tora-shop-coming-soon {
+    min-height: 62vh;
+    padding: 5.5rem 15px;
+  }
+
+  .tora-shop-coming-soon h2 {
+    font-size: 34px;
+    line-height: 1.5;
+  }
+
+  .tora-product-page,
+  .tora-cart-page {
+    padding-bottom: 4.5rem;
+  }
+
+  .tora-product-page__crumb,
+  .tora-cart-page__crumb {
+    margin-bottom: 2.25rem;
+    padding: 22px 15px;
+  }
+
+  .tora-product-page__inner {
+    display: block;
+    padding: 0 15px;
+  }
+
+  .tora-product-page__image {
+    margin-bottom: 2rem;
+  }
+
+  .tora-product-page h1,
+  .tora-product-page__price {
+    font-size: 26px;
+  }
+
+  .tora-product-page__description {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .tora-product-page .tora-add-to-cart {
+    justify-content: stretch;
+  }
+
+  .tora-product-page .tora-add-to-cart__button,
+  .tora-product-page .tora-add-to-cart__link {
+    flex: 1;
+  }
+
+  .tora-cart-page__heading {
+    margin-bottom: 2rem;
+  }
+
+  .tora-cart-page__heading h1 {
+    font-size: 28px;
+  }
+
+  .tora-cart-layout {
+    display: grid;
+    gap: 28px;
+    grid-template-columns: 1fr;
+  }
+
+  .tora-cart-item {
+    gap: 14px;
+    grid-template-columns: 96px minmax(0, 1fr) 38px;
+  }
+
+  .tora-cart-item__image {
+    grid-row: span 3;
+  }
+
+  .tora-cart-item__body {
+    grid-column: 2 / 3;
+  }
+
+  .tora-cart-quantity {
+    grid-column: 2 / 3;
+    justify-self: start;
+  }
+
+  .tora-cart-item__total {
+    grid-column: 2 / 3;
+  }
+
+  .tora-cart-item__remove {
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
+  }
+
+  .tora-cart-checkout {
+    padding: 24px;
+    position: static;
+  }
+
+  .tora-cart-empty {
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .tora-contact-section {
+    padding: 4.35rem 0 4.6rem;
+  }
+
+  .tora-contact-section__inner {
+    width: min(100% - 30px, 1110px);
+  }
+
+  .tora-contact-section__heading {
+    margin-bottom: 2.2rem;
+  }
+
+  .tora-contact-section__heading h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-contact-section__heading div {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .tora-contact-form__row {
+    display: block;
+  }
+
+  .tora-contact-form__field {
+    margin-bottom: 40px;
+  }
+
+  .tora-contact-form__actions {
+    margin-top: 8px;
+  }
+
+  .tora-contact-form button {
+    min-width: 182px;
+  }
+}
+
 .about-section-classic {
   display: flex;
   margin: 0 auto;
@@ -1266,6 +2569,51 @@ html.js .pr-root.is-enhanced {
 .about-section-classic .img-wrap:nth-of-type(3) {
   grid-column: 2;
   grid-row: 3 / 6;
+}
+
+.about-reflector-block-casting {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in oklab, hsl(var(--muted)) 42%, transparent), transparent 34rem),
+    hsl(var(--background));
+  padding: 7.4rem 0 5.2rem;
+}
+
+.dark .about-reflector-block-casting {
+  --about-dark: #f7f7f7;
+  --about-grey: rgb(247 247 247 / 0.64);
+  --about-light-main: #2d2b2b;
+  background: #252626;
+}
+
+.about-section-casting {
+  text-align: center;
+}
+
+.about-section-casting .title {
+  color: var(--about-dark);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0 0 4.35rem;
+  text-transform: uppercase;
+}
+
+.casting-photos {
+  display: grid;
+  gap: 30px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.casting-photo {
+  aspect-ratio: 430 / 380;
+  background: #f7f7f7;
+}
+
+.about-section-casting .about-reflector-description {
+  margin: 5rem auto 0;
+  max-width: 1100px;
+  text-align: center;
 }
 
 @media (max-width: 1200px) {
@@ -3188,6 +4536,341 @@ html.js .pr-root.is-enhanced {
 
 .tora-pricelist--img-bg .price-wrap {
   color: #fff;
+}
+
+.tora-casting-services {
+  --tora-casting-bg: hsl(var(--background));
+  --tora-casting-card: color-mix(in oklab, hsl(var(--muted)) 84%, hsl(var(--background)));
+  --tora-casting-image-ratio: 541 / 373;
+  --tora-casting-title: hsl(var(--foreground));
+  --tora-casting-text: hsl(var(--muted-foreground));
+  --tora-casting-number: rgb(0 0 0 / 0.18);
+  background: var(--tora-casting-bg);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  padding: 5.2rem 0 6.25rem;
+}
+
+.tora-casting-services--ratio-wide {
+  --tora-casting-image-ratio: 16 / 9;
+}
+
+.tora-casting-services--ratio-landscape {
+  --tora-casting-image-ratio: 4 / 3;
+}
+
+.tora-casting-services--ratio-square {
+  --tora-casting-image-ratio: 1 / 1;
+}
+
+.tora-casting-services--ratio-portrait {
+  --tora-casting-image-ratio: 4 / 5;
+}
+
+.tora-casting-services.is-dark {
+  --tora-casting-bg: #252626;
+  --tora-casting-card: #2d2b2b;
+  --tora-casting-title: #f7f7f7;
+  --tora-casting-text: rgb(247 247 247 / 0.64);
+  --tora-casting-number: rgb(247 247 247 / 0.25);
+  background: var(--tora-casting-bg);
+}
+
+.tora-casting-services__container {
+  max-width: 1170px;
+}
+
+.tora-casting-services__heading {
+  margin: 0 auto 5.35rem;
+  max-width: 770px;
+  text-align: center;
+}
+
+.tora-casting-services__heading h2 {
+  color: var(--tora-casting-title);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-casting-services__heading p {
+  color: var(--tora-casting-text);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 2rem auto 0;
+  max-width: 700px;
+}
+
+.tora-casting-services__list {
+  display: grid;
+  gap: 30px;
+}
+
+.tora-casting-services__row {
+  align-items: stretch;
+  display: grid;
+  gap: 60px;
+  grid-template-columns: minmax(0, 505px) minmax(0, 1fr);
+}
+
+.tora-casting-services__row.is-reverse {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 505px);
+}
+
+.tora-casting-services__row.is-reverse .tora-casting-services__copy {
+  order: 2;
+}
+
+.tora-casting-services__row.is-reverse .tora-casting-services__image {
+  order: 1;
+}
+
+.tora-casting-services__copy {
+  background: var(--tora-casting-card);
+  color: var(--tora-casting-text);
+  min-height: 373px;
+  padding: 85px 40px 45px;
+}
+
+.tora-casting-services__top {
+  position: relative;
+}
+
+.tora-casting-services__number {
+  bottom: -7px;
+  color: var(--tora-casting-number);
+  font-size: 70px;
+  font-weight: 700;
+  left: 0;
+  letter-spacing: 2px;
+  line-height: 1;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+.tora-casting-services__top h3 {
+  color: var(--tora-casting-title);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  padding-left: 35px;
+  position: relative;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.tora-casting-services__lines {
+  margin-top: 45px;
+}
+
+.tora-casting-services__lines p {
+  color: var(--tora-casting-text);
+  font-size: 23px;
+  font-weight: 300;
+  line-height: 1.75;
+  margin: 0;
+}
+
+.tora-casting-services__lines p + p {
+  margin-top: 40px;
+}
+
+.tora-casting-services__image {
+  align-self: start;
+  aspect-ratio: var(--tora-casting-image-ratio);
+  height: auto;
+  min-height: 0;
+}
+
+@media (max-width: 1199px) {
+  .tora-casting-services__row {
+    gap: 55px;
+    grid-template-columns: minmax(0, 430px) minmax(0, 1fr);
+  }
+
+  .tora-casting-services__row.is-reverse {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 430px);
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-casting-services__row {
+    gap: 40px;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  }
+
+  .tora-casting-services__row.is-reverse {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-section-casting .title,
+  .tora-casting-services__heading h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-casting-services__row,
+  .tora-casting-services__row.is-reverse {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .tora-casting-services__row .tora-casting-services__image,
+  .tora-casting-services__row.is-reverse .tora-casting-services__image {
+    order: 1;
+  }
+
+  .tora-casting-services__row .tora-casting-services__copy,
+  .tora-casting-services__row.is-reverse .tora-casting-services__copy {
+    order: 2;
+  }
+}
+
+@media (max-width: 576px) {
+  .about-reflector-block-casting {
+    padding: 4.35rem 0 3.35rem;
+  }
+
+  .about-section-casting .title,
+  .tora-casting-services__heading h2 {
+    letter-spacing: 1px;
+  }
+
+  .about-section-casting .title {
+    margin-bottom: 2rem;
+  }
+
+  .casting-photos {
+    display: block;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .casting-photo {
+    animation: casting-mobile-cycle 12s infinite;
+    inset: 0;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+  }
+
+  .casting-photo-primary {
+    position: relative;
+  }
+
+  .casting-photo-secondary {
+    animation-delay: 4s;
+  }
+
+  .casting-photo-tertiary {
+    animation-delay: 8s;
+  }
+
+  .about-section-casting .about-reflector-description {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-top: 1.75rem;
+  }
+
+  .tora-casting-services {
+    padding: 3rem 0 4rem;
+  }
+
+  .tora-casting-services__heading {
+    margin-bottom: 2rem;
+  }
+
+  .tora-casting-services__heading p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-top: 1.25rem;
+  }
+
+  .tora-casting-services__list {
+    gap: 30px;
+  }
+
+  .tora-casting-services__image {
+    min-height: 0;
+  }
+
+  .tora-casting-services__copy {
+    min-height: auto;
+    padding: 55px 20px 25px;
+  }
+
+  .tora-casting-services__number {
+    bottom: -4px;
+    font-size: 55px;
+    letter-spacing: 1px;
+  }
+
+  .tora-casting-services__top h3 {
+    font-size: 23px;
+    letter-spacing: 1px;
+    padding-left: 25px;
+  }
+
+  .tora-casting-services__lines {
+    margin-top: 15px;
+  }
+
+  .tora-casting-services__lines p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .tora-casting-services__lines p + p {
+    margin-top: 10px;
+  }
+}
+
+@keyframes casting-mobile-cycle {
+  0%,
+  26% {
+    opacity: 1;
+    z-index: 2;
+  }
+
+  33%,
+  93% {
+    opacity: 0;
+    z-index: 1;
+  }
+
+  100% {
+    opacity: 1;
+    z-index: 2;
+  }
+}
+
+@media (max-width: 576px) and (prefers-reduced-motion: reduce) {
+  .casting-photo {
+    animation: none;
+    opacity: 0;
+    position: absolute;
+  }
+
+  .casting-photo-primary {
+    opacity: 1;
+    position: relative;
+  }
+
+  .casting-photo-secondary,
+  .casting-photo-tertiary {
+    display: none;
+  }
 }
 
 @media (max-width: 1199px) {

@@ -9,7 +9,9 @@ import {
   JustifiedGrid,
   MasonryGrid,
   MosaicGrid,
+  ToraPropsCatalogGrid,
   UniformGrid,
+  type ToraPropsCaptionSource,
 } from "./grids";
 import { Carousel3D } from "./carousel-3d";
 import { ParallaxRing } from "./parallax-ring";
@@ -35,6 +37,7 @@ interface GalleryLayout {
     | "carousel3d"
     | "cinematic"
     | "horizontal-lenis"
+    | "tora-props-catalog"
     | "parallax-ring"
     | "image-trail"
     | "rotating-scroll"
@@ -115,6 +118,14 @@ interface GalleryLayout {
     useCustomColors?: boolean;
     backgroundColor?: string;
     textColor?: string;
+  };
+  /** ToraMochie Props catalog only: static inventory grid colors/captions. */
+  toraProps?: {
+    useBackground?: boolean;
+    backgroundColor?: string;
+    captionColor?: string;
+    showCaptions?: boolean;
+    captionSource?: ToraPropsCaptionSource;
   };
 }
 
@@ -463,6 +474,17 @@ export function Gallery({
       )}
       {layout.gridType === "horizontal-lenis" && (
         <HorizontalLenisGrid {...gridProps} overlay={layout.overlay} />
+      )}
+      {layout.gridType === "tora-props-catalog" && (
+        <ToraPropsCatalogGrid
+          photos={photos}
+          onOpen={openAt}
+          useBackground={layout.toraProps?.useBackground}
+          backgroundColor={layout.toraProps?.backgroundColor}
+          captionColor={layout.toraProps?.captionColor}
+          showCaptions={layout.toraProps?.showCaptions}
+          captionSource={layout.toraProps?.captionSource}
+        />
       )}
     </>
   );

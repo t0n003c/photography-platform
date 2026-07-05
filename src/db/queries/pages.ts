@@ -12,7 +12,7 @@ export type PageRow = typeof page.$inferSelect;
 // Top-level slugs owned by fixed routes — builder pages may not use these.
 export const RESERVED_SLUGS = new Set([
   "admin", "api", "g", "login", "categories", "locations", "galleries",
-  "contact", "preview", "_next", "manifest.webmanifest", "robots.txt",
+  "contact", "cart", "preview", "product", "_next", "manifest.webmanifest", "robots.txt",
   "sitemap.xml", "icon.svg", "sw.js",
 ]);
 

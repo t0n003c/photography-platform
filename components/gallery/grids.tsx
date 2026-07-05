@@ -19,6 +19,21 @@ export interface GridProps {
   onOpen: (index: number) => void;
 }
 
+export type ToraPropsCaptionSource = "auto" | "headline" | "alt" | "caption";
+
+export interface ToraPropsCatalogGridProps {
+  photos: PhotoDTO[];
+  onOpen: (index: number) => void;
+  useBackground?: boolean;
+  backgroundColor?: string;
+  captionColor?: string;
+  showCaptions?: boolean;
+  captionSource?: ToraPropsCaptionSource;
+}
+
+const TORA_PROPS_DEFAULT_BACKGROUND = "#252626";
+const TORA_PROPS_DEFAULT_CAPTION = "#edd8aa";
+
 function ratio(photo: PhotoDTO): number {
   if (!photo.height) return 1;
   return photo.width / photo.height;
@@ -26,6 +41,31 @@ function ratio(photo: PhotoDTO): number {
 
 function tileLabel(photo: PhotoDTO): string {
   return `View ${photo.altText || "photo"}`;
+}
+
+function cleanText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function propsCaption(
+  photo: PhotoDTO,
+  index: number,
+  source: ToraPropsCaptionSource,
+): string {
+  if (source === "headline") return cleanText(photo.headline) ?? `Photo ${index + 1}`;
+  if (source === "alt") return cleanText(photo.altText) ?? `Photo ${index + 1}`;
+  if (source === "caption") return cleanText(photo.caption) ?? `Photo ${index + 1}`;
+  return (
+    cleanText(photo.headline) ??
+    cleanText(photo.altText) ??
+    cleanText(photo.caption) ??
+    `Photo ${index + 1}`
+  );
+}
+
+function isDefaultColor(value: string | undefined, defaultValue: string): boolean {
+  return !value || value.trim().toLowerCase() === defaultValue;
 }
 
 /** Masonry via CSS columns; items avoid breaking across columns. */
@@ -79,6 +119,63 @@ export function UniformGrid({ photos, spacingClass, onOpen }: GridProps) {
         </button>
       ))}
     </div>
+  );
+}
+
+/** ToraMochie Props reference: square catalog tiles with warm captions. */
+export function ToraPropsCatalogGrid({
+  photos,
+  onOpen,
+  useBackground = true,
+  backgroundColor = TORA_PROPS_DEFAULT_BACKGROUND,
+  captionColor = TORA_PROPS_DEFAULT_CAPTION,
+  showCaptions = true,
+  captionSource = "auto",
+}: ToraPropsCatalogGridProps) {
+  const hasCustomBackground = !isDefaultColor(backgroundColor, TORA_PROPS_DEFAULT_BACKGROUND);
+  const hasCustomCaption = !isDefaultColor(captionColor, TORA_PROPS_DEFAULT_CAPTION);
+  const style = {
+    ...(hasCustomBackground ? { "--tora-props-bg": backgroundColor } : {}),
+    ...(hasCustomCaption ? { "--tora-props-caption": captionColor } : {}),
+  } as React.CSSProperties;
+
+  return (
+    <section
+      className={cn(
+        "tora-props-catalog",
+        !useBackground && "tora-props-catalog--plain",
+        hasCustomBackground && "tora-props-catalog--custom-bg",
+      )}
+      style={style}
+    >
+      <div className="tora-props-catalog__inner">
+        <div className="tora-props-catalog__grid">
+          {photos.map((photo, i) => {
+            const caption = propsCaption(photo, i, captionSource);
+            return (
+              <button
+                key={photo.id}
+                type="button"
+                onClick={() => onOpen(i)}
+                aria-label={`View ${caption}`}
+                className="tora-props-catalog__item"
+              >
+                <span className="tora-props-catalog__image">
+                  <ResponsiveImage
+                    photo={photo}
+                    sizes="(min-width:1120px) 206px, (min-width:768px) 30vw, 50vw"
+                    className="h-full w-full"
+                  />
+                </span>
+                {showCaptions && (
+                  <span className="tora-props-catalog__caption">{caption}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 

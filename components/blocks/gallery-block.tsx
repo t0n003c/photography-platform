@@ -164,14 +164,42 @@ export async function GalleryBlock({
       </Container>
     );
   }
-  const layout = { gridType: block.gridType, spacing: block.spacing, autoplay: block.autoplay, backdrop: block.backdrop };
+  const layout = {
+    gridType: block.gridType,
+    spacing: block.spacing,
+    autoplay: block.autoplay,
+    backdrop: block.backdrop,
+    toraProps: {
+      useBackground: block.toraPropsShowBackground,
+      backgroundColor: block.toraPropsBackgroundColor,
+      captionColor: block.toraPropsCaptionColor,
+      showCaptions: block.toraPropsShowCaptions,
+      captionSource: block.toraPropsCaptionSource,
+    },
+  };
 
   // Cinematic 3D scroll is a layout choice (gridType) — it renders full-bleed
   // and manages its own height, degrading to a standard grid when WebGL is
   // gated off. `effect === "cinematic-3d-scroll"` is the legacy form, kept so
   // pages saved before it moved to the grid picker still render.
-  if (block.gridType === "cinematic" || block.effect === "cinematic-3d-scroll") {
-    return <CinematicGallery photos={photos} layout={layout} speed={block.effectSpeed ?? 1} />;
+  if (block.gridType === "cinematic") {
+    return (
+      <CinematicGallery
+        photos={photos}
+        layout={{ gridType: "cinematic", spacing: block.spacing }}
+        speed={block.effectSpeed ?? 1}
+      />
+    );
+  }
+
+  if (block.effect === "cinematic-3d-scroll") {
+    return (
+      <CinematicGallery
+        photos={photos}
+        layout={{ gridType: "justified", spacing: block.spacing }}
+        speed={block.effectSpeed ?? 1}
+      />
+    );
   }
 
   if (block.filterMode && block.filterMode !== "none") {
@@ -192,6 +220,10 @@ export async function GalleryBlock({
         </Container>
       );
     }
+  }
+
+  if (block.gridType === "tora-props-catalog") {
+    return <Gallery photos={photos} layout={layout} />;
   }
 
   return (

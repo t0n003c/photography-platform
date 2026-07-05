@@ -283,6 +283,43 @@ function ClassicAbout({
   );
 }
 
+function CastingAbout({
+  block,
+  primary,
+  secondary,
+  tertiary,
+}: {
+  block: AboutBlockData;
+  primary?: PhotoDTO;
+  secondary?: PhotoDTO;
+  tertiary?: PhotoDTO;
+}) {
+  const headline = block.headline?.trim() || "CASTING";
+  const photos = [
+    { photo: primary, className: "casting-photo casting-photo-primary" },
+    { photo: secondary, className: "casting-photo casting-photo-secondary" },
+    { photo: tertiary, className: "casting-photo casting-photo-tertiary" },
+  ];
+
+  return (
+    <div className="about-section-casting">
+      <h3 className="title">{headline}</h3>
+      <div className="casting-photos" aria-label={`${headline} photos`}>
+        {photos.map((item, index) => (
+          <PhotoFrame
+            key={index}
+            photo={item.photo}
+            sizes="(min-width: 1024px) 350px, (min-width: 768px) 30vw, 100vw"
+            priority={index === 0}
+            className={item.className}
+          />
+        ))}
+      </div>
+      <BodyText text={block.body ?? ""} />
+    </div>
+  );
+}
+
 export function AboutBlock({
   block,
   photoMap,
@@ -294,27 +331,40 @@ export function AboutBlock({
   const secondary = block.secondaryPhotoId ? photoMap.get(block.secondaryPhotoId) : undefined;
   const tertiary = block.tertiaryPhotoId ? photoMap.get(block.tertiaryPhotoId) : undefined;
   const layout = block.layout ?? "simple";
+  const casting = layout === "tora-casting";
 
   return (
     <section
       className={cn(
         "about-reflector-block",
         layout === "classic" && "about-reflector-block-classic",
+        casting && "about-reflector-block-casting",
       )}
     >
       <div className="about-reflector-container">
-        <SectionHeading block={block} />
-        {layout === "modern" ? (
-          <ModernAbout block={block} primary={primary} />
-        ) : layout === "classic" ? (
-          <ClassicAbout
+        {casting ? (
+          <CastingAbout
             block={block}
             primary={primary}
             secondary={secondary}
             tertiary={tertiary}
           />
         ) : (
-          <SimpleAbout block={block} primary={primary} />
+          <>
+            <SectionHeading block={block} />
+            {layout === "modern" ? (
+          <ModernAbout block={block} primary={primary} />
+            ) : layout === "classic" ? (
+              <ClassicAbout
+                block={block}
+                primary={primary}
+                secondary={secondary}
+                tertiary={tertiary}
+              />
+            ) : (
+              <SimpleAbout block={block} primary={primary} />
+            )}
+          </>
         )}
       </div>
     </section>

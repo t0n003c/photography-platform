@@ -34,8 +34,9 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
    **location/travel** (Arkansas, Colorado, Seattle…). Multiple gallery layouts.
 2. **Private client galleries** — access-controlled pages where a client views/downloads
    their shoot, via real auth + expiring shareable links, favorites, download controls.
-3. **Light print store** — browse/cart now; **payments are stubbed behind an interface**
-   to be implemented later (invoicing/checkout), not built yet.
+3. **Light print store** — product management, public product browsing, browser-local
+   cart, and manual invoice order requests are underway. **Real payments remain stubbed
+   behind an interface** to be implemented later.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -172,7 +173,7 @@ remotion/ scripts/ tests/ public/
   + `collection_photo` (categories), `location`, `folder` + `folder_photo`; `gallery`,
   `gallery_photo`, `gallery_access_grant` (private galleries + expiring share links);
   `client`; `favorite`, `download`; `layout`, `page_config`, `page`, `menu`, `menu_item`
-  (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments stub);
+  (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments seam);
   `site_settings`, `audit_log`, `contact_submission`.
 - **`page_config`** is the per-surface layout instance: `scope` ∈
   `home|gallery|category|location|about|global`, plus `grid_type`, `spacing`, `theme`,
@@ -706,7 +707,15 @@ is gitignored):
   They default open on desktop and closed on mobile to reduce narrow-screen scrolling.
   Pages editor follow-up: Contact form is now a real page-builder block option. It reuses the
   existing spam-protected contact submission flow and supports stacked, split, card, and minimal
-  presentation styles with editable intro/heading/button text.
+  presentation styles with editable intro/heading/button text. Follow-up: the ToraMochie
+  Contact Us reference is implemented as the `tora-contact` Contact Form style. It keeps the
+  same contact inbox API, hides the subject field with a heading-derived fallback subject, and
+  renders a full-width Reflector-style form section: Josefin Sans, uppercase heading, 1110px
+  rail, paired desktop inputs, single-column mobile fields, dark/light theme variables,
+  gold-accent underline borders, and a centered uppercase submit button. The footer top margin
+  is removed after pages containing this section, including sticky footers, and the builder
+  wrapper bottom padding is suppressed so it does not leave a horizontal black spacer bar below
+  the form.
   Pages editor follow-up: Location Map is now a page-builder block that renders published
   locations with saved latitude/longitude pins, OpenFreeMap/MapLibre basemaps, map marker labels,
   rich cover-photo popups, directions/open-location actions, desktop popups, and mobile bottom
@@ -1118,6 +1127,26 @@ is gitignored):
   resolver as the standard style. Plans can now store an optional `priceLabel` such as
   "Contact us"; feature rows store `included` so unavailable benefits can render with
   muted x icons.
+  Store follow-up: `/admin/store` is now a first-class Store tab for product management.
+  The existing `product` table was expanded with `slug`, `sale_price_cents`, `category`,
+  JSON `tags`, `is_featured`, and `sort_order` (migration `0013_past_ultron.sql`; written
+  to backfill slugs safely before enforcing the unique/non-null constraint). Admin product
+  APIs live at `/api/v1/admin/products`; deletes require fresh auth. Public product APIs now
+  return the shared `ProductDTO` with optimized photo variants from `src/db/queries/store.ts`.
+  Pages now include a `shop` block. Its `tora-grid` style is based on the ToraMochie /
+  Reflector WooCommerce category/product pages: dark/light-aware charcoal or warm theme,
+  optional sidebar search/tag cloud, Tora toolbar, 3-column desktop product grid, 1-column
+  mobile grid, square product photos, sale badges, uppercase Josefin product names, and
+  Playfair-style italic prices. `tora-coming-soon` reproduces the visible `/shop/` empty
+  WooCommerce state. Product card links resolve to `/product/[slug]`, which renders a
+  Tora-style product detail page.
+  Follow-up: Store checkout now has a lightweight no-payments path. Public product/shop pages
+  render Add to cart actions backed by a browser-local `photog-store-cart-v1` cart, `/cart`
+  resolves current active products/prices through `POST /api/v1/cart`, and `POST /api/v1/checkout`
+  creates a pending manual-invoice order plus `order_item` rows while `PAYMENTS_DRIVER=stub`.
+  Admin `/admin/store` now shows a compact Recent order requests section via
+  `/api/v1/admin/orders`. Hosted checkout and real payment capture remain deliberately deferred
+  behind the `PaymentProvider` seam.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,
@@ -1327,6 +1356,29 @@ is gitignored):
   differ. The ToraMochie page also contains contact-form price-list variants; those should be
   added to the Contact Form block as a separate follow-up if the owner wants that part of the
   reference too.
+  Pages Gallery block follow-up: the ToraMochie/Reflector Props page is represented as the
+  `tora-props-catalog` Gallery block grid option. It matches the reference props inventory
+  composition: full-width optional showroom band, Josefin Sans, 1110px inner width, 5/3/2
+  square-tile responsive grid, 20px horizontal gutters, warm gold captions, and click-to-lightbox
+  via the existing Gallery lightbox. Default colors are theme-aware: light mode uses a warm cream
+  showroom with brown-gold captions and subtle image lift, while dark mode keeps the closer source
+  charcoal/gold look (`#252626`/`#edd8aa`). Custom background/caption colors still override the
+  theme defaults. Settings expose caption visibility/source (`auto`, `headline`, `alt`, `caption`),
+  caption color, background toggle, and background color. It intentionally uses existing photo
+  metadata for prop codes instead of introducing a separate inventory-code field.
+  ToraMochie/Reflector Casting page follow-up: the top casting intro is an About block layout
+  (`tora-casting`) because it is a title/body/three-photo editorial intro; desktop shows three
+  430:380 portraits, mobile auto-cycles through the three selected photos with a CSS-only
+  slideshow while reduced-motion keeps a single static photo, and typography follows Reflector
+  headings (Josefin Sans, 29px/3.77px desktop, 26px/1px mobile). The “Offering castings for” section is a
+  Price block style (`tora-casting-services`) because the source uses Reflector’s
+  `pricing-wrap classic` shortcode as service cards. It maps each plan to an offering: name =
+  service title, subtitle = first slash line, features = remaining slash lines, photo = offering
+  image, and order generates `/01`, `/02`, etc. Prices/buttons remain saved but hidden for this
+  style. Desktop alternates text/image and image/text on a ~1170px rail with a 505px text card,
+  60px gap, large faded number, and a configurable service image ratio: Reference 541:373,
+  Wide 16:9, Landscape 4:3, Square 1:1, or Portrait 4:5. The image cell keeps its chosen
+  aspect ratio instead of stretching to match tall copy cards. Mobile stacks image then text card.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

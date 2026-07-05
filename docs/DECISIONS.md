@@ -184,6 +184,7 @@ This is the running decision log for the self-hosted photography platform.
 - **Consequences:**
   - Zero payment/PCI surface enters the system until a deliberate future decision.
   - The print store can grow into invoicing/checkout without rearchitecting — only a driver and UI are added.
+  - Product management, public product browsing, browser-local cart, and manual invoice order requests may ship before payments; purchase CTAs must avoid pretending hosted payment capture is active until a payment driver is deliberately enabled.
   - Stripe (not a merchant of record) would leave sales-tax/VAT obligations to the operator — to be weighed at activation.
 - **Alternatives considered:** **Lemon Squeezy / Paddle** (merchant-of-record handling global tax/VAT — major admin relief, at higher fees and more opinionated checkout; preserved as a deliberate future alternative); **building payments now** (premature scope, compliance/maintenance burden ahead of revenue — rejected).
 

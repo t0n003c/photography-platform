@@ -91,7 +91,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "portfolioList", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
-  "quote", "testimonials", "team", "pricing", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "testimonials", "team", "pricing", "shop", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "locationMap", "scrollShowcase", "instagram", "columns",
 ];
 
@@ -338,6 +338,14 @@ function makeLocationMapConnection(startId = "", endId = "") {
   };
 }
 
+const GALLERY_TORA_PROPS_DEFAULTS = {
+  toraPropsShowBackground: true,
+  toraPropsBackgroundColor: "#252626",
+  toraPropsCaptionColor: "#edd8aa",
+  toraPropsShowCaptions: true,
+  toraPropsCaptionSource: "auto",
+} as const;
+
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
@@ -456,7 +464,7 @@ function makeBlock(type: BlockType): Block {
       textColor: "#2d251d",
       accentColor: "#8b5e34",
     };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [] };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS };
     case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
@@ -545,7 +553,28 @@ function makeBlock(type: BlockType): Block {
       showBillingToggle: true,
       theme: "auto",
       showHighlightEffect: true,
+      castingImageRatio: "reference",
       plans: [makePricingPlan(0), makePricingPlan(1), makePricingPlan(2)],
+    };
+    case "shop": return {
+      id,
+      type,
+      style: "tora-grid",
+      title: "SHOP",
+      body: "Browse prints, digital downloads, and curated bundles.",
+      source: "all",
+      category: "",
+      limit: 12,
+      showSidebar: true,
+      showSearch: true,
+      showTagCloud: true,
+      showSorting: true,
+      showSaleBadge: true,
+      showPrices: true,
+      theme: "auto",
+      backgroundColor: "#252626",
+      textColor: "#f7f7f7",
+      accentColor: "#ddc59f",
     };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
@@ -994,6 +1023,8 @@ function blockSummary(block: Block): string {
       return `${block.members.length} members`;
     case "pricing":
       return `${block.plans.length} plans`;
+    case "shop":
+      return `${block.style} · ${block.source}${block.source === "category" && block.category ? ` · ${block.category}` : ""}`;
     case "cta":
       return block.headline || block.buttonLabel;
     case "contactForm":
@@ -2276,6 +2307,7 @@ function LeafEditor({
         const next = Number(value);
         updatePlan(index, { [key]: Number.isFinite(next) ? next : 0 });
       };
+      const isCastingServices = block.style === "tora-casting-services";
 
       return (
         <div className="space-y-4">
@@ -2295,6 +2327,7 @@ function LeafEditor({
                 <option value="tora-simple">Tora simple banner</option>
                 <option value="tora-with-media">Tora with media</option>
                 <option value="tora-image-background">Tora image background</option>
+                <option value="tora-casting-services">Tora casting services</option>
               </Select>
             </Field>
             <Field label="Heading">
@@ -2303,12 +2336,14 @@ function LeafEditor({
                 onChange={(e) => set({ heading: e.target.value })}
               />
             </Field>
-            <Field label="Currency">
-              <Input
-                value={block.currency ?? "$"}
-                onChange={(e) => set({ currency: e.target.value })}
-              />
-            </Field>
+            {!isCastingServices && (
+              <Field label="Currency">
+                <Input
+                  value={block.currency ?? "$"}
+                  onChange={(e) => set({ currency: e.target.value })}
+                />
+              </Field>
+            )}
             <Field label="Theme">
               <Select
                 value={block.theme ?? "auto"}
@@ -2319,6 +2354,25 @@ function LeafEditor({
                 <option value="light">Light</option>
               </Select>
             </Field>
+            {isCastingServices && (
+              <Field label="Photo ratio">
+                <Select
+                  value={block.castingImageRatio ?? "reference"}
+                  onChange={(e) =>
+                    set({
+                      castingImageRatio:
+                        e.target.value as typeof block.castingImageRatio,
+                    })
+                  }
+                >
+                  <option value="reference">Reference 541:373</option>
+                  <option value="wide">Wide 16:9</option>
+                  <option value="landscape">Landscape 4:3</option>
+                  <option value="square">Square 1:1</option>
+                  <option value="portrait">Portrait 4:5</option>
+                </Select>
+              </Field>
+            )}
             <div className="sm:col-span-2 lg:col-span-4">
               <Field label="Description">
                 <Textarea
@@ -2328,40 +2382,44 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            <Field label="Billing toggle">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showBillingToggle ?? true}
-                  onChange={(e) => set({ showBillingToggle: e.target.checked })}
-                />
-                Show monthly/yearly
-              </label>
-            </Field>
-            <Field label="Default period">
-              <Select
-                value={block.defaultFrequency ?? "monthly"}
-                onChange={(e) =>
-                  set({
-                    defaultFrequency: e.target
-                      .value as typeof block.defaultFrequency,
-                  })
-                }
-              >
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </Select>
-            </Field>
-            <Field label="Popular effect">
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={block.showHighlightEffect ?? true}
-                  onChange={(e) => set({ showHighlightEffect: e.target.checked })}
-                />
-                Animated border
-              </label>
-            </Field>
+            {!isCastingServices && (
+              <>
+                <Field label="Billing toggle">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showBillingToggle ?? true}
+                      onChange={(e) => set({ showBillingToggle: e.target.checked })}
+                    />
+                    Show monthly/yearly
+                  </label>
+                </Field>
+                <Field label="Default period">
+                  <Select
+                    value={block.defaultFrequency ?? "monthly"}
+                    onChange={(e) =>
+                      set({
+                        defaultFrequency: e.target
+                          .value as typeof block.defaultFrequency,
+                      })
+                    }
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </Select>
+                </Field>
+                <Field label="Popular effect">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.showHighlightEffect ?? true}
+                      onChange={(e) => set({ showHighlightEffect: e.target.checked })}
+                    />
+                    Animated border
+                  </label>
+                </Field>
+              </>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -2369,7 +2427,7 @@ function LeafEditor({
               <div key={plan.id} className="rounded-lg border p-3">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                    Plan {planIndex + 1}
+                    {isCastingServices ? "Offering" : "Plan"} {planIndex + 1}
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
@@ -2425,21 +2483,34 @@ function LeafEditor({
                       onChange={(e) => updatePlan(planIndex, { info: e.target.value })}
                     />
                   </Field>
-                  <Field label="Highlighted">
-                    <label className="flex h-9 items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={plan.highlighted ?? false}
-                        onChange={(e) =>
-                          updatePlan(planIndex, { highlighted: e.target.checked })
-                        }
-                      />
-                      Popular plan
-                    </label>
-                  </Field>
+                  {!isCastingServices && (
+                    <Field label="Highlighted">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={plan.highlighted ?? false}
+                          onChange={(e) =>
+                            updatePlan(planIndex, { highlighted: e.target.checked })
+                          }
+                        />
+                        Popular plan
+                      </label>
+                    </Field>
+                  )}
+                  {isCastingServices && (
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        This style uses the offering name, subtitle, feature lines, and image. Prices and buttons stay saved but are hidden.
+                      </p>
+                    </div>
+                  )}
                   <div className="sm:col-span-2 lg:col-span-3">
-                    <div className="grid gap-3 rounded-lg border p-3 lg:grid-cols-2">
-                      <Field label="Plan image / background">
+                    <div
+                      className={`grid gap-3 rounded-lg border p-3 ${
+                        isCastingServices ? "" : "lg:grid-cols-2"
+                      }`}
+                    >
+                      <Field label={isCastingServices ? "Offering image" : "Plan image / background"}>
                         <PhotoPicker
                           photos={photos}
                           value={plan.photoId ?? null}
@@ -2449,78 +2520,84 @@ function LeafEditor({
                           containerClassName="max-h-48"
                         />
                       </Field>
-                      <div className="space-y-2">
-                        <Field label="Media panel image">
-                          <PhotoPicker
-                            photos={photos}
-                            value={plan.mediaPhotoId ?? null}
-                            onChange={(mediaPhotoId) =>
-                              updatePlan(planIndex, { mediaPhotoId })
-                            }
-                            containerClassName="max-h-36"
-                          />
-                        </Field>
-                        <Field label="Media video link">
+                      {!isCastingServices && (
+                        <div className="space-y-2">
+                          <Field label="Media panel image">
+                            <PhotoPicker
+                              photos={photos}
+                              value={plan.mediaPhotoId ?? null}
+                              onChange={(mediaPhotoId) =>
+                                updatePlan(planIndex, { mediaPhotoId })
+                              }
+                              containerClassName="max-h-36"
+                            />
+                          </Field>
+                          <Field label="Media video link">
+                            <Input
+                              value={plan.mediaVideoUrl ?? ""}
+                              placeholder="Optional video URL"
+                              onChange={(e) =>
+                                updatePlan(planIndex, {
+                                  mediaVideoUrl: e.target.value,
+                                })
+                              }
+                            />
+                          </Field>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {!isCastingServices && (
+                    <>
+                      <Field label="Monthly price">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={plan.monthlyPrice}
+                          onChange={(e) =>
+                            setPlanPrice(planIndex, "monthlyPrice", e.target.value)
+                          }
+                        />
+                      </Field>
+                      <Field label="Yearly price">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={plan.yearlyPrice}
+                          onChange={(e) =>
+                            setPlanPrice(planIndex, "yearlyPrice", e.target.value)
+                          }
+                        />
+                      </Field>
+                      <Field label="Display price">
+                        <Input
+                          value={plan.priceLabel ?? ""}
+                          placeholder="Optional, e.g. Contact us"
+                          onChange={(e) =>
+                            updatePlan(planIndex, { priceLabel: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Button label">
+                        <Input
+                          value={plan.ctaLabel}
+                          onChange={(e) =>
+                            updatePlan(planIndex, { ctaLabel: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <div className="sm:col-span-2 lg:col-span-3">
+                        <Field label="Button link">
                           <Input
-                            value={plan.mediaVideoUrl ?? ""}
-                            placeholder="Optional video URL"
+                            value={plan.ctaHref}
                             onChange={(e) =>
-                              updatePlan(planIndex, {
-                                mediaVideoUrl: e.target.value,
-                              })
+                              updatePlan(planIndex, { ctaHref: e.target.value })
                             }
                           />
                         </Field>
                       </div>
-                    </div>
-                  </div>
-                  <Field label="Monthly price">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={plan.monthlyPrice}
-                      onChange={(e) =>
-                        setPlanPrice(planIndex, "monthlyPrice", e.target.value)
-                      }
-                    />
-                  </Field>
-                  <Field label="Yearly price">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={plan.yearlyPrice}
-                      onChange={(e) =>
-                        setPlanPrice(planIndex, "yearlyPrice", e.target.value)
-                      }
-                    />
-                  </Field>
-                  <Field label="Display price">
-                    <Input
-                      value={plan.priceLabel ?? ""}
-                      placeholder="Optional, e.g. Contact us"
-                      onChange={(e) =>
-                        updatePlan(planIndex, { priceLabel: e.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field label="Button label">
-                    <Input
-                      value={plan.ctaLabel}
-                      onChange={(e) =>
-                        updatePlan(planIndex, { ctaLabel: e.target.value })
-                      }
-                    />
-                  </Field>
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <Field label="Button link">
-                      <Input
-                        value={plan.ctaHref}
-                        onChange={(e) =>
-                          updatePlan(planIndex, { ctaHref: e.target.value })
-                        }
-                      />
-                    </Field>
-                  </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-4 space-y-2 rounded-lg border p-3">
@@ -2654,11 +2731,137 @@ function LeafEditor({
             onClick={() => set({ plans: [...plans, makePricingPlan(plans.length)] })}
           >
             <Plus className="h-4 w-4" />
-            Add plan
+            Add {isCastingServices ? "offering" : "plan"}
           </Button>
         </div>
       );
     }
+    case "shop":
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Shop style">
+              <Select
+                value={block.style}
+                onChange={(e) =>
+                  set({
+                    style: e.target.value as typeof block.style,
+                    ...(e.target.value === "tora-coming-soon"
+                      ? {
+                          title:
+                            block.title === "SHOP"
+                              ? "Great things are on the horizon"
+                              : block.title,
+                          body:
+                            block.body ===
+                            "Browse prints, digital downloads, and curated bundles."
+                              ? "Something big is brewing! Our store is in the works and will be launching soon!"
+                              : block.body,
+                        }
+                      : {}),
+                  })
+                }
+              >
+                <option value="tora-grid">Tora product grid</option>
+                <option value="tora-coming-soon">Tora coming soon</option>
+              </Select>
+            </Field>
+            <Field label="Product source">
+              <Select
+                value={block.source}
+                onChange={(e) => set({ source: e.target.value as typeof block.source })}
+                disabled={block.style === "tora-coming-soon"}
+              >
+                <option value="all">All active products</option>
+                <option value="featured">Featured products</option>
+                <option value="category">Category label</option>
+              </Select>
+            </Field>
+            <Field label="Category label">
+              <Input
+                value={block.category}
+                onChange={(e) => set({ category: e.target.value })}
+                disabled={block.source !== "category" || block.style === "tora-coming-soon"}
+                placeholder="Sunset"
+              />
+            </Field>
+            <Field label="Product limit">
+              <Input
+                type="number"
+                min={1}
+                max={48}
+                value={block.limit}
+                onChange={(e) =>
+                  set({ limit: Math.min(48, Math.max(1, Number(e.target.value) || 1)) })
+                }
+                disabled={block.style === "tora-coming-soon"}
+              />
+            </Field>
+            <Field label="Title">
+              <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+            </Field>
+            <Field label="Theme">
+              <Select
+                value={block.theme}
+                onChange={(e) => set({ theme: e.target.value as typeof block.theme })}
+              >
+                <option value="auto">Auto</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </Select>
+            </Field>
+            <Field label="Background color">
+              <Input
+                type="color"
+                value={block.backgroundColor}
+                onChange={(e) => set({ backgroundColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Text color">
+              <Input
+                type="color"
+                value={block.textColor}
+                onChange={(e) => set({ textColor: e.target.value })}
+              />
+            </Field>
+            <Field label="Accent color">
+              <Input
+                type="color"
+                value={block.accentColor}
+                onChange={(e) => set({ accentColor: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Body text">
+            <Textarea
+              value={block.body}
+              onChange={(e) => set({ body: e.target.value })}
+              rows={3}
+            />
+          </Field>
+          {block.style === "tora-grid" && (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ["showSidebar", "Show sidebar"],
+                ["showSearch", "Show search box"],
+                ["showTagCloud", "Show tag cloud"],
+                ["showSorting", "Show sorting control"],
+                ["showSaleBadge", "Show sale badge"],
+                ["showPrices", "Show prices"],
+              ].map(([key, label]) => (
+                <label key={key} className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(block[key as keyof typeof block])}
+                    onChange={(e) => set({ [key]: e.target.checked } as Partial<LeafBlock>)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     case "cta":
       return (
         <div className="grid gap-2 sm:grid-cols-2">
@@ -2682,11 +2885,39 @@ function LeafEditor({
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Form style">
-              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+              <Select
+                value={block.style}
+                onChange={(e) => {
+                  const style = e.target.value as typeof block.style;
+                  set({
+                    style,
+                    ...(style === "tora-contact"
+                      ? {
+                          eyebrow: block.eyebrow === "Contact" ? "" : block.eyebrow,
+                          heading:
+                            block.heading === "Get in touch"
+                              ? "GET IN TOUCH"
+                              : block.heading,
+                          body:
+                            block.body ===
+                            "Tell me about your session, event, or print order and I'll be in touch soon."
+                              ? ""
+                              : block.body,
+                          submitLabel:
+                            block.submitLabel === "Send message"
+                              ? "SUBMIT NOW"
+                              : block.submitLabel,
+                          align: "center",
+                        }
+                      : {}),
+                  });
+                }}
+              >
                 <option value="stacked">Stacked intro</option>
                 <option value="split">Split intro + form</option>
                 <option value="card">Card form</option>
                 <option value="minimal">Minimal</option>
+                <option value="tora-contact">Tora contact</option>
               </Select>
             </Field>
             <AlignField value={block.align} onChange={(align) => set({ align })} />
@@ -3036,47 +3267,63 @@ function LeafEditor({
                           ? "MODERN"
                           : next === "classic"
                             ? "CLASSIC"
-                            : "SIMPLE",
+                            : next === "tora-casting"
+                              ? ""
+                              : "SIMPLE",
                       headline:
                         next === "modern"
                           ? "ABOUT ME"
                           : next === "classic"
                             ? "GET TO KNOW ME BETTER"
-                            : "HI, I'M REFLECTOR",
+                            : next === "tora-casting"
+                              ? "CASTING"
+                              : "HI, I'M REFLECTOR",
                       eyebrow: next === "classic" ? "GET TO KNOW ME" : "",
-                      ctaLabel: next === "classic" ? "CONTACT US" : "learn more",
+                      ctaLabel:
+                        next === "classic"
+                          ? "CONTACT US"
+                          : next === "tora-casting"
+                            ? ""
+                            : "learn more",
                     });
                   }}
                 >
                   <option value="simple">Simple</option>
                   <option value="modern">Modern</option>
                   <option value="classic">Classic</option>
+                  <option value="tora-casting">Tora casting intro</option>
                 </Select>
               </Field>
-              <Field label="Top label">
-                <Input
-                  value={block.sectionEyebrow ?? ""}
-                  onChange={(e) => set({ sectionEyebrow: e.target.value })}
-                />
-              </Field>
-              <Field label="Top title">
-                <Input
-                  value={block.sectionTitle ?? ""}
-                  onChange={(e) => set({ sectionTitle: e.target.value })}
-                />
-              </Field>
+              {layout !== "tora-casting" && (
+                <>
+                  <Field label="Top label">
+                    <Input
+                      value={block.sectionEyebrow ?? ""}
+                      onChange={(e) => set({ sectionEyebrow: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Top title">
+                    <Input
+                      value={block.sectionTitle ?? ""}
+                      onChange={(e) => set({ sectionTitle: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
             </div>
           </SettingsGroup>
 
           <SettingsGroup title="Text">
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Small label">
-                <Input
-                  value={block.eyebrow ?? ""}
-                  onChange={(e) => set({ eyebrow: e.target.value })}
-                  placeholder={layout === "classic" ? "GET TO KNOW ME" : ""}
-                />
-              </Field>
+              {layout !== "tora-casting" && (
+                <Field label="Small label">
+                  <Input
+                    value={block.eyebrow ?? ""}
+                    onChange={(e) => set({ eyebrow: e.target.value })}
+                    placeholder={layout === "classic" ? "GET TO KNOW ME" : ""}
+                  />
+                </Field>
+              )}
               <Field label="Headline">
                 <Input
                   value={block.headline ?? ""}
@@ -3099,25 +3346,27 @@ function LeafEditor({
                 onChange={(e) => set({ body: e.target.value })}
               />
             </Field>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Button label">
-                <Input
-                  value={block.ctaLabel ?? ""}
-                  onChange={(e) => set({ ctaLabel: e.target.value })}
-                />
-              </Field>
-              <Field label="Button link">
-                <Input
-                  value={block.ctaHref ?? ""}
-                  onChange={(e) => set({ ctaHref: e.target.value })}
-                />
-              </Field>
-            </div>
+            {layout !== "tora-casting" && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Button label">
+                  <Input
+                    value={block.ctaLabel ?? ""}
+                    onChange={(e) => set({ ctaLabel: e.target.value })}
+                  />
+                </Field>
+                <Field label="Button link">
+                  <Input
+                    value={block.ctaHref ?? ""}
+                    onChange={(e) => set({ ctaHref: e.target.value })}
+                  />
+                </Field>
+              </div>
+            )}
           </SettingsGroup>
 
           <SettingsGroup title="Photos">
             <div className="grid gap-3 sm:grid-cols-3">
-              <Field label={layout === "classic" ? "Photo 1" : "Portrait photo"}>
+              <Field label={layout === "classic" || layout === "tora-casting" ? "Photo 1" : "Portrait photo"}>
                 <PhotoPicker
                   photos={photos}
                   value={block.primaryPhotoId ?? null}
@@ -3125,7 +3374,7 @@ function LeafEditor({
                   containerClassName="max-h-64"
                 />
               </Field>
-              {layout === "classic" && (
+              {(layout === "classic" || layout === "tora-casting") && (
                 <>
                   <Field label="Photo 2">
                     <PhotoPicker
@@ -4040,12 +4289,14 @@ function LeafEditor({
                       });
                     }}
                   >
-                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option>
+                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option><option value="tora-props-catalog">Tora props catalog</option>
                   </Select>
                 </Field>
                 {/* The 3D infinite carousel and cinematic 3D scroll manage their own
                     layout, so the tight/normal/airy spacing control doesn't apply. */}
-                {block.gridType !== "carousel3d" && block.gridType !== "cinematic" && (
+                {block.gridType !== "carousel3d" &&
+                  block.gridType !== "cinematic" &&
+                  block.gridType !== "tora-props-catalog" && (
                   <Field label="Spacing">
                     <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
                       <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
@@ -4089,6 +4340,63 @@ function LeafEditor({
                       </span>
                     </div>
                   </Field>
+                )}
+                {block.gridType === "tora-props-catalog" && (
+                  <>
+                    <Field label="Captions">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraPropsShowCaptions ?? true}
+                          onChange={(e) => set({ toraPropsShowCaptions: e.target.checked })}
+                        />
+                        Show below each photo
+                      </label>
+                    </Field>
+                    <Field label="Caption source">
+                      <Select
+                        value={block.toraPropsCaptionSource ?? "auto"}
+                        onChange={(e) =>
+                          set({
+                            toraPropsCaptionSource:
+                              e.target.value as typeof block.toraPropsCaptionSource,
+                          })
+                        }
+                        disabled={block.toraPropsShowCaptions === false}
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="headline">Headline</option>
+                        <option value="alt">Alt text</option>
+                        <option value="caption">Caption</option>
+                      </Select>
+                    </Field>
+                    <Field label="Caption color">
+                      <Input
+                        type="color"
+                        value={block.toraPropsCaptionColor ?? "#edd8aa"}
+                        onChange={(e) => set({ toraPropsCaptionColor: e.target.value })}
+                        disabled={block.toraPropsShowCaptions === false}
+                      />
+                    </Field>
+                    <Field label="Background">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraPropsShowBackground ?? true}
+                          onChange={(e) => set({ toraPropsShowBackground: e.target.checked })}
+                        />
+                        Show showroom band
+                      </label>
+                    </Field>
+                    <Field label="Background color">
+                      <Input
+                        type="color"
+                        value={block.toraPropsBackgroundColor ?? "#252626"}
+                        onChange={(e) => set({ toraPropsBackgroundColor: e.target.value })}
+                        disabled={block.toraPropsShowBackground === false}
+                      />
+                    </Field>
+                  </>
                 )}
               </>
             )}

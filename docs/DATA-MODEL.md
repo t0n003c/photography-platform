@@ -458,19 +458,19 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 
 ---
 
-## 13. Store (DEFERRED — stub tables, minimal)
+## 13. Store (light catalog + manual invoice checkout)
 
-> **Deferred.** The print store is architected for invoicing/payments **later**. These tables
-> exist only so future payment work is additive. The `PaymentProvider` is an interface stub
-> (Stripe-likely). No payment processing, tax, or fulfillment logic in Phase 0. Keep columns
-> minimal; expand under a future migration.
+> Product catalog, public browse/cart, and manual invoice order requests are active. Hosted
+> payment capture remains deferred behind the `PaymentProvider` interface stub
+> (Stripe-likely). No tax or automated fulfillment logic is active yet.
 
-### 13.1 `product` (stub)
-`id` PK, `sku` UNIQUE, `name`, `description`, `kind` (`print`\|`digital`\|`bundle`),
-`photo_id` FK→photo NULL, `base_price_cents` integer, `currency` text, `is_active` boolean,
-timestamps.
+### 13.1 `product`
+`id` PK, `slug` UNIQUE, `sku` UNIQUE, `name`, `description`, `kind`
+(`print`\|`digital`\|`bundle`), `photo_id` FK→photo NULL, `base_price_cents`,
+`sale_price_cents` NULL, `currency`, `category` NULL, JSON `tags`, `is_featured`,
+`is_active`, `sort_order`, timestamps.
 
-### 13.2 `order` (stub)
+### 13.2 `order`
 | Field | Type | Notes |
 |---|---|---|
 | id | text PK | |
@@ -479,15 +479,15 @@ timestamps.
 | status | text | `draft`\|`pending`\|`paid`\|`fulfilled`\|`cancelled` |
 | subtotal_cents / total_cents | integer | |
 | currency | text | |
-| payment_provider | text NULL | stub: `'stripe'` later |
-| payment_ref | text NULL | external charge id (future) |
+| payment_provider | text NULL | currently `'manual'`; `'stripe'` later |
+| payment_ref | text NULL | manual note or external charge id (future) |
 | created_at / updated_at | timestamptz | |
 
-### 13.3 `order_item` (stub)
+### 13.3 `order_item`
 `id` PK, `order_id` FK→order CASCADE, `product_id` FK→product NULL, `photo_id` FK→photo NULL,
 `description`, `quantity` integer, `unit_price_cents` integer, `line_total_cents` integer.
 
-### 13.4 `invoice` (stub)
+### 13.4 `invoice` (future PDF/issued invoice)
 `id` PK, `order_id` FK→order UNIQUE, `number` text UNIQUE, `status` (`draft`\|`issued`\|`paid`\|`void`),
 `amount_cents`, `currency`, `issued_at` NULL, `due_at` NULL, `pdf_storage_key` NULL, timestamps.
 

@@ -14,6 +14,7 @@ export const GridEnum = z.enum([
   "carousel3d",
   "cinematic",
   "horizontal-lenis",
+  "tora-props-catalog",
 ]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
@@ -116,7 +117,7 @@ const AboutLink = z.object({
 const AboutBlock = z.object({
   ...baseBlock,
   type: z.literal("about"),
-  layout: z.enum(["simple", "modern", "classic"]).default("simple"),
+  layout: z.enum(["simple", "modern", "classic", "tora-casting"]).default("simple"),
   sectionEyebrow: z.string().default("ABOUT"),
   sectionTitle: z.string().default("SIMPLE"),
   eyebrow: z.string().default(""),
@@ -251,6 +252,7 @@ const GalleryFilterSort = z.object({
   sortMode: GallerySortEnum.default("source"),
   photoIds: z.array(z.string()).default([]),
 });
+const ToraPropsCaptionSource = z.enum(["auto", "headline", "alt", "caption"]);
 const GalleryBlock = z.object({
   ...baseBlock,
   type: z.literal("gallery"),
@@ -284,6 +286,11 @@ const GalleryBlock = z.object({
       }),
     )
     .default([]),
+  toraPropsShowBackground: z.boolean().default(true),
+  toraPropsBackgroundColor: z.string().default("#252626"),
+  toraPropsCaptionColor: z.string().default("#edd8aa"),
+  toraPropsShowCaptions: z.boolean().default(true),
+  toraPropsCaptionSource: ToraPropsCaptionSource.default("auto"),
 });
 // Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
 // WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.
@@ -499,6 +506,7 @@ const PricingBlock = z.object({
       "tora-simple",
       "tora-with-media",
       "tora-image-background",
+      "tora-casting-services",
     ])
     .default("standard"),
   heading: z.string().default("Plans that Scale with You"),
@@ -512,7 +520,32 @@ const PricingBlock = z.object({
   showBillingToggle: z.boolean().default(true),
   theme: z.enum(["auto", "dark", "light"]).default("auto"),
   showHighlightEffect: z.boolean().default(true),
+  castingImageRatio: z
+    .enum(["reference", "wide", "landscape", "square", "portrait"])
+    .default("reference"),
   plans: z.array(PricingPlan).default([]),
+});
+const ShopBlock = z.object({
+  ...baseBlock,
+  type: z.literal("shop"),
+  style: z.enum(["tora-grid", "tora-coming-soon"]).default("tora-grid"),
+  title: z.string().default("SHOP"),
+  body: z
+    .string()
+    .default("Browse prints, digital downloads, and curated bundles."),
+  source: z.enum(["all", "featured", "category"]).default("all"),
+  category: z.string().default(""),
+  limit: z.number().int().min(1).max(48).default(12),
+  showSidebar: z.boolean().default(true),
+  showSearch: z.boolean().default(true),
+  showTagCloud: z.boolean().default(true),
+  showSorting: z.boolean().default(true),
+  showSaleBadge: z.boolean().default(true),
+  showPrices: z.boolean().default(true),
+  theme: z.enum(["auto", "dark", "light"]).default("auto"),
+  backgroundColor: z.string().default("#252626"),
+  textColor: z.string().default("#f7f7f7"),
+  accentColor: z.string().default("#ddc59f"),
 });
 export const CtaButtonStyleEnum = z.enum([
   "solid",
@@ -530,7 +563,13 @@ const CtaBlock = z.object({
   buttonHref: z.string().default("/contact"),
   buttonStyle: CtaButtonStyleEnum.default("pill"),
 });
-export const ContactFormStyleEnum = z.enum(["stacked", "split", "card", "minimal"]);
+export const ContactFormStyleEnum = z.enum([
+  "stacked",
+  "split",
+  "card",
+  "minimal",
+  "tora-contact",
+]);
 const ContactFormBlock = z.object({
   ...baseBlock,
   type: z.literal("contactForm"),
@@ -790,6 +829,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   TestimonialsBlock,
   TeamBlock,
   PricingBlock,
+  ShopBlock,
   CtaBlock,
   ContactFormBlock,
   SpacerBlock,
@@ -923,6 +963,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   testimonials: "Testimonials",
   team: "Team",
   pricing: "Price",
+  shop: "Shop",
   cta: "Call to action",
   contactForm: "Contact form",
   spacer: "Spacer",
