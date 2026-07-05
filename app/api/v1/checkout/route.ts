@@ -3,6 +3,14 @@ import { created, parseJson, problem } from "@/src/lib/http";
 import { isPaymentsEnabled } from "@/src/payments";
 import { createManualCheckoutOrder } from "@/src/db/queries/orders";
 import { resolveCartItems } from "@/src/db/queries/store";
+import { enqueueEmail } from "@/src/email/send";
+import {
+  manualOrderAdminNotification,
+  manualOrderCustomerConfirmation,
+} from "@/src/email/templates";
+import { getEnv } from "@/src/lib/env";
+import { getSiteSettings } from "@/src/db/queries/settings";
+import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +29,42 @@ const CheckoutSchema = z.object({
   }),
   items: z.array(CheckoutItemSchema).min(1).max(50),
 });
+
+function trimSlash(value: string) {
+  return value.replace(/\/+$/, "");
+}
+
+function buildConfirmation(opts: {
+  order: Awaited<ReturnType<typeof createManualCheckoutOrder>>;
+  summary: Awaited<ReturnType<typeof resolveCartItems>>;
+  customer: z.infer<typeof CheckoutSchema>["customer"];
+}): StoreOrderConfirmation {
+  const receiptUrl = `/cart/confirmation?order=${encodeURIComponent(
+    opts.order.orderId,
+  )}`;
+  return {
+    orderId: opts.order.orderId,
+    status: opts.order.status,
+    customerName: opts.customer.name?.trim() || null,
+    customerEmail: opts.customer.email.trim().toLowerCase(),
+    subtotalCents: opts.order.subtotalCents,
+    totalCents: opts.order.totalCents,
+    currency: opts.order.currency,
+    itemCount: opts.order.itemCount,
+    createdAt: opts.order.createdAt,
+    receiptUrl,
+    lines: opts.summary.lines.map((line) => ({
+      productId: line.product.id,
+      productSlug: line.product.slug,
+      productName: line.product.name,
+      sku: line.product.sku,
+      quantity: line.quantity,
+      unitPriceCents: line.unitPriceCents,
+      lineTotalCents: line.lineTotalCents,
+      selectedOptions: line.selectedOptions,
+    })),
+  };
+}
 
 // POST /api/v1/checkout — creates a pending manual-invoice order while the
 // PaymentProvider seam is stubbed. A real driver can replace the enabled branch
@@ -76,8 +120,33 @@ export async function POST(req: Request) {
   }
 
   const order = await createManualCheckoutOrder(summary, parsed.data.customer);
+  const env = getEnv();
+  const baseUrl = trimSlash(env.APP_BASE_URL);
+  const adminNotifyTo = env.CONTACT_NOTIFY_EMAIL?.trim() || env.EMAIL_FROM;
+  const confirmation = buildConfirmation({
+    order,
+    summary,
+    customer: parsed.data.customer,
+  });
+  const settings = await getSiteSettings();
+
+  await enqueueEmail(
+    manualOrderCustomerConfirmation({
+      to: confirmation.customerEmail,
+      order: confirmation,
+      siteName: settings.siteTitle,
+    }),
+  );
+  await enqueueEmail(
+    manualOrderAdminNotification({
+      to: adminNotifyTo,
+      order: confirmation,
+      adminUrl: `${baseUrl}/admin/store`,
+    }),
+  );
+
   return created({
-    data: order,
+    data: confirmation,
     message: "Order request received. A manual invoice can be sent for this order.",
   });
 }

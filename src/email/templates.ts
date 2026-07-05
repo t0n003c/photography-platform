@@ -1,10 +1,8 @@
 import type { EmailMessage } from "@/src/email/provider";
+import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
 
 function escape(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function layout(title: string, body: string): string {
@@ -13,6 +11,69 @@ function layout(title: string, body: string): string {
     <h2 style="margin:0 0 12px">${escape(title)}</h2>
     ${body}
   </div></body></html>`;
+}
+
+function formatMoney(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD",
+  }).format(cents / 100);
+}
+
+function optionText(
+  option: StoreOrderConfirmation["lines"][number]["selectedOptions"][number],
+  currency: string,
+) {
+  const delta =
+    option.priceDeltaCents === 0
+      ? ""
+      : ` (${option.priceDeltaCents > 0 ? "+" : "-"}${formatMoney(
+          Math.abs(option.priceDeltaCents),
+          currency,
+        )})`;
+  return `${option.optionName}: ${option.valueLabel}${delta}`;
+}
+
+function orderLinesHtml(order: StoreOrderConfirmation) {
+  return order.lines
+    .map((line) => {
+      const options = line.selectedOptions
+        .map((option) => `<li>${escape(optionText(option, order.currency))}</li>`)
+        .join("");
+      return `<tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e6e6e6">
+          <strong>${escape(line.productName)}</strong>
+          <div style="color:#666;font-size:13px">${escape(line.sku)}</div>
+          ${
+            options
+              ? `<ul style="color:#666;font-size:13px;margin:8px 0 0;padding-left:18px">${options}</ul>`
+              : ""
+          }
+        </td>
+        <td style="padding:12px 0;border-bottom:1px solid #e6e6e6;text-align:center">${line.quantity}</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e6e6e6;text-align:right">${escape(
+          formatMoney(line.lineTotalCents, order.currency),
+        )}</td>
+      </tr>`;
+    })
+    .join("");
+}
+
+function orderLinesText(order: StoreOrderConfirmation) {
+  return order.lines
+    .flatMap((line) => {
+      const head = `- ${line.quantity} x ${line.productName} (${line.sku}) = ${formatMoney(
+        line.lineTotalCents,
+        order.currency,
+      )}`;
+      return [
+        head,
+        ...line.selectedOptions.map(
+          (option) => `  ${optionText(option, order.currency)}`,
+        ),
+      ];
+    })
+    .join("\n");
 }
 
 // Admin notification for a new (non-spam) contact submission.
@@ -54,5 +115,89 @@ export function galleryInvite(opts: {
     subject: `Your gallery: ${opts.galleryTitle}`,
     html: layout("Your gallery is ready", body),
     text: `${greeting}\n\nYour gallery "${opts.galleryTitle}" is ready: ${opts.shareUrl}`,
+  };
+}
+
+export function manualOrderCustomerConfirmation(opts: {
+  to: string;
+  order: StoreOrderConfirmation;
+  siteName: string;
+}): EmailMessage {
+  const name = opts.order.customerName?.trim();
+  const greeting = name ? `Hi ${escape(name)},` : "Hi,";
+  const body = `
+    <p>${greeting}</p>
+    <p>We received your manual invoice request. The studio will review it and follow up with payment or fulfillment details.</p>
+    <p style="color:#666;font-size:13px">Order ${escape(opts.order.orderId)}</p>
+    <table style="width:100%;border-collapse:collapse;margin:18px 0">
+      <thead>
+        <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
+          <th align="left" style="padding-bottom:8px">Item</th>
+          <th align="center" style="padding-bottom:8px">Qty</th>
+          <th align="right" style="padding-bottom:8px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${orderLinesHtml(opts.order)}</tbody>
+    </table>
+    <p style="font-size:18px"><strong>Total: ${escape(
+      formatMoney(opts.order.totalCents, opts.order.currency),
+    )}</strong></p>`;
+  return {
+    to: opts.to,
+    subject: `Order request received: ${opts.order.orderId}`,
+    html: layout("Order request received", body),
+    text: `${name ? `Hi ${name},` : "Hi,"}
+
+We received your manual invoice request. The studio will review it and follow up with payment or fulfillment details.
+
+Order ${opts.order.orderId}
+
+${orderLinesText(opts.order)}
+
+Total: ${formatMoney(opts.order.totalCents, opts.order.currency)}
+
+${opts.siteName}`,
+  };
+}
+
+export function manualOrderAdminNotification(opts: {
+  to: string;
+  order: StoreOrderConfirmation;
+  adminUrl: string;
+}): EmailMessage {
+  const customer = opts.order.customerName
+    ? `${opts.order.customerName} <${opts.order.customerEmail}>`
+    : opts.order.customerEmail;
+  const body = `
+    <p><strong>${escape(customer)}</strong> submitted a manual invoice request.</p>
+    <p style="color:#666;font-size:13px">Order ${escape(opts.order.orderId)}</p>
+    <table style="width:100%;border-collapse:collapse;margin:18px 0">
+      <thead>
+        <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
+          <th align="left" style="padding-bottom:8px">Item</th>
+          <th align="center" style="padding-bottom:8px">Qty</th>
+          <th align="right" style="padding-bottom:8px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${orderLinesHtml(opts.order)}</tbody>
+    </table>
+    <p style="font-size:18px"><strong>Total: ${escape(
+      formatMoney(opts.order.totalCents, opts.order.currency),
+    )}</strong></p>
+    <p><a href="${escape(opts.adminUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Review in Store admin</a></p>`;
+  return {
+    to: opts.to,
+    subject: `New store order request: ${opts.order.orderId}`,
+    html: layout("New store order request", body),
+    text: `${customer} submitted a manual invoice request.
+
+Order ${opts.order.orderId}
+
+${orderLinesText(opts.order)}
+
+Total: ${formatMoney(opts.order.totalCents, opts.order.currency)}
+
+Review: ${opts.adminUrl}`,
+    replyTo: opts.order.customerEmail,
   };
 }

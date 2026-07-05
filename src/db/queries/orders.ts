@@ -24,6 +24,7 @@ export interface ManualCheckoutOrderDTO {
   totalCents: number;
   currency: string;
   itemCount: number;
+  createdAt: string;
 }
 
 export type OrderStatus = "draft" | "pending" | "paid" | "fulfilled" | "cancelled";
@@ -106,6 +107,7 @@ export async function createManualCheckoutOrder(
 ): Promise<ManualCheckoutOrderDTO> {
   const clientId = await createCheckoutClient(customer);
   const orderId = newId();
+  const createdAt = new Date();
 
   await db.transaction(async (tx) => {
     await tx.insert(orderTable).values({
@@ -118,6 +120,8 @@ export async function createManualCheckoutOrder(
       currency: summary.currency,
       paymentProvider: "manual",
       paymentRef: "Manual invoice requested",
+      createdAt,
+      updatedAt: createdAt,
     });
 
     await tx.insert(orderItem).values(
@@ -143,6 +147,7 @@ export async function createManualCheckoutOrder(
     totalCents: summary.totalCents,
     currency: summary.currency,
     itemCount: summary.lines.reduce((sum, line) => sum + line.quantity, 0),
+    createdAt: createdAt.toISOString(),
   };
 }
 

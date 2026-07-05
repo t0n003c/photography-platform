@@ -1170,6 +1170,13 @@ is gitignored):
   option chips under each order item, richer copied summaries with indented option rows,
   one-click next-step status actions in the order detail modal, and mobile order cards
   that avoid sideways table scanning for manual fulfillment.
+  Follow-up: Store checkout now redirects successful manual-invoice requests to
+  `/cart/confirmation?order=...`. The confirmation page reads the just-created order
+  summary from browser session storage instead of exposing a public raw-order lookup,
+  with a safe fallback when the summary is unavailable. Checkout responses now include
+  itemized lines/options and enqueue two existing email-queue messages: a customer
+  receipt-style confirmation and an admin new-order notification that links to
+  `/admin/store`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

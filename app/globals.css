@@ -1796,6 +1796,11 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   color: var(--shop-bg);
 }
 
+.tora-cart-action--ghost {
+  background: transparent;
+  color: var(--shop-accent);
+}
+
 .tora-shop-empty {
   border: 1px solid var(--shop-accent);
   color: var(--shop-muted);
@@ -2372,6 +2377,150 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   margin: 0;
 }
 
+.tora-order-confirmation {
+  border: 1px solid var(--shop-accent);
+  color: var(--shop-muted);
+  display: grid;
+  gap: 26px;
+  padding: 34px;
+}
+
+.tora-order-confirmation__hero {
+  align-items: center;
+  border-bottom: 1px solid var(--shop-subtle);
+  display: flex;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+.tora-order-confirmation__hero svg {
+  color: var(--shop-accent);
+  flex: 0 0 auto;
+}
+
+.tora-order-confirmation__hero p,
+.tora-order-confirmation__grid span,
+.tora-order-confirmation__items article > span {
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-order-confirmation__hero h2 {
+  color: var(--shop-text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.35;
+  margin: 6px 0 0;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+.tora-order-confirmation__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tora-order-confirmation__grid div {
+  border: 1px solid var(--shop-subtle);
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.tora-order-confirmation__grid strong {
+  color: var(--shop-text);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tora-order-confirmation__message {
+  background: var(--shop-panel);
+  padding: 24px;
+}
+
+.tora-order-confirmation__message h3,
+.tora-order-confirmation__items h3 {
+  color: var(--shop-text);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.35;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-order-confirmation__message p {
+  color: var(--shop-muted);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.65;
+  margin: 10px 0 0;
+}
+
+.tora-order-confirmation__items {
+  display: grid;
+  gap: 14px;
+}
+
+.tora-order-confirmation__items article {
+  align-items: start;
+  border: 1px solid var(--shop-subtle);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 18px;
+}
+
+.tora-order-confirmation__items p {
+  color: var(--shop-muted);
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  margin: 6px 0 0;
+  text-transform: uppercase;
+}
+
+.tora-order-confirmation__items ul {
+  color: var(--shop-muted);
+  display: grid;
+  font-size: 13px;
+  gap: 4px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.tora-order-confirmation__items strong {
+  color: var(--shop-muted);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.tora-order-confirmation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tora-order-confirmation__fallback {
+  color: var(--shop-accent);
+  display: block;
+  font-size: 13px;
+  letter-spacing: 1.6px;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 1100px) {
   .tora-shop-shell {
     grid-template-columns: 300px minmax(0, 1fr);
@@ -2547,9 +2696,42 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   .tora-cart-empty {
     padding: 28px 24px;
   }
+
+  .tora-order-confirmation {
+    padding: 24px;
+  }
+
+  .tora-order-confirmation__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tora-order-confirmation__items article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .tora-order-confirmation__items strong {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 576px) {
+  .tora-order-confirmation__hero {
+    align-items: flex-start;
+  }
+
+  .tora-order-confirmation__hero h2 {
+    font-size: 18px;
+  }
+
+  .tora-order-confirmation__grid,
+  .tora-order-confirmation__items article {
+    grid-template-columns: 1fr;
+  }
+
+  .tora-order-confirmation__actions .tora-cart-action {
+    width: 100%;
+  }
+
   .tora-contact-section {
     padding: 4.35rem 0 4.6rem;
   }

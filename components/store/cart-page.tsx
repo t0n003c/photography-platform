@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
@@ -13,19 +14,16 @@ import {
   writeStoredCart,
   type StoredCartItem,
 } from "@/src/lib/store-cart";
+import {
+  storeOrderConfirmationStorageKey,
+  type StoreOrderConfirmation,
+} from "@/src/lib/store-order-confirmation";
 
 interface CheckoutForm {
   name: string;
   email: string;
   phone: string;
   notes: string;
-}
-
-interface CheckoutResult {
-  orderId: string;
-  totalCents: number;
-  currency: string;
-  itemCount: number;
 }
 
 const emptySummary: CartSummaryDTO = {
@@ -55,13 +53,13 @@ async function readError(res: Response) {
 }
 
 export function StoreCartPage() {
+  const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [items, setItems] = useState<StoredCartItem[]>([]);
   const [summary, setSummary] = useState<CartSummaryDTO>(emptySummary);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [confirmation, setConfirmation] = useState<CheckoutResult | null>(null);
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
     email: "",
@@ -145,7 +143,6 @@ export function StoreCartPage() {
     }
     setSubmitting(true);
     setError(null);
-    setConfirmation(null);
     const checkoutItems = summary.lines.map((line) => ({
       productId: line.product.id,
       quantity: line.quantity,
@@ -166,9 +163,17 @@ export function StoreCartPage() {
         }),
       });
       if (!res.ok) throw new Error(await readError(res));
-      const body = (await res.json()) as { data: CheckoutResult };
-      setConfirmation(body.data);
+      const body = (await res.json()) as { data: StoreOrderConfirmation };
+      try {
+        sessionStorage.setItem(
+          storeOrderConfirmationStorageKey(body.data.orderId),
+          JSON.stringify(body.data),
+        );
+      } catch {
+        // The confirmation page still has a safe fallback if storage is unavailable.
+      }
       replaceCart([]);
+      router.push(body.data.receiptUrl);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not submit checkout request.",
@@ -194,20 +199,9 @@ export function StoreCartPage() {
           </div>
         </header>
 
-        {confirmation && (
-          <div className="tora-cart-success" role="status">
-            <p>Order request received.</p>
-            <strong>{confirmation.orderId}</strong>
-            <span>
-              {confirmation.itemCount} item{confirmation.itemCount === 1 ? "" : "s"} ·{" "}
-              {formatMoney(confirmation.totalCents, confirmation.currency)}
-            </span>
-          </div>
-        )}
-
         {!loaded ? (
           <div className="tora-cart-empty">Loading cart...</div>
-        ) : items.length === 0 && !confirmation ? (
+        ) : items.length === 0 ? (
           <div className="tora-cart-empty">
             <h2>Your cart is empty</h2>
             <p>Add prints from the shop, then submit the request here.</p>
