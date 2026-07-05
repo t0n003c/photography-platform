@@ -2,7 +2,7 @@
 
 This is the running decision log for the self-hosted photography platform.
 
-**How this log works.** Each ADR captures one significant decision and the reasoning behind it at the time it was made. ADRs are **append-only**: we never delete or rewrite an accepted ADR. When a decision changes, we add a **new** ADR that records the new choice and references the old one, and we edit the old ADR's **Status** to `Superseded by ADR-00NN` (leaving its body intact as history). This preserves *why* past choices were made so future maintainers don't relitigate settled trade-offs or repeat abandoned ones.
+**How this log works.** Each ADR captures one significant decision and the reasoning behind it at the time it was made. ADRs are **append-only**: we never delete or rewrite an accepted ADR. When a decision changes, we add a **new** ADR that records the new choice and references the old one, and we edit the old ADR's **Status** to `Superseded by ADR-00NN` (leaving its body intact as history). This preserves _why_ past choices were made so future maintainers don't relitigate settled trade-offs or repeat abandoned ones.
 
 **Statuses used:** `Proposed` → `Accepted` → (`Superseded by ADR-00NN` | `Deprecated`).
 
@@ -82,7 +82,7 @@ This is the running decision log for the self-hosted photography platform.
 - **Status:** Accepted — **Superseded by ADR-0024** for the storage-engine choice (SeaweedFS replaces MinIO; the `StorageProvider` abstraction and filesystem-alternate decision stand).
 - **Date:** 2026-06-14
 - **Context:** The platform is image-heavy; originals must be preserved and many derivatives served. We deploy on a NAS, which is itself a storage appliance. We want maximum portability and immediate cloud-S3 parity (presigned URLs, an identical S3 API to AWS/R2) so a potential move to off-site cloud is purely operational, while still preserving a raw-disk option.
-- **Decision:** Define a **`StorageProvider` interface** (unchanged). The **default driver is MinIO (S3-compatible)**, run as a **core (non-optional, non-profile-gated) service** in Docker Compose from day one. Provide the **NAS filesystem volume** driver as a **selectable alternate**. App code never touches `fs` or S3 directly — only the interface (put/get/delete/presign). *(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)*
+- **Decision:** Define a **`StorageProvider` interface** (unchanged). The **default driver is MinIO (S3-compatible)**, run as a **core (non-optional, non-profile-gated) service** in Docker Compose from day one. Provide the **NAS filesystem volume** driver as a **selectable alternate**. App code never touches `fs` or S3 directly — only the interface (put/get/delete/presign). _(This reflects the user's explicit choice of MinIO-first over filesystem-first on 2026-06-14.)_
 - **Consequences:**
   - Maximum portability and immediate cloud-S3 parity: presigned URLs and an S3 API identical to R2/AWS, so a later move off the NAS is operational, not a rewrite.
   - MinIO is a core always-on service to run, secure, and back up (its bucket becomes the media system of record and is backup-critical).
@@ -100,7 +100,7 @@ This is the running decision log for the self-hosted photography platform.
 - **Consequences:**
   - Heavy image jobs run off the request path and off the primary DB; the site stays responsive.
   - Robust retries/backoff/concurrency/scheduling out of the box.
-  - Adds no new dependency *category* — Valkey is already present.
+  - Adds no new dependency _category_ — Valkey is already present.
 - **Alternatives considered:** **pg-boss** and **Graphile Worker** (both Postgres-backed, removing a dependency, but they couple queue load to the primary DB — deliberately avoided for heavy image work; reasonable if we ever want to drop Valkey).
 
 ---
@@ -181,6 +181,10 @@ This is the running decision log for the self-hosted photography platform.
 - **Date:** 2026-06-14
 - **Context:** A light print store is in scope to be **architected** for invoicing/payments **later**, not built now. Introducing real payment processing prematurely adds PCI/compliance surface and maintenance before there's revenue to justify it.
 - **Decision:** Ship only a **`PaymentProvider` interface stub** plus **schema headroom** in PostgreSQL for an order/invoice model. **No money-processing code** is implemented now. When activated, **Stripe** is the planned first driver (API + webhooks fit a self-hosted app).
+- **2026-07 update:** Manual invoices and receipts are active. The Stripe foundation now
+  includes encrypted Settings → Payments fields plus invoice columns for future hosted
+  payment session/intent tracking, but public checkout still stays on manual invoice
+  requests until a separate hosted-checkout/webhook phase is approved.
 - **Consequences:**
   - Zero payment/PCI surface enters the system until a deliberate future decision.
   - The print store can grow into invoicing/checkout without rearchitecting — only a driver and UI are added.

@@ -1,4 +1,6 @@
 export type StoreShippingMode = "manual" | "free" | "flat";
+export type StorePaymentProvider = "manual" | "stripe";
+export type StorePaymentMode = "test" | "live";
 
 export interface StoreCheckoutSettings {
   notifyEmail: string | null;
@@ -9,6 +11,23 @@ export interface StoreCheckoutSettings {
   taxRateBps: number;
   shippingMode: StoreShippingMode;
   shippingFlatCents: number;
+}
+
+export interface StorePaymentSettings {
+  onlinePaymentsEnabled: boolean;
+  paymentProvider: StorePaymentProvider;
+  paymentMode: StorePaymentMode;
+  stripePublishableKey: string | null;
+  stripeSecretKeySet: boolean;
+  stripeWebhookSecretSet: boolean;
+  stripeStatementDescriptor: string | null;
+}
+
+export interface StorePaymentStatus {
+  activeCheckoutPath: "manual";
+  readyForHostedCheckout: boolean;
+  missing: string[];
+  label: string;
 }
 
 export interface StoreTotals {
@@ -32,6 +51,16 @@ export const STORE_CHECKOUT_DEFAULTS: StoreCheckoutSettings = {
   shippingFlatCents: 0,
 };
 
+export const STORE_PAYMENT_DEFAULTS: StorePaymentSettings = {
+  onlinePaymentsEnabled: false,
+  paymentProvider: "manual",
+  paymentMode: "test",
+  stripePublishableKey: null,
+  stripeSecretKeySet: false,
+  stripeWebhookSecretSet: false,
+  stripeStatementDescriptor: null,
+};
+
 export function normalizeTaxRateBps(value: unknown) {
   const parsed = Number(value ?? 0);
   if (!Number.isFinite(parsed)) return 0;
@@ -48,6 +77,18 @@ export function normalizeShippingMode(value: unknown): StoreShippingMode {
   return value === "free" || value === "flat" || value === "manual"
     ? value
     : STORE_CHECKOUT_DEFAULTS.shippingMode;
+}
+
+export function normalizePaymentProvider(value: unknown): StorePaymentProvider {
+  return value === "stripe" || value === "manual"
+    ? value
+    : STORE_PAYMENT_DEFAULTS.paymentProvider;
+}
+
+export function normalizePaymentMode(value: unknown): StorePaymentMode {
+  return value === "live" || value === "test"
+    ? value
+    : STORE_PAYMENT_DEFAULTS.paymentMode;
 }
 
 export function normalizeOptionalText(value: unknown) {
@@ -73,6 +114,54 @@ export function normalizeStoreCheckoutSettings(
     taxRateBps: normalizeTaxRateBps(input.taxRateBps),
     shippingMode: normalizeShippingMode(input.shippingMode),
     shippingFlatCents: normalizeMoneyCents(input.shippingFlatCents),
+  };
+}
+
+export function normalizeStorePaymentSettings(
+  input: Partial<StorePaymentSettings> = {},
+): StorePaymentSettings {
+  const paymentProvider = normalizePaymentProvider(input.paymentProvider);
+  const stripeStatementDescriptor = normalizeOptionalText(
+    input.stripeStatementDescriptor,
+  );
+
+  return {
+    onlinePaymentsEnabled:
+      paymentProvider === "stripe" ? Boolean(input.onlinePaymentsEnabled) : false,
+    paymentProvider,
+    paymentMode: normalizePaymentMode(input.paymentMode),
+    stripePublishableKey: normalizeOptionalText(input.stripePublishableKey),
+    stripeSecretKeySet: Boolean(input.stripeSecretKeySet),
+    stripeWebhookSecretSet: Boolean(input.stripeWebhookSecretSet),
+    stripeStatementDescriptor: stripeStatementDescriptor
+      ? stripeStatementDescriptor.slice(0, 22)
+      : null,
+  };
+}
+
+export function storePaymentStatus(settings: StorePaymentSettings): StorePaymentStatus {
+  const normalized = normalizeStorePaymentSettings(settings);
+  const missing: string[] = [];
+
+  if (normalized.paymentProvider !== "stripe") {
+    return {
+      activeCheckoutPath: "manual",
+      readyForHostedCheckout: false,
+      missing,
+      label: "Manual invoice checkout",
+    };
+  }
+
+  if (!normalized.onlinePaymentsEnabled) missing.push("online payment readiness");
+  if (!normalized.stripePublishableKey) missing.push("Stripe publishable key");
+  if (!normalized.stripeSecretKeySet) missing.push("Stripe secret key");
+
+  return {
+    activeCheckoutPath: "manual",
+    readyForHostedCheckout: missing.length === 0,
+    missing,
+    label:
+      missing.length === 0 ? "Stripe settings ready" : "Stripe settings incomplete",
   };
 }
 

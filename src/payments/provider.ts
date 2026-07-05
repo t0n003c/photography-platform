@@ -1,6 +1,9 @@
-// PaymentProvider seam — DEFERRED. The interface and call seams exist so
-// invoicing/checkout can be added later (Stripe likely) without reworking
-// the store. No real payment logic is built now.
+import type { StorePaymentMode, StorePaymentProvider } from "@/src/lib/store-settings";
+
+// PaymentProvider seam. The interface and call seams exist so hosted
+// invoicing/checkout can be added without reworking the store. The current
+// checkout flow remains manual invoices until a real driver is deliberately
+// wired to the cart/invoice routes.
 export interface CheckoutLineItem {
   description: string;
   amountCents: number;
@@ -22,4 +25,12 @@ export interface CheckoutSession {
 
 export interface PaymentProvider {
   createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession>;
+}
+
+export interface PaymentProviderReadiness {
+  activeCheckoutPath: "manual";
+  configuredProvider: StorePaymentProvider;
+  mode: StorePaymentMode;
+  hostedCheckoutReady: boolean;
+  missing: string[];
 }

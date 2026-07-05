@@ -11,16 +11,19 @@ the code wins — verify before asserting.
 > gotchas are [`docs/DEV-WORKFLOW.md`](docs/DEV-WORKFLOW.md).
 
 > ## FIRST, READ THIS: push/audit state
+>
 > The previously paused Claude-to-Codex backlog was pushed to GitHub on **2026-06-26** after
 > the owner explicitly approved it. The repository is now public at
 > `https://github.com/t0n003c/photography-platform`, so standard GitHub-hosted Actions minutes
 > for public-repo workflows should not count against the private-repo minute quota. Continue to
 > commit directly to `main`, but still **do not push unless the owner explicitly asks**. Check the
 > real local state any time with:
+>
 > ```bash
 > git rev-list --count origin/main..HEAD      # how many commits are unpushed
 > git log origin/main..HEAD --oneline         # what they are
 > ```
+>
 > See §12 and `AGENTS.md` rule 3.
 
 ---
@@ -35,8 +38,8 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
 2. **Private client galleries** — access-controlled pages where a client views/downloads
    their shoot, via real auth + expiring shareable links, favorites, download controls.
 3. **Light print store** — product management, public product browsing, browser-local
-   cart, and manual invoice order requests are underway. **Real payments remain stubbed
-   behind an interface** to be implemented later.
+   cart, manual invoice requests, and manual receipts are underway. Hosted payments have
+   a Stripe-ready settings/schema foundation but remain unwired from public checkout.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -54,9 +57,10 @@ product**, not a demo.
   portfolio/galleries, the **admin** CMS, and the **API** (route handlers under `app/api`).
 - **`worker`** — a separate Node process running a **BullMQ** consumer for heavy/async work
   (image derivative generation, EXIF normalize, email send, video render). Imports the
-  *same* `src/` domain modules as `web`; never serves HTTP (just a health port).
+  _same_ `src/` domain modules as `web`; never serves HTTP (just a health port).
 
 Both processes are **stateless**. Durable state lives in:
+
 - **PostgreSQL 16** — all relational data.
 - **Redis/Valkey** — sessions, rate-limit counters, app cache, and the BullMQ job queue.
 - **Object store** — originals + image derivatives. **SeaweedFS (S3-compatible) is the
@@ -80,22 +84,22 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 
 ## 3. Tech stack
 
-| Concern | Choice | Notes |
-|---|---|---|
-| Framework | **Next.js 15** App Router + React 19 + TypeScript | SSR/SSG/ISR, one app |
-| Styling/UI | **Tailwind CSS** + shadcn/ui primitives (`components/ui`) | dark mode via `next-themes` (system + manual, persisted) |
-| Database | **PostgreSQL 16** + **Drizzle ORM** (SQL-first) | schema in `src/db/schema`, committed SQL migrations |
-| Auth | **Better Auth** | password + TOTP 2FA + WebAuthn/passkeys; rate limit + lockout; passkeys are a *stronger* factor, admin-policy-gated |
-| Cache/queue | **Redis/Valkey** + **BullMQ** | sessions, rate limit, cache, jobs |
-| Image pipeline | **sharp** | AVIF/WebP responsive variants + LQIP, EXIF normalize, originals preserved |
-| Storage | `StorageProvider` interface | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client |
-| PWA | **Serwist** (`@serwist/next`) | offline shell, manifest, thumbnail caching |
-| Email | `EmailProvider` interface | **SMTP** (nodemailer) + **Resend** drivers |
-| Payments | `PaymentProvider` **stub** | Stripe likely driver; seams only, not implemented |
-| Animation | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement |
-| Video | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`) | gallery slideshow render |
-| Bot defense | **Cloudflare Turnstile** | contact form + auth |
-| Tests | **Vitest** (unit), **Playwright** (e2e), **Lighthouse CI** (`@lhci/cli`) | |
+| Concern        | Choice                                                                                           | Notes                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Framework      | **Next.js 15** App Router + React 19 + TypeScript                                                | SSR/SSG/ISR, one app                                                                                                |
+| Styling/UI     | **Tailwind CSS** + shadcn/ui primitives (`components/ui`)                                        | dark mode via `next-themes` (system + manual, persisted)                                                            |
+| Database       | **PostgreSQL 16** + **Drizzle ORM** (SQL-first)                                                  | schema in `src/db/schema`, committed SQL migrations                                                                 |
+| Auth           | **Better Auth**                                                                                  | password + TOTP 2FA + WebAuthn/passkeys; rate limit + lockout; passkeys are a _stronger_ factor, admin-policy-gated |
+| Cache/queue    | **Redis/Valkey** + **BullMQ**                                                                    | sessions, rate limit, cache, jobs                                                                                   |
+| Image pipeline | **sharp**                                                                                        | AVIF/WebP responsive variants + LQIP, EXIF normalize, originals preserved                                           |
+| Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
+| PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
+| Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
+| Payments       | Manual invoice checkout + `PaymentProvider` foundation                                           | Stripe settings/schema ready; hosted checkout not implemented                                                       |
+| Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
+| Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
+| Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
+| Tests          | **Vitest** (unit), **Playwright** (e2e), **Lighthouse CI** (`@lhci/cli`)                         |                                                                                                                     |
 
 Full rationale + alternatives considered: [`docs/TECH-STACK.md`](docs/TECH-STACK.md).
 
@@ -118,7 +122,7 @@ src/                     # framework-agnostic domain code (shared by web + worke
   image/                 # sharp pipeline: derivatives, lqip, exif
   queue/                 # BullMQ queues + typed job contracts + handlers
   email/                 # EmailProvider interface + smtp/resend drivers
-  payments/              # PaymentProvider STUB (Stripe later)
+  payments/              # PaymentProvider seam + Stripe readiness helpers
   layout-config/         # (legacy) typed layout descriptor — see §6 note
   lib/                   # cross-cutting: blocks.ts, render-config.ts, preview.ts, cache.ts, env, logging
 components/
@@ -139,26 +143,26 @@ remotion/ scripts/ tests/ public/
 
 ## 5. Important files
 
-| File | Why it matters |
-|---|---|
-| `docs/PROJECT-BRIEF.md` | The founding charter (verbatim). Source of intent/scope. |
-| `docs/DEV-WORKFLOW.md` | Conventions, open follow-ups, and **gotchas** (read before editing). |
-| `docs/DECISIONS.md` | ADR log (ADR-0024 storage, 0025–0028 CMS, etc.). |
-| `src/db/schema/app.ts` | Drizzle schema — single source of truth for tables. |
-| `src/lib/blocks.ts` | Page-builder block schemas (Zod) — the curated CMS blocks. |
-| `src/lib/render-config.ts` | `GridType` union + `resolveRenderConfig` (public page layout resolution + admin live-preview override). |
-| `src/lib/preview.ts` | `__pc` live-preview encode/decode (admin draft → public page). |
-| `components/gallery/gallery.tsx` | **Grid-type dispatcher** — maps `gridType` → renderer. Add new layouts here. |
-| `components/gallery/grids.tsx` | masonry / justified / uniform / carousel / filmstrip / mosaic / horizontal-lenis renderers. |
-| `components/blocks/carousel-3d-scroll.tsx` | On-scroll 3D carousel (Codrops port). The template for scroll-driven effects. |
-| `components/blocks/column-scroll.tsx` | "Alternative Scroll" (Codrops ColumnScroll port) — opposite-column parallax + content view. |
-| `components/webgl/smooth-scroll.tsx` | Global Lenis; exposes `window.__lenis` for components to drive page scroll. |
-| `components/webgl/feature.ts` | `prefersReducedMotion()` gate used by every enhancement. |
-| `app/api/v1/media/v/[id]/route.ts` | Serves photo bytes (public OR admin-session OR grant-token). |
-| `app/(admin)/admin/design/page.tsx` | Per-scope layout/theme editor (grid type, spacing, hero). |
-| `app/(admin)/admin/galleries/[id]/page.tsx` | Per-gallery editor incl. its **Gallery tab** grid-type select. |
-| `docker/compose.yaml` (+ overlays) | Service topology; `Dockerfile.web` / `Dockerfile.worker`. |
-| `.claude/skills/gsap-scroll-animations/SKILL.md` | Playbook for porting reference web animations (GSAP/Lenis gotchas). |
+| File                                             | Why it matters                                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `docs/PROJECT-BRIEF.md`                          | The founding charter (verbatim). Source of intent/scope.                                                |
+| `docs/DEV-WORKFLOW.md`                           | Conventions, open follow-ups, and **gotchas** (read before editing).                                    |
+| `docs/DECISIONS.md`                              | ADR log (ADR-0024 storage, 0025–0028 CMS, etc.).                                                        |
+| `src/db/schema/app.ts`                           | Drizzle schema — single source of truth for tables.                                                     |
+| `src/lib/blocks.ts`                              | Page-builder block schemas (Zod) — the curated CMS blocks.                                              |
+| `src/lib/render-config.ts`                       | `GridType` union + `resolveRenderConfig` (public page layout resolution + admin live-preview override). |
+| `src/lib/preview.ts`                             | `__pc` live-preview encode/decode (admin draft → public page).                                          |
+| `components/gallery/gallery.tsx`                 | **Grid-type dispatcher** — maps `gridType` → renderer. Add new layouts here.                            |
+| `components/gallery/grids.tsx`                   | masonry / justified / uniform / carousel / filmstrip / mosaic / horizontal-lenis renderers.             |
+| `components/blocks/carousel-3d-scroll.tsx`       | On-scroll 3D carousel (Codrops port). The template for scroll-driven effects.                           |
+| `components/blocks/column-scroll.tsx`            | "Alternative Scroll" (Codrops ColumnScroll port) — opposite-column parallax + content view.             |
+| `components/webgl/smooth-scroll.tsx`             | Global Lenis; exposes `window.__lenis` for components to drive page scroll.                             |
+| `components/webgl/feature.ts`                    | `prefersReducedMotion()` gate used by every enhancement.                                                |
+| `app/api/v1/media/v/[id]/route.ts`               | Serves photo bytes (public OR admin-session OR grant-token).                                            |
+| `app/(admin)/admin/design/page.tsx`              | Per-scope layout/theme editor (grid type, spacing, hero).                                               |
+| `app/(admin)/admin/galleries/[id]/page.tsx`      | Per-gallery editor incl. its **Gallery tab** grid-type select.                                          |
+| `docker/compose.yaml` (+ overlays)               | Service topology; `Dockerfile.web` / `Dockerfile.worker`.                                               |
+| `.claude/skills/gsap-scroll-animations/SKILL.md` | Playbook for porting reference web animations (GSAP/Lenis gotchas).                                     |
 
 ---
 
@@ -170,11 +174,11 @@ remotion/ scripts/ tests/ public/
   with `npm run db:migrate` (or `RUN_MIGRATIONS=true` on container start).
 - **Core tables** (in `app.ts`): `user`, `account`, `session`, `passkey`, `twoFactor`,
   `verification` (auth); `photo`, `photo_variant`, `photo_location` (media); `collection`
-  + `collection_photo` (categories), `location`, `folder` + `folder_photo`; `gallery`,
-  `gallery_photo`, `gallery_access_grant` (private galleries + expiring share links);
-  `client`; `favorite`, `download`; `layout`, `page_config`, `page`, `menu`, `menu_item`
-  (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments seam);
-  `site_settings`, `audit_log`, `contact_submission`.
+  - `collection_photo` (categories), `location`, `folder` + `folder_photo`; `gallery`,
+    `gallery_photo`, `gallery_access_grant` (private galleries + expiring share links);
+    `client`; `favorite`, `download`; `layout`, `page_config`, `page`, `menu`, `menu_item`
+    (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments seam);
+    `site_settings`, `audit_log`, `contact_submission`.
 - **`page_config`** is the per-surface layout instance: `scope` ∈
   `home|gallery|category|location|about|global`, plus `grid_type`, `spacing`, `theme`,
   `hero` (jsonb), `config` (jsonb), `is_default`. Public pages resolve their config via
@@ -184,7 +188,7 @@ remotion/ scripts/ tests/ public/
   extend the TS unions + the page-config API Zod enums. (See the "new grid type" pattern in
   AGENTS.md.)
 - **Layouts are data, not hardcoded JSX** — the admin writes a descriptor, the public site
-  renders it. NOTE: `src/layout-config/` is a *legacy* descriptor type not used for new
+  renders it. NOTE: `src/layout-config/` is a _legacy_ descriptor type not used for new
   scopes; `src/lib/render-config.ts` is the live source of truth for public rendering.
 - Full schema + indexing strategy: [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md).
 
@@ -253,7 +257,9 @@ is gitignored):
   `STORAGE_FS_PATH`.
 - **Email:** `EMAIL_DRIVER` (`smtp`|`resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`,
   `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` (SECRET), `RESEND_API_KEY` (SECRET).
-- **Payments (deferred):** `PAYMENTS_DRIVER`, `STRIPE_SECRET_KEY` (SECRET).
+- **Payments (hosted checkout deferred):** `PAYMENTS_DRIVER`, `STRIPE_PUBLISHABLE_KEY`,
+  `STRIPE_SECRET_KEY` (SECRET), `STRIPE_WEBHOOK_SECRET` (SECRET). Stripe keys can also be
+  stored encrypted through Settings → Payments.
 - **Integrations:** `IG_ACCESS_TOKEN` (SECRET, Instagram), `TURNSTILE_SITE_KEY`,
   `TURNSTILE_SECRET_KEY` (SECRET — NAS needs real Turnstile keys).
 - **Video:** `VIDEO_RENDER_ENABLED`, `INSTALL_REMOTION_DEPS`.
@@ -264,7 +270,7 @@ is gitignored):
 ## 10. Bugs fixed and how
 
 - **Library photos "extremely blurry"** (commit f841729): freshly uploaded photos rendered
-  only their 16×16 LQIP. Cause: `media/v/[id]` only served bytes for *public* photos or with a
+  only their 16×16 LQIP. Cause: `media/v/[id]` only served bytes for _public_ photos or with a
   grant token; a new Library photo has neither, so every `<img>` 404'd → `<picture>` fell back
   to the LQIP. Fix: **admin-session bypass** — if not public and a session exists, serve
   private/no-store; else require grant.
@@ -276,20 +282,20 @@ is gitignored):
   synchronously.**
 - **WebGL hero rendered darker than the `<img>`** (commit 6252e70): a custom `ShaderMaterial`
   image texture tagged `THREE.SRGBColorSpace` is uploaded `SRGB8_ALPHA8` and hardware-decoded
-  sRGB→linear; three only injects the re-encode into *built-in* shaders, not custom ones. Fix:
+  sRGB→linear; three only injects the re-encode into _built-in_ shaders, not custom ones. Fix:
   tag passthrough image textures `THREE.LinearSRGBColorSpace`. Also: `flipY=true` inverts the
   texture V axis, so feed `1 - focalY` to the focal-point uniform (commit c70dd93).
 - **3D-carousel return not front-facing / visible snap:** the scrub maps scroll→rotation
-  through the tween's `sine.inOut` ease; a *linear* inverse drifts ~¼-step. Fix: invert the
+  through the tween's `sine.inOut` ease; a _linear_ inverse drifts ~¼-step. Fix: invert the
   ease (`p = acos(1−2e)/π`) using the trigger's real start/end; match the wobble channel on
-  the scrub hand-off so the tilt doesn't snap; drive the scroll *through Lenis*.
+  the scrub hand-off so the tilt doesn't snap; drive the scroll _through Lenis_.
 - **Preview "sometimes shows nothing":** hidden with `autoAlpha` (sets `visibility:hidden`) but
   revealed with plain `opacity` → stayed `visibility:hidden`. Fix: reveal with `autoAlpha` too.
 - **Page left scroll-locked after a layout overlay:** `lenis.stop()` on open with no
   `lenis.start()` on unmount. Fix: restart Lenis in the cleanup.
 - **Demo page silently reverting** to `cinematic`/`masonry`: the chosen style was only set in
   **Redis**; a `FLUSHALL` reverts it to the Postgres value. Fix: persist with SQL
-  (`jsonb_set` on `page.blocks` or `UPDATE page_config`), *then* flush.
+  (`jsonb_set` on `page.blocks` or `UPDATE page_config`), _then_ flush.
 - **NAS seaweedfs-init failing:** `:latest` auto-updated to a non-root image that couldn't read
   root-owned `s3.json`. Fix: pin `chrislusf/seaweedfs:4.34` + `user:"0:0"`; on Synology, fix DSM
   ACLs (`chmod 755 seaweedfs` + `644 s3.json`).
@@ -451,7 +457,7 @@ is gitignored):
   the image trail layer. The stage background is a separate lower layer; the title and trail images
   sit in a transparent isolated layer so Demo 1's `difference` title stays white on plain background
   and only changes where it crosses trail photos. The old default `imgTrailBackgroundColor:
-  "#efece5"` should be treated as "no custom background selected" so Demo 2-6 can use their own
+"#efece5"` should be treated as "no custom background selected" so Demo 2-6 can use their own
   reference backgrounds.
   Live-preview iframes pass `__previewFrame=1`;
   middleware converts that to `x-preview-frame`, and the root `ThemeProvider` uses
@@ -465,7 +471,8 @@ is gitignored):
 - **GHCR packages:** the public image manifests for `photography-platform-web:latest` and
   `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
   fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
-- **Payments:** still a stub — `PaymentProvider` interface + seams only; implement when desired.
+- **Payments:** manual invoice checkout/receipts are active. Stripe provider settings and
+  future invoice payment tracking fields exist, but hosted checkout/webhooks are not wired yet.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -498,8 +505,8 @@ is gitignored):
 
 - **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
   `main` still builds/publishes images and runs the full CI/Lighthouse stack.
-- **Implement payments** when needed via the existing `PaymentProvider` stub (Stripe driver);
-  the seams (`invoice`, `order` tables, checkout route) already exist.
+- **Implement hosted payments** when needed via the existing `PaymentProvider` seam (Stripe
+  likely first driver); provider settings and invoice session/intent fields already exist.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
@@ -1206,6 +1213,15 @@ is gitignored):
   `/admin/store` order details can open or copy the current invoice/receipt link via
   `GET /api/v1/admin/orders/[id]/invoice`, which returns a regenerated signed public
   link for the existing invoice.
+  Follow-up: Store payments now have a provider-foundation slice without turning on
+  hosted checkout. Migration `0018_amused_romulus.sql` adds Settings → Payments fields
+  (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,
+  Stripe publishable key, encrypted Stripe secret/webhook secrets, and statement
+  descriptor) plus future invoice fields for provider/status/session/intent/payment URL.
+  `/api/v1/admin/settings` returns sanitized Stripe readiness booleans only; non-empty
+  secret inputs replace encrypted values and `null` clears them. `src/payments` now exposes
+  a readiness helper, while `/api/v1/checkout` still uses the existing manual invoice path
+  until hosted Stripe checkout/webhooks are approved.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
   and `drizzle.__drizzle_migrations` hashes were verified for `0015`, `0016`, and
@@ -1464,7 +1480,7 @@ is gitignored):
   `src/layout-config/` legacy descriptor when convenient.
 - **Set the production `SETTINGS_ENCRYPTION_KEY`** before storing real client/SMTP secrets.
 - **Cross-agent memory:** the git-tracked Markdown here is the portable source of truth. A
-  self-hosted semantic-memory service (FastAPI + SQLite + Qdrant over MCP) is an *optional*
+  self-hosted semantic-memory service (FastAPI + SQLite + Qdrant over MCP) is an _optional_
   accelerator only — design + guardrails (index only docs, never secrets; rebuildable cache)
   in [`docs/AI-MEMORY-SERVICE.md`](docs/AI-MEMORY-SERVICE.md). Don't make a local DB the truth.
 - **New agent? Run `./scripts/agent-bootstrap.sh`** for instant repo + stack orientation.

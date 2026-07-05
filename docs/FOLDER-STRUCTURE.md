@@ -40,7 +40,7 @@ photography-platform/
 │   │   ├── contact/              # Contact form submission + spam check
 │   │   ├── products/             # Public product browse/detail API
 │   │   ├── cart/                 # Resolve browser cart lines against current product pricing
-│   │   ├── checkout/             # Manual invoice order request while payments are stubbed
+│   │   ├── checkout/             # Manual invoice order request while hosted payments are deferred
 │   │   └── admin/orders/         # Admin recent manual order requests
 │   ├── layout.tsx                # Root layout (theme provider, fonts, PWA shell)
 │   ├── manifest.ts               # PWA web app manifest
@@ -66,8 +66,8 @@ photography-platform/
 │   ├── email/                    # EmailProvider abstraction
 │   │   ├── provider.ts          # EmailProvider interface
 │   │   └── drivers/            # smtp.ts + resend.ts
-│   ├── payments/                 # PaymentProvider STUB (Stripe likely later)
-│   │   ├── provider.ts          # PaymentProvider interface — seams only
+│   ├── payments/                 # PaymentProvider seam + Stripe readiness helpers
+│   │   ├── provider.ts          # PaymentProvider interface + readiness types
 │   │   └── drivers/            # stripe.ts (stub, not implemented)
 │   ├── layout-config/            # Legacy descriptor type; new work uses src/lib/render-config.ts
 │   ├── validation/               # Shared Zod schemas (client/server/worker)
@@ -140,9 +140,9 @@ photography-platform/
 - **Drivers** (`src/storage/drivers`, `src/email/drivers`, `src/payments/drivers`) sit
   behind their respective `provider.ts` interfaces. **SeaweedFS through the S3-compatible
   driver is the default storage path**; switching to the filesystem alternate, or SMTP→Resend, is a config/driver swap
-  with no call-site changes. The payments driver is a **stub**: the interface and seams
-  exist. Current checkout creates pending manual-invoice orders while hosted payment
-  capture remains deliberately deferred.
+  with no call-site changes. The payments seam has Stripe readiness settings and future
+  invoice tracking fields; current checkout creates pending manual-invoice orders while
+  hosted payment capture remains deliberately deferred.
 
 - **`app/` is routing only.** Business logic lives in `src/`; route handlers and Server
   Components call into `src/` modules. This keeps the worker able to reuse the exact

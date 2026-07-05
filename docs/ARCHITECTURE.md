@@ -19,7 +19,7 @@ The system is intentionally **two long-lived processes that share one codebase**
      and the deferred payment seams).
 2. **`worker`** — a separate Node process running a **BullMQ** consumer that performs
    all heavy/async work (image derivative generation, EXIF normalization, email send,
-   future invoicing jobs). It imports the *same* domain modules as `web` (DB schema,
+   future invoicing jobs). It imports the _same_ domain modules as `web` (DB schema,
    storage drivers, image pipeline, email drivers) but never serves HTTP.
 
 Both processes are **stateless**; all durable state lives in **PostgreSQL 16**
@@ -34,18 +34,18 @@ edge CDN for cacheable HTML/ISR pages and image bytes.
 
 ### Locked stack at a glance
 
-| Concern | Decision |
-|---|---|
-| Framework | Next.js 15 App Router + React + TypeScript |
-| Styling/UI | Tailwind CSS + shadcn/ui; dark mode via `next-themes` |
-| Database | PostgreSQL 16, Drizzle ORM (SQL-first) |
-| Auth | Better Auth — password + TOTP 2FA + WebAuthn/passkeys, built-in rate limit + lockout |
-| Cache/queue | Redis/Valkey (sessions, rate limit, cache) + BullMQ jobs |
-| Image pipeline | `sharp` → AVIF/WebP derivatives + LQIP, EXIF normalize, preserve originals |
-| Storage | `StorageProvider` abstraction; **SeaweedFS (S3) core/default**, filesystem driver alternate (ADR-0024) |
-| PWA | Serwist (offline shell, manifest, thumbnail caching) |
-| Email | `EmailProvider` interface — SMTP + Resend drivers |
-| Payments | `PaymentProvider` **stub only** (Stripe likely driver); build seams, not the feature |
+| Concern        | Decision                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Framework      | Next.js 15 App Router + React + TypeScript                                                                                    |
+| Styling/UI     | Tailwind CSS + shadcn/ui; dark mode via `next-themes`                                                                         |
+| Database       | PostgreSQL 16, Drizzle ORM (SQL-first)                                                                                        |
+| Auth           | Better Auth — password + TOTP 2FA + WebAuthn/passkeys, built-in rate limit + lockout                                          |
+| Cache/queue    | Redis/Valkey (sessions, rate limit, cache) + BullMQ jobs                                                                      |
+| Image pipeline | `sharp` → AVIF/WebP derivatives + LQIP, EXIF normalize, preserve originals                                                    |
+| Storage        | `StorageProvider` abstraction; **SeaweedFS (S3) core/default**, filesystem driver alternate (ADR-0024)                        |
+| PWA            | Serwist (offline shell, manifest, thumbnail caching)                                                                          |
+| Email          | `EmailProvider` interface — SMTP + Resend drivers                                                                             |
+| Payments       | Manual invoice checkout active; `PaymentProvider` has Stripe-ready settings/schema foundation, hosted checkout still deferred |
 
 ## 2. Component Diagram
 
@@ -81,7 +81,7 @@ flowchart TB
 
     subgraph external["External providers"]
         EMAIL["Email provider<br/>(SMTP / Resend)"]
-        PAY["Payment provider<br/>(Stripe) — STUB / DEFERRED"]
+        PAY["Payment provider<br/>(Stripe) — FOUNDATION / DEFERRED"]
     end
 
     B <--> CF

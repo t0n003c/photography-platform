@@ -56,15 +56,15 @@ flowchart TD
 
 Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod overlay: log rotation, resource limits, optional tunnel) and `docker/compose.dev.yaml` (dev overlay: publishes `db`/`redis` to the host for host-run tooling).
 
-| Service | Image / Build | Purpose | Ports | Volumes | Healthcheck | Restart |
-| --- | --- | --- | --- | --- | --- | --- |
-| `web` | build `docker/Dockerfile.web` (Next.js standalone, node:22) | Public site + admin/CMS + API | `${WEB_PORT:-3000}:3000` (for NPM) | none (stateless) | `GET /api/health` (node fetch) | `unless-stopped` |
-| `worker` | build `docker/Dockerfile.worker` (tsx, node:22) | BullMQ image + email queues; **runs DB migrations on boot** | none (internal `:9091` health only) | none (stateless) | `GET :9091/health` | `unless-stopped` |
-| `db` | `postgres:16-alpine` | System of record (users, galleries, grants, media metadata) | internal only | `pgdata` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
-| `redis` | `redis:7-alpine` (`--appendonly yes`) | BullMQ broker + sessions + rate limiting | internal only | `redisdata` | `redis-cli ping` | `unless-stopped` |
-| `seaweedfs` | `chrislusf/seaweedfs:4.34` (pinned; `user: "0:0"`) | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | **none published** (internal network only; debug ports commented out in `docker/compose.yaml`) | `seaweeddata` | `GET :9333/cluster/status` (master) | `unless-stopped` |
-| `seaweedfs-init` | `minio/mc:RELEASE.2025-08-13T08-35-41Z` (pinned) | Retries until the S3 gateway is up, creates the `${S3_BUCKET}` bucket, then idles as a healthy sidecar | — | none | `test -f /tmp/ready` | `unless-stopped` |
-| `cloudflared` | `cloudflare/cloudflared:latest` | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile) | none (egress-only) | none | — | `unless-stopped` |
+| Service          | Image / Build                                               | Purpose                                                                                                                         | Ports                                                                                          | Volumes          | Healthcheck                                    | Restart          |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------- | ---------------- |
+| `web`            | build `docker/Dockerfile.web` (Next.js standalone, node:22) | Public site + admin/CMS + API                                                                                                   | `${WEB_PORT:-3000}:3000` (for NPM)                                                             | none (stateless) | `GET /api/health` (node fetch)                 | `unless-stopped` |
+| `worker`         | build `docker/Dockerfile.worker` (tsx, node:22)             | BullMQ image + email queues; **runs DB migrations on boot**                                                                     | none (internal `:9091` health only)                                                            | none (stateless) | `GET :9091/health`                             | `unless-stopped` |
+| `db`             | `postgres:16-alpine`                                        | System of record (users, galleries, grants, media metadata)                                                                     | internal only                                                                                  | `pgdata`         | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | `unless-stopped` |
+| `redis`          | `redis:7-alpine` (`--appendonly yes`)                       | BullMQ broker + sessions + rate limiting                                                                                        | internal only                                                                                  | `redisdata`      | `redis-cli ping`                               | `unless-stopped` |
+| `seaweedfs`      | `chrislusf/seaweedfs:4.34` (pinned; `user: "0:0"`)          | Default S3 media store (originals + derivatives); all-in-one `server -s3` (master + volume + filer + S3 gateway in one process) | **none published** (internal network only; debug ports commented out in `docker/compose.yaml`) | `seaweeddata`    | `GET :9333/cluster/status` (master)            | `unless-stopped` |
+| `seaweedfs-init` | `minio/mc:RELEASE.2025-08-13T08-35-41Z` (pinned)            | Retries until the S3 gateway is up, creates the `${S3_BUCKET}` bucket, then idles as a healthy sidecar                          | —                                                                                              | none             | `test -f /tmp/ready`                           | `unless-stopped` |
+| `cloudflared`    | `cloudflare/cloudflared:latest`                             | **Optional** Cloudflare Tunnel (prod overlay, `tunnel` profile)                                                                 | none (egress-only)                                                                             | none             | —                                              | `unless-stopped` |
 
 **Notes:**
 
@@ -83,11 +83,11 @@ Defined in `docker/compose.yaml` (base), with `docker/compose.prod.yaml` (prod o
 
 ## 3. Volumes & Persistence
 
-| Volume | Backs | NAS mapping (example) | Tier |
-| --- | --- | --- | --- |
-| `pgdata` | Postgres 16 data directory | `/volume1/docker/photo/pg` | **Critical** — system of record |
-| `seaweeddata` | SeaweedFS objects — **originals + derivatives** | `/volume1/photos/seaweedfs` | **Critical (originals)**; derivatives regenerable |
-| `redisdata` | Redis appendonly (AOF) file | `/volume1/docker/photo/redis` | Important — protects in-flight queue jobs |
+| Volume        | Backs                                           | NAS mapping (example)         | Tier                                              |
+| ------------- | ----------------------------------------------- | ----------------------------- | ------------------------------------------------- |
+| `pgdata`      | Postgres 16 data directory                      | `/volume1/docker/photo/pg`    | **Critical** — system of record                   |
+| `seaweeddata` | SeaweedFS objects — **originals + derivatives** | `/volume1/photos/seaweedfs`   | **Critical (originals)**; derivatives regenerable |
+| `redisdata`   | Redis appendonly (AOF) file                     | `/volume1/docker/photo/redis` | Important — protects in-flight queue jobs         |
 
 - **`pgdata`** — must persist; never a tmpfs/throwaway volume.
 - **`seaweeddata`** — the irreplaceable asset. Holds source **originals** (cannot be recreated) and **derivatives** (thumbnails/resized/LQIP, regenerable by re-running the sharp pipeline). Map this to durable NAS storage.
@@ -114,7 +114,10 @@ cp .env.example .env
 - **Settings encryption** — `SETTINGS_ENCRYPTION_KEY` (64 hex chars / 32 bytes; `openssl rand -hex 32`). Encrypts editable secrets stored in the DB by the **Settings** tab (the SMTP password / Resend key). **Optional** — when unset, a key is derived from `BETTER_AUTH_SECRET` so dev boots; set a dedicated value in production. Rotating it invalidates stored secrets (re-enter them in the UI).
 - **Storage (S3 / SeaweedFS)** — `STORAGE_DRIVER` (`minio` default — the generic S3 driver name, now pointed at SeaweedFS; `filesystem` alternate), `S3_ENDPOINT` (`http://seaweedfs:8333`), `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE=true`, and `STORAGE_FS_PATH` (filesystem driver only). **There are no `MINIO_ROOT_*` vars** — SeaweedFS reads its identities from `docker/seaweedfs/s3.json`, and `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` **must match** the keys in that file.
 - **Email** — `EMAIL_DRIVER` (`log` default, `smtp`, `resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`, `RESEND_API_KEY`. These are the **fallback**; the **Settings → Email** tab overrides them at runtime (SMTP/Resend config in `site_settings`, secret encrypted). "Send test email" verifies the live config.
-- **Payments** — `PAYMENTS_DRIVER` (`stub`, deferred), `STRIPE_SECRET_KEY`.
+- **Payments** — `PAYMENTS_DRIVER` (`stub` until hosted checkout is deliberately wired),
+  `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Stripe keys can
+  also be managed from **Settings → Payments**, where secret values are encrypted in
+  `site_settings` by `SETTINGS_ENCRYPTION_KEY`; env values are optional fallbacks.
 - **Worker** — `WORKER_HEALTH_PORT` (default `9091`), `RUN_MIGRATIONS` (default `true`; set `false` to run migrations out-of-band).
 - **Tunnel** — `TUNNEL_TOKEN` (only when using the `tunnel` profile; critical secret).
 - **Seed** — `SEED_OWNER_EMAIL`, `SEED_OWNER_PASSWORD`.
@@ -183,14 +186,15 @@ build (no Chromium); for Remotion slideshow video, build the worker locally with
 
 **Synology Container Manager (single-file):** the Projects UI takes one compose
 file, not `-f` overlays. Use the pre-merged **`docker/compose.nas.yaml`** (= base
-+ prod + ghcr, pull-based). In the project folder place `compose.nas.yaml`, your
-filled **`.env`**, and **`seaweedfs/s3.json`** (copied from `docker/seaweedfs/`,
-keys matching `.env`). **Then fix the file perms** — `chmod 755 seaweedfs && chmod
+
+- prod + ghcr, pull-based). In the project folder place `compose.nas.yaml`, your
+  filled **`.env`**, and **`seaweedfs/s3.json`** (copied from `docker/seaweedfs/`,
+  keys matching `.env`). **Then fix the file perms** — `chmod 755 seaweedfs && chmod
 644 seaweedfs/s3.json` — or seaweedfs crash-loops on "permission denied" (DSM
-adds a restrictive ACL the container's root can't read). Create the Project
-pointing at that folder (or paste the file's contents into the editor), and it
-pulls + starts — no build. Seed the owner once:
-`docker compose -f compose.nas.yaml run --rm worker npm run db:seed`.
+  adds a restrictive ACL the container's root can't read). Create the Project
+  pointing at that folder (or paste the file's contents into the editor), and it
+  pulls + starts — no build. Seed the owner once:
+  `docker compose -f compose.nas.yaml run --rm worker npm run db:seed`.
 
 **Updating later (Dockge / Container Manager):** push to `main` → CI auto-builds
 and publishes fresh `web`/`worker` images to GHCR (~6 min; wait for the green
@@ -311,23 +315,23 @@ docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .en
 
 Set an alias to keep commands short: `alias dc='docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env'`
 
-| Task | Command |
-| --- | --- |
-| Start full stack | `dc up -d` (add `--build` after a code change; `--profile tunnel` for in-compose cloudflared) |
-| Stop (data persists) | `dc down` |
-| Restart one service | `dc restart web` / `dc restart worker` |
-| Service status / health | `dc ps` |
-| Logs (follow) | `dc logs -f web` · `dc logs -f worker` · `dc logs -f` |
-| Web health | `curl -fsS http://localhost:${WEB_PORT:-3000}/api/health` or `https://photos.example.com/api/health` |
-| Worker health | `dc exec worker node -e "fetch('http://localhost:9091/health').then(r=>r.text()).then(console.log)"` |
-| Run migrations manually | set `RUN_MIGRATIONS=false`, then `dc run --rm worker npm run db:migrate` (drizzle-kit) |
-| Seed owner + taxonomy | `dc run --rm worker npm run db:seed` (idempotent) |
-| psql shell | `dc exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
-| Inspect queues | `dc exec redis redis-cli` (BullMQ keys) |
-| Storage usage | Admin **Dashboard → Storage** card (derived from the DB; no SeaweedFS access needed) |
+| Task                           | Command                                                                                                                                                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Start full stack               | `dc up -d` (add `--build` after a code change; `--profile tunnel` for in-compose cloudflared)                                                                                                                                                     |
+| Stop (data persists)           | `dc down`                                                                                                                                                                                                                                         |
+| Restart one service            | `dc restart web` / `dc restart worker`                                                                                                                                                                                                            |
+| Service status / health        | `dc ps`                                                                                                                                                                                                                                           |
+| Logs (follow)                  | `dc logs -f web` · `dc logs -f worker` · `dc logs -f`                                                                                                                                                                                             |
+| Web health                     | `curl -fsS http://localhost:${WEB_PORT:-3000}/api/health` or `https://photos.example.com/api/health`                                                                                                                                              |
+| Worker health                  | `dc exec worker node -e "fetch('http://localhost:9091/health').then(r=>r.text()).then(console.log)"`                                                                                                                                              |
+| Run migrations manually        | set `RUN_MIGRATIONS=false`, then `dc run --rm worker npm run db:migrate` (drizzle-kit)                                                                                                                                                            |
+| Seed owner + taxonomy          | `dc run --rm worker npm run db:seed` (idempotent)                                                                                                                                                                                                 |
+| psql shell                     | `dc exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`                                                                                                                                                                                           |
+| Inspect queues                 | `dc exec redis redis-cli` (BullMQ keys)                                                                                                                                                                                                           |
+| Storage usage                  | Admin **Dashboard → Storage** card (derived from the DB; no SeaweedFS access needed)                                                                                                                                                              |
 | SeaweedFS file browser (debug) | uncomment the `ports:` block on the `seaweedfs` service in `docker/compose.yaml`, `dc up -d seaweedfs`, then browse `http://<nas-ip>:8888` (filer UI; master UI at `:9333`). Credentials live in `docker/seaweedfs/s3.json`. Re-comment when done |
-| Backup | `./scripts/backup.sh` |
-| Restore | `./scripts/restore.sh <pg.sql.gz> <media.tar.gz>` |
+| Backup                         | `./scripts/backup.sh`                                                                                                                                                                                                                             |
+| Restore                        | `./scripts/restore.sh <pg.sql.gz> <media.tar.gz>`                                                                                                                                                                                                 |
 
 **Where data lives:** `pgdata` (Postgres), `redisdata` (Redis AOF), `seaweeddata` (SeaweedFS objects — originals + derivatives). Config in `.env`. NPM proxy host + Cloudflare Tunnel hostname are external.
 

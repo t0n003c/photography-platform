@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   calculateStoreTotals,
   normalizeStoreCheckoutSettings,
+  normalizeStorePaymentSettings,
+  storePaymentStatus,
 } from "@/src/lib/store-settings";
 
 describe("store checkout settings", () => {
@@ -30,6 +32,55 @@ describe("store checkout settings", () => {
       taxCents: 0,
       shippingCents: 0,
       totalCents: 0,
+    });
+  });
+
+  it("keeps hosted payments off for manual checkout", () => {
+    const settings = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "manual",
+      stripePublishableKey: "pk_test_demo",
+      stripeSecretKeySet: true,
+    });
+    expect(settings.onlinePaymentsEnabled).toBe(false);
+    expect(storePaymentStatus(settings)).toMatchObject({
+      activeCheckoutPath: "manual",
+      readyForHostedCheckout: false,
+      label: "Manual invoice checkout",
+    });
+  });
+
+  it("reports missing Stripe readiness fields without exposing secret values", () => {
+    const settings = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "stripe",
+      stripePublishableKey: "pk_test_demo",
+      stripeSecretKeySet: false,
+      stripeWebhookSecretSet: true,
+    });
+    expect(storePaymentStatus(settings)).toMatchObject({
+      activeCheckoutPath: "manual",
+      readyForHostedCheckout: false,
+      missing: ["Stripe secret key"],
+      label: "Stripe settings incomplete",
+    });
+  });
+
+  it("marks Stripe ready when readiness and required keys are present", () => {
+    const settings = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "stripe",
+      paymentMode: "live",
+      stripePublishableKey: "pk_live_demo",
+      stripeSecretKeySet: true,
+      stripeWebhookSecretSet: false,
+      stripeStatementDescriptor: "A very long studio statement descriptor",
+    });
+    expect(settings.stripeStatementDescriptor).toHaveLength(22);
+    expect(storePaymentStatus(settings)).toMatchObject({
+      activeCheckoutPath: "manual",
+      readyForHostedCheckout: true,
+      label: "Stripe settings ready",
     });
   });
 });

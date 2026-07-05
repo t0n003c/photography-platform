@@ -2,11 +2,15 @@ import { eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { siteSettings } from "@/src/db/schema";
 import { cached, invalidate } from "@/src/lib/cache";
+import { getEnv } from "@/src/lib/env";
 import { decryptSecret } from "@/src/lib/secrets";
 import {
   normalizeStoreCheckoutSettings,
+  normalizeStorePaymentSettings,
   STORE_CHECKOUT_DEFAULTS,
+  STORE_PAYMENT_DEFAULTS,
   type StoreCheckoutSettings,
+  type StorePaymentSettings,
 } from "@/src/lib/store-settings";
 
 export const SITE_SETTINGS_ID = "site";
@@ -25,6 +29,7 @@ export const SETTINGS_DEFAULTS = {
   iconStorageKey: null as string | null,
   logoStorageKey: null as string | null,
   storeCheckout: STORE_CHECKOUT_DEFAULTS,
+  storePayment: STORE_PAYMENT_DEFAULTS,
 };
 
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
@@ -138,6 +143,67 @@ export async function getStoreCheckoutSettings(): Promise<StoreCheckoutSettings>
     shippingFlatCents:
       row?.storeShippingFlatCents ?? SETTINGS_DEFAULTS.storeCheckout.shippingFlatCents,
   });
+}
+
+export async function getStorePaymentSettings(): Promise<StorePaymentSettings> {
+  const row = await getSiteSettingsRow();
+  const env = getEnv();
+  return normalizeStorePaymentSettings({
+    onlinePaymentsEnabled:
+      row?.storeOnlinePaymentsEnabled ??
+      SETTINGS_DEFAULTS.storePayment.onlinePaymentsEnabled,
+    paymentProvider:
+      row?.storePaymentProvider ?? SETTINGS_DEFAULTS.storePayment.paymentProvider,
+    paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
+    stripePublishableKey:
+      row?.stripePublishableKey ??
+      env.STRIPE_PUBLISHABLE_KEY ??
+      SETTINGS_DEFAULTS.storePayment.stripePublishableKey,
+    stripeSecretKeySet: Boolean(row?.stripeSecretKeyEnc || env.STRIPE_SECRET_KEY),
+    stripeWebhookSecretSet: Boolean(
+      row?.stripeWebhookSecretEnc || env.STRIPE_WEBHOOK_SECRET,
+    ),
+    stripeStatementDescriptor:
+      row?.stripeStatementDescriptor ??
+      SETTINGS_DEFAULTS.storePayment.stripeStatementDescriptor,
+  });
+}
+
+export interface ResolvedStorePaymentConfig extends StorePaymentSettings {
+  stripeSecretKey: string | null;
+  stripeWebhookSecret: string | null;
+}
+
+// Decrypted server-only payment config. Do not send this object to the client.
+export async function getResolvedStorePaymentConfig(): Promise<ResolvedStorePaymentConfig> {
+  const row = await getSiteSettingsRow();
+  const env = getEnv();
+  const stripeSecretKey =
+    decryptSecret(row?.stripeSecretKeyEnc) ?? env.STRIPE_SECRET_KEY ?? null;
+  const stripeWebhookSecret =
+    decryptSecret(row?.stripeWebhookSecretEnc) ?? env.STRIPE_WEBHOOK_SECRET ?? null;
+  const settings = normalizeStorePaymentSettings({
+    onlinePaymentsEnabled:
+      row?.storeOnlinePaymentsEnabled ??
+      SETTINGS_DEFAULTS.storePayment.onlinePaymentsEnabled,
+    paymentProvider:
+      row?.storePaymentProvider ?? SETTINGS_DEFAULTS.storePayment.paymentProvider,
+    paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
+    stripePublishableKey:
+      row?.stripePublishableKey ??
+      env.STRIPE_PUBLISHABLE_KEY ??
+      SETTINGS_DEFAULTS.storePayment.stripePublishableKey,
+    stripeSecretKeySet: Boolean(stripeSecretKey),
+    stripeWebhookSecretSet: Boolean(stripeWebhookSecret),
+    stripeStatementDescriptor:
+      row?.stripeStatementDescriptor ??
+      SETTINGS_DEFAULTS.storePayment.stripeStatementDescriptor,
+  });
+  return {
+    ...settings,
+    stripeSecretKey,
+    stripeWebhookSecret,
+  };
 }
 
 // Instagram Graph API token (decrypted), or null. Read directly (not cached)

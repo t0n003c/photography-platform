@@ -16,8 +16,9 @@ upload→`sharp`→derivatives media pipeline, the public portfolio (categories 
 with multiple gallery layouts, private client galleries with expiring share links, and a
 full admin **CMS** (upload, library, galleries, page builder, layout/design editor,
 settings, menus). The page builder includes curated blocks such as galleries, banners,
-contact forms, scroll showcases, logos/FAQs, and testimonials. Payments remain a **stub
-behind an interface**. See
+contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout currently
+uses **manual invoice requests**; hosted payments have a Stripe-ready provider/settings
+foundation but remain intentionally unwired from public checkout. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 
 ## Stack
@@ -66,14 +67,14 @@ canonical local target is the Docker `:3001` stack above.)
 
 ## Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` / `build` / `start` | Next.js dev / production build / serve |
-| `npm run worker` / `worker:dev` | BullMQ worker (run / watch) |
-| `npm run typecheck` / `lint` / `format` | TS check / lint / Prettier |
-| `npm test` / `test:watch` | Vitest unit tests |
-| `npm run test:e2e` | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack) |
-| `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed |
+| Command                                                        | Purpose                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `npm run dev` / `build` / `start`                              | Next.js dev / production build / serve                                                |
+| `npm run worker` / `worker:dev`                                | BullMQ worker (run / watch)                                                           |
+| `npm run typecheck` / `lint` / `format`                        | TS check / lint / Prettier                                                            |
+| `npm test` / `test:watch`                                      | Vitest unit tests                                                                     |
+| `npm run test:e2e`                                             | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack) |
+| `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed                                                    |
 
 ## Repository layout (short)
 

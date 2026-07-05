@@ -10,9 +10,11 @@ import { captchaConfigured } from "@/src/lib/turnstile";
 import {
   SITE_SETTINGS_ID,
   SETTINGS_DEFAULTS,
+  getStorePaymentSettings,
   getSiteSettingsRow,
   invalidateSiteSettings,
 } from "@/src/db/queries/settings";
+import { storePaymentStatus } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,8 @@ export async function GET() {
   if (a.error) return a.error;
 
   const row = await getSiteSettingsRow();
+  const paymentSettings = await getStorePaymentSettings();
+  const paymentStatus = storePaymentStatus(paymentSettings);
   return ok({
     data: {
       siteTitle: row?.siteTitle ?? SETTINGS_DEFAULTS.siteTitle,
@@ -49,6 +53,19 @@ export async function GET() {
       storeTaxRateBps: row?.storeTaxRateBps ?? 0,
       storeShippingMode: row?.storeShippingMode ?? "manual",
       storeShippingFlatCents: row?.storeShippingFlatCents ?? 0,
+      storeOnlinePaymentsEnabled:
+        paymentSettings.onlinePaymentsEnabled ??
+        SETTINGS_DEFAULTS.storePayment.onlinePaymentsEnabled,
+      storePaymentProvider:
+        paymentSettings.paymentProvider ??
+        SETTINGS_DEFAULTS.storePayment.paymentProvider,
+      storePaymentMode:
+        paymentSettings.paymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
+      stripePublishableKey: paymentSettings.stripePublishableKey ?? "",
+      stripeSecretKeySet: paymentSettings.stripeSecretKeySet,
+      stripeWebhookSecretSet: paymentSettings.stripeWebhookSecretSet,
+      stripeStatementDescriptor: paymentSettings.stripeStatementDescriptor ?? "",
+      storePaymentStatus: paymentStatus,
       igAccessTokenSet: Boolean(row?.igAccessTokenEnc),
       captchaEnabled: row?.captchaEnabled ?? false,
       captchaConfigured: captchaConfigured(),
@@ -78,10 +95,17 @@ const PatchSchema = z.object({
   storeTaxRateBps: z.number().int().min(0).max(10000).optional(),
   storeShippingMode: z.enum(["manual", "free", "flat"]).optional(),
   storeShippingFlatCents: z.number().int().min(0).max(100_000_000).optional(),
+  storeOnlinePaymentsEnabled: z.boolean().optional(),
+  storePaymentProvider: z.enum(["manual", "stripe"]).optional(),
+  storePaymentMode: z.enum(["test", "live"]).optional(),
+  stripePublishableKey: z.string().max(255).nullable().optional(),
+  stripeStatementDescriptor: z.string().max(22).nullable().optional(),
   // Secrets: a non-empty string sets/replaces; null clears; undefined leaves.
   smtpPassword: z.string().nullable().optional(),
   resendApiKey: z.string().nullable().optional(),
   igAccessToken: z.string().nullable().optional(),
+  stripeSecretKey: z.string().nullable().optional(),
+  stripeWebhookSecret: z.string().nullable().optional(),
   captchaEnabled: z.boolean().optional(),
 });
 
@@ -131,6 +155,13 @@ export async function PATCH(req: Request) {
   if (body.storeShippingFlatCents !== undefined) {
     updates.storeShippingFlatCents = body.storeShippingFlatCents;
   }
+  if (body.storeOnlinePaymentsEnabled !== undefined) {
+    updates.storeOnlinePaymentsEnabled = body.storeOnlinePaymentsEnabled;
+  }
+  setIf("storePaymentProvider", "storePaymentProvider");
+  setIf("storePaymentMode", "storePaymentMode");
+  setIf("stripePublishableKey", "stripePublishableKey");
+  setIf("stripeStatementDescriptor", "stripeStatementDescriptor");
 
   if (body.smtpPassword !== undefined) {
     updates.smtpPasswordEnc = body.smtpPassword
@@ -146,6 +177,20 @@ export async function PATCH(req: Request) {
     updates.igAccessTokenEnc = body.igAccessToken
       ? encryptSecret(body.igAccessToken)
       : null;
+  }
+  if (body.stripeSecretKey !== undefined) {
+    updates.stripeSecretKeyEnc = body.stripeSecretKey
+      ? encryptSecret(body.stripeSecretKey)
+      : null;
+  }
+  if (body.stripeWebhookSecret !== undefined) {
+    updates.stripeWebhookSecretEnc = body.stripeWebhookSecret
+      ? encryptSecret(body.stripeWebhookSecret)
+      : null;
+  }
+
+  if (updates.storePaymentProvider === "manual") {
+    updates.storeOnlinePaymentsEnabled = false;
   }
 
   await db

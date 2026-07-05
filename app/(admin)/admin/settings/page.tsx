@@ -35,6 +35,19 @@ interface SettingsDTO {
   storeTaxRateBps: number;
   storeShippingMode: "manual" | "free" | "flat";
   storeShippingFlatCents: number;
+  storeOnlinePaymentsEnabled: boolean;
+  storePaymentProvider: "manual" | "stripe";
+  storePaymentMode: "test" | "live";
+  stripePublishableKey: string;
+  stripeSecretKeySet: boolean;
+  stripeWebhookSecretSet: boolean;
+  stripeStatementDescriptor: string;
+  storePaymentStatus: {
+    activeCheckoutPath: "manual";
+    readyForHostedCheckout: boolean;
+    missing: string[];
+    label: string;
+  };
   igAccessTokenSet: boolean;
 }
 
@@ -81,6 +94,35 @@ function percentToBps(value: string) {
   return Number.isFinite(parsed)
     ? Math.min(Math.max(Math.round(parsed * 100), 0), 10000)
     : 0;
+}
+
+function paymentStatusFor(settings: {
+  paymentProvider: SettingsDTO["storePaymentProvider"];
+  onlinePaymentsEnabled: boolean;
+  stripePublishableKey: string;
+  stripeSecretKeySet: boolean;
+}) {
+  if (settings.paymentProvider !== "stripe") {
+    return {
+      activeCheckoutPath: "manual" as const,
+      readyForHostedCheckout: false,
+      missing: [],
+      label: "Manual invoice checkout",
+    };
+  }
+
+  const missing: string[] = [];
+  if (!settings.onlinePaymentsEnabled) missing.push("online payment readiness");
+  if (!settings.stripePublishableKey?.trim()) missing.push("Stripe publishable key");
+  if (!settings.stripeSecretKeySet) missing.push("Stripe secret key");
+
+  return {
+    activeCheckoutPath: "manual" as const,
+    readyForHostedCheckout: missing.length === 0,
+    missing,
+    label:
+      missing.length === 0 ? "Stripe settings ready" : "Stripe settings incomplete",
+  };
 }
 
 function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
@@ -150,6 +192,8 @@ export default function SettingsPage() {
   const [smtpPassword, setSmtpPassword] = useState("");
   const [resendApiKey, setResendApiKey] = useState("");
   const [igAccessToken, setIgAccessToken] = useState("");
+  const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [testing, setTesting] = useState(false);
   const [iconBust, setIconBust] = useState(0);
@@ -203,24 +247,47 @@ export default function SettingsPage() {
         storeTaxRateBps: s.storeTaxRateBps,
         storeShippingMode: s.storeShippingMode,
         storeShippingFlatCents: s.storeShippingFlatCents,
+        storeOnlinePaymentsEnabled: s.storeOnlinePaymentsEnabled,
+        storePaymentProvider: s.storePaymentProvider,
+        storePaymentMode: s.storePaymentMode,
+        stripePublishableKey: s.stripePublishableKey,
+        stripeStatementDescriptor: s.stripeStatementDescriptor,
       };
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
       if (resendApiKey) payload.resendApiKey = resendApiKey;
       if (igAccessToken) payload.igAccessToken = igAccessToken;
+      if (stripeSecretKey) payload.stripeSecretKey = stripeSecretKey;
+      if (stripeWebhookSecret) payload.stripeWebhookSecret = stripeWebhookSecret;
 
       await api.patch("/api/v1/admin/settings", payload);
       setSmtpPassword("");
       setResendApiKey("");
       setIgAccessToken("");
+      setStripeSecretKey("");
+      setStripeWebhookSecret("");
       setS((prev) =>
         prev
-          ? {
-              ...prev,
-              smtpPasswordSet: prev.smtpPasswordSet || Boolean(smtpPassword),
-              resendApiKeySet: prev.resendApiKeySet || Boolean(resendApiKey),
-              igAccessTokenSet: prev.igAccessTokenSet || Boolean(igAccessToken),
-            }
+          ? (() => {
+              const next = {
+                ...prev,
+                smtpPasswordSet: prev.smtpPasswordSet || Boolean(smtpPassword),
+                resendApiKeySet: prev.resendApiKeySet || Boolean(resendApiKey),
+                igAccessTokenSet: prev.igAccessTokenSet || Boolean(igAccessToken),
+                stripeSecretKeySet: prev.stripeSecretKeySet || Boolean(stripeSecretKey),
+                stripeWebhookSecretSet:
+                  prev.stripeWebhookSecretSet || Boolean(stripeWebhookSecret),
+              };
+              return {
+                ...next,
+                storePaymentStatus: paymentStatusFor({
+                  paymentProvider: next.storePaymentProvider,
+                  onlinePaymentsEnabled: next.storeOnlinePaymentsEnabled,
+                  stripePublishableKey: next.stripePublishableKey,
+                  stripeSecretKeySet: next.stripeSecretKeySet,
+                }),
+              };
+            })()
           : prev,
       );
       toast("Settings saved", "success");
@@ -282,6 +349,14 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  const paymentStatus = paymentStatusFor({
+    paymentProvider: s.storePaymentProvider,
+    onlinePaymentsEnabled: s.storeOnlinePaymentsEnabled,
+    stripePublishableKey: s.stripePublishableKey,
+    stripeSecretKeySet: s.stripeSecretKeySet,
+  });
+  const stripeSelected = s.storePaymentProvider === "stripe";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -458,6 +533,137 @@ export default function SettingsPage() {
         </div>
       </SettingsSection>
 
+      {/* Payments */}
+      <SettingsSection title="Payments">
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-[hsl(var(--muted))] p-3 text-sm">
+            <p className="font-medium text-[hsl(var(--foreground))]">
+              Current checkout: manual invoice requests
+            </p>
+            <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+              These settings prepare hosted payments for the next checkout phase. Manual
+              invoices remain the active public checkout path.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Hosted payment provider">
+              <Select
+                value={s.storePaymentProvider}
+                onChange={(e) => {
+                  const provider = e.target
+                    .value as SettingsDTO["storePaymentProvider"];
+                  update("storePaymentProvider", provider);
+                  if (provider === "manual") {
+                    update("storeOnlinePaymentsEnabled", false);
+                  }
+                }}
+              >
+                <option value="manual">Manual invoices only</option>
+                <option value="stripe">Stripe hosted checkout</option>
+              </Select>
+            </Field>
+            <Field label="Stripe mode">
+              <Select
+                value={s.storePaymentMode}
+                onChange={(e) =>
+                  update(
+                    "storePaymentMode",
+                    e.target.value as SettingsDTO["storePaymentMode"],
+                  )
+                }
+                disabled={!stripeSelected}
+              >
+                <option value="test">Test mode</option>
+                <option value="live">Live mode</option>
+              </Select>
+            </Field>
+          </div>
+
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={s.storeOnlinePaymentsEnabled}
+              onChange={(e) => update("storeOnlinePaymentsEnabled", e.target.checked)}
+              disabled={!stripeSelected}
+            />
+            <span>
+              <span className="block font-medium">
+                Mark hosted payments ready for checkout wiring
+              </span>
+              <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                This does not turn on public Stripe checkout yet; it records that the
+                account settings are ready for the next phase.
+              </span>
+            </span>
+          </label>
+
+          {stripeSelected && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Stripe publishable key">
+                <Input
+                  value={s.stripePublishableKey}
+                  onChange={(e) => update("stripePublishableKey", e.target.value)}
+                  placeholder="pk_test_..."
+                  autoComplete="off"
+                />
+              </Field>
+              <Field label="Statement descriptor">
+                <Input
+                  value={s.stripeStatementDescriptor}
+                  onChange={(e) =>
+                    update("stripeStatementDescriptor", e.target.value.slice(0, 22))
+                  }
+                  placeholder="STUDIO NAME"
+                  maxLength={22}
+                />
+              </Field>
+              <Field label="Stripe secret key">
+                <Input
+                  type="password"
+                  value={stripeSecretKey}
+                  onChange={(e) => setStripeSecretKey(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder={
+                    s.stripeSecretKeySet
+                      ? "•••••••• (leave blank to keep)"
+                      : "sk_test_..."
+                  }
+                />
+              </Field>
+              <Field label="Stripe webhook secret">
+                <Input
+                  type="password"
+                  value={stripeWebhookSecret}
+                  onChange={(e) => setStripeWebhookSecret(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder={
+                    s.stripeWebhookSecretSet
+                      ? "•••••••• (leave blank to keep)"
+                      : "whsec_..."
+                  }
+                />
+              </Field>
+            </div>
+          )}
+
+          <div className="rounded-lg border p-3 text-sm">
+            <p className="font-medium">{paymentStatus.label}</p>
+            {paymentStatus.missing.length > 0 ? (
+              <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+                Missing: {paymentStatus.missing.join(", ")}.
+              </p>
+            ) : (
+              <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+                Hosted payment details are recorded. Public checkout is still manual
+                until the hosted checkout route is implemented.
+              </p>
+            )}
+          </div>
+        </div>
+      </SettingsSection>
+
       {/* Branding */}
       <SettingsSection title="Branding">
         <div className="space-y-3">
@@ -465,7 +671,11 @@ export default function SettingsPage() {
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border bg-[hsl(var(--muted))]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/api/v1/media/site-icon?v=${iconBust}`}
+                src={
+                  s.iconStorageKey
+                    ? `/api/v1/media/site-icon?v=${iconBust}`
+                    : "/icon.svg"
+                }
                 alt="Site icon"
                 className="h-full w-full object-contain"
                 onError={(e) => {

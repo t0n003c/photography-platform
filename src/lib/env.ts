@@ -4,9 +4,7 @@ import { z } from "zod";
 // Phase 1 uses permissive defaults so the scaffold boots anywhere; Phase 2
 // tightens this (required secrets, no fallbacks) once auth/db are wired.
 const EnvSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
   DATABASE_URL: z
@@ -46,6 +44,9 @@ const EnvSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
 
   PAYMENTS_DRIVER: z.enum(["stub", "stripe"]).default("stub"),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
   // Instagram (optional) — when IG_ACCESS_TOKEN is set, the "From the field"
   // home section pulls the real IG feed via the Graph API; otherwise it falls

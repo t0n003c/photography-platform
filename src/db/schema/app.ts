@@ -510,6 +510,23 @@ export const siteSettings = pgTable("site_settings", {
     .notNull()
     .default("manual"),
   storeShippingFlatCents: integer("store_shipping_flat_cents").notNull().default(0),
+  storeOnlinePaymentsEnabled: boolean("store_online_payments_enabled")
+    .notNull()
+    .default(false),
+  storePaymentProvider: text("store_payment_provider", {
+    enum: ["manual", "stripe"],
+  })
+    .notNull()
+    .default("manual"),
+  storePaymentMode: text("store_payment_mode", {
+    enum: ["test", "live"],
+  })
+    .notNull()
+    .default("test"),
+  stripePublishableKey: text("stripe_publishable_key"),
+  stripeSecretKeyEnc: text("stripe_secret_key_enc"), // AES-256-GCM ciphertext
+  stripeWebhookSecretEnc: text("stripe_webhook_secret_enc"), // AES-256-GCM ciphertext
+  stripeStatementDescriptor: text("stripe_statement_descriptor"),
   // Integrations
   igAccessTokenEnc: text("ig_access_token_enc"), // Instagram Graph API token (AES-256-GCM)
   // Bot protection: require Cloudflare Turnstile at login (keys live in env).
@@ -702,6 +719,18 @@ export const invoice = pgTable("invoice", {
   paymentReference: text("payment_reference"),
   paymentNote: text("payment_note"),
   receiptSentAt: timestamp("receipt_sent_at", { withTimezone: true }),
+  onlinePaymentProvider: text("online_payment_provider", {
+    enum: ["stripe"],
+  }),
+  onlinePaymentStatus: text("online_payment_status", {
+    enum: ["requires_payment", "pending", "paid", "failed", "expired", "refunded"],
+  }),
+  onlinePaymentSessionId: text("online_payment_session_id"),
+  onlinePaymentIntentId: text("online_payment_intent_id"),
+  onlinePaymentUrl: text("online_payment_url"),
+  onlinePaymentExpiresAt: timestamp("online_payment_expires_at", {
+    withTimezone: true,
+  }),
   pdfStorageKey: text("pdf_storage_key"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

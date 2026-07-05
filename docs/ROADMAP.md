@@ -108,7 +108,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 ## Phase 6 — Integrations & hardening ✅ (completed 2026-06-15)
 
 - [x] Email flows: contact notifications + gallery invites via `EmailProvider` (log default / SMTP / Resend), enqueued through BullMQ, sent by the worker.
-- [x] `PaymentProvider` / invoice seams (factory + `isPaymentsEnabled`; checkout gated, still 501 — real payments deferred).
+- [x] `PaymentProvider` / invoice seams (factory + `isPaymentsEnabled`; manual invoice checkout active; Stripe settings/schema foundation added, hosted checkout still unwired).
 - [x] Security pass against `SECURITY.md` (audit) + fixes: fail-closed prod secret (`instrumentation.ts`), contact dual rate-limit keys, XFF trusted only outside prod, token-resolution rate-limit ordering. Vitest + 37 unit tests.
 - [~] Performance: Lighthouse CI budgets (`lighthouserc.json`) wired; **the actual Lighthouse run needs a browser/CI — run `npx @lhci/cli autorun` against the built app**.
 - [x] Caching per `CACHING-STRATEGY.md`: middleware enforces private `no-store` (admin/login/client-gallery/auth) + CDN `s-maxage`+SWR on public read APIs; media route immutable vs no-store; CSP report endpoint.
@@ -140,7 +140,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] **CI** (GitHub Actions: lint/typecheck/test/build + Lighthouse + Playwright) and a **Playwright WebGL e2e**.
 - [x] Remotion **evaluated** (skill added locally) and proposed in `AI-INTEGRATIONS.md` (not wired — changes deployment shape).
 
-> Still needing a browser/CI to *execute* (set up, not run here): the Lighthouse pass and the Playwright suite run in CI. Smaller follow-ups: streaming zip for very large galleries, `lastStrongAuthAt` step-up refinement, tightening `style-src`.
+> Still needing a browser/CI to _execute_ (set up, not run here): the Lighthouse pass and the Playwright suite run in CI. Smaller follow-ups: streaming zip for very large galleries, `lastStrongAuthAt` step-up refinement, tightening `style-src`.
 
 ---
 
@@ -151,7 +151,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 
 ## Deferred / Out of scope (require explicit sign-off)
 
-- [ ] Real payments / checkout (live `PaymentProvider`, gateway integration, tax, fulfillment).
+- [ ] Real payments / checkout (live Stripe checkout sessions, webhook reconciliation, refunds, tax, fulfillment).
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 
