@@ -16,12 +16,18 @@ function formatMoney(cents: number, currency: string) {
   }).format(cents / 100);
 }
 
-function productSalePrice(product: Pick<ProductDTO, "basePriceCents" | "salePriceCents">) {
+function productSalePrice(
+  product: Pick<ProductDTO, "basePriceCents" | "salePriceCents">,
+) {
   if (product.salePriceCents === null) return null;
-  return product.salePriceCents < product.basePriceCents ? product.salePriceCents : null;
+  return product.salePriceCents < product.basePriceCents
+    ? product.salePriceCents
+    : null;
 }
 
-function productCurrentPrice(product: Pick<ProductDTO, "basePriceCents" | "salePriceCents">) {
+function productCurrentPrice(
+  product: Pick<ProductDTO, "basePriceCents" | "salePriceCents">,
+) {
   return productSalePrice(product) ?? product.basePriceCents;
 }
 
@@ -54,9 +60,14 @@ function ToraProductCard({
   showPrices: boolean;
 }) {
   const sale = productSalePrice(product);
+  const needsOptions = product.options.length > 0;
   return (
     <article className="tora-shop-card">
-      <a href={productHref(product)} className="tora-shop-card__image" aria-label={product.name}>
+      <a
+        href={productHref(product)}
+        className="tora-shop-card__image"
+        aria-label={product.name}
+      >
         {product.photo ? (
           <ResponsiveImage
             photo={product.photo}
@@ -68,7 +79,9 @@ function ToraProductCard({
             <ShoppingBag aria-hidden className="h-8 w-8" />
           </div>
         )}
-        {showSaleBadge && sale !== null && <span className="tora-shop-card__sale">Sale!</span>}
+        {showSaleBadge && sale !== null && (
+          <span className="tora-shop-card__sale">Sale!</span>
+        )}
       </a>
       <h3>
         <a href={productHref(product)}>{product.name}</a>
@@ -85,7 +98,16 @@ function ToraProductCard({
           )}
         </p>
       )}
-      <AddToCartButton productId={product.id} compact />
+      {needsOptions ? (
+        <div className="tora-add-to-cart is-compact">
+          <a href={productHref(product)} className="tora-add-to-cart__button">
+            <ShoppingBag aria-hidden className="h-3.5 w-3.5" />
+            <span>Choose options</span>
+          </a>
+        </div>
+      ) : (
+        <AddToCartButton productId={product.id} compact />
+      )}
     </article>
   );
 }
@@ -189,10 +211,14 @@ export function ShopGridClient({
       return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     }
     if (sort === "price-asc") {
-      return [...filtered].sort((a, b) => productCurrentPrice(a) - productCurrentPrice(b));
+      return [...filtered].sort(
+        (a, b) => productCurrentPrice(a) - productCurrentPrice(b),
+      );
     }
     if (sort === "price-desc") {
-      return [...filtered].sort((a, b) => productCurrentPrice(b) - productCurrentPrice(a));
+      return [...filtered].sort(
+        (a, b) => productCurrentPrice(b) - productCurrentPrice(a),
+      );
     }
     return filtered;
   }, [activeTag, products, query, sort]);
@@ -233,7 +259,11 @@ export function ShopGridClient({
         </div>
         {visible.length === 0 ? (
           <div className="tora-shop-empty">
-            <h3>{products.length === 0 ? "Great things are on the horizon" : "No products found"}</h3>
+            <h3>
+              {products.length === 0
+                ? "Great things are on the horizon"
+                : "No products found"}
+            </h3>
             <p>
               {products.length === 0
                 ? "Products assigned to this shop block will appear here."

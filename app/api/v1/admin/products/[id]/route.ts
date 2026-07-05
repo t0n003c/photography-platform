@@ -7,10 +7,24 @@ import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { product } from "@/src/db/schema";
 import { getProductByIdAdmin } from "@/src/db/queries/store";
+import { normalizeProductOptions } from "@/src/lib/store-options";
 
 export const dynamic = "force-dynamic";
 
 const ProductKind = z.enum(["print", "digital", "bundle"]);
+
+const ProductOptionValueSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1),
+  priceDeltaCents: z.number().int().default(0),
+});
+
+const ProductOptionSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  required: z.boolean().default(true),
+  values: z.array(ProductOptionValueSchema).min(1),
+});
 
 const PatchSchema = z.object({
   name: z.string().min(1).optional(),
@@ -24,6 +38,7 @@ const PatchSchema = z.object({
   currency: z.string().min(3).max(3).optional(),
   category: z.string().nullable().optional(),
   tags: z.array(z.string()).optional(),
+  options: z.array(ProductOptionSchema).optional(),
   isFeatured: z.boolean().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
@@ -50,10 +65,7 @@ async function productExists(id: string) {
   return Boolean(rows[0]);
 }
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -62,10 +74,7 @@ export async function GET(
   return ok(row);
 }
 
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -99,7 +108,8 @@ export async function PATCH(
   if (body.name !== undefined) updates.name = body.name.trim();
   if (nextSlug !== undefined) updates.slug = nextSlug;
   if (nextSku !== undefined) updates.sku = nextSku;
-  if (body.description !== undefined) updates.description = body.description?.trim() || null;
+  if (body.description !== undefined)
+    updates.description = body.description?.trim() || null;
   if (body.kind !== undefined) updates.kind = body.kind;
   if (body.photoId !== undefined) updates.photoId = body.photoId;
   if (body.basePriceCents !== undefined) updates.basePriceCents = body.basePriceCents;
@@ -107,6 +117,8 @@ export async function PATCH(
   if (body.currency !== undefined) updates.currency = body.currency.toUpperCase();
   if (body.category !== undefined) updates.category = body.category?.trim() || null;
   if (body.tags !== undefined) updates.tags = cleanTags(body.tags);
+  if (body.options !== undefined)
+    updates.options = normalizeProductOptions(body.options);
   if (body.isFeatured !== undefined) updates.isFeatured = body.isFeatured;
   if (body.isActive !== undefined) updates.isActive = body.isActive;
   if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
@@ -126,10 +138,7 @@ export async function PATCH(
   return ok({ id });
 }
 
-export async function DELETE(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireFreshAuth("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;

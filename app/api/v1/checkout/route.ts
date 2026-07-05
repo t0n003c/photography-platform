@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 const CheckoutItemSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1).max(99),
+  options: z.record(z.string(), z.string()).optional(),
 });
 
 const CheckoutSchema = z.object({
@@ -41,6 +42,19 @@ export async function POST(req: Request) {
         details: summary.unavailableProductIds.map((id) => ({
           field: "items",
           issue: id,
+        })),
+      },
+    );
+  }
+  if (summary.optionErrors.length > 0) {
+    return problem(
+      409,
+      "PRODUCT_OPTIONS_REQUIRED",
+      "One or more products need an updated option choice before checkout.",
+      {
+        details: summary.optionErrors.map((error) => ({
+          field: "items",
+          issue: error.message,
         })),
       },
     );

@@ -1157,6 +1157,13 @@ is gitignored):
   browser-local cart and updates on `photog-store-cart-change`, plus an interactive shop grid
   client island. Shop block search, tag cloud buttons, and sorting now filter/sort the displayed
   products immediately while preserving the server-fetched product list and the Tora visual style.
+  Follow-up: product options are now part of the Store path. Migration
+  `0014_nifty_screwball.sql` adds JSON `product.options` and `order_item.options`.
+  Product options are structured as option groups with choices and price deltas; `/admin/store`
+  edits them visually, product detail pages render dropdown choices, shop cards with required
+  options route shoppers to the product page, browser-local cart lines are keyed by product +
+  selected option IDs, `/api/v1/cart` prices option deltas, and `/api/v1/checkout` blocks stale
+  or missing required selections before creating manual-invoice orders.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

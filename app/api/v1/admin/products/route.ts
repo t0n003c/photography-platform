@@ -8,10 +8,24 @@ import { writeAudit } from "@/src/lib/audit";
 import { db } from "@/src/db/client";
 import { product } from "@/src/db/schema";
 import { listProductsAdmin } from "@/src/db/queries/store";
+import { normalizeProductOptions } from "@/src/lib/store-options";
 
 export const dynamic = "force-dynamic";
 
 const ProductKind = z.enum(["print", "digital", "bundle"]);
+
+const ProductOptionValueSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1),
+  priceDeltaCents: z.number().int().default(0),
+});
+
+const ProductOptionSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  required: z.boolean().default(true),
+  values: z.array(ProductOptionValueSchema).min(1),
+});
 
 const CreateSchema = z.object({
   name: z.string().min(1),
@@ -25,6 +39,7 @@ const CreateSchema = z.object({
   currency: z.string().min(3).max(3).default("USD"),
   category: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
+  options: z.array(ProductOptionSchema).default([]),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
@@ -85,6 +100,7 @@ export async function POST(req: Request) {
     currency: body.currency.toUpperCase(),
     category: body.category?.trim() || null,
     tags: cleanTags(body.tags),
+    options: normalizeProductOptions(body.options),
     isFeatured: body.isFeatured,
     isActive: body.isActive,
     sortOrder: body.sortOrder,

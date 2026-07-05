@@ -467,8 +467,11 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ### 13.1 `product`
 `id` PK, `slug` UNIQUE, `sku` UNIQUE, `name`, `description`, `kind`
 (`print`\|`digital`\|`bundle`), `photo_id` FK→photo NULL, `base_price_cents`,
-`sale_price_cents` NULL, `currency`, `category` NULL, JSON `tags`, `is_featured`,
+`sale_price_cents` NULL, `currency`, `category` NULL, JSON `tags`, JSON `options`, `is_featured`,
 `is_active`, `sort_order`, timestamps.
+
+`options` stores reusable product choice groups such as size, finish, license, or framing:
+`[{ id, name, required, values: [{ id, label, priceDeltaCents }] }]`.
 
 ### 13.2 `order`
 | Field | Type | Notes |
@@ -485,7 +488,11 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 
 ### 13.3 `order_item`
 `id` PK, `order_id` FK→order CASCADE, `product_id` FK→product NULL, `photo_id` FK→photo NULL,
-`description`, `quantity` integer, `unit_price_cents` integer, `line_total_cents` integer.
+`description`, JSON `options`, `quantity` integer, `unit_price_cents` integer,
+`line_total_cents` integer.
+
+`options` snapshots the selected product options at checkout so later product edits do not
+rewrite historical order requests.
 
 ### 13.4 `invoice` (future PDF/issued invoice)
 `id` PK, `order_id` FK→order UNIQUE, `number` text UNIQUE, `status` (`draft`\|`issued`\|`paid`\|`void`),

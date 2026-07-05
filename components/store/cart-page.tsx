@@ -9,6 +9,7 @@ import {
   normalizeStoredCart,
   readStoredCart,
   STORE_CART_CHANGE_EVENT,
+  storedCartItemKey,
   writeStoredCart,
   type StoredCartItem,
 } from "@/src/lib/store-cart";
@@ -30,6 +31,7 @@ interface CheckoutResult {
 const emptySummary: CartSummaryDTO = {
   lines: [],
   unavailableProductIds: [],
+  optionErrors: [],
   subtotalCents: 0,
   totalCents: 0,
   currency: "USD",
@@ -123,16 +125,16 @@ export function StoreCartPage() {
     writeStoredCart(normalized);
   }
 
-  function setQuantity(productId: string, quantity: number) {
+  function setQuantity(key: string, quantity: number) {
     replaceCart(
       items.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item,
+        storedCartItemKey(item) === key ? { ...item, quantity } : item,
       ),
     );
   }
 
-  function remove(productId: string) {
-    replaceCart(items.filter((item) => item.productId !== productId));
+  function remove(key: string) {
+    replaceCart(items.filter((item) => storedCartItemKey(item) !== key));
   }
 
   async function submit(e: FormEvent) {
@@ -147,6 +149,7 @@ export function StoreCartPage() {
     const checkoutItems = summary.lines.map((line) => ({
       productId: line.product.id,
       quantity: line.quantity,
+      options: line.options,
     }));
     try {
       const res = await fetch("/api/v1/checkout", {
@@ -167,7 +170,9 @@ export function StoreCartPage() {
       setConfirmation(body.data);
       replaceCart([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not submit checkout request.");
+      setError(
+        err instanceof Error ? err.message : "Could not submit checkout request.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -214,8 +219,11 @@ export function StoreCartPage() {
           <div className="tora-cart-layout">
             <div className="tora-cart-items" aria-busy={checking}>
               {summary.lines.map((line) => (
-                <article className="tora-cart-item" key={line.product.id}>
-                  <Link href={`/product/${line.product.slug}`} className="tora-cart-item__image">
+                <article className="tora-cart-item" key={line.key}>
+                  <Link
+                    href={`/product/${line.product.slug}`}
+                    className="tora-cart-item__image"
+                  >
                     {line.product.photo ? (
                       <ResponsiveImage
                         photo={line.product.photo}
@@ -227,14 +235,30 @@ export function StoreCartPage() {
                     )}
                   </Link>
                   <div className="tora-cart-item__body">
-                    <Link href={`/product/${line.product.slug}`}>{line.product.name}</Link>
+                    <Link href={`/product/${line.product.slug}`}>
+                      {line.product.name}
+                    </Link>
                     <span>{line.product.sku}</span>
-                    <strong>{formatMoney(line.unitPriceCents, line.product.currency)}</strong>
+                    {line.selectedOptions.length > 0 && (
+                      <ul className="tora-cart-item__options">
+                        {line.selectedOptions.map((option) => (
+                          <li key={option.optionId}>
+                            {option.optionName}: {option.valueLabel}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <strong>
+                      {formatMoney(line.unitPriceCents, line.product.currency)}
+                    </strong>
                   </div>
-                  <div className="tora-cart-quantity" aria-label={`Quantity for ${line.product.name}`}>
+                  <div
+                    className="tora-cart-quantity"
+                    aria-label={`Quantity for ${line.product.name}`}
+                  >
                     <button
                       type="button"
-                      onClick={() => setQuantity(line.product.id, line.quantity - 1)}
+                      onClick={() => setQuantity(line.key, line.quantity - 1)}
                       disabled={line.quantity <= 1}
                       aria-label="Decrease quantity"
                     >
@@ -243,7 +267,7 @@ export function StoreCartPage() {
                     <span>{line.quantity}</span>
                     <button
                       type="button"
-                      onClick={() => setQuantity(line.product.id, line.quantity + 1)}
+                      onClick={() => setQuantity(line.key, line.quantity + 1)}
                       disabled={line.quantity >= 99}
                       aria-label="Increase quantity"
                     >
@@ -256,7 +280,7 @@ export function StoreCartPage() {
                   <button
                     type="button"
                     className="tora-cart-item__remove"
-                    onClick={() => remove(line.product.id)}
+                    onClick={() => remove(line.key)}
                     aria-label={`Remove ${line.product.name}`}
                   >
                     <Trash2 aria-hidden className="h-4 w-4" />
@@ -266,7 +290,13 @@ export function StoreCartPage() {
 
               {summary.unavailableProductIds.length > 0 && (
                 <div className="tora-cart-warning">
-                  Some cart items are no longer available and were removed from checkout totals.
+                  Some cart items are no longer available and were removed from checkout
+                  totals.
+                </div>
+              )}
+              {summary.optionErrors.length > 0 && (
+                <div className="tora-cart-warning">
+                  {summary.optionErrors.map((item) => item.message).join(" ")}
                 </div>
               )}
             </div>
@@ -274,7 +304,8 @@ export function StoreCartPage() {
             <form className="tora-cart-checkout" onSubmit={submit}>
               <h2>Request invoice</h2>
               <p>
-                Submit your details and a pending order will be saved for manual follow-up.
+                Submit your details and a pending order will be saved for manual
+                follow-up.
               </p>
               <label>
                 Name
@@ -311,11 +342,21 @@ export function StoreCartPage() {
                 />
               </label>
               <div className="tora-cart-summary">
-                <span>{itemCount} item{itemCount === 1 ? "" : "s"}</span>
+                <span>
+                  {itemCount} item{itemCount === 1 ? "" : "s"}
+                </span>
                 <strong>{formatMoney(summary.totalCents, summary.currency)}</strong>
               </div>
               {error && <p className="tora-cart-error">{error}</p>}
-              <button type="submit" disabled={submitting || checking || summary.lines.length === 0}>
+              <button
+                type="submit"
+                disabled={
+                  submitting ||
+                  checking ||
+                  summary.lines.length === 0 ||
+                  summary.optionErrors.length > 0
+                }
+              >
                 {submitting ? "Submitting..." : "Submit order request"}
               </button>
             </form>

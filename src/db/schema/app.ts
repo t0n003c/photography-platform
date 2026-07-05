@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
+import type { ProductOption, SelectedProductOption } from "@/src/lib/store-options";
 
 // Application tables (DATA-MODEL §4–§15). Drizzle is the source of truth.
 // Conventions: text ULID PKs, timestamptz, money in integer cents, enums typed
@@ -285,9 +286,7 @@ export const galleryPhoto = pgTable(
       .notNull()
       .references(() => photo.id, { onDelete: "cascade" }),
     sortOrder: integer("sort_order").notNull().default(0),
-    addedAt: timestamp("added_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.galleryId, t.photoId] }),
@@ -330,9 +329,7 @@ export const folderPhoto = pgTable(
       .notNull()
       .references(() => photo.id, { onDelete: "cascade" }),
     sortOrder: integer("sort_order").notNull().default(0),
-    addedAt: timestamp("added_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.folderId, t.photoId] }),
@@ -451,7 +448,9 @@ export const pageConfig = pgTable(
     spacing: text("spacing"),
     theme: text("theme", { enum: ["light", "dark", "auto"] }),
     hero: jsonb("hero"),
-    config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+    config: jsonb("config")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     isDefault: boolean("is_default").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -514,7 +513,9 @@ export const menu = pgTable("menu", {
   // Which navigation slot this menu fills. Multiple named presets may share a
   // role; exactly one per role is `isActive` (enforced in app logic) and is
   // what the public site renders.
-  role: text("role", { enum: ["primary", "footer"] }).notNull().default("primary"),
+  role: text("role", { enum: ["primary", "footer"] })
+    .notNull()
+    .default("primary"),
   isActive: boolean("is_active").notNull().default(false),
   name: text("name").notNull(),
   createdAt: createdAt(),
@@ -567,7 +568,9 @@ export const page = pgTable(
       .notNull()
       .default("draft"),
     isHome: boolean("is_home").notNull().default(false),
-    blocks: jsonb("blocks").notNull().default(sql`'[]'::jsonb`),
+    blocks: jsonb("blocks")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     theme: text("theme", { enum: ["light", "dark", "auto"] }),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
@@ -580,7 +583,9 @@ export const page = pgTable(
   },
   (t) => [
     index("page_status_idx").on(t.status),
-    uniqueIndex("page_home_uniq").on(t.isHome).where(sql`${t.isHome}`),
+    uniqueIndex("page_home_uniq")
+      .on(t.isHome)
+      .where(sql`${t.isHome}`),
   ],
 );
 
@@ -597,7 +602,14 @@ export const product = pgTable("product", {
   salePriceCents: integer("sale_price_cents"),
   currency: text("currency").notNull().default("USD"),
   category: text("category"),
-  tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  tags: jsonb("tags")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  options: jsonb("options")
+    .$type<ProductOption[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   isFeatured: boolean("is_featured").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -635,6 +647,10 @@ export const orderItem = pgTable("order_item", {
   }),
   photoId: text("photo_id").references(() => photo.id, { onDelete: "set null" }),
   description: text("description"),
+  options: jsonb("options")
+    .$type<SelectedProductOption[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   quantity: integer("quantity").notNull().default(1),
   unitPriceCents: integer("unit_price_cents").notNull().default(0),
   lineTotalCents: integer("line_total_cents").notNull().default(0),

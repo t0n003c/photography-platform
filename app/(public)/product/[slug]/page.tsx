@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
-import { AddToCartButton } from "@/components/store/add-to-cart-button";
+import { ProductPurchaseForm } from "@/components/store/product-purchase-form";
 import { getActiveProductBySlug, productSalePrice } from "@/src/db/queries/store";
 import { buildMetadata } from "@/src/lib/seo";
 
@@ -71,8 +71,15 @@ export default async function ProductPage({
               <span>{formatMoney(product.basePriceCents, product.currency)}</span>
             )}
           </p>
-          {product.description && <p className="tora-product-page__description">{product.description}</p>}
-          <AddToCartButton productId={product.id} />
+          {product.description && (
+            <p className="tora-product-page__description">{product.description}</p>
+          )}
+          <ProductPurchaseForm
+            productId={product.id}
+            currency={product.currency}
+            basePriceCents={sale ?? product.basePriceCents}
+            options={product.options}
+          />
           <dl className="tora-product-page__meta">
             <div>
               <dt>SKU</dt>

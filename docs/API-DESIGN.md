@@ -350,13 +350,17 @@ Response `201` (raw token shown exactly once):
 |---|---|---|---|
 | GET | `/products` | public | list active products |
 | GET | `/products/{id}` | public | product detail |
-| POST | `/cart` | public | resolve browser-local cart lines against current active products/prices |
-| POST | `/checkout` | public | creates `order` (status `pending`) + `order_item` rows for manual invoice follow-up |
+| POST | `/cart` | public | resolve browser-local cart lines, selected options, and current active product pricing |
+| POST | `/checkout` | public | creates `order` (status `pending`) + `order_item` rows, including selected options, for manual invoice follow-up |
 | GET | `/admin/products` | admin | list products |
 | POST | `/admin/products` | admin | create product |
 | PATCH/DELETE | `/admin/products/{id}` | admin | update/delete product; delete requires fresh auth |
 | GET | `/admin/orders` | admin | view recent manual order requests |
 | GET/PATCH | `/admin/orders/{id}` | admin | view an order request and update status |
+
+Cart and checkout line items accept `options` as an option-id to choice-id map. Required
+product options must resolve against the current active product definition, or checkout returns
+`409 PRODUCT_OPTIONS_REQUIRED`.
 
 `POST /checkout` with `PAYMENTS_DRIVER=stub` returns a manual request confirmation:
 ```json

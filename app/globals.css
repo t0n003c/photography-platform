@@ -1978,6 +1978,66 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   margin: 0 0 30px;
 }
 
+.tora-product-options {
+  display: grid;
+  gap: 16px;
+}
+
+.tora-product-options__fields {
+  display: grid;
+  gap: 14px;
+  max-width: 360px;
+}
+
+.tora-product-options__fields label {
+  color: var(--shop-text);
+  display: grid;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.tora-product-options__fields select {
+  appearance: none;
+  background: var(--shop-panel);
+  border: 1px solid var(--shop-subtle);
+  border-radius: 0;
+  color: var(--shop-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  min-height: 46px;
+  outline: none;
+  padding: 12px 13px;
+}
+
+.tora-product-options__fields select:focus {
+  border-color: var(--shop-accent);
+}
+
+.tora-product-options__price {
+  color: var(--shop-muted);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tora-product-options__price strong {
+  color: var(--shop-text);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.tora-product-options__error {
+  color: #ffb4a8;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .tora-product-page .tora-add-to-cart {
   justify-content: flex-start;
   margin-top: 0;
@@ -2092,6 +2152,16 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   font-size: 12px;
   letter-spacing: 1.6px;
   text-transform: uppercase;
+}
+
+.tora-cart-item__options {
+  color: var(--shop-muted);
+  display: grid;
+  font-size: 13px;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .tora-cart-item__body strong,
@@ -2413,6 +2483,10 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   .tora-product-page__description {
     font-size: 16px;
     line-height: 1.6;
+  }
+
+  .tora-product-options__fields {
+    max-width: none;
   }
 
   .tora-product-page .tora-add-to-cart {

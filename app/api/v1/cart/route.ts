@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const CartItemSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1).max(99),
+  options: z.record(z.string(), z.string()).optional(),
 });
 
 const CartSchema = z.object({

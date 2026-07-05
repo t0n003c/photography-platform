@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
-import { Copy, Eye, Loader2, Plus, ShoppingBag } from "lucide-react";
+import { Copy, Eye, Loader2, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,13 @@ import { useStepUp } from "@/components/admin/step-up";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
 import type { PhotoDTO } from "@/src/db/queries/photos";
+import {
+  createStoreOptionId,
+  normalizeProductOptions,
+  type ProductOption,
+  type ProductOptionValue,
+  type SelectedProductOption,
+} from "@/src/lib/store-options";
 
 type ProductKind = "print" | "digital" | "bundle";
 
@@ -29,6 +36,7 @@ interface ProductRow {
   currency: string;
   category: string | null;
   tags: string[];
+  options: ProductOption[];
   isFeatured: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -53,6 +61,7 @@ interface OrderRow {
     productId: string | null;
     photoId: string | null;
     description: string | null;
+    options: SelectedProductOption[];
     quantity: number;
     unitPriceCents: number;
     lineTotalCents: number;
@@ -73,6 +82,7 @@ interface ProductFormValues {
   currency: string;
   category: string;
   tags: string;
+  options: ProductOption[];
   isFeatured: boolean;
   isActive: boolean;
   sortOrder: string;
@@ -90,6 +100,7 @@ const EMPTY_FORM: ProductFormValues = {
   currency: "USD",
   category: "",
   tags: "",
+  options: [],
   isFeatured: false,
   isActive: true,
   sortOrder: "0",
@@ -124,6 +135,11 @@ function nullablePriceToCents(value: string) {
   if (!cleaned) return null;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * 100)) : null;
+}
+
+function adjustmentToCents(value: string) {
+  const parsed = Number(value.trim() || 0);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
 }
 
 function formatMoney(cents: number, currency: string) {
@@ -179,7 +195,9 @@ function orderSummary(row: OrderRow) {
 function photoUrl(photo: PhotoDTO | null | undefined) {
   if (!photo) return null;
   const pick =
-    photo.variants.find((variant) => variant.format === "webp" && variant.sizeBucket === "small") ??
+    photo.variants.find(
+      (variant) => variant.format === "webp" && variant.sizeBucket === "small",
+    ) ??
     photo.variants.find((variant) => variant.format === "webp") ??
     photo.variants[0];
   return pick?.url ?? null;
@@ -198,6 +216,7 @@ function toForm(product: ProductRow): ProductFormValues {
     currency: product.currency,
     category: product.category ?? "",
     tags: product.tags.join(", "),
+    options: normalizeProductOptions(product.options),
     isFeatured: product.isFeatured,
     isActive: product.isActive,
     sortOrder: String(product.sortOrder),
@@ -220,6 +239,7 @@ function toPayload(form: ProductFormValues) {
       .split(",")
       .map((tag) => tag.trim())
       .filter(Boolean),
+    options: normalizeProductOptions(form.options),
     isFeatured: form.isFeatured,
     isActive: form.isActive,
     sortOrder: Number.isFinite(Number(form.sortOrder)) ? Number(form.sortOrder) : 0,
@@ -266,6 +286,192 @@ function ProductPhotoPicker({
           </p>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function newProductOptionValue(label = "Choice"): ProductOptionValue {
+  return {
+    id: createStoreOptionId("value"),
+    label,
+    priceDeltaCents: 0,
+  };
+}
+
+function newProductOption(): ProductOption {
+  return {
+    id: createStoreOptionId("option"),
+    name: "",
+    required: true,
+    values: [newProductOptionValue()],
+  };
+}
+
+function ProductOptionsEditor({
+  value,
+  currency,
+  onChange,
+}: {
+  value: ProductOption[];
+  currency: string;
+  onChange: (options: ProductOption[]) => void;
+}) {
+  const setOption = (optionIndex: number, next: ProductOption) => {
+    onChange(value.map((option, index) => (index === optionIndex ? next : option)));
+  };
+
+  const removeOption = (optionIndex: number) => {
+    onChange(value.filter((_, index) => index !== optionIndex));
+  };
+
+  const setChoice = (
+    optionIndex: number,
+    choiceIndex: number,
+    next: ProductOptionValue,
+  ) => {
+    const option = value[optionIndex];
+    if (!option) return;
+    setOption(optionIndex, {
+      ...option,
+      values: option.values.map((choice, index) =>
+        index === choiceIndex ? next : choice,
+      ),
+    });
+  };
+
+  const removeChoice = (optionIndex: number, choiceIndex: number) => {
+    const option = value[optionIndex];
+    if (!option) return;
+    setOption(optionIndex, {
+      ...option,
+      values: option.values.filter((_, index) => index !== choiceIndex),
+    });
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium">Options and choices</p>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Add choices like size, finish, license, or framing. Price adjustments use{" "}
+            {currency || "USD"}.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([...value, newProductOption()])}
+        >
+          <Plus className="h-4 w-4" />
+          Add option
+        </Button>
+      </div>
+
+      {value.length === 0 ? (
+        <div className="rounded-md border border-dashed p-4 text-sm text-[hsl(var(--muted-foreground))]">
+          No product options. Shoppers can add this product directly to cart.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {value.map((option, optionIndex) => (
+            <div key={option.id} className="space-y-3 rounded-md border p-3">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                <Field label="Option name" htmlFor={`product-option-${option.id}`}>
+                  <Input
+                    id={`product-option-${option.id}`}
+                    value={option.name}
+                    onChange={(event) =>
+                      setOption(optionIndex, { ...option, name: event.target.value })
+                    }
+                    placeholder="Size"
+                  />
+                </Field>
+                <label className="inline-flex items-center gap-2 pb-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={option.required}
+                    onChange={(event) =>
+                      setOption(optionIndex, {
+                        ...option,
+                        required: event.target.checked,
+                      })
+                    }
+                  />
+                  Required
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeOption(optionIndex)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {option.values.map((choice, choiceIndex) => (
+                  <div
+                    key={choice.id}
+                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_auto]"
+                  >
+                    <Input
+                      value={choice.label}
+                      onChange={(event) =>
+                        setChoice(optionIndex, choiceIndex, {
+                          ...choice,
+                          label: event.target.value,
+                        })
+                      }
+                      placeholder="11x14"
+                      aria-label="Choice label"
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={centsToInput(choice.priceDeltaCents)}
+                      onChange={(event) =>
+                        setChoice(optionIndex, choiceIndex, {
+                          ...choice,
+                          priceDeltaCents: adjustmentToCents(event.target.value),
+                        })
+                      }
+                      placeholder="0.00"
+                      aria-label="Price adjustment"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeChoice(optionIndex, choiceIndex)}
+                      disabled={option.values.length <= 1}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setOption(optionIndex, {
+                      ...option,
+                      values: [...option.values, newProductOptionValue()],
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4" />
+                  Add choice
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -401,7 +607,11 @@ function ProductModal({
               placeholder="Sunset"
             />
           </Field>
-          <Field label="Tags" htmlFor="product-tags" hint="Comma-separated labels for filtering/tag cloud.">
+          <Field
+            label="Tags"
+            htmlFor="product-tags"
+            hint="Comma-separated labels for filtering/tag cloud."
+          >
             <Input
               id="product-tags"
               value={form.tags}
@@ -425,6 +635,11 @@ function ProductModal({
             onChange={(event) => setForm({ ...form, description: event.target.value })}
           />
         </Field>
+        <ProductOptionsEditor
+          value={form.options}
+          currency={form.currency}
+          onChange={(options) => setForm({ ...form, options })}
+        />
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="inline-flex items-center gap-2">
             <input
@@ -438,7 +653,9 @@ function ProductModal({
             <input
               type="checkbox"
               checked={form.isFeatured}
-              onChange={(event) => setForm({ ...form, isFeatured: event.target.checked })}
+              onChange={(event) =>
+                setForm({ ...form, isFeatured: event.target.checked })
+              }
             />
             Featured
           </label>
@@ -673,9 +890,12 @@ export default function StorePage() {
     if (row.status === status) return;
     setUpdatingOrderId(row.id);
     try {
-      const res = await api.patch<{ data: OrderRow }>(`/api/v1/admin/orders/${row.id}`, {
-        status,
-      });
+      const res = await api.patch<{ data: OrderRow }>(
+        `/api/v1/admin/orders/${row.id}`,
+        {
+          status,
+        },
+      );
       setOrders((current) =>
         current.map((order) => (order.id === row.id ? res.data : order)),
       );
@@ -705,8 +925,12 @@ export default function StorePage() {
           <h1 className="text-xl font-semibold">Store</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {products.length} product{products.length === 1 ? "" : "s"}
-            {categories.length ? ` across ${categories.length} categor${categories.length === 1 ? "y" : "ies"}` : ""}
-            {orders.length ? ` · ${orders.length} order request${orders.length === 1 ? "" : "s"}` : ""}
+            {categories.length
+              ? ` across ${categories.length} categor${categories.length === 1 ? "y" : "ies"}`
+              : ""}
+            {orders.length
+              ? ` · ${orders.length} order request${orders.length === 1 ? "" : "s"}`
+              : ""}
           </p>
         </div>
         <Button onClick={() => setCreating(true)}>
@@ -759,7 +983,11 @@ export default function StorePage() {
                           <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-[hsl(var(--muted))]">
                             {image ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={image} alt="" className="h-full w-full object-cover" />
+                              <img
+                                src={image}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center">
                                 <ShoppingBag className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
@@ -866,7 +1094,9 @@ export default function StorePage() {
                     {orders.map((row) => (
                       <tr key={row.id} className="border-b last:border-0">
                         <td className="px-3 py-3">
-                          <p className="font-medium">{row.clientName || row.email || "Unknown"}</p>
+                          <p className="font-medium">
+                            {row.clientName || row.email || "Unknown"}
+                          </p>
                           {row.email && (
                             <p className="text-xs text-[hsl(var(--muted-foreground))]">
                               {row.email}

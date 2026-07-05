@@ -3,6 +3,11 @@ import { db } from "@/src/db/client";
 import { client, order as orderTable, orderItem } from "@/src/db/schema";
 import { newId } from "@/src/lib/id";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
+import {
+  normalizeSelectedOptions,
+  selectedOptionsLabel,
+  type SelectedProductOption,
+} from "@/src/lib/store-options";
 
 export interface CheckoutCustomerInput {
   name?: string | null;
@@ -28,6 +33,7 @@ export interface AdminOrderItemDTO {
   productId: string | null;
   photoId: string | null;
   description: string | null;
+  options: SelectedProductOption[];
   quantity: number;
   unitPriceCents: number;
   lineTotalCents: number;
@@ -49,6 +55,11 @@ export interface AdminOrderDTO {
   createdAt: string;
   updatedAt: string;
   items: AdminOrderItemDTO[];
+}
+
+function lineDescription(name: string, options: SelectedProductOption[]) {
+  const label = selectedOptionsLabel(options);
+  return label ? `${name} — ${label}` : name;
 }
 
 async function findExistingClientByEmail(email: string) {
@@ -115,7 +126,8 @@ export async function createManualCheckoutOrder(
         orderId,
         productId: line.product.id,
         photoId: line.product.photoId,
-        description: line.product.name,
+        description: lineDescription(line.product.name, line.selectedOptions),
+        options: line.selectedOptions,
         quantity: line.quantity,
         unitPriceCents: line.unitPriceCents,
         lineTotalCents: line.lineTotalCents,
@@ -169,6 +181,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       productId: item.productId,
       photoId: item.photoId,
       description: item.description,
+      options: normalizeSelectedOptions(item.options),
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,
       lineTotalCents: item.lineTotalCents,
@@ -178,7 +191,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
 
   const clientsById = new Map(clientRows.map((row) => [row.id, row]));
   return rows.map((row) => {
-    const clientRow = row.clientId ? clientsById.get(row.clientId) ?? null : null;
+    const clientRow = row.clientId ? (clientsById.get(row.clientId) ?? null) : null;
     return {
       id: row.id,
       clientId: row.clientId,
@@ -200,11 +213,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
 }
 
 export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
-  const rows = await db
-    .select()
-    .from(orderTable)
-    .where(eq(orderTable.id, id))
-    .limit(1);
+  const rows = await db.select().from(orderTable).where(eq(orderTable.id, id)).limit(1);
   if (!rows[0]) return null;
 
   const [itemRows, clientRows] = await Promise.all([
@@ -246,6 +255,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
       productId: item.productId,
       photoId: item.photoId,
       description: item.description,
+      options: normalizeSelectedOptions(item.options),
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,
       lineTotalCents: item.lineTotalCents,
