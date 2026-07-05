@@ -40,3 +40,7 @@ export function addStoredCartItem(productId: string, quantity = 1) {
   const current = readStoredCart();
   writeStoredCart([...current, { productId, quantity }]);
 }
+
+export function storedCartCount(items = readStoredCart()): number {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+}

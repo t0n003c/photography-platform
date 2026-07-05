@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/container";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { DesktopNav } from "@/components/layout/desktop-nav";
+import { CartNavBadge } from "@/components/store/cart-nav-badge";
 import { getMenu } from "@/src/db/queries/menus";
 import { getSiteSettings } from "@/src/db/queries/settings";
 
@@ -29,6 +30,7 @@ export async function Header() {
         <DesktopNav items={items} />
 
         <div className="flex items-center gap-2">
+          <CartNavBadge />
           <ThemeToggle />
           <MobileNav items={items} />
         </div>

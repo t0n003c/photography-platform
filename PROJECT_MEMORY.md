@@ -1153,6 +1153,10 @@ is gitignored):
   opens an order detail modal with customer info, itemized totals, status selector, and a copy
   summary helper. Repeated checkout requests from the same email refresh the existing client's
   latest name/phone/notes so the detail modal has current contact context.
+  Follow-up: storefront polish added a header cart badge client island that reads the
+  browser-local cart and updates on `photog-store-cart-change`, plus an interactive shop grid
+  client island. Shop block search, tag cloud buttons, and sorting now filter/sort the displayed
+  products immediately while preserving the server-fetched product list and the Tora visual style.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,
