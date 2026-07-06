@@ -1601,6 +1601,14 @@ is gitignored):
   60px gap, large faded number, and a configurable service image ratio: Reference 541:373,
   Wide 16:9, Landscape 4:3, Square 1:1, or Portrait 4:5. The image cell keeps its chosen
   aspect ratio instead of stretching to match tall copy cards. Mobile stacks image then text card.
+  Store operations follow-up: the Store admin page now has an operations view for product
+  inventory. It computes reserved demand from draft/pending/invoiced order items only, because
+  paid/fulfilled orders already decrement product stock in `updateOrderStatusAdmin` /
+  fulfillment updates. Product filters include needs attention, low stock, sold out, backorder,
+  and tracking off; product rows show on-hand, reserved, available, and threshold context.
+  Order drawers include a readiness panel and temporary packing checklist. Bulk paid/fulfilled/
+  cancelled actions now show confirmation warnings when selected orders are missing invoices,
+  payment, email, tracking, or already have fulfillment/payment progress.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

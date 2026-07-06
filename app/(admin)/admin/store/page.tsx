@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
+  AlertTriangle,
+  ClipboardCheck,
   Copy,
   CreditCard,
   Download,
@@ -35,7 +37,6 @@ import {
   type ProductOptionValue,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
-import { inventoryAvailable } from "@/src/lib/store-inventory";
 
 type ProductKind = "print" | "digital" | "bundle";
 
@@ -181,6 +182,29 @@ type SavedOrderFilter =
   | "completed"
   | "missing_email";
 type OrderFilter = "all" | "open" | OrderStatus | SavedOrderFilter;
+type ProductOpsFilter =
+  | "all"
+  | "needs_attention"
+  | "low_stock"
+  | "sold_out"
+  | "backorder"
+  | "tracking_off";
+
+interface ProductInventorySnapshot {
+  reservedQuantity: number;
+  availableQuantity: number;
+  status: "not_tracked" | "in_stock" | "low_stock" | "backorder" | "sold_out";
+  label: string;
+  detail: string;
+  tone: ComponentProps<typeof Badge>["tone"];
+}
+
+interface OrderReadinessWarning {
+  key: string;
+  label: string;
+  detail: string;
+  tone: ComponentProps<typeof Badge>["tone"];
+}
 
 interface AuditLogRow {
   id: string;
@@ -217,6 +241,11 @@ const OPEN_ORDER_STATUSES = new Set<OrderStatus>([
   "pending",
   "invoiced",
   "paid",
+]);
+const INVENTORY_RESERVATION_STATUSES = new Set<OrderStatus>([
+  "draft",
+  "pending",
+  "invoiced",
 ]);
 const FULFILLMENT_STATUS_OPTIONS: FulfillmentStatus[] = [
   "unfulfilled",
@@ -266,6 +295,43 @@ const SAVED_ORDER_FILTERS: Array<{
     value: "missing_email",
     label: "Missing email",
     description: "Orders that cannot receive client emails yet.",
+  },
+];
+
+const PRODUCT_OPS_FILTERS: Array<{
+  value: ProductOpsFilter;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "all",
+    label: "All products",
+    description: "Every product in the store.",
+  },
+  {
+    value: "needs_attention",
+    label: "Needs attention",
+    description: "Tracked products that are low, sold out, or backordered.",
+  },
+  {
+    value: "low_stock",
+    label: "Low stock",
+    description: "Available inventory is at or under the low-stock threshold.",
+  },
+  {
+    value: "sold_out",
+    label: "Sold out",
+    description: "Tracked products without available stock or backorder.",
+  },
+  {
+    value: "backorder",
+    label: "Backorder",
+    description: "Tracked products without available stock but backorder is allowed.",
+  },
+  {
+    value: "tracking_off",
+    label: "Tracking off",
+    description: "Products that do not currently track inventory.",
   },
 ];
 
@@ -458,18 +524,87 @@ function refundLabel(status: RefundStatus) {
   return status.replace(/_/g, " ");
 }
 
-function inventoryTone(row: ProductRow): ComponentProps<typeof Badge>["tone"] {
-  const status = inventoryAvailable(row).status;
-  if (status === "sold_out") return "red";
-  if (status === "low_stock" || status === "backorder") return "amber";
-  if (status === "in_stock") return "green";
-  return "neutral";
+function productReservedQuantity(row: ProductRow, orders: OrderRow[]) {
+  if (!row.inventoryTracked) return 0;
+  return orders
+    .filter((order) => INVENTORY_RESERVATION_STATUSES.has(order.status))
+    .flatMap((order) => order.items)
+    .filter((item) => item.productId === row.id)
+    .reduce((sum, item) => sum + item.quantity, 0);
 }
 
-function inventoryLabel(row: ProductRow) {
-  const status = inventoryAvailable(row);
-  if (!row.inventoryTracked) return status.label;
-  return `${status.label} · ${row.stockQuantity}`;
+function productInventorySnapshot(
+  row: ProductRow,
+  orders: OrderRow[],
+): ProductInventorySnapshot {
+  if (!row.inventoryTracked) {
+    return {
+      reservedQuantity: 0,
+      availableQuantity: 0,
+      status: "not_tracked",
+      label: "Tracking off",
+      detail: "Inventory is not tracked for this product.",
+      tone: "neutral",
+    };
+  }
+
+  const reservedQuantity = productReservedQuantity(row, orders);
+  const rawAvailableQuantity = row.stockQuantity - reservedQuantity;
+  const availableQuantity = Math.max(0, rawAvailableQuantity);
+  const detail = `${row.stockQuantity} on hand · ${reservedQuantity} reserved · ${availableQuantity} available${
+    rawAvailableQuantity < 0
+      ? ` · ${Math.abs(rawAvailableQuantity)} over reserved`
+      : ""
+  }`;
+  if (rawAvailableQuantity <= 0) {
+    return {
+      reservedQuantity,
+      availableQuantity,
+      status: row.allowBackorder ? "backorder" : "sold_out",
+      label: row.allowBackorder ? "Backorder" : "Sold out",
+      detail,
+      tone: row.allowBackorder ? "amber" : "red",
+    };
+  }
+  if (
+    row.lowStockThreshold > 0 &&
+    availableQuantity <= row.lowStockThreshold
+  ) {
+    return {
+      reservedQuantity,
+      availableQuantity,
+      status: "low_stock",
+      label: "Low stock",
+      detail,
+      tone: "amber",
+    };
+  }
+  return {
+    reservedQuantity,
+    availableQuantity,
+    status: "in_stock",
+    label: "In stock",
+    detail,
+    tone: "green",
+  };
+}
+
+function productMatchesOpsFilter(
+  row: ProductRow,
+  snapshot: ProductInventorySnapshot,
+  filter: ProductOpsFilter,
+) {
+  if (filter === "all") return true;
+  if (filter === "tracking_off") return !row.inventoryTracked;
+  if (filter === "needs_attention") {
+    return (
+      row.inventoryTracked &&
+      (snapshot.status === "low_stock" ||
+        snapshot.status === "sold_out" ||
+        snapshot.status === "backorder")
+    );
+  }
+  return snapshot.status === filter;
 }
 
 function successfulRefundedCents(row: OrderRow) {
@@ -598,6 +733,26 @@ function orderTriageBadges(row: OrderRow): Array<{
   } else if (row.fulfillmentStatus === "in_progress") {
     badges.push({ key: "in-progress", label: "In progress", tone: "amber" });
   }
+  if (
+    (row.fulfillmentStatus === "shipped" ||
+      row.fulfillmentStatus === "delivered") &&
+    !row.fulfillmentTrackingNumber &&
+    !row.fulfillmentTrackingUrl
+  ) {
+    badges.push({ key: "missing-tracking", label: "No tracking", tone: "amber" });
+  }
+  if (
+    (row.fulfillmentStatus === "ready" ||
+      row.fulfillmentStatus === "shipped" ||
+      row.fulfillmentStatus === "delivered") &&
+    row.invoice?.status !== "paid"
+  ) {
+    badges.push({
+      key: "fulfillment-before-payment",
+      label: "Check payment",
+      tone: "amber",
+    });
+  }
   if (pendingRefundCents(row) > 0) {
     badges.push({
       key: "refund-pending",
@@ -613,6 +768,162 @@ function orderTriageBadges(row: OrderRow): Array<{
     });
   }
   return badges;
+}
+
+function orderReadinessWarnings(row: OrderRow): OrderReadinessWarning[] {
+  const warnings: OrderReadinessWarning[] = [];
+  if (!row.email) {
+    warnings.push({
+      key: "missing-email",
+      label: "Missing email",
+      detail: "Client emails, receipts, and fulfillment updates cannot be sent yet.",
+      tone: "amber",
+    });
+  }
+  if (!row.invoice) {
+    warnings.push({
+      key: "missing-invoice",
+      label: "Invoice needed",
+      detail: "Create and send an invoice before marking this order paid.",
+      tone: "amber",
+    });
+  } else if (row.invoice.status === "draft") {
+    warnings.push({
+      key: "draft-invoice",
+      label: "Draft invoice",
+      detail: "Issue the invoice before payment or fulfillment moves forward.",
+      tone: "amber",
+    });
+  } else if (row.invoice.status === "issued") {
+    warnings.push({
+      key: "payment-due",
+      label: "Payment due",
+      detail: "The invoice has been issued but is not marked paid yet.",
+      tone: "blue",
+    });
+  }
+  if (
+    (row.fulfillmentStatus === "ready" ||
+      row.fulfillmentStatus === "shipped" ||
+      row.fulfillmentStatus === "delivered") &&
+    row.invoice?.status !== "paid"
+  ) {
+    warnings.push({
+      key: "fulfillment-before-payment",
+      label: "Fulfillment ahead of payment",
+      detail: "Confirm payment before releasing, shipping, or delivering this order.",
+      tone: "amber",
+    });
+  }
+  if (
+    (row.fulfillmentStatus === "shipped" ||
+      row.fulfillmentStatus === "delivered") &&
+    !row.fulfillmentTrackingNumber &&
+    !row.fulfillmentTrackingUrl
+  ) {
+    warnings.push({
+      key: "missing-tracking",
+      label: "Tracking missing",
+      detail: "Add a tracking number, tracking URL, or handoff reference for shipment history.",
+      tone: "amber",
+    });
+  }
+  if (
+    row.fulfillmentStatus === "ready" &&
+    !row.fulfillmentCarrier &&
+    !row.shippingProfileLabel
+  ) {
+    warnings.push({
+      key: "delivery-method",
+      label: "Delivery method unclear",
+      detail: "Add a carrier, local pickup note, or shipping profile before release.",
+      tone: "neutral",
+    });
+  }
+  return warnings;
+}
+
+function bulkStatusWarnings(status: OrderStatus, rows: OrderRow[]) {
+  const warnings: string[] = [];
+  if (status === "paid") {
+    const missingInvoice = rows.filter(
+      (row) => !row.invoice || row.invoice.status === "draft",
+    ).length;
+    const missingEmail = rows.filter((row) => !row.email).length;
+    if (missingInvoice) {
+      warnings.push(
+        `${missingInvoice} selected order${missingInvoice === 1 ? "" : "s"} do not have an issued invoice.`,
+      );
+    }
+    if (missingEmail) {
+      warnings.push(
+        `${missingEmail} selected order${missingEmail === 1 ? "" : "s"} are missing customer email.`,
+      );
+    }
+  }
+  if (status === "fulfilled") {
+    const unpaid = rows.filter((row) => row.invoice?.status !== "paid").length;
+    const notReady = rows.filter(
+      (row) =>
+        row.fulfillmentStatus !== "ready" &&
+        row.fulfillmentStatus !== "shipped" &&
+        row.fulfillmentStatus !== "delivered",
+    ).length;
+    const missingTracking = rows.filter(
+      (row) =>
+        (row.fulfillmentStatus === "shipped" ||
+          row.fulfillmentStatus === "delivered") &&
+        !row.fulfillmentTrackingNumber &&
+        !row.fulfillmentTrackingUrl,
+    ).length;
+    if (unpaid) {
+      warnings.push(
+        `${unpaid} selected order${unpaid === 1 ? "" : "s"} are not marked paid.`,
+      );
+    }
+    if (notReady) {
+      warnings.push(
+        `${notReady} selected order${notReady === 1 ? "" : "s"} have no ready, shipped, or delivered fulfillment record.`,
+      );
+    }
+    if (missingTracking) {
+      warnings.push(
+        `${missingTracking} selected shipped order${missingTracking === 1 ? "" : "s"} are missing tracking details.`,
+      );
+    }
+  }
+  if (status === "cancelled") {
+    const paid = rows.filter((row) => row.invoice?.status === "paid").length;
+    const inFulfillment = rows.filter(
+      (row) =>
+        row.fulfillmentStatus === "ready" ||
+        row.fulfillmentStatus === "shipped" ||
+        row.fulfillmentStatus === "delivered",
+    ).length;
+    if (paid) {
+      warnings.push(
+        `${paid} selected order${paid === 1 ? "" : "s"} are paid and may need a refund record.`,
+      );
+    }
+    if (inFulfillment) {
+      warnings.push(
+        `${inFulfillment} selected order${inFulfillment === 1 ? "" : "s"} already have fulfillment progress.`,
+      );
+    }
+  }
+  return warnings;
+}
+
+function bulkStatusConfirmationMessage(status: OrderStatus, rows: OrderRow[]) {
+  const warnings = bulkStatusWarnings(status, rows);
+  if (warnings.length === 0) return null;
+  return [
+    `Before marking ${rows.length} order${rows.length === 1 ? "" : "s"} ${status}:`,
+    "",
+    ...warnings.map((warning) => `- ${warning}`),
+    "",
+    "Continue with the audited bulk update?",
+  ].join("\n");
 }
 
 function metadataRecord(value: unknown): Record<string, unknown> {
@@ -1721,6 +2032,7 @@ function OrderDetailModal({
     () => orderActivityEntries(order, auditRows),
     [order, auditRows],
   );
+  const readinessWarnings = orderReadinessWarnings(order);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
@@ -1940,6 +2252,47 @@ function OrderDetailModal({
         <div className="rounded-lg border p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
+              <h4 className="font-medium">Readiness</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Quick checks before payment, packing, or shipment.
+              </p>
+            </div>
+            <Badge tone={readinessWarnings.length ? "amber" : "green"}>
+              {readinessWarnings.length
+                ? `${readinessWarnings.length} check${readinessWarnings.length === 1 ? "" : "s"}`
+                : "Ready"}
+            </Badge>
+          </div>
+          <div className="mt-3 space-y-2">
+            {readinessWarnings.length === 0 ? (
+              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                No readiness warnings for this order.
+              </p>
+            ) : (
+              readinessWarnings.map((warning) => (
+                <div
+                  key={warning.key}
+                  className="flex gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{warning.label}</p>
+                      <Badge tone={warning.tone}>Check</Badge>
+                    </div>
+                    <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+                      {warning.detail}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
               <h4 className="font-medium">Activity timeline</h4>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
                 Order milestones plus admin audit entries for this request.
@@ -2023,6 +2376,69 @@ function OrderDetailModal({
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="space-y-3 rounded-lg border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 className="flex items-center gap-2 font-medium">
+                <ClipboardCheck className="h-4 w-4" />
+                Packing checklist
+              </h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Temporary checklist for this order drawer.
+              </p>
+            </div>
+            <Badge tone="neutral">
+              {itemCount} item{itemCount === 1 ? "" : "s"}
+            </Badge>
+          </div>
+          <div className="space-y-2">
+            {order.items.length === 0 ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                No items to pack.
+              </p>
+            ) : (
+              order.items.map((item) => (
+                <label
+                  key={`pack-${item.id}`}
+                  className="flex gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
+                >
+                  <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block font-medium">
+                      {item.quantity} × {orderItemTitle(item)}
+                    </span>
+                    {item.options.length > 0 && (
+                      <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
+                        {item.options
+                          .map((option) => optionLine(option, order.currency))
+                          .join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          <div className="grid gap-2 rounded-md border p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+            <span>
+              Contact: {order.email || order.clientPhone || "No contact saved"}
+            </span>
+            <span>
+              Method: {order.shippingProfileLabel || order.fulfillmentCarrier || "Not set"}
+            </span>
+            <span>
+              Tracking:{" "}
+              {order.fulfillmentTrackingNumber ||
+                (order.fulfillmentTrackingUrl ? "Tracking URL saved" : "Not set")}
+            </span>
+          </div>
+          {order.fulfillmentNotes && (
+            <p className="whitespace-pre-wrap rounded-md bg-[hsl(var(--muted))] p-3 text-sm text-[hsl(var(--muted-foreground))]">
+              {order.fulfillmentNotes}
+            </p>
+          )}
         </div>
 
         <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -3087,10 +3503,52 @@ export default function StorePage() {
   );
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("open");
   const [orderQuery, setOrderQuery] = useState("");
+  const [productOpsFilter, setProductOpsFilter] =
+    useState<ProductOpsFilter>("all");
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category).filter(Boolean))],
     [products],
+  );
+
+  const productInventory = useMemo(
+    () =>
+      new Map(
+        products.map((product) => [
+          product.id,
+          productInventorySnapshot(product, orders),
+        ]),
+      ),
+    [orders, products],
+  );
+
+  const productOpsCounts = useMemo(() => {
+    return Object.fromEntries(
+      PRODUCT_OPS_FILTERS.map((filter) => [
+        filter.value,
+        products.filter((product) =>
+          productMatchesOpsFilter(
+            product,
+            productInventory.get(product.id) ??
+              productInventorySnapshot(product, orders),
+            filter.value,
+          ),
+        ).length,
+      ]),
+    ) as Record<ProductOpsFilter, number>;
+  }, [orders, productInventory, products]);
+
+  const visibleProducts = useMemo(
+    () =>
+      products.filter((product) =>
+        productMatchesOpsFilter(
+          product,
+          productInventory.get(product.id) ??
+            productInventorySnapshot(product, orders),
+          productOpsFilter,
+        ),
+      ),
+    [orders, productInventory, productOpsFilter, products],
   );
 
   const orderCounts = useMemo(() => {
@@ -3266,6 +3724,8 @@ export default function StorePage() {
   const bulkUpdateOrderStatus = async (status: OrderStatus) => {
     const targets = selectedVisibleOrders.filter((order) => order.status !== status);
     if (targets.length === 0) return;
+    const confirmation = bulkStatusConfirmationMessage(status, targets);
+    if (confirmation && !window.confirm(confirmation)) return;
     setBulkUpdating(true);
     try {
       const updated: OrderRow[] = [];
@@ -3608,121 +4068,178 @@ export default function StorePage() {
         />
       ) : (
         <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full min-w-[58rem] text-sm">
-              <thead>
-                <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Kind</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => {
-                  const image = photoUrl(product.photo);
-                  const sale =
-                    product.salePriceCents !== null &&
-                    product.salePriceCents < product.basePriceCents
-                      ? product.salePriceCents
-                      : null;
-                  return (
-                    <tr key={product.id} className="border-b last:border-0">
-                      <td className="px-4 py-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-[hsl(var(--muted))]">
-                            {image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={image}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <ShoppingBag className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{product.name}</p>
-                            <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
-                              {product.sku} · /product/{product.slug}
-                            </p>
-                            {product.options.length > 0 && (
-                              <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                                {product.options.length} option
-                                {product.options.length === 1 ? "" : "s"} configured
-                              </p>
-                            )}
-                            {product.stripeTaxCode && (
-                              <p className="mt-1 truncate text-xs text-[hsl(var(--muted-foreground))]">
-                                Tax code {product.stripeTaxCode}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 capitalize text-[hsl(var(--muted-foreground))]">
-                        {product.kind}
-                      </td>
-                      <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">
-                        {product.category ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {sale !== null ? (
-                          <div>
-                            <span className="mr-2 text-[hsl(var(--muted-foreground))] line-through">
-                              {formatMoney(product.basePriceCents, product.currency)}
-                            </span>
-                            <span className="font-medium">
-                              {formatMoney(sale, product.currency)}
-                            </span>
-                          </div>
-                        ) : (
-                          formatMoney(product.basePriceCents, product.currency)
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          <Badge tone={product.isActive ? "green" : "neutral"}>
-                            {product.isActive ? "Active" : "Hidden"}
-                          </Badge>
-                          <Badge tone={inventoryTone(product)}>
-                            {inventoryLabel(product)}
-                          </Badge>
-                          {product.isFeatured && <Badge tone="blue">Featured</Badge>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditing(product)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => remove(product)}
-                            disabled={deletingId === product.id}
-                          >
-                            {deletingId === product.id && (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            )}
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
+          <CardContent className="space-y-4 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-medium">Product operations</h2>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Stock reflects paid/fulfilled deductions; reserved demand is from draft,
+                  pending, and invoiced requests.
+                </p>
+              </div>
+              <Badge tone="neutral">
+                {visibleProducts.length} of {products.length} shown
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PRODUCT_OPS_FILTERS.map((item) => (
+                <Button
+                  key={item.value}
+                  type="button"
+                  variant={
+                    productOpsFilter === item.value ? "default" : "outline"
+                  }
+                  size="sm"
+                  title={item.description}
+                  onClick={() => setProductOpsFilter(item.value)}
+                >
+                  {item.label}
+                  <span className="text-[0.68rem] opacity-75">
+                    {productOpsCounts[item.value]}
+                  </span>
+                </Button>
+              ))}
+            </div>
+            {visibleProducts.length === 0 ? (
+              <div className="rounded-md border border-dashed p-6 text-sm text-[hsl(var(--muted-foreground))]">
+                No products match this operations filter.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[64rem] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
+                      <th className="px-4 py-3 font-medium">Product</th>
+                      <th className="px-4 py-3 font-medium">Kind</th>
+                      <th className="px-4 py-3 font-medium">Category</th>
+                      <th className="px-4 py-3 font-medium">Price</th>
+                      <th className="px-4 py-3 font-medium">Inventory</th>
+                      <th className="px-4 py-3" />
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {visibleProducts.map((product) => {
+                      const image = photoUrl(product.photo);
+                      const sale =
+                        product.salePriceCents !== null &&
+                        product.salePriceCents < product.basePriceCents
+                          ? product.salePriceCents
+                          : null;
+                      const inventory =
+                        productInventory.get(product.id) ??
+                        productInventorySnapshot(product, orders);
+                      return (
+                        <tr key={product.id} className="border-b last:border-0">
+                          <td className="px-4 py-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-[hsl(var(--muted))]">
+                                {image ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={image}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center">
+                                    <ShoppingBag className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">
+                                  {product.name}
+                                </p>
+                                <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
+                                  {product.sku} · /product/{product.slug}
+                                </p>
+                                {product.options.length > 0 && (
+                                  <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                                    {product.options.length} option
+                                    {product.options.length === 1 ? "" : "s"} configured
+                                  </p>
+                                )}
+                                {product.stripeTaxCode && (
+                                  <p className="mt-1 truncate text-xs text-[hsl(var(--muted-foreground))]">
+                                    Tax code {product.stripeTaxCode}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 capitalize text-[hsl(var(--muted-foreground))]">
+                            {product.kind}
+                          </td>
+                          <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">
+                            {product.category ?? "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {sale !== null ? (
+                              <div>
+                                <span className="mr-2 text-[hsl(var(--muted-foreground))] line-through">
+                                  {formatMoney(product.basePriceCents, product.currency)}
+                                </span>
+                                <span className="font-medium">
+                                  {formatMoney(sale, product.currency)}
+                                </span>
+                              </div>
+                            ) : (
+                              formatMoney(product.basePriceCents, product.currency)
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap gap-1">
+                                <Badge tone={product.isActive ? "green" : "neutral"}>
+                                  {product.isActive ? "Active" : "Hidden"}
+                                </Badge>
+                                <Badge tone={inventory.tone}>
+                                  {inventory.label}
+                                </Badge>
+                                {product.isFeatured && (
+                                  <Badge tone="blue">Featured</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {inventory.detail}
+                              </p>
+                              {product.inventoryTracked &&
+                                product.lowStockThreshold > 0 && (
+                                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                    Low-stock threshold {product.lowStockThreshold}
+                                  </p>
+                                )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditing(product)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => remove(product)}
+                                disabled={deletingId === product.id}
+                              >
+                                {deletingId === product.id && (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                )}
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
