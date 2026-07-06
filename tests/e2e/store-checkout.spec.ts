@@ -47,6 +47,10 @@ type StatusResponse = {
     order: {
       id: string;
       status: string;
+      fulfillmentStatus: string;
+      fulfillmentCarrier: string | null;
+      fulfillmentTrackingNumber: string | null;
+      fulfillmentTrackingUrl: string | null;
       totalCents: number;
       items: Array<{ quantity: number; lineTotalCents: number }>;
     };
@@ -249,9 +253,41 @@ test("store cart, manual checkout, and order status stay healthy", async ({
     const lookup = (await lookupResponse.json()) as StatusResponse;
     expect(lookup.data.order.id).toBe(createdOrderId);
     expect(lookup.data.order.status).toBe("pending");
+    expect(lookup.data.order.fulfillmentStatus).toBe("unfulfilled");
     expect(lookup.data.order.totalCents).toBe(24690);
     expect(lookup.data.order.items).toHaveLength(1);
     expect(lookup.data.statusUrl).toContain("/orders/status?token=");
+
+    await sql`
+      update "order"
+      set
+        status = 'paid',
+        fulfillment_status = 'shipped',
+        fulfillment_carrier = 'USPS',
+        fulfillment_tracking_number = '9400TEST',
+        fulfillment_tracking_url = 'https://tracking.example/9400TEST',
+        fulfillment_ready_at = '2026-07-11T12:00:00.000Z',
+        fulfillment_shipped_at = '2026-07-12T12:00:00.000Z',
+        fulfillment_notes = 'Internal-only packing note',
+        updated_at = now()
+      where id = ${createdOrderId}
+    `;
+
+    const fulfilledLookupResponse = await request.post("/api/v1/orders/status", {
+      data: { email: customerEmail, reference: createdOrderId },
+    });
+    expect(fulfilledLookupResponse.ok()).toBeTruthy();
+    const fulfilledLookup = (await fulfilledLookupResponse.json()) as StatusResponse;
+    expect(fulfilledLookup.data.order.status).toBe("paid");
+    expect(fulfilledLookup.data.order.fulfillmentStatus).toBe("shipped");
+    expect(fulfilledLookup.data.order.fulfillmentCarrier).toBe("USPS");
+    expect(fulfilledLookup.data.order.fulfillmentTrackingNumber).toBe("9400TEST");
+    expect(fulfilledLookup.data.order.fulfillmentTrackingUrl).toBe(
+      "https://tracking.example/9400TEST",
+    );
+    expect(JSON.stringify(fulfilledLookup.data.order)).not.toContain(
+      "Internal-only packing note",
+    );
 
     await openCleanPage(page, `/product/${slug}`, browserErrors);
     await expect(
@@ -260,7 +296,10 @@ test("store cart, manual checkout, and order status stay healthy", async ({
 
     await openCleanPage(page, "/cart", browserErrors);
     await openCleanPage(page, checkout.data.statusUrl!, browserErrors);
-    await expect(page.getByText(/pending/i).first()).toBeVisible();
+    await expect(page.getByText(/shipped/i).first()).toBeVisible();
+    await expect(page.getByText("USPS").first()).toBeVisible();
+    await expect(page.getByText("9400TEST").first()).toBeVisible();
+    await expect(page.getByText("Internal-only packing note")).toHaveCount(0);
 
     await openCleanPage(page, "/admin/store", browserErrors);
     await expect(page).toHaveURL(/\/login/);

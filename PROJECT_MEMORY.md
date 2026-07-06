@@ -351,6 +351,11 @@ is gitignored):
   CI's e2e job layers `compose.dev.yaml` on top of prod for this reason. If logged-out auth or
   session calls start 500ing while Redis still pings, check Redis logs for `MISCONF` / Docker disk
   full and prune unused build cache/images before restarting.
+- Store workflow coverage follow-up: the same smoke now also advances its temporary order to a
+  shipped customer-facing state, verifies the public status API/page show carrier/tracking data,
+  and asserts private fulfillment notes are not exposed. Email template unit coverage now locks
+  status links into manual confirmations, invoices, receipts, refunds, and fulfillment updates,
+  including ready-without-receipt and delivered-with-private-notes cases.
 - **Recent UI/effect scope:** gallery/mobile UI and Alternative Scroll refinements, plus a
   Pages editor fix so Gallery block grid changes update the live preview and support the newer
   grid types. Latest Pages editor work adds

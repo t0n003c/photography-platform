@@ -5,12 +5,16 @@ import {
   manualOrderAdminNotification,
   manualOrderCustomerConfirmation,
   storeRefundIssued,
+  storeOrderDelivered,
+  storeOrderReady,
   storeOrderShipped,
   storeInvoiceIssued,
   storeReceiptIssued,
 } from "@/src/email/templates";
 import type { AdminOrderDTO } from "@/src/db/queries/orders";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
+
+const statusUrl = "https://example.com/orders/status?token=signed-status";
 
 const order: StoreOrderConfirmation = {
   orderId: "01TESTORDER",
@@ -160,7 +164,7 @@ describe("manual order email templates", () => {
   it("builds a customer confirmation with itemized options", () => {
     const msg = manualOrderCustomerConfirmation({
       to: "riley@example.com",
-      order,
+      order: { ...order, statusUrl },
       siteName: "Studio",
     });
     expect(msg.to).toBe("riley@example.com");
@@ -170,6 +174,8 @@ describe("manual order email templates", () => {
     expect(msg.text ?? "").toContain("Tax: $11.47");
     expect(msg.text ?? "").toContain("Shipping (Standard shipping): $12.00");
     expect(msg.text ?? "").toContain("Total: $162.47");
+    expect(msg.html).toContain("Track order status");
+    expect(msg.text ?? "").toContain(statusUrl);
   });
 
   it("builds an admin notification with replyTo set to the customer", () => {
@@ -231,11 +237,14 @@ describe("storeInvoiceIssued", () => {
         updatedAt: "2026-07-05T20:00:00.000Z",
       },
       invoiceUrl: "https://example.com/invoice/secret-token",
+      statusUrl,
       siteName: "Studio",
     });
     expect(msg.subject).toContain("INV-20260705-ABC123");
     expect(msg.html).toContain("https://example.com/invoice/secret-token");
+    expect(msg.html).toContain("Track order status");
     expect(msg.text ?? "").toContain("Pay by card after confirmation.");
+    expect(msg.text ?? "").toContain(statusUrl);
     expect(msg.text ?? "").toContain("Total: $162.47");
   });
 });
@@ -273,12 +282,15 @@ describe("storeReceiptIssued", () => {
         updatedAt: "2026-07-10T18:05:00.000Z",
       },
       receiptUrl: "https://example.com/invoice/signed-receipt",
+      statusUrl,
       siteName: "Studio",
     });
     expect(msg.subject).toContain("Receipt");
     expect(msg.html).toContain("Amount paid: $162.47");
     expect(msg.html).toContain("Reference: 1042");
     expect(msg.text ?? "").toContain("Method: Check");
+    expect(msg.html).toContain("Track order status");
+    expect(msg.text ?? "").toContain(statusUrl);
     expect(msg.text ?? "").toContain("https://example.com/invoice/signed-receipt");
   });
 });
@@ -309,17 +321,39 @@ describe("storeRefundIssued", () => {
         updatedAt: "2026-07-12T18:05:00.000Z",
       },
       receiptUrl: "https://example.com/invoice/refund-receipt",
+      statusUrl,
       siteName: "Studio",
     });
     expect(msg.subject).toContain("Refund");
     expect(msg.html).toContain("Amount refunded: $25.00");
     expect(msg.html).toContain("Reference: 1099");
     expect(msg.text ?? "").toContain("Refunded the extra print.");
+    expect(msg.html).toContain("Track order status");
+    expect(msg.text ?? "").toContain(statusUrl);
     expect(msg.text ?? "").toContain("https://example.com/invoice/refund-receipt");
   });
 });
 
 describe("store fulfillment emails", () => {
+  it("builds a ready update with the customer status link even without a receipt", () => {
+    const msg = storeOrderReady({
+      to: "riley@example.com",
+      order: {
+        ...adminOrder,
+        status: "paid",
+        fulfillmentStatus: "ready",
+        fulfillmentReadyAt: "2026-07-11T12:00:00.000Z",
+      },
+      receiptUrl: null,
+      statusUrl,
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("is ready");
+    expect(msg.html).toContain("Track order status");
+    expect(msg.text ?? "").toContain(statusUrl);
+    expect(msg.html).not.toContain("View receipt");
+  });
+
   it("builds a shipped update with tracking details", () => {
     const msg = storeOrderShipped({
       to: "riley@example.com",
@@ -334,14 +368,40 @@ describe("store fulfillment emails", () => {
         fulfillmentShippedAt: "2026-07-12T12:00:00.000Z",
       },
       receiptUrl: "https://example.com/invoice/signed-receipt",
+      statusUrl,
       siteName: "Studio",
     });
     expect(msg.subject).toContain("has shipped");
     expect(msg.html).toContain("Carrier: USPS");
     expect(msg.html).toContain("9400TEST");
     expect(msg.html).toContain("Track shipment");
+    expect(msg.html).toContain("Track order status");
+    expect(msg.text ?? "").toContain(statusUrl);
     expect(msg.text ?? "").toContain(
       "View receipt: https://example.com/invoice/signed-receipt",
     );
+  });
+
+  it("builds a delivered update without exposing internal notes", () => {
+    const msg = storeOrderDelivered({
+      to: "riley@example.com",
+      order: {
+        ...adminOrder,
+        status: "fulfilled",
+        fulfillmentStatus: "delivered",
+        fulfillmentCarrier: "UPS",
+        fulfillmentTrackingNumber: "1ZTEST",
+        fulfillmentDeliveredAt: "2026-07-15T12:00:00.000Z",
+        fulfillmentNotes: "Internal packing and client preference notes.",
+      },
+      receiptUrl: "https://example.com/invoice/signed-receipt",
+      statusUrl,
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("was delivered");
+    expect(msg.html).toContain("Carrier: UPS");
+    expect(msg.html).toContain("1ZTEST");
+    expect(msg.html).not.toContain("Internal packing");
+    expect(msg.text ?? "").not.toContain("Internal packing");
   });
 });
