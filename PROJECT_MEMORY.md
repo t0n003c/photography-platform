@@ -1200,6 +1200,11 @@ is gitignored):
   option chips under each order item, richer copied summaries with indented option rows,
   one-click next-step status actions in the order detail modal, and mobile order cards
   that avoid sideways table scanning for manual fulfillment.
+  Follow-up: Store admin communication previews are non-mutating and template-backed.
+  `/admin/store` order details can preview invoice, receipt, refund, and fulfillment emails
+  before sending; `/api/v1/admin/orders/[id]/email-preview` renders the same email templates
+  against draft form values and uses a placeholder recipient only when the order has no customer
+  email yet.
   Follow-up: Store checkout now redirects successful manual-invoice requests to
   `/cart/confirmation?order=...`. The confirmation page reads the just-created order
   summary from browser session storage instead of exposing a public raw-order lookup,

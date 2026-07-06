@@ -238,6 +238,18 @@ interface FulfillmentFormValues {
   fulfillmentNotes: string;
 }
 
+type EmailPreviewKind = "invoice" | "receipt" | "refund" | "fulfillment";
+
+interface EmailPreviewMessage {
+  kind: EmailPreviewKind;
+  label: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  note: string | null;
+}
+
 interface ProductFormValues {
   name: string;
   slug: string;
@@ -1203,6 +1215,58 @@ function ProductModal({
   );
 }
 
+function EmailPreviewModal({
+  preview,
+  onClose,
+}: {
+  preview: EmailPreviewMessage;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={preview.label}
+      className="w-[min(94vw,58rem)]"
+    >
+      <div className="space-y-4">
+        <div className="grid gap-3 rounded-lg border bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[8rem_1fr]">
+          <span className="font-medium text-[hsl(var(--muted-foreground))]">
+            To
+          </span>
+          <span className="break-words">{preview.to}</span>
+          <span className="font-medium text-[hsl(var(--muted-foreground))]">
+            Subject
+          </span>
+          <span className="break-words">{preview.subject}</span>
+        </div>
+        {preview.note && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-200">
+            {preview.note}
+          </p>
+        )}
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">HTML preview</h3>
+            <iframe
+              title={`${preview.label} HTML preview`}
+              srcDoc={preview.html}
+              sandbox=""
+              className="h-[32rem] w-full rounded-lg border bg-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Plain text</h3>
+            <pre className="h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg border bg-[hsl(var(--muted))] p-3 text-xs leading-relaxed">
+              {preview.text}
+            </pre>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function OrderDetailModal({
   order,
   saving,
@@ -1235,6 +1299,7 @@ function OrderDetailModal({
   onStatusLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onRefreshCheckout: (order: OrderRow) => Promise<void>;
 }) {
+  const { toast } = useToast();
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
     dueAt: "",
     notes: "",
@@ -1266,6 +1331,8 @@ function OrderDetailModal({
     fulfillmentDeliveredAt: "",
     fulfillmentNotes: "",
   });
+  const [preview, setPreview] = useState<EmailPreviewMessage | null>(null);
+  const [previewing, setPreviewing] = useState<EmailPreviewKind | null>(null);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
@@ -1332,8 +1399,84 @@ function OrderDetailModal({
     return onFulfillmentSubmit(values, sendEmail);
   };
 
+  const previewEmail = async (kind: EmailPreviewKind) => {
+    setPreviewing(kind);
+    try {
+      const body =
+        kind === "invoice"
+          ? {
+              kind,
+              invoice: {
+                dueAt: invoiceForm.dueAt || null,
+                notes: invoiceForm.notes.trim() || null,
+                paymentInstructions:
+                  invoiceForm.paymentInstructions.trim() || null,
+              },
+            }
+          : kind === "receipt"
+            ? {
+                kind,
+                payment: {
+                  paidAt: paymentForm.paidAt || null,
+                  paidAmountCents: inputToCents(paymentForm.paidAmount),
+                  paymentMethod: paymentForm.paymentMethod.trim() || null,
+                  paymentReference: paymentForm.paymentReference.trim() || null,
+                  paymentNote: paymentForm.paymentNote.trim() || null,
+                },
+              }
+            : kind === "refund"
+              ? {
+                  kind,
+                  refund: {
+                    amountCents: inputToCents(refundForm.amount),
+                    status: "succeeded",
+                    provider: refundForm.provider,
+                    method:
+                      refundForm.provider === "stripe"
+                        ? null
+                        : refundForm.method.trim() || null,
+                    reference:
+                      refundForm.provider === "stripe"
+                        ? null
+                        : refundForm.reference.trim() || null,
+                    reason: refundForm.reason.trim() || null,
+                    note: refundForm.note.trim() || null,
+                    refundedAt: refundForm.refundedAt || null,
+                  },
+                }
+              : {
+                  kind,
+                  fulfillment: {
+                    fulfillmentStatus: fulfillmentForm.fulfillmentStatus,
+                    fulfillmentCarrier:
+                      fulfillmentForm.fulfillmentCarrier.trim() || null,
+                    fulfillmentTrackingNumber:
+                      fulfillmentForm.fulfillmentTrackingNumber.trim() || null,
+                    fulfillmentTrackingUrl:
+                      fulfillmentForm.fulfillmentTrackingUrl.trim() || null,
+                    fulfillmentReadyAt: fulfillmentForm.fulfillmentReadyAt || null,
+                    fulfillmentShippedAt:
+                      fulfillmentForm.fulfillmentShippedAt || null,
+                    fulfillmentDeliveredAt:
+                      fulfillmentForm.fulfillmentDeliveredAt || null,
+                    fulfillmentNotes: fulfillmentForm.fulfillmentNotes.trim() || null,
+                  },
+                };
+      const res = await api.post<{ data: EmailPreviewMessage }>(
+        `/api/v1/admin/orders/${order.id}/email-preview`,
+        body,
+      );
+      setPreview(res.data);
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setPreviewing(null);
+    }
+  };
+
   return (
-    <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
+    <>
+      <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -1472,6 +1615,19 @@ function OrderDetailModal({
             <Button type="button" variant="outline" onClick={() => onCopy(order)}>
               <Copy className="h-4 w-4" />
               Copy summary
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => previewEmail("invoice")}
+            >
+              {previewing === "invoice" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              Preview email
             </Button>
             <Button
               type="button"
@@ -1870,6 +2026,19 @@ function OrderDetailModal({
             <Button
               type="button"
               variant="outline"
+              disabled={saving || inputToCents(paymentForm.paidAmount) <= 0}
+              onClick={() => previewEmail("receipt")}
+            >
+              {previewing === "receipt" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              Preview receipt
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               disabled={saving}
               onClick={() => onPaymentSubmit(paymentForm, false)}
             >
@@ -2140,6 +2309,19 @@ function OrderDetailModal({
                 type="button"
                 variant="outline"
                 disabled={saving || !canRecordRefund}
+                onClick={() => previewEmail("refund")}
+              >
+                {previewing === "refund" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                Preview refund
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || !canRecordRefund}
                 onClick={() => onRefundSubmit(refundForm, false)}
               >
                 <CreditCard className="h-4 w-4" />
@@ -2366,6 +2548,22 @@ function OrderDetailModal({
               <Button
                 type="button"
                 variant="outline"
+                disabled={
+                  saving ||
+                  !canEmailFulfillment(fulfillmentForm.fulfillmentStatus)
+                }
+                onClick={() => previewEmail("fulfillment")}
+              >
+                {previewing === "fulfillment" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                Preview update
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 disabled={saving}
                 onClick={() => onFulfillmentSubmit(fulfillmentForm, false)}
               >
@@ -2416,7 +2614,11 @@ function OrderDetailModal({
           </div>
         </div>
       </div>
-    </Modal>
+      </Modal>
+      {preview && (
+        <EmailPreviewModal preview={preview} onClose={() => setPreview(null)} />
+      )}
+    </>
   );
 }
 
