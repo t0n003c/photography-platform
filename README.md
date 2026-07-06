@@ -17,9 +17,9 @@ with multiple gallery layouts, private client galleries with expiring share link
 full admin **CMS** (upload, library, galleries, page builder, layout/design editor,
 settings, menus). The page builder includes curated blocks such as galleries, banners,
 contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout supports
-**manual invoice requests**, receipts, fulfillment tracking, refund tracking, and optional
-Stripe Checkout/refunds/Stripe Tax for hosted cart checkout from Settings -> Payments
-only when the account, keys, and webhook secret are configured.
+**manual invoice requests**, receipts, fulfillment tracking, refund tracking, tax CSV export,
+and optional Stripe Checkout/refunds/Stripe Tax for hosted cart checkout from Settings ->
+Payments only when the account, keys, and webhook secret are configured.
 Stripe test-mode validation is documented in [`docs/STRIPE-TEST-RUNBOOK.md`](docs/STRIPE-TEST-RUNBOOK.md). See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 

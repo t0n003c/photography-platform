@@ -15,6 +15,9 @@ describe("StripePaymentProvider checkout", () => {
         expect(body.get("billing_address_collection")).toBe("auto");
         expect(body.get("customer_creation")).toBe("always");
         expect(body.get("line_items[0][price_data][tax_behavior]")).toBe("exclusive");
+        expect(body.get("line_items[0][price_data][product_data][tax_code]")).toBe(
+          "txcd_99999999",
+        );
         expect(body.get("metadata[taxMode]")).toBe("stripe");
         expect(new Headers(init?.headers).get("Idempotency-Key")).toBe(
           "invoice-checkout-invoice-1",
@@ -38,7 +41,14 @@ describe("StripePaymentProvider checkout", () => {
       invoiceId: "invoice-1",
       customerEmail: "client@example.com",
       currency: "USD",
-      lineItems: [{ description: "Fine art print", amountCents: 5000, quantity: 1 }],
+      lineItems: [
+        {
+          description: "Fine art print",
+          amountCents: 5000,
+          quantity: 1,
+          taxCode: "txcd_99999999",
+        },
+      ],
       successUrl: "https://studio.test/success",
       cancelUrl: "https://studio.test/cancel",
       automaticTax: true,

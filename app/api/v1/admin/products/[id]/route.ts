@@ -8,6 +8,7 @@ import { db } from "@/src/db/client";
 import { product } from "@/src/db/schema";
 import { getProductByIdAdmin } from "@/src/db/queries/store";
 import { normalizeProductOptions } from "@/src/lib/store-options";
+import { normalizeStripeTaxCode } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ const PatchSchema = z.object({
   salePriceCents: z.number().int().min(0).nullable().optional(),
   currency: z.string().min(3).max(3).optional(),
   category: z.string().nullable().optional(),
+  stripeTaxCode: z.string().max(80).nullable().optional(),
   tags: z.array(z.string()).optional(),
   options: z.array(ProductOptionSchema).optional(),
   isFeatured: z.boolean().optional(),
@@ -116,6 +118,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (body.salePriceCents !== undefined) updates.salePriceCents = body.salePriceCents;
   if (body.currency !== undefined) updates.currency = body.currency.toUpperCase();
   if (body.category !== undefined) updates.category = body.category?.trim() || null;
+  if (body.stripeTaxCode !== undefined) {
+    updates.stripeTaxCode = normalizeStripeTaxCode(body.stripeTaxCode);
+  }
   if (body.tags !== undefined) updates.tags = cleanTags(body.tags);
   if (body.options !== undefined)
     updates.options = normalizeProductOptions(body.options);

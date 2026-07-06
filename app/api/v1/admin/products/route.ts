@@ -9,6 +9,7 @@ import { db } from "@/src/db/client";
 import { product } from "@/src/db/schema";
 import { listProductsAdmin } from "@/src/db/queries/store";
 import { normalizeProductOptions } from "@/src/lib/store-options";
+import { normalizeStripeTaxCode } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ const CreateSchema = z.object({
   salePriceCents: z.number().int().min(0).nullable().optional(),
   currency: z.string().min(3).max(3).default("USD"),
   category: z.string().nullable().optional(),
+  stripeTaxCode: z.string().max(80).nullable().optional(),
   tags: z.array(z.string()).default([]),
   options: z.array(ProductOptionSchema).default([]),
   isFeatured: z.boolean().default(false),
@@ -99,6 +101,7 @@ export async function POST(req: Request) {
     salePriceCents: body.salePriceCents ?? null,
     currency: body.currency.toUpperCase(),
     category: body.category?.trim() || null,
+    stripeTaxCode: normalizeStripeTaxCode(body.stripeTaxCode),
     tags: cleanTags(body.tags),
     options: normalizeProductOptions(body.options),
     isFeatured: body.isFeatured,

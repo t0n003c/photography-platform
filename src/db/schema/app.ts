@@ -524,6 +524,7 @@ export const siteSettings = pgTable("site_settings", {
     .notNull()
     .default("test"),
   storeStripeTaxEnabled: boolean("store_stripe_tax_enabled").notNull().default(false),
+  storeStripeShippingTaxCode: text("store_stripe_shipping_tax_code"),
   stripePublishableKey: text("stripe_publishable_key"),
   stripeSecretKeyEnc: text("stripe_secret_key_enc"), // AES-256-GCM ciphertext
   stripeWebhookSecretEnc: text("stripe_webhook_secret_enc"), // AES-256-GCM ciphertext
@@ -636,6 +637,7 @@ export const product = pgTable("product", {
   salePriceCents: integer("sale_price_cents"),
   currency: text("currency").notNull().default("USD"),
   category: text("category"),
+  stripeTaxCode: text("stripe_tax_code"),
   tags: jsonb("tags")
     .$type<string[]>()
     .notNull()
@@ -701,6 +703,7 @@ export const orderItem = pgTable("order_item", {
   }),
   photoId: text("photo_id").references(() => photo.id, { onDelete: "set null" }),
   description: text("description"),
+  stripeTaxCode: text("stripe_tax_code"),
   options: jsonb("options")
     .$type<SelectedProductOption[]>()
     .notNull()

@@ -500,16 +500,16 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ## 13. Store (light catalog + optional hosted checkout)
 
 > Product catalog, public browse/cart, manual invoice order requests, issued invoices,
-> manual payment receipts, refund tracking, fulfillment tracking, and optional Stripe Checkout
-> are active. Hosted checkout is enabled only when Settings -> Payments has all required
-> Stripe values.
+> manual payment receipts, refund tracking, fulfillment tracking, tax CSV export, and optional
+> Stripe Checkout/Stripe Tax are active. Hosted checkout is enabled only when Settings ->
+> Payments has all required Stripe values.
 
 ### 13.1 `product`
 
 `id` PK, `slug` UNIQUE, `sku` UNIQUE, `name`, `description`, `kind`
 (`print`\|`digital`\|`bundle`), `photo_id` FK→photo NULL, `base_price_cents`,
-`sale_price_cents` NULL, `currency`, `category` NULL, JSON `tags`, JSON `options`, `is_featured`,
-`is_active`, `sort_order`, timestamps.
+`sale_price_cents` NULL, `currency`, `category` NULL, `stripe_tax_code` NULL, JSON `tags`,
+JSON `options`, `is_featured`, `is_active`, `sort_order`, timestamps.
 
 `options` stores reusable product choice groups such as size, finish, license, or framing:
 `[{ id, name, required, values: [{ id, label, priceDeltaCents }] }]`.
@@ -540,11 +540,11 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ### 13.3 `order_item`
 
 `id` PK, `order_id` FK→order CASCADE, `product_id` FK→product NULL, `photo_id` FK→photo NULL,
-`description`, JSON `options`, `quantity` integer, `unit_price_cents` integer,
-`line_total_cents` integer.
+`description`, `stripe_tax_code` NULL, JSON `options`, `quantity` integer,
+`unit_price_cents` integer, `line_total_cents` integer.
 
-`options` snapshots the selected product options at checkout so later product edits do not
-rewrite historical order requests.
+`options` and `stripe_tax_code` snapshot selected product options/tax category at checkout so
+later product edits do not rewrite historical order requests or tax exports.
 
 ### 13.4 `invoice`
 
@@ -589,16 +589,17 @@ Indexes: `INDEX(order_id)`, `INDEX(invoice_id)`.
 Store checkout settings live on the singleton `site_settings` row. Hosted payment readiness
 adds:
 
-| Field                         | Type      | Notes                                                                  |
-| ----------------------------- | --------- | ---------------------------------------------------------------------- |
-| store_online_payments_enabled | boolean   | permits hosted checkout only when provider + Stripe fields are ready   |
-| store_payment_provider        | text      | `manual`\|`stripe`; default `manual`                                   |
-| store_payment_mode            | text      | `test`\|`live`; default `test`                                         |
-| store_stripe_tax_enabled      | boolean   | optional Stripe Tax for hosted public cart checkout only               |
-| stripe_publishable_key        | text NULL | non-secret Stripe key                                                  |
-| stripe_secret_key_enc         | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                               |
-| stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
-| stripe_statement_descriptor   | text NULL | optional Stripe statement descriptor                                   |
+| Field                          | Type      | Notes                                                                  |
+| ------------------------------ | --------- | ---------------------------------------------------------------------- |
+| store_online_payments_enabled  | boolean   | permits hosted checkout only when provider + Stripe fields are ready   |
+| store_payment_provider         | text      | `manual`\|`stripe`; default `manual`                                   |
+| store_payment_mode             | text      | `test`\|`live`; default `test`                                         |
+| store_stripe_tax_enabled       | boolean   | optional Stripe Tax for hosted public cart checkout only               |
+| store_stripe_shipping_tax_code | text NULL | optional Stripe Tax category for the app's flat shipping line          |
+| stripe_publishable_key         | text NULL | non-secret Stripe key                                                  |
+| stripe_secret_key_enc          | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                               |
+| stripe_webhook_secret_enc      | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
+| stripe_statement_descriptor    | text NULL | optional Stripe statement descriptor                                   |
 
 ### 13.7 `stripe_webhook_event`
 
@@ -722,5 +723,5 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/VAT automation — deferred beyond the current manual invoice, optional Stripe
-  Checkout/refunds, refund-tracking, and fulfillment basics slices.
+- Store tax/VAT compliance operations — registrations/nexus decisions, filing/reporting,
+  and automatic tax for already-issued invoice links remain deferred.

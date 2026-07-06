@@ -39,6 +39,7 @@ interface SettingsDTO {
   storePaymentProvider: "manual" | "stripe";
   storePaymentMode: "test" | "live";
   storeStripeTaxEnabled: boolean;
+  storeStripeShippingTaxCode: string | null;
   stripePublishableKey: string;
   stripeSecretKeySet: boolean;
   stripeWebhookSecretSet: boolean;
@@ -255,6 +256,7 @@ export default function SettingsPage() {
         storePaymentProvider: s.storePaymentProvider,
         storePaymentMode: s.storePaymentMode,
         storeStripeTaxEnabled: s.storeStripeTaxEnabled,
+        storeStripeShippingTaxCode: s.storeStripeShippingTaxCode,
         stripePublishableKey: s.stripePublishableKey,
         stripeStatementDescriptor: s.stripeStatementDescriptor,
       };
@@ -564,6 +566,7 @@ export default function SettingsPage() {
                   if (provider === "manual") {
                     update("storeOnlinePaymentsEnabled", false);
                     update("storeStripeTaxEnabled", false);
+                    update("storeStripeShippingTaxCode", null);
                   }
                 }}
               >
@@ -624,6 +627,24 @@ export default function SettingsPage() {
               </span>
             </span>
           </label>
+
+          {stripeSelected && s.storeStripeTaxEnabled && (
+            <Field
+              label="Stripe shipping tax code"
+              htmlFor="store-stripe-shipping-tax-code"
+              hint="Optional. Use when flat shipping should have its own Stripe Tax category."
+            >
+              <Input
+                id="store-stripe-shipping-tax-code"
+                value={s.storeStripeShippingTaxCode ?? ""}
+                onChange={(e) =>
+                  update("storeStripeShippingTaxCode", e.target.value || null)
+                }
+                placeholder="txcd_..."
+                autoComplete="off"
+              />
+            </Field>
+          )}
 
           {stripeSelected && (
             <div className="grid gap-3 sm:grid-cols-2">

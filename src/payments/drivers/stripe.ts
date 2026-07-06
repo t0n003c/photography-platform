@@ -92,6 +92,12 @@ export class StripePaymentProvider implements PaymentProvider {
       );
       if (input.automaticTax) {
         params.set(`line_items[${index}][price_data][tax_behavior]`, "exclusive");
+        if (item.taxCode?.trim()) {
+          params.set(
+            `line_items[${index}][price_data][product_data][tax_code]`,
+            item.taxCode.trim(),
+          );
+        }
       }
     });
 

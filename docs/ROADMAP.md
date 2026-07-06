@@ -157,7 +157,8 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Store refund tracking basics: manual refund records, public receipt refund history, optional refund emails, and admin audit metadata.
 - [x] Provider-side live Stripe refund execution: partial/full refunds against Stripe PaymentIntents, provider status/error tracking, and refund status webhook updates.
 - [x] Stripe Tax automation foundation for hosted public cart checkout: optional Checkout automatic tax, address collection, and webhook reconciliation of paid tax/total.
-- [ ] Store operations still deferred: tax/VAT compliance operations (registrations/nexus decisions, product tax-code strategy, filing/reporting) and automatic tax for already-issued invoice links.
+- [x] Store tax operations basics: product/shipping Stripe tax-code capture, order-item tax-code snapshots, and admin tax/accounting CSV export.
+- [ ] Store operations still deferred: tax/VAT compliance operations (registrations/nexus decisions, filing/reporting) and automatic tax for already-issued invoice links.
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 

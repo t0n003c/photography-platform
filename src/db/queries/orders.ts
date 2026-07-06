@@ -101,6 +101,7 @@ export interface AdminOrderItemDTO {
   productId: string | null;
   photoId: string | null;
   description: string | null;
+  stripeTaxCode: string | null;
   options: SelectedProductOption[];
   quantity: number;
   unitPriceCents: number;
@@ -157,6 +158,34 @@ export interface AdminOrderDTO {
   updatedAt: string;
   items: AdminOrderItemDTO[];
   refunds: AdminOrderRefundDTO[];
+}
+
+export interface AdminOrderTaxExportDTO {
+  orderId: string;
+  createdAt: string;
+  orderStatus: OrderStatus;
+  customerName: string | null;
+  customerEmail: string | null;
+  invoiceNumber: string | null;
+  invoiceStatus: InvoiceStatus | null;
+  onlinePaymentProvider: "stripe" | null;
+  onlinePaymentStatus: OnlinePaymentStatus | null;
+  onlinePaymentSessionId: string | null;
+  onlinePaymentIntentId: string | null;
+  paidAt: string | null;
+  currency: string;
+  subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
+  totalCents: number;
+  invoiceAmountCents: number | null;
+  paidAmountCents: number | null;
+  succeededRefundCents: number;
+  pendingRefundCents: number;
+  netPaidCents: number;
+  itemCount: number;
+  itemDescriptions: string;
+  itemTaxCodes: string;
 }
 
 export interface PublicInvoiceDTO {
@@ -334,6 +363,7 @@ export async function createManualCheckoutOrder(
         productId: line.product.id,
         photoId: line.product.photoId,
         description: lineDescription(line.product.name, line.selectedOptions),
+        stripeTaxCode: line.product.stripeTaxCode,
         options: line.selectedOptions,
         quantity: line.quantity,
         unitPriceCents: line.unitPriceCents,
@@ -412,6 +442,7 @@ export async function createHostedCheckoutOrder(
         productId: line.product.id,
         photoId: line.product.photoId,
         description: lineDescription(line.product.name, line.selectedOptions),
+        stripeTaxCode: line.product.stripeTaxCode,
         options: line.selectedOptions,
         quantity: line.quantity,
         unitPriceCents: line.unitPriceCents,
@@ -491,6 +522,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       productId: item.productId,
       photoId: item.photoId,
       description: item.description,
+      stripeTaxCode: item.stripeTaxCode,
       options: normalizeSelectedOptions(item.options),
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,
@@ -532,6 +564,142 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       updatedAt: row.updatedAt.toISOString(),
       items: itemsByOrder.get(row.id) ?? [],
       refunds: refundsByOrder.get(row.id) ?? [],
+    };
+  });
+}
+
+export async function listOrdersTaxExportAdmin(
+  limit = 5000,
+): Promise<AdminOrderTaxExportDTO[]> {
+  const rows = await db
+    .select({
+      orderId: orderTable.id,
+      orderEmail: orderTable.email,
+      status: orderTable.status,
+      subtotalCents: orderTable.subtotalCents,
+      taxCents: orderTable.taxCents,
+      shippingCents: orderTable.shippingCents,
+      totalCents: orderTable.totalCents,
+      currency: orderTable.currency,
+      createdAt: orderTable.createdAt,
+      clientName: client.name,
+      clientEmail: client.email,
+      invoiceNumber: invoice.number,
+      invoiceStatus: invoice.status,
+      invoiceAmountCents: invoice.amountCents,
+      paidAt: invoice.paidAt,
+      paidAmountCents: invoice.paidAmountCents,
+      onlinePaymentProvider: invoice.onlinePaymentProvider,
+      onlinePaymentStatus: invoice.onlinePaymentStatus,
+      onlinePaymentSessionId: invoice.onlinePaymentSessionId,
+      onlinePaymentIntentId: invoice.onlinePaymentIntentId,
+    })
+    .from(orderTable)
+    .leftJoin(client, eq(orderTable.clientId, client.id))
+    .leftJoin(invoice, eq(invoice.orderId, orderTable.id))
+    .orderBy(desc(orderTable.createdAt))
+    .limit(Math.min(Math.max(limit, 1), 5000));
+
+  if (rows.length === 0) return [];
+  const orderIds = rows.map((row) => row.orderId);
+  const [itemRows, refundRows] = await Promise.all([
+    db
+      .select({
+        orderId: orderItem.orderId,
+        description: orderItem.description,
+        quantity: orderItem.quantity,
+        stripeTaxCode: orderItem.stripeTaxCode,
+      })
+      .from(orderItem)
+      .where(inArray(orderItem.orderId, orderIds)),
+    db
+      .select({
+        orderId: orderRefund.orderId,
+        amountCents: orderRefund.amountCents,
+        status: orderRefund.status,
+      })
+      .from(orderRefund)
+      .where(inArray(orderRefund.orderId, orderIds)),
+  ]);
+
+  const itemsByOrder = new Map<
+    string,
+    Array<{
+      description: string | null;
+      quantity: number;
+      stripeTaxCode: string | null;
+    }>
+  >();
+  for (const item of itemRows) {
+    const list = itemsByOrder.get(item.orderId) ?? [];
+    list.push(item);
+    itemsByOrder.set(item.orderId, list);
+  }
+
+  const refundsByOrder = new Map<
+    string,
+    { succeededRefundCents: number; pendingRefundCents: number }
+  >();
+  for (const refund of refundRows) {
+    const current = refundsByOrder.get(refund.orderId) ?? {
+      succeededRefundCents: 0,
+      pendingRefundCents: 0,
+    };
+    if (refund.status === "succeeded") {
+      current.succeededRefundCents += refund.amountCents;
+    } else if (refund.status === "pending") {
+      current.pendingRefundCents += refund.amountCents;
+    }
+    refundsByOrder.set(refund.orderId, current);
+  }
+
+  return rows.map((row) => {
+    const items = itemsByOrder.get(row.orderId) ?? [];
+    const refundTotals = refundsByOrder.get(row.orderId) ?? {
+      succeededRefundCents: 0,
+      pendingRefundCents: 0,
+    };
+    const paidAmountCents =
+      row.paidAmountCents ??
+      (row.invoiceStatus === "paid"
+        ? (row.invoiceAmountCents ?? row.totalCents)
+        : null);
+    const itemDescriptions = items
+      .map((item) => `${item.quantity}x ${item.description || "Product"}`)
+      .join(" | ");
+    const itemTaxCodes = [
+      ...new Set(items.map((item) => item.stripeTaxCode).filter(Boolean)),
+    ].join(" | ");
+
+    return {
+      orderId: row.orderId,
+      createdAt: row.createdAt.toISOString(),
+      orderStatus: row.status as OrderStatus,
+      customerName: row.clientName,
+      customerEmail: row.orderEmail ?? row.clientEmail,
+      invoiceNumber: row.invoiceNumber,
+      invoiceStatus: row.invoiceStatus as InvoiceStatus | null,
+      onlinePaymentProvider: row.onlinePaymentProvider as "stripe" | null,
+      onlinePaymentStatus: row.onlinePaymentStatus as OnlinePaymentStatus | null,
+      onlinePaymentSessionId: row.onlinePaymentSessionId,
+      onlinePaymentIntentId: row.onlinePaymentIntentId,
+      paidAt: row.paidAt?.toISOString() ?? null,
+      currency: row.currency,
+      subtotalCents: row.subtotalCents,
+      taxCents: row.taxCents,
+      shippingCents: row.shippingCents,
+      totalCents: row.totalCents,
+      invoiceAmountCents: row.invoiceAmountCents,
+      paidAmountCents,
+      succeededRefundCents: refundTotals.succeededRefundCents,
+      pendingRefundCents: refundTotals.pendingRefundCents,
+      netPaidCents: Math.max(
+        0,
+        (paidAmountCents ?? 0) - refundTotals.succeededRefundCents,
+      ),
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      itemDescriptions,
+      itemTaxCodes,
     };
   });
 }
@@ -586,6 +754,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
       productId: item.productId,
       photoId: item.photoId,
       description: item.description,
+      stripeTaxCode: item.stripeTaxCode,
       options: normalizeSelectedOptions(item.options),
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,

@@ -46,6 +46,7 @@ const emptySummary: CartSummaryDTO = {
     provider: "manual",
     activeCheckoutPath: "manual",
     taxMode: "manual",
+    shippingTaxCode: null,
   },
 };
 

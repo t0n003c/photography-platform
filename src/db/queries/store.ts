@@ -38,6 +38,7 @@ export interface ProductDTO {
   salePriceCents: number | null;
   currency: string;
   category: string | null;
+  stripeTaxCode: string | null;
   tags: string[];
   options: ProductOption[];
   isFeatured: boolean;
@@ -79,6 +80,7 @@ export interface CartSummaryDTO {
     provider: "manual" | "stripe";
     activeCheckoutPath: "manual" | "hosted";
     taxMode: "manual" | "stripe";
+    shippingTaxCode: string | null;
   };
 }
 
@@ -139,6 +141,7 @@ export async function serializeProducts(rows: ProductRow[]): Promise<ProductDTO[
     salePriceCents: row.salePriceCents,
     currency: row.currency,
     category: row.category,
+    stripeTaxCode: row.stripeTaxCode,
     tags: Array.isArray(row.tags) ? row.tags : [],
     options: normalizeProductOptions(row.options),
     isFeatured: row.isFeatured,
@@ -298,6 +301,7 @@ export async function resolveCartItems(
       provider: paymentSettings.paymentProvider,
       activeCheckoutPath: paymentStatus.activeCheckoutPath,
       taxMode: useStripeTax ? "stripe" : "manual",
+      shippingTaxCode: useStripeTax ? paymentSettings.stripeShippingTaxCode : null,
     },
   };
 }

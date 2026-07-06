@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   Copy,
   CreditCard,
+  Download,
   Eye,
   ExternalLink,
   Link as LinkIcon,
@@ -105,6 +106,7 @@ interface ProductRow {
   salePriceCents: number | null;
   currency: string;
   category: string | null;
+  stripeTaxCode: string | null;
   tags: string[];
   options: ProductOption[];
   isFeatured: boolean;
@@ -148,6 +150,7 @@ interface OrderRow {
     productId: string | null;
     photoId: string | null;
     description: string | null;
+    stripeTaxCode: string | null;
     options: SelectedProductOption[];
     quantity: number;
     unitPriceCents: number;
@@ -230,6 +233,7 @@ interface ProductFormValues {
   slug: string;
   sku: string;
   description: string;
+  stripeTaxCode: string;
   kind: ProductKind;
   photoId: string | null;
   basePrice: string;
@@ -248,6 +252,7 @@ const EMPTY_FORM: ProductFormValues = {
   slug: "",
   sku: "",
   description: "",
+  stripeTaxCode: "",
   kind: "print",
   photoId: null,
   basePrice: "",
@@ -466,11 +471,12 @@ function orderSummary(row: OrderRow) {
       item.unitPriceCents,
       row.currency,
     )} = ${formatMoney(item.lineTotalCents, row.currency)}`;
-    if (item.options.length === 0) return [head];
-    return [
-      head,
+    const details = [
+      item.stripeTaxCode ? `  Tax code: ${item.stripeTaxCode}` : null,
       ...item.options.map((option) => `  ${optionLine(option, row.currency)}`),
-    ];
+    ].filter(Boolean) as string[];
+    if (details.length === 0) return [head];
+    return [head, ...details];
   });
   return [
     `Order ${row.id}`,
@@ -517,9 +523,7 @@ function orderSummary(row: OrderRow) {
       : null,
     `Fulfillment: ${fulfillmentLabel(row.fulfillmentStatus)}`,
     row.fulfillmentCarrier ? `Carrier: ${row.fulfillmentCarrier}` : null,
-    row.fulfillmentTrackingNumber
-      ? `Tracking: ${row.fulfillmentTrackingNumber}`
-      : null,
+    row.fulfillmentTrackingNumber ? `Tracking: ${row.fulfillmentTrackingNumber}` : null,
     row.fulfillmentTrackingUrl ? `Tracking URL: ${row.fulfillmentTrackingUrl}` : null,
     row.clientNotes ? `Notes: ${row.clientNotes}` : null,
   ]
@@ -544,6 +548,7 @@ function toForm(product: ProductRow): ProductFormValues {
     slug: product.slug,
     sku: product.sku,
     description: product.description ?? "",
+    stripeTaxCode: product.stripeTaxCode ?? "",
     kind: product.kind,
     photoId: product.photoId,
     basePrice: centsToInput(product.basePriceCents),
@@ -564,6 +569,7 @@ function toPayload(form: ProductFormValues) {
     slug: form.slug.trim(),
     sku: form.sku.trim(),
     description: form.description.trim() || null,
+    stripeTaxCode: form.stripeTaxCode.trim() || null,
     kind: form.kind,
     photoId: form.photoId,
     basePriceCents: inputToCents(form.basePrice),
@@ -943,6 +949,21 @@ function ProductModal({
             />
           </Field>
           <Field
+            label="Stripe tax code"
+            htmlFor="product-stripe-tax-code"
+            hint="Optional. Used by Stripe Tax when hosted cart checkout is enabled."
+          >
+            <Input
+              id="product-stripe-tax-code"
+              value={form.stripeTaxCode}
+              onChange={(event) =>
+                setForm({ ...form, stripeTaxCode: event.target.value })
+              }
+              placeholder="txcd_..."
+              autoComplete="off"
+            />
+          </Field>
+          <Field
             label="Tags"
             htmlFor="product-tags"
             hint="Comma-separated labels for filtering/tag cloud."
@@ -1089,7 +1110,9 @@ function OrderDetailModal({
   const fulfillmentCanEmail =
     Boolean(order.email) && canEmailFulfillment(fulfillmentForm.fulfillmentStatus);
   const nextStatus: OrderStatus | null =
-    order.status === "draft" || order.status === "pending" || order.status === "invoiced"
+    order.status === "draft" ||
+    order.status === "pending" ||
+    order.status === "invoiced"
       ? "paid"
       : order.status === "paid"
         ? "fulfilled"
@@ -1128,10 +1151,7 @@ function OrderDetailModal({
     });
   }, [order.id, order.invoice, order.totalCents, order, stripeRefundAvailable]);
 
-  const submitFulfillmentStatus = (
-    status: FulfillmentStatus,
-    sendEmail: boolean,
-  ) => {
+  const submitFulfillmentStatus = (status: FulfillmentStatus, sendEmail: boolean) => {
     const values = { ...fulfillmentForm, fulfillmentStatus: status };
     setFulfillmentForm(values);
     return onFulfillmentSubmit(values, sendEmail);
@@ -1310,12 +1330,20 @@ function OrderDetailModal({
             <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-5">
               <span>Created {formatDate(order.invoice.createdAt)}</span>
               <span>
-                Issued {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
+                Issued{" "}
+                {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
               </span>
-              <span>Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}</span>
-              <span>Paid {order.invoice.paidAt ? formatDate(order.invoice.paidAt) : "—"}</span>
               <span>
-                Receipt {order.invoice.receiptSentAt ? formatDate(order.invoice.receiptSentAt) : "—"}
+                Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}
+              </span>
+              <span>
+                Paid {order.invoice.paidAt ? formatDate(order.invoice.paidAt) : "—"}
+              </span>
+              <span>
+                Receipt{" "}
+                {order.invoice.receiptSentAt
+                  ? formatDate(order.invoice.receiptSentAt)
+                  : "—"}
               </span>
             </div>
           )}
@@ -1341,7 +1369,10 @@ function OrderDetailModal({
                   <span className="font-medium text-[hsl(var(--foreground))]">
                     Session
                   </span>
-                  <p className="font-mono" title={order.invoice.onlinePaymentSessionId ?? ""}>
+                  <p
+                    className="font-mono"
+                    title={order.invoice.onlinePaymentSessionId ?? ""}
+                  >
                     {shortRef(order.invoice.onlinePaymentSessionId)}
                   </p>
                 </div>
@@ -1349,7 +1380,10 @@ function OrderDetailModal({
                   <span className="font-medium text-[hsl(var(--foreground))]">
                     Payment intent
                   </span>
-                  <p className="font-mono" title={order.invoice.onlinePaymentIntentId ?? ""}>
+                  <p
+                    className="font-mono"
+                    title={order.invoice.onlinePaymentIntentId ?? ""}
+                  >
                     {shortRef(order.invoice.onlinePaymentIntentId)}
                   </p>
                 </div>
@@ -1368,7 +1402,9 @@ function OrderDetailModal({
                     Checkout URL
                   </span>
                   <p className="truncate">
-                    {order.invoice.onlinePaymentUrl ? "Active link stored" : "No active link"}
+                    {order.invoice.onlinePaymentUrl
+                      ? "Active link stored"
+                      : "No active link"}
                   </p>
                 </div>
               </div>
@@ -1716,12 +1752,8 @@ function OrderDetailModal({
           )}
 
           <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-3">
-            <span>
-              Paid {formatMoney(paidAmountCents(order), order.currency)}
-            </span>
-            <span>
-              Refunded {formatMoney(refundedCents, order.currency)}
-            </span>
+            <span>Paid {formatMoney(paidAmountCents(order), order.currency)}</span>
+            <span>Refunded {formatMoney(refundedCents, order.currency)}</span>
             <span>
               Refundable {formatMoney(remainingRefundCents, order.currency)}
               {reservedRefundCents > refundedCents
@@ -1739,12 +1771,14 @@ function OrderDetailModal({
             </p>
           )}
 
-          {invoicePaid && !stripeRefundAvailable && order.invoice?.onlinePaymentProvider === "stripe" && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              This Stripe invoice is missing a payment intent, so only a manual refund
-              record is available.
-            </p>
-          )}
+          {invoicePaid &&
+            !stripeRefundAvailable &&
+            order.invoice?.onlinePaymentProvider === "stripe" && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                This Stripe invoice is missing a payment intent, so only a manual refund
+                record is available.
+              </p>
+            )}
 
           <Field
             label="Refund action"
@@ -1808,9 +1842,7 @@ function OrderDetailModal({
             <Field label="Method" htmlFor="refund-method">
               <Input
                 id="refund-method"
-                value={
-                  refundForm.provider === "stripe" ? "Stripe" : refundForm.method
-                }
+                value={refundForm.provider === "stripe" ? "Stripe" : refundForm.method}
                 disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
                 placeholder="Zelle, check, cash, Stripe dashboard"
                 onChange={(event) =>
@@ -1947,9 +1979,7 @@ function OrderDetailModal({
           <div className="grid gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
             <span>
               Ready{" "}
-              {order.fulfillmentReadyAt
-                ? formatDate(order.fulfillmentReadyAt)
-                : "—"}
+              {order.fulfillmentReadyAt ? formatDate(order.fulfillmentReadyAt) : "—"}
             </span>
             <span>
               Shipped{" "}
@@ -2404,7 +2434,10 @@ export default function StorePage() {
       } else if (values.provider === "stripe" && refund.status === "pending") {
         toast("Stripe refund started", "success");
       } else if (values.provider === "stripe") {
-        toast(sendEmail ? "Stripe refund completed and emailed" : "Stripe refund completed", "success");
+        toast(
+          sendEmail ? "Stripe refund completed and emailed" : "Stripe refund completed",
+          "success",
+        );
       } else {
         toast(sendEmail ? "Refund recorded and emailed" : "Refund recorded", "success");
       }
@@ -2457,7 +2490,10 @@ export default function StorePage() {
         toast(`Opened ${res.data.kind}`, "success");
       } else {
         await navigator.clipboard.writeText(res.data.invoiceUrl);
-        toast(`${res.data.kind === "receipt" ? "Receipt" : "Invoice"} link copied`, "success");
+        toast(
+          `${res.data.kind === "receipt" ? "Receipt" : "Invoice"} link copied`,
+          "success",
+        );
       }
     } catch (err) {
       toast(errMsg(err), "error");
@@ -2513,6 +2549,10 @@ export default function StorePage() {
     } catch {
       toast("Could not copy order summary", "error");
     }
+  };
+
+  const downloadTaxExport = () => {
+    window.location.assign("/api/v1/admin/orders/tax-export");
   };
 
   return (
@@ -2602,6 +2642,11 @@ export default function StorePage() {
                                 {product.options.length === 1 ? "" : "s"} configured
                               </p>
                             )}
+                            {product.stripeTaxCode && (
+                              <p className="mt-1 truncate text-xs text-[hsl(var(--muted-foreground))]">
+                                Tax code {product.stripeTaxCode}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -2674,9 +2719,20 @@ export default function StorePage() {
                   Public cart orders, manual invoices, and hosted Stripe checkout.
                 </p>
               </div>
-              <Badge tone="neutral">
-                {visibleOrders.length} of {orders.length} shown
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadTaxExport}
+                >
+                  <Download className="h-4 w-4" />
+                  Tax CSV
+                </Button>
+                <Badge tone="neutral">
+                  {visibleOrders.length} of {orders.length} shown
+                </Badge>
+              </div>
             </div>
             {orders.length > 0 && (
               <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
@@ -2905,7 +2961,9 @@ export default function StorePage() {
                               </Badge>
                               {row.invoice?.onlinePaymentStatus && (
                                 <Badge
-                                  tone={onlinePaymentTone(row.invoice.onlinePaymentStatus)}
+                                  tone={onlinePaymentTone(
+                                    row.invoice.onlinePaymentStatus,
+                                  )}
                                   className="capitalize"
                                 >
                                   Stripe{" "}
@@ -2917,8 +2975,7 @@ export default function StorePage() {
                                   tone={fulfillmentTone(row.fulfillmentStatus)}
                                   className="capitalize"
                                 >
-                                  Fulfillment{" "}
-                                  {fulfillmentLabel(row.fulfillmentStatus)}
+                                  Fulfillment {fulfillmentLabel(row.fulfillmentStatus)}
                                 </Badge>
                               )}
                               {successfulRefundedCents(row) > 0 && (

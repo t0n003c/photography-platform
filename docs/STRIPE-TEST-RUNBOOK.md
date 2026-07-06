@@ -12,7 +12,9 @@ Payments is complete.
 4. Optional: enable **Use Stripe Tax for hosted cart checkout** after Stripe Tax is
    configured in the Stripe dashboard. This only affects new public cart Checkout
    sessions; issued invoice payment links keep their saved invoice totals.
-5. Configure the webhook secret after starting the local listener below.
+5. Optional: set product-level Stripe tax codes in Admin -> Store and a shipping tax code
+   in Settings -> Payments if flat shipping should use its own Stripe Tax category.
+6. Configure the webhook secret after starting the local listener below.
 
 Required local webhook URL:
 
@@ -62,6 +64,7 @@ The payment status should switch to hosted checkout ready once all fields are pr
    - receipt email is queued/sent through the configured email provider
    - if Stripe Tax is enabled, the saved invoice/order total and tax line match the
      completed Checkout Session `amount_total` and `total_details.amount_tax`
+   - Admin -> Store -> Tax CSV includes the order totals, refund totals, and item tax codes
 
 ## 4. Issued invoice checkout smoke
 

@@ -9,7 +9,7 @@ function cleanDescription(value: string | null | undefined, fallback: string) {
 
 function appendAdjustmentLines(
   lines: CheckoutLineItem[],
-  input: { taxCents: number; shippingCents: number },
+  input: { taxCents: number; shippingCents: number; shippingTaxCode?: string | null },
 ) {
   if (input.taxCents > 0) {
     lines.push({
@@ -23,6 +23,7 @@ function appendAdjustmentLines(
       description: "Shipping",
       amountCents: input.shippingCents,
       quantity: 1,
+      taxCode: input.shippingTaxCode ?? null,
     });
   }
 }
@@ -34,8 +35,12 @@ export function checkoutLineItemsFromCartSummary(
     description: cleanDescription(line.product.name, "Product"),
     amountCents: line.unitPriceCents,
     quantity: line.quantity,
+    taxCode: line.product.stripeTaxCode,
   }));
-  appendAdjustmentLines(lines, summary);
+  appendAdjustmentLines(lines, {
+    ...summary,
+    shippingTaxCode: summary.payment.shippingTaxCode,
+  });
   return lines;
 }
 
@@ -44,6 +49,7 @@ export function checkoutLineItemsFromOrder(order: AdminOrderDTO): CheckoutLineIt
     description: cleanDescription(item.description?.split(" — ")[0], "Product"),
     amountCents: item.unitPriceCents,
     quantity: item.quantity,
+    taxCode: item.stripeTaxCode,
   }));
   appendAdjustmentLines(lines, order);
   return lines;

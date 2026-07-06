@@ -409,6 +409,7 @@ Response `201` (raw token shown exactly once):
 | POST         | `/admin/orders/{id}/fulfillment` | admin  | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email                  |
 | POST         | `/admin/orders/{id}/checkout`    | admin  | refresh a hosted Stripe Checkout link for an unpaid issued invoice                                                              |
 | POST         | `/admin/orders/{id}/refunds`     | admin  | record a manual refund or execute a Stripe refund against a paid invoice, then optionally email the customer an updated receipt |
+| GET          | `/admin/orders/tax-export`       | admin  | download a private CSV of order, invoice, payment, refund, and item tax-code fields for tax/accounting review                   |
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
 product options must resolve against the current active product definition, or checkout returns
@@ -419,14 +420,16 @@ When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`,
 client redirects to Stripe Checkout. If `store_stripe_tax_enabled` is enabled, public cart
 checkout sends Stripe `automatic_tax[enabled]=true`, omits the app's fixed tax line to avoid
 double tax, and lets the paid webhook update the order/invoice from the Checkout Session
-`amount_total` and `total_details.amount_tax`. Issued invoice checkout links keep the saved
-invoice amount and fixed tax breakdown for now.
+`amount_total` and `total_details.amount_tax`. Product-level `stripe_tax_code` values are
+sent to Stripe Checkout as inline product tax codes; the optional
+`store_stripe_shipping_tax_code` is sent on the flat shipping line. Issued invoice checkout
+links keep the saved invoice amount and fixed tax breakdown for now.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,
-`store_stripe_tax_enabled`, `stripe_publishable_key`, `stripe_secret_key_enc` presence,
-`stripe_webhook_secret_enc` presence, and `stripe_statement_descriptor`) through sanitized
-camelCase DTO fields.
+`store_stripe_tax_enabled`, `store_stripe_shipping_tax_code`, `stripe_publishable_key`,
+`stripe_secret_key_enc` presence, `stripe_webhook_secret_enc` presence, and
+`stripe_statement_descriptor`) through sanitized camelCase DTO fields.
 Secret values are write-only: a non-empty value replaces the encrypted key, `null` clears it,
 and GET only returns `*Set` booleans.
 

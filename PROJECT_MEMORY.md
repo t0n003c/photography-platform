@@ -38,8 +38,8 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
 2. **Private client galleries** — access-controlled pages where a client views/downloads
    their shoot, via real auth + expiring shareable links, favorites, download controls.
 3. **Light print store** — product management, public product browsing, browser-local
-   cart, manual invoice requests, manual receipts, refund tracking, and optional Stripe
-   Checkout/refunds/Stripe Tax for hosted cart checkout when Settings -> Payments is fully configured.
+   cart, manual invoice requests, manual receipts, refund tracking, tax CSV export, and
+   optional Stripe Checkout/refunds/Stripe Tax for hosted cart checkout when Settings -> Payments is fully configured.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -478,8 +478,9 @@ is gitignored):
   and signed webhooks reconcile paid/expired invoice state when Settings -> Payments is
   ready. `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety,
   including refund update events. Stripe Tax can be enabled for hosted public cart checkout
-  only; issued invoice links still use saved totals, and tax/VAT registration/reporting
-  remain deferred/compliance work.
+  only; products and flat shipping can carry Stripe tax codes, order items snapshot tax
+  codes for later export, issued invoice links still use saved totals, and tax/VAT
+  registration/reporting remain deferred/compliance work.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -512,7 +513,8 @@ is gitignored):
 
 - **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
   `main` still builds/publishes images and runs the full CI/Lighthouse stack.
-- **Store payment follow-ups:** tax/VAT automation.
+- **Store payment follow-ups:** tax/VAT compliance operations, Stripe Tax for already-issued
+  invoice links, and richer accounting exports if needed.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
@@ -1235,7 +1237,8 @@ is gitignored):
   `/api/v1/invoices/[token]/checkout` creates invoice-specific Checkout sessions, and
   `/api/v1/webhooks/stripe` verifies `stripe-signature` before marking sessions paid or
   expired. Paid webhooks update order/invoice state idempotently and enqueue the existing
-  receipt email when appropriate. Stripe still does not handle tax/VAT automation.
+  receipt email when appropriate. Stripe Tax automation was added later for hosted public cart
+  checkout only.
   Follow-up: Stripe payment operations were hardened. Migration `0019_yellow_phalanx.sql`
   adds `stripe_webhook_event` so duplicate/replayed Stripe event IDs do not re-apply
   payment mutations; previously failed events can retry. Admin -> Store now shows hosted
@@ -1276,10 +1279,19 @@ is gitignored):
   `total_details.amount_tax` and `amount_total` to update the saved order/invoice tax and
   total before sending the receipt. Issued public invoice checkout links intentionally keep
   the already-saved invoice total for now. Remaining tax/VAT work: registrations/nexus,
-  product tax-code strategy, filing/reporting, and automatic tax for already-issued invoices.
+  filing/reporting, and automatic tax for already-issued invoices.
+  Follow-up: Store tax operations basics are active. Migration
+  `0024_boring_emma_frost.sql` adds `product.stripe_tax_code`,
+  `order_item.stripe_tax_code`, and `site_settings.store_stripe_shipping_tax_code`.
+  Admin -> Store product forms expose an optional Stripe tax code; new order items snapshot
+  that value. Settings -> Payments exposes an optional shipping tax code when Stripe Tax is
+  enabled. Hosted cart Stripe Checkout sends product/shipping tax codes to Stripe, and
+  Admin -> Store has a Tax CSV download backed by
+  `/api/v1/admin/orders/tax-export` with order/invoice/payment/refund totals and item tax
+  codes for accounting review.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0023`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0024`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

@@ -14,7 +14,7 @@ import {
   getSiteSettingsRow,
   invalidateSiteSettings,
 } from "@/src/db/queries/settings";
-import { storePaymentStatus } from "@/src/lib/store-settings";
+import { normalizeStripeTaxCode, storePaymentStatus } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +64,9 @@ export async function GET() {
       storeStripeTaxEnabled:
         paymentSettings.stripeTaxEnabled ??
         SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
+      storeStripeShippingTaxCode:
+        paymentSettings.stripeShippingTaxCode ??
+        SETTINGS_DEFAULTS.storePayment.stripeShippingTaxCode,
       stripePublishableKey: paymentSettings.stripePublishableKey ?? "",
       stripeSecretKeySet: paymentSettings.stripeSecretKeySet,
       stripeWebhookSecretSet: paymentSettings.stripeWebhookSecretSet,
@@ -102,6 +105,7 @@ const PatchSchema = z.object({
   storePaymentProvider: z.enum(["manual", "stripe"]).optional(),
   storePaymentMode: z.enum(["test", "live"]).optional(),
   storeStripeTaxEnabled: z.boolean().optional(),
+  storeStripeShippingTaxCode: z.string().max(80).nullable().optional(),
   stripePublishableKey: z.string().max(255).nullable().optional(),
   stripeStatementDescriptor: z.string().max(22).nullable().optional(),
   // Secrets: a non-empty string sets/replaces; null clears; undefined leaves.
@@ -167,6 +171,11 @@ export async function PATCH(req: Request) {
   if (body.storeStripeTaxEnabled !== undefined) {
     updates.storeStripeTaxEnabled = body.storeStripeTaxEnabled;
   }
+  if (body.storeStripeShippingTaxCode !== undefined) {
+    updates.storeStripeShippingTaxCode = normalizeStripeTaxCode(
+      body.storeStripeShippingTaxCode,
+    );
+  }
   setIf("stripePublishableKey", "stripePublishableKey");
   setIf("stripeStatementDescriptor", "stripeStatementDescriptor");
 
@@ -199,6 +208,7 @@ export async function PATCH(req: Request) {
   if (updates.storePaymentProvider === "manual") {
     updates.storeOnlinePaymentsEnabled = false;
     updates.storeStripeTaxEnabled = false;
+    updates.storeStripeShippingTaxCode = null;
   }
 
   await db

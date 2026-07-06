@@ -18,6 +18,7 @@ export interface StorePaymentSettings {
   paymentProvider: StorePaymentProvider;
   paymentMode: StorePaymentMode;
   stripeTaxEnabled: boolean;
+  stripeShippingTaxCode: string | null;
   stripePublishableKey: string | null;
   stripeSecretKeySet: boolean;
   stripeWebhookSecretSet: boolean;
@@ -57,6 +58,7 @@ export const STORE_PAYMENT_DEFAULTS: StorePaymentSettings = {
   paymentProvider: "manual",
   paymentMode: "test",
   stripeTaxEnabled: false,
+  stripeShippingTaxCode: null,
   stripePublishableKey: null,
   stripeSecretKeySet: false,
   stripeWebhookSecretSet: false,
@@ -97,6 +99,11 @@ export function normalizeOptionalText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+export function normalizeStripeTaxCode(value: unknown) {
+  const cleaned = normalizeOptionalText(value);
+  return cleaned ? cleaned.slice(0, 80) : null;
+}
+
 export function normalizeStoreCheckoutSettings(
   input: Partial<StoreCheckoutSettings> = {},
 ): StoreCheckoutSettings {
@@ -134,6 +141,10 @@ export function normalizeStorePaymentSettings(
     paymentMode: normalizePaymentMode(input.paymentMode),
     stripeTaxEnabled:
       paymentProvider === "stripe" ? Boolean(input.stripeTaxEnabled) : false,
+    stripeShippingTaxCode:
+      paymentProvider === "stripe"
+        ? normalizeStripeTaxCode(input.stripeShippingTaxCode)
+        : null,
     stripePublishableKey: normalizeOptionalText(input.stripePublishableKey),
     stripeSecretKeySet: Boolean(input.stripeSecretKeySet),
     stripeWebhookSecretSet: Boolean(input.stripeWebhookSecretSet),

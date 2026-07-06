@@ -169,6 +169,13 @@
       "when": 1783298057605,
       "tag": "0023_clean_epoch",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783299298355,
+      "tag": "0024_boring_emma_frost",
+      "breakpoints": true
     }
   ]
 }

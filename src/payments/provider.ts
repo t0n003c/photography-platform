@@ -6,6 +6,7 @@ export interface CheckoutLineItem {
   description: string;
   amountCents: number;
   quantity: number;
+  taxCode?: string | null;
 }
 
 export interface CreateCheckoutInput {

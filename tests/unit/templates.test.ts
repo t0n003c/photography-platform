@@ -90,6 +90,7 @@ const adminOrder: AdminOrderDTO = {
       productId: "product-1",
       photoId: null,
       description: "Fine Art Print — Size: 16 x 20",
+      stripeTaxCode: null,
       options: order.lines[0].selectedOptions,
       quantity: 1,
       unitPriceCents: 13900,
@@ -329,6 +330,8 @@ describe("store fulfillment emails", () => {
     expect(msg.html).toContain("Carrier: USPS");
     expect(msg.html).toContain("9400TEST");
     expect(msg.html).toContain("Track shipment");
-    expect(msg.text ?? "").toContain("View receipt: https://example.com/invoice/signed-receipt");
+    expect(msg.text ?? "").toContain(
+      "View receipt: https://example.com/invoice/signed-receipt",
+    );
   });
 });
