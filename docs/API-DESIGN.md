@@ -399,6 +399,7 @@ Response `201` (raw token shown exactly once):
 | GET          | `/products/{id}`                 | public | product detail                                                                                                                  |
 | POST         | `/cart`                          | public | resolve browser-local cart lines, selected options, and current active product pricing                                          |
 | POST         | `/checkout`                      | public | creates a manual invoice request, or a Stripe Checkout session + pending order/invoice when hosted payments are ready           |
+| GET/POST     | `/orders/status`                 | public | load a customer-safe order status by signed token, or look one up by email plus order/invoice number                            |
 | POST         | `/invoices/{token}/checkout`     | public | creates a Stripe Checkout session for an issued public invoice token                                                            |
 | POST         | `/webhooks/stripe`               | public | verifies Stripe signatures and reconciles paid/expired Checkout sessions plus refund status updates                             |
 | GET          | `/admin/products`                | admin  | list products                                                                                                                   |
@@ -406,6 +407,7 @@ Response `201` (raw token shown exactly once):
 | PATCH/DELETE | `/admin/products/{id}`           | admin  | update/delete product; delete requires fresh auth                                                                               |
 | GET          | `/admin/orders`                  | admin  | view recent manual order requests                                                                                               |
 | GET/PATCH    | `/admin/orders/{id}`             | admin  | view an order request and update status                                                                                         |
+| GET          | `/admin/orders/{id}/status-link` | admin  | generate a signed customer-facing order status URL                                                                               |
 | POST         | `/admin/orders/{id}/fulfillment` | admin  | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email                  |
 | POST         | `/admin/orders/{id}/checkout`    | admin  | refresh a hosted Stripe Checkout link for an unpaid issued invoice                                                              |
 | POST         | `/admin/orders/{id}/refunds`     | admin  | record a manual refund or execute a Stripe refund against a paid invoice, then optionally email the customer an updated receipt |
@@ -417,13 +419,16 @@ product options must resolve against the current active product definition, or c
 
 `POST /checkout` returns a manual request confirmation when hosted payments are not ready.
 When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`, and the
-client redirects to Stripe Checkout. If `store_stripe_tax_enabled` is enabled, public cart
-checkout sends Stripe `automatic_tax[enabled]=true`, omits the app's fixed tax line to avoid
-double tax, and lets the paid webhook update the order/invoice from the Checkout Session
-`amount_total` and `total_details.amount_tax`. Product-level `stripe_tax_code` values are
-sent to Stripe Checkout as inline product tax codes; the optional
-`store_stripe_shipping_tax_code` is sent on the flat shipping line. Issued invoice checkout
-links keep the saved invoice amount and fixed tax breakdown for now.
+client redirects to Stripe Checkout. Confirmations include a signed `/orders/status` link.
+`POST /orders/status` also lets a customer recover the same customer-safe status view with
+their email plus either the order id or invoice number; admin-only notes, raw payment IDs, and
+secret fields are not returned. If `store_stripe_tax_enabled` is enabled, public cart checkout
+sends Stripe `automatic_tax[enabled]=true`, omits the app's fixed tax line to avoid double tax,
+and lets the paid webhook update the order/invoice from the Checkout Session `amount_total`
+and `total_details.amount_tax`. Product-level `stripe_tax_code` values are sent to Stripe
+Checkout as inline product tax codes; the optional `store_stripe_shipping_tax_code` is sent on
+the flat shipping line. Issued invoice checkout links keep the saved invoice amount and fixed
+tax breakdown for now.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,

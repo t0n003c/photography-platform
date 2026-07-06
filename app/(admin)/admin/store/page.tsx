@@ -1042,6 +1042,7 @@ function OrderDetailModal({
   onFulfillmentSubmit,
   onInvoiceLinkAction,
   onCheckoutLinkAction,
+  onStatusLinkAction,
   onRefreshCheckout,
 }: {
   order: OrderRow;
@@ -1058,6 +1059,7 @@ function OrderDetailModal({
   ) => Promise<void>;
   onInvoiceLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onCheckoutLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
+  onStatusLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onRefreshCheckout: (order: OrderRow) => Promise<void>;
 }) {
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormValues>({
@@ -1297,6 +1299,24 @@ function OrderDetailModal({
             <Button type="button" variant="outline" onClick={() => onCopy(order)}>
               <Copy className="h-4 w-4" />
               Copy summary
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => onStatusLinkAction(order, "open")}
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open status
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => onStatusLinkAction(order, "copy")}
+            >
+              <LinkIcon className="h-4 w-4" />
+              Copy status link
             </Button>
           </div>
         </div>
@@ -2519,6 +2539,23 @@ export default function StorePage() {
     }
   };
 
+  const useStatusLink = async (row: OrderRow, action: "open" | "copy") => {
+    try {
+      const res = await api.get<{ data: { statusUrl: string } }>(
+        `/api/v1/admin/orders/${row.id}/status-link`,
+      );
+      if (action === "open") {
+        window.open(res.data.statusUrl, "_blank", "noopener,noreferrer");
+        toast("Opened order status", "success");
+      } else {
+        await navigator.clipboard.writeText(res.data.statusUrl);
+        toast("Customer status link copied", "success");
+      }
+    } catch (err) {
+      toast(errMsg(err), "error");
+    }
+  };
+
   const refreshCheckout = async (row: OrderRow) => {
     setUpdatingOrderId(row.id);
     try {
@@ -3057,6 +3094,7 @@ export default function StorePage() {
           }
           onInvoiceLinkAction={useInvoiceLink}
           onCheckoutLinkAction={useCheckoutLink}
+          onStatusLinkAction={useStatusLink}
           onRefreshCheckout={refreshCheckout}
         />
       )}

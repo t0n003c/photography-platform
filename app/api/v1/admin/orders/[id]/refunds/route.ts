@@ -2,6 +2,7 @@ import { z } from "zod";
 import { requireRole } from "@/src/auth/session";
 import { enqueueEmail } from "@/src/email/send";
 import { storeRefundIssued } from "@/src/email/templates";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
 import { getSiteSettings } from "@/src/db/queries/settings";
 import {
   getOrderAdmin,
@@ -13,6 +14,7 @@ import { writeAudit } from "@/src/lib/audit";
 import { getEnv } from "@/src/lib/env";
 import { notFound, ok, parseJson, problem } from "@/src/lib/http";
 import { newId } from "@/src/lib/id";
+import { orderStatusUrl } from "@/src/lib/order-status";
 import { clientIp, userAgent } from "@/src/lib/request";
 
 export const dynamic = "force-dynamic";
@@ -208,6 +210,7 @@ export async function POST(
         order: result.order,
         refund: result.refund,
         receiptUrl,
+        statusUrl: orderStatusUrl(issueOrderStatusToken(result.order.id)),
         siteName: settings.siteTitle,
       }),
     );

@@ -20,6 +20,8 @@ import {
   checkoutLineItemsTotal,
 } from "@/src/payments/store-line-items";
 import { issueInvoiceToken } from "@/src/auth/invoice-token";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
+import { orderStatusPath } from "@/src/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +53,7 @@ function buildConfirmation(opts: {
   const receiptUrl = `/cart/confirmation?order=${encodeURIComponent(
     opts.order.orderId,
   )}`;
+  const statusUrl = orderStatusPath(issueOrderStatusToken(opts.order.orderId));
   return {
     orderId: opts.order.orderId,
     status: opts.order.status,
@@ -64,6 +67,7 @@ function buildConfirmation(opts: {
     itemCount: opts.order.itemCount,
     createdAt: opts.order.createdAt,
     receiptUrl,
+    statusUrl,
     checkoutSettings: opts.order.checkoutSettings,
     lines: opts.summary.lines.map((line) => ({
       productId: line.product.id,
@@ -195,12 +199,18 @@ export async function POST(req: Request) {
     summary,
     customer: parsed.data.customer,
   });
+  const emailConfirmation = {
+    ...confirmation,
+    statusUrl: confirmation.statusUrl
+      ? `${baseUrl}${confirmation.statusUrl}`
+      : confirmation.statusUrl,
+  };
   const settings = await getSiteSettings();
 
   await enqueueEmail(
     manualOrderCustomerConfirmation({
-      to: confirmation.customerEmail,
-      order: confirmation,
+      to: emailConfirmation.customerEmail,
+      order: emailConfirmation,
       siteName: settings.siteTitle,
     }),
   );

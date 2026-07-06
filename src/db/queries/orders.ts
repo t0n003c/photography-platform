@@ -193,6 +193,117 @@ export interface PublicInvoiceDTO {
   order: AdminOrderDTO;
 }
 
+export interface PublicOrderStatusItemDTO {
+  id: string;
+  description: string | null;
+  options: SelectedProductOption[];
+  quantity: number;
+  unitPriceCents: number;
+  lineTotalCents: number;
+}
+
+export interface PublicOrderStatusRefundDTO {
+  id: string;
+  amountCents: number;
+  currency: string;
+  status: Extract<RefundStatus, "pending" | "succeeded">;
+  reason: string | null;
+  refundedAt: string | null;
+}
+
+export interface PublicOrderStatusDTO {
+  id: string;
+  customerName: string | null;
+  maskedEmail: string | null;
+  status: OrderStatus;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentCarrier: string | null;
+  fulfillmentTrackingNumber: string | null;
+  fulfillmentTrackingUrl: string | null;
+  fulfillmentReadyAt: string | null;
+  fulfillmentShippedAt: string | null;
+  fulfillmentDeliveredAt: string | null;
+  subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
+  totalCents: number;
+  currency: string;
+  invoice: Pick<
+    AdminInvoiceDTO,
+    | "number"
+    | "status"
+    | "issuedAt"
+    | "dueAt"
+    | "paidAt"
+    | "paidAmountCents"
+    | "onlinePaymentStatus"
+  > | null;
+  createdAt: string;
+  updatedAt: string;
+  items: PublicOrderStatusItemDTO[];
+  refunds: PublicOrderStatusRefundDTO[];
+}
+
+function maskEmail(value: string | null) {
+  if (!value) return null;
+  const [name, domain] = value.split("@");
+  if (!name || !domain) return value;
+  const visible = name.length <= 2 ? name[0] : `${name.slice(0, 2)}...`;
+  return `${visible}@${domain}`;
+}
+
+function publicOrderStatusFromAdmin(order: AdminOrderDTO): PublicOrderStatusDTO {
+  return {
+    id: order.id,
+    customerName: order.clientName,
+    maskedEmail: maskEmail(order.email),
+    status: order.status,
+    fulfillmentStatus: order.fulfillmentStatus,
+    fulfillmentCarrier: order.fulfillmentCarrier,
+    fulfillmentTrackingNumber: order.fulfillmentTrackingNumber,
+    fulfillmentTrackingUrl: order.fulfillmentTrackingUrl,
+    fulfillmentReadyAt: order.fulfillmentReadyAt,
+    fulfillmentShippedAt: order.fulfillmentShippedAt,
+    fulfillmentDeliveredAt: order.fulfillmentDeliveredAt,
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    shippingCents: order.shippingCents,
+    totalCents: order.totalCents,
+    currency: order.currency,
+    invoice: order.invoice
+      ? {
+          number: order.invoice.number,
+          status: order.invoice.status,
+          issuedAt: order.invoice.issuedAt,
+          dueAt: order.invoice.dueAt,
+          paidAt: order.invoice.paidAt,
+          paidAmountCents: order.invoice.paidAmountCents,
+          onlinePaymentStatus: order.invoice.onlinePaymentStatus,
+        }
+      : null,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    items: order.items.map((item) => ({
+      id: item.id,
+      description: item.description,
+      options: item.options,
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      lineTotalCents: item.lineTotalCents,
+    })),
+    refunds: order.refunds
+      .filter((refund) => refund.status === "pending" || refund.status === "succeeded")
+      .map((refund) => ({
+        id: refund.id,
+        amountCents: refund.amountCents,
+        currency: refund.currency,
+        status: refund.status as Extract<RefundStatus, "pending" | "succeeded">,
+        reason: refund.reason,
+        refundedAt: refund.refundedAt,
+      })),
+  };
+}
+
 function lineDescription(name: string, options: SelectedProductOption[]) {
   const label = selectedOptionsLabel(options);
   return label ? `${name} — ${label}` : name;
@@ -762,6 +873,38 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
     })),
     refunds: refundRows.map(refundToDTO),
   };
+}
+
+export async function getPublicOrderStatusById(
+  id: string,
+): Promise<PublicOrderStatusDTO | null> {
+  const order = await getOrderAdmin(id);
+  return order ? publicOrderStatusFromAdmin(order) : null;
+}
+
+export async function findPublicOrderStatusByLookup(input: {
+  email: string;
+  reference: string;
+}): Promise<PublicOrderStatusDTO | null> {
+  const email = input.email.trim().toLowerCase();
+  const reference = input.reference.trim();
+  if (!email || !reference) return null;
+  const referenceLower = reference.toLowerCase();
+
+  const rows = await db
+    .select({ orderId: orderTable.id })
+    .from(orderTable)
+    .leftJoin(client, eq(orderTable.clientId, client.id))
+    .leftJoin(invoice, eq(invoice.orderId, orderTable.id))
+    .where(
+      and(
+        sql`lower(coalesce(${orderTable.email}, ${client.email}, '')) = ${email}`,
+        sql`(${orderTable.id} = ${reference} or lower(coalesce(${invoice.number}, '')) = ${referenceLower})`,
+      ),
+    )
+    .limit(1);
+
+  return rows[0]?.orderId ? getPublicOrderStatusById(rows[0].orderId) : null;
 }
 
 export async function updateOrderStatusAdmin(

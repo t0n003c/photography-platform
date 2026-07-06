@@ -500,9 +500,9 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ## 13. Store (light catalog + optional hosted checkout)
 
 > Product catalog, public browse/cart, manual invoice order requests, issued invoices,
-> manual payment receipts, refund tracking, fulfillment tracking, tax CSV export, and optional
-> Stripe Checkout/Stripe Tax are active. Hosted checkout is enabled only when Settings ->
-> Payments has all required Stripe values.
+> manual payment receipts, customer order-status lookup, refund tracking, fulfillment tracking,
+> tax CSV export, and optional Stripe Checkout/Stripe Tax are active. Hosted checkout is enabled
+> only when Settings -> Payments has all required Stripe values.
 
 ### 13.1 `product`
 
@@ -536,6 +536,11 @@ JSON `options`, `is_featured`, `is_active`, `sort_order`, timestamps.
 | fulfillment_notes            | text NULL                | internal admin notes; never shown on public receipts                       |
 | store_settings_snapshot      | jsonb                    | saved checkout copy/tax/shipping settings                                  |
 | created_at / updated_at      | timestamptz              |                                                                            |
+
+Customer order-status pages do not add a table. They render a sanitized DTO from `order`,
+`order_item`, `invoice`, and `order_refund`, either through a signed HMAC order-status token
+or through a lookup that requires the checkout email plus order id / invoice number. Private
+admin fulfillment notes and raw provider IDs stay admin-only.
 
 ### 13.3 `order_item`
 

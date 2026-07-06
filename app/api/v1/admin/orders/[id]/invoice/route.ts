@@ -7,8 +7,10 @@ import { getEnv } from "@/src/lib/env";
 import { enqueueEmail } from "@/src/email/send";
 import { storeInvoiceIssued } from "@/src/email/templates";
 import { issueInvoiceToken } from "@/src/auth/invoice-token";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
 import { getSiteSettings } from "@/src/db/queries/settings";
 import { getOrderAdmin, saveInvoiceAdmin } from "@/src/db/queries/orders";
+import { orderStatusUrl } from "@/src/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +102,7 @@ export async function POST(
         order: result.order,
         invoice,
         invoiceUrl,
+        statusUrl: orderStatusUrl(issueOrderStatusToken(result.order.id)),
         siteName: settings.siteTitle,
       }),
     );

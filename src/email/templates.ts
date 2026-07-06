@@ -180,10 +180,14 @@ export function manualOrderCustomerConfirmation(opts: {
       <tbody>${orderLinesHtml(opts.order)}</tbody>
     </table>
     ${totalsHtml(opts.order)}`;
+  const statusLink = opts.order.statusUrl
+    ? `<p><a href="${escape(opts.order.statusUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Track order status</a></p>
+    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.order.statusUrl)}</p>`
+    : "";
   return {
     to: opts.to,
     subject: `Order request received: ${opts.order.orderId}`,
-    html: layout("Order request received", body),
+    html: layout("Order request received", `${body}${statusLink}`),
     text: `${name ? `Hi ${name},` : "Hi,"}
 
 ${opts.order.checkoutSettings.confirmationMessage}
@@ -193,6 +197,7 @@ Order ${opts.order.orderId}
 ${orderLinesText(opts.order)}
 
 ${totalsText(opts.order)}
+${opts.order.statusUrl ? `\nTrack order status: ${opts.order.statusUrl}\n` : ""}
 
 ${opts.siteName}`,
   };
@@ -281,6 +286,7 @@ export function storeInvoiceIssued(opts: {
   order: AdminOrderDTO;
   invoice: AdminInvoiceDTO;
   invoiceUrl: string;
+  statusUrl?: string | null;
   siteName: string;
 }): EmailMessage {
   const customerName = opts.order.clientName?.trim();
@@ -315,6 +321,11 @@ export function storeInvoiceIssued(opts: {
         : ""
     }
     <p><a href="${escape(opts.invoiceUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View invoice</a></p>
+    ${
+      opts.statusUrl
+        ? `<p><a href="${escape(opts.statusUrl)}" style="display:inline-block;background:#fff;color:#111;border:1px solid #111;padding:9px 16px;border-radius:999px;text-decoration:none">Track order status</a></p>`
+        : ""
+    }
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.invoiceUrl)}</p>`;
   return {
     to: opts.to,
@@ -328,7 +339,8 @@ ${orderLinesText(invoiceOrder)}
 
 ${totalsText(invoiceOrder)}
 ${opts.invoice.paymentInstructions ? `\n${opts.invoice.paymentInstructions}\n` : ""}
-View invoice: ${opts.invoiceUrl}`,
+View invoice: ${opts.invoiceUrl}
+${opts.statusUrl ? `Track order status: ${opts.statusUrl}` : ""}`,
   };
 }
 
@@ -337,6 +349,7 @@ export function storeReceiptIssued(opts: {
   order: AdminOrderDTO;
   invoice: AdminInvoiceDTO;
   receiptUrl: string;
+  statusUrl?: string | null;
   siteName: string;
 }): EmailMessage {
   const customerName = opts.order.clientName?.trim();
@@ -378,6 +391,11 @@ export function storeReceiptIssued(opts: {
     </table>
     ${totalsHtml(receiptOrder)}
     <p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View receipt</a></p>
+    ${
+      opts.statusUrl
+        ? `<p><a href="${escape(opts.statusUrl)}" style="display:inline-block;background:#fff;color:#111;border:1px solid #111;padding:9px 16px;border-radius:999px;text-decoration:none">Track order status</a></p>`
+        : ""
+    }
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`;
   return {
     to: opts.to,
@@ -398,7 +416,8 @@ ${orderLinesText(receiptOrder)}
 
 ${totalsText(receiptOrder)}
 
-View receipt: ${opts.receiptUrl}`,
+View receipt: ${opts.receiptUrl}
+${opts.statusUrl ? `Track order status: ${opts.statusUrl}` : ""}`,
   };
 }
 
@@ -407,6 +426,7 @@ export function storeRefundIssued(opts: {
   order: AdminOrderDTO;
   refund: AdminOrderRefundDTO;
   receiptUrl: string;
+  statusUrl?: string | null;
   siteName: string;
 }): EmailMessage {
   const customerName = opts.order.clientName?.trim();
@@ -438,6 +458,11 @@ export function storeRefundIssued(opts: {
         : ""
     }
     <p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View receipt</a></p>
+    ${
+      opts.statusUrl
+        ? `<p><a href="${escape(opts.statusUrl)}" style="display:inline-block;background:#fff;color:#111;border:1px solid #111;padding:9px 16px;border-radius:999px;text-decoration:none">Track order status</a></p>`
+        : ""
+    }
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`;
   return {
     to: opts.to,
@@ -452,7 +477,8 @@ ${refundDate ? `Refunded: ${refundDate}\n` : ""}${
     }${opts.refund.reference ? `Reference: ${opts.refund.reference}\n` : ""}${
       opts.refund.reason ? `Reason: ${opts.refund.reason}\n` : ""
     }${opts.refund.note ? `\n${opts.refund.note}\n` : ""}
-View receipt: ${opts.receiptUrl}`,
+View receipt: ${opts.receiptUrl}
+${opts.statusUrl ? `Track order status: ${opts.statusUrl}` : ""}`,
   };
 }
 
@@ -460,6 +486,7 @@ type FulfillmentEmailOpts = {
   to: string;
   order: AdminOrderDTO;
   receiptUrl: string | null;
+  statusUrl?: string | null;
   siteName: string;
 };
 
@@ -527,8 +554,13 @@ function fulfillmentEmail(
       <tbody>${orderLinesHtml(emailOrder)}</tbody>
     </table>
     ${
+      opts.statusUrl
+        ? `<p><a href="${escape(opts.statusUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Track order status</a></p>`
+        : ""
+    }
+    ${
       opts.receiptUrl
-        ? `<p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">${escape(opts.ctaLabel)}</a></p>
+        ? `<p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#fff;color:#111;border:1px solid #111;padding:9px 16px;border-radius:999px;text-decoration:none">${escape(opts.ctaLabel)}</a></p>
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`
         : ""
     }`;
@@ -545,6 +577,7 @@ Order ${opts.order.id}
 ${trackingText ? `\n${trackingText}\n` : ""}
 ${orderLinesText(emailOrder)}
 
+${opts.statusUrl ? `Track order status: ${opts.statusUrl}\n` : ""}
 ${opts.receiptUrl ? `${opts.ctaLabel}: ${opts.receiptUrl}` : opts.siteName}`,
   };
 }

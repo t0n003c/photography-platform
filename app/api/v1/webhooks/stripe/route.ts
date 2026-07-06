@@ -1,5 +1,6 @@
 import { ok, problem } from "@/src/lib/http";
 import { issueInvoiceToken } from "@/src/auth/invoice-token";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
 import { enqueueEmail } from "@/src/email/send";
 import { storeReceiptIssued } from "@/src/email/templates";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/src/payments/stripe-webhook";
 import { stripeRefundStatusToPaymentStatus } from "@/src/payments";
 import { getEnv } from "@/src/lib/env";
+import { orderStatusUrl } from "@/src/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -130,6 +132,7 @@ export async function POST(req: Request) {
               receiptUrl: `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(
                 token,
               )}`,
+              statusUrl: orderStatusUrl(issueOrderStatusToken(result.order.id)),
               siteName: settings.siteTitle,
             }),
           );

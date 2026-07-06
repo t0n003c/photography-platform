@@ -473,14 +473,14 @@ is gitignored):
   `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
   fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
 - **Payments + fulfillment:** manual invoice checkout/receipts, provider-side Stripe
-  refunds, manual refund tracking, and fulfillment tracking remain active. Optional
-  Stripe Checkout now creates hosted sessions for cart orders and issued public invoices,
-  and signed webhooks reconcile paid/expired invoice state when Settings -> Payments is
-  ready. `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety,
-  including refund update events. Stripe Tax can be enabled for hosted public cart checkout
-  only; products and flat shipping can carry Stripe tax codes, order items snapshot tax
-  codes for later export, issued invoice links still use saved totals, and tax/VAT
-  registration/reporting remain deferred/compliance work.
+  refunds, manual refund tracking, fulfillment tracking, and customer order-status lookup
+  remain active. Optional Stripe Checkout now creates hosted sessions for cart orders and
+  issued public invoices, and signed webhooks reconcile paid/expired invoice state when
+  Settings -> Payments is ready. `stripe_webhook_event` stores Stripe event IDs for
+  duplicate/retry safety, including refund update events. Stripe Tax can be enabled for
+  hosted public cart checkout only; products and flat shipping can carry Stripe tax codes,
+  order items snapshot tax codes for later export, issued invoice links still use saved
+  totals, and tax/VAT registration/reporting remain deferred/compliance work.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -1289,6 +1289,15 @@ is gitignored):
   Admin -> Store has a Tax CSV download backed by
   `/api/v1/admin/orders/tax-export` with order/invoice/payment/refund totals and item tax
   codes for accounting review.
+  Follow-up: Customer order status lookup is active without a schema migration.
+  `/orders/status` loads a customer-safe order summary from a signed HMAC order-status
+  token or from an email + order id / invoice number lookup via
+  `GET/POST /api/v1/orders/status`. Checkout confirmations now include a status URL,
+  customer confirmation/invoice/receipt/refund/fulfillment emails can include the same
+  link, and Admin -> Store order details can open/copy a signed customer status link via
+  `GET /api/v1/admin/orders/[id]/status-link`. The public DTO intentionally omits
+  private fulfillment notes, client notes, raw Stripe session/payment intent IDs, and
+  provider error details.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
   and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0024`.

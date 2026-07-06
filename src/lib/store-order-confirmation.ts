@@ -27,6 +27,7 @@ export interface StoreOrderConfirmation {
   itemCount: number;
   createdAt: string;
   receiptUrl: string;
+  statusUrl?: string | null;
   checkoutUrl?: string | null;
   checkoutSettings: PublicStoreCheckoutSettings;
   lines: StoreOrderConfirmationLine[];

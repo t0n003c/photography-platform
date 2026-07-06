@@ -202,6 +202,14 @@ export function StoreOrderConfirmationPage({
             </div>
 
             <div className="tora-order-confirmation__actions">
+              {confirmation.statusUrl && (
+                <Link
+                  href={confirmation.statusUrl}
+                  className="tora-cart-action tora-cart-action--ghost"
+                >
+                  Track order status
+                </Link>
+              )}
               <Link href="/" className="tora-cart-action">
                 Continue browsing
               </Link>

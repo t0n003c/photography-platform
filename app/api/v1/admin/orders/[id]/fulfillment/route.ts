@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { requireRole } from "@/src/auth/session";
 import { issueInvoiceToken } from "@/src/auth/invoice-token";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
 import { enqueueEmail } from "@/src/email/send";
 import {
   storeOrderDelivered,
@@ -13,6 +14,7 @@ import { getSiteSettings } from "@/src/db/queries/settings";
 import { writeAudit } from "@/src/lib/audit";
 import { getEnv } from "@/src/lib/env";
 import { notFound, ok, parseJson, problem } from "@/src/lib/http";
+import { orderStatusUrl } from "@/src/lib/order-status";
 import { clientIp, userAgent } from "@/src/lib/request";
 
 export const dynamic = "force-dynamic";
@@ -124,6 +126,7 @@ export async function POST(
       to: order.email,
       order,
       receiptUrl,
+      statusUrl: orderStatusUrl(issueOrderStatusToken(order.id)),
       siteName: settings.siteTitle,
     };
     const message =
