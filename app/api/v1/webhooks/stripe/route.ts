@@ -2,7 +2,10 @@ import { ok, problem } from "@/src/lib/http";
 import { issueInvoiceToken } from "@/src/auth/invoice-token";
 import { enqueueEmail } from "@/src/email/send";
 import { storeReceiptIssued } from "@/src/email/templates";
-import { getSiteSettings, getResolvedStorePaymentConfig } from "@/src/db/queries/settings";
+import {
+  getSiteSettings,
+  getResolvedStorePaymentConfig,
+} from "@/src/db/queries/settings";
 import {
   recordStripeRefundUpdated,
   recordStripeCheckoutExpired,
@@ -51,9 +54,7 @@ export async function POST(req: Request) {
 
   const payload = await req.text();
   const signature = req.headers.get("stripe-signature");
-  if (
-    !verifyStripeWebhookSignature(payload, signature, config.stripeWebhookSecret)
-  ) {
+  if (!verifyStripeWebhookSignature(payload, signature, config.stripeWebhookSecret)) {
     return problem(400, "INVALID_STRIPE_SIGNATURE", "Invalid Stripe signature.");
   }
 
@@ -74,7 +75,9 @@ export async function POST(req: Request) {
         paymentIntentId: refundObject(event).payment_intent ?? null,
       }
     : {
-        invoiceId: sessionObject(event as StripeCheckoutSessionEvent).metadata?.invoiceId ?? null,
+        invoiceId:
+          sessionObject(event as StripeCheckoutSessionEvent).metadata?.invoiceId ??
+          null,
         sessionId: sessionObject(event as StripeCheckoutSessionEvent).id ?? null,
         paymentIntentId:
           sessionObject(event as StripeCheckoutSessionEvent).payment_intent ?? null,
@@ -111,6 +114,8 @@ export async function POST(req: Request) {
           sessionId: session.id,
           paymentIntentId: session.payment_intent ?? null,
           amountPaidCents: session.amount_total ?? null,
+          amountTaxCents: session.total_details?.amount_tax ?? null,
+          automaticTaxEnabled: session.automatic_tax?.enabled ?? false,
         });
         if (!result) {
           ignored = "invoice_not_found";

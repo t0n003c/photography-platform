@@ -45,6 +45,7 @@ const emptySummary: CartSummaryDTO = {
     hostedCheckoutAvailable: false,
     provider: "manual",
     activeCheckoutPath: "manual",
+    taxMode: "manual",
   },
 };
 

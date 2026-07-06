@@ -393,22 +393,22 @@ Response `201` (raw token shown exactly once):
 > Settings -> Payments is fully Stripe-ready; then cart orders and issued invoices can
 > create hosted Stripe Checkout sessions.
 
-| Method       | Path                   | Auth   | Purpose                                                                                                          |
-| ------------ | ---------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
-| GET          | `/products`            | public | list active products                                                                                             |
-| GET          | `/products/{id}`       | public | product detail                                                                                                   |
-| POST         | `/cart`                | public | resolve browser-local cart lines, selected options, and current active product pricing                           |
-| POST         | `/checkout`            | public | creates a manual invoice request, or a Stripe Checkout session + pending order/invoice when hosted payments are ready |
-| POST         | `/invoices/{token}/checkout` | public | creates a Stripe Checkout session for an issued public invoice token |
-| POST         | `/webhooks/stripe`     | public | verifies Stripe signatures and reconciles paid/expired Checkout sessions plus refund status updates |
-| GET          | `/admin/products`      | admin  | list products                                                                                                    |
-| POST         | `/admin/products`      | admin  | create product                                                                                                   |
-| PATCH/DELETE | `/admin/products/{id}` | admin  | update/delete product; delete requires fresh auth                                                                |
-| GET          | `/admin/orders`        | admin  | view recent manual order requests                                                                                |
-| GET/PATCH    | `/admin/orders/{id}`   | admin  | view an order request and update status                                                                          |
-| POST         | `/admin/orders/{id}/fulfillment` | admin | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email |
-| POST         | `/admin/orders/{id}/checkout` | admin | refresh a hosted Stripe Checkout link for an unpaid issued invoice |
-| POST         | `/admin/orders/{id}/refunds` | admin | record a manual refund or execute a Stripe refund against a paid invoice, then optionally email the customer an updated receipt |
+| Method       | Path                             | Auth   | Purpose                                                                                                                         |
+| ------------ | -------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| GET          | `/products`                      | public | list active products                                                                                                            |
+| GET          | `/products/{id}`                 | public | product detail                                                                                                                  |
+| POST         | `/cart`                          | public | resolve browser-local cart lines, selected options, and current active product pricing                                          |
+| POST         | `/checkout`                      | public | creates a manual invoice request, or a Stripe Checkout session + pending order/invoice when hosted payments are ready           |
+| POST         | `/invoices/{token}/checkout`     | public | creates a Stripe Checkout session for an issued public invoice token                                                            |
+| POST         | `/webhooks/stripe`               | public | verifies Stripe signatures and reconciles paid/expired Checkout sessions plus refund status updates                             |
+| GET          | `/admin/products`                | admin  | list products                                                                                                                   |
+| POST         | `/admin/products`                | admin  | create product                                                                                                                  |
+| PATCH/DELETE | `/admin/products/{id}`           | admin  | update/delete product; delete requires fresh auth                                                                               |
+| GET          | `/admin/orders`                  | admin  | view recent manual order requests                                                                                               |
+| GET/PATCH    | `/admin/orders/{id}`             | admin  | view an order request and update status                                                                                         |
+| POST         | `/admin/orders/{id}/fulfillment` | admin  | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email                  |
+| POST         | `/admin/orders/{id}/checkout`    | admin  | refresh a hosted Stripe Checkout link for an unpaid issued invoice                                                              |
+| POST         | `/admin/orders/{id}/refunds`     | admin  | record a manual refund or execute a Stripe refund against a paid invoice, then optionally email the customer an updated receipt |
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
 product options must resolve against the current active product definition, or checkout returns
@@ -416,12 +416,17 @@ product options must resolve against the current active product definition, or c
 
 `POST /checkout` returns a manual request confirmation when hosted payments are not ready.
 When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`, and the
-client redirects to Stripe Checkout.
+client redirects to Stripe Checkout. If `store_stripe_tax_enabled` is enabled, public cart
+checkout sends Stripe `automatic_tax[enabled]=true`, omits the app's fixed tax line to avoid
+double tax, and lets the paid webhook update the order/invoice from the Checkout Session
+`amount_total` and `total_details.amount_tax`. Issued invoice checkout links keep the saved
+invoice amount and fixed tax breakdown for now.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,
-`stripe_publishable_key`, `stripe_secret_key_enc` presence, `stripe_webhook_secret_enc`
-presence, and `stripe_statement_descriptor`) through sanitized camelCase DTO fields.
+`store_stripe_tax_enabled`, `stripe_publishable_key`, `stripe_secret_key_enc` presence,
+`stripe_webhook_secret_enc` presence, and `stripe_statement_descriptor`) through sanitized
+camelCase DTO fields.
 Secret values are write-only: a non-empty value replaces the encrypted key, `null` clears it,
 and GET only returns `*Set` booleans.
 

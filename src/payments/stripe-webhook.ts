@@ -45,6 +45,15 @@ export interface StripeCheckoutSessionEvent {
       payment_status?: string;
       payment_intent?: string | null;
       amount_total?: number | null;
+      automatic_tax?: {
+        enabled?: boolean | null;
+        status?: string | null;
+      } | null;
+      total_details?: {
+        amount_discount?: number | null;
+        amount_shipping?: number | null;
+        amount_tax?: number | null;
+      } | null;
       metadata?: Record<string, string | undefined> | null;
     };
   };

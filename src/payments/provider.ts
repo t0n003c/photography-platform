@@ -16,6 +16,7 @@ export interface CreateCheckoutInput {
   lineItems: CheckoutLineItem[];
   successUrl: string;
   cancelUrl: string;
+  automaticTax?: boolean;
   metadata?: Record<string, string | number | boolean | null | undefined>;
 }
 

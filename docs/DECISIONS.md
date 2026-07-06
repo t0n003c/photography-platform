@@ -188,11 +188,14 @@ This is the running decision log for the self-hosted photography platform.
   now available when Settings -> Payments has Stripe selected, online payments enabled,
   and publishable/secret/webhook values present. Cart checkout and issued public invoices
   create Stripe Checkout sessions; signed webhooks reconcile paid/expired invoice state.
+  Hosted public cart checkout can optionally enable Stripe Tax; issued invoice payment
+  links still use their saved invoice totals.
 - **Consequences:**
   - Card data stays with Stripe Checkout; this app stores only session/intent references and invoice state.
   - Manual invoice requests remain the default/fallback when Stripe readiness is incomplete.
   - Product management, public product browsing, browser-local cart, and manual invoice order requests continue to work without hosted payments.
-  - Stripe (not a merchant of record) would leave sales-tax/VAT obligations to the operator — to be weighed at activation.
+  - Stripe (not a merchant of record) still leaves sales-tax/VAT obligations, registrations,
+    and filings to the operator; Stripe Tax only automates calculation/collection where configured.
 - **Alternatives considered:** **Lemon Squeezy / Paddle** (merchant-of-record handling global tax/VAT — major admin relief, at higher fees and more opinionated checkout; preserved as a deliberate future alternative); **building payments now** (premature scope, compliance/maintenance burden ahead of revenue — rejected).
 
 ---

@@ -147,8 +147,10 @@ export async function POST(req: Request) {
         lineItems,
         successUrl: checkoutUrlFor(invoiceToken, "?payment=success"),
         cancelUrl: checkoutUrlFor(invoiceToken, "?payment=cancelled"),
+        automaticTax: summary.payment.taxMode === "stripe",
         metadata: {
           source: "cart",
+          taxMode: summary.payment.taxMode,
           orderId: refs.orderId,
           invoiceId: refs.invoiceId,
         },

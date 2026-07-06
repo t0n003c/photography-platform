@@ -1,0 +1,1 @@
+ALTER TABLE "site_settings" ADD COLUMN "store_stripe_tax_enabled" boolean DEFAULT false NOT NULL;

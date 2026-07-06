@@ -38,6 +38,7 @@ interface SettingsDTO {
   storeOnlinePaymentsEnabled: boolean;
   storePaymentProvider: "manual" | "stripe";
   storePaymentMode: "test" | "live";
+  storeStripeTaxEnabled: boolean;
   stripePublishableKey: string;
   stripeSecretKeySet: boolean;
   stripeWebhookSecretSet: boolean;
@@ -119,7 +120,8 @@ function paymentStatusFor(settings: {
   if (!settings.stripeWebhookSecretSet) missing.push("Stripe webhook secret");
 
   return {
-    activeCheckoutPath: missing.length === 0 ? ("hosted" as const) : ("manual" as const),
+    activeCheckoutPath:
+      missing.length === 0 ? ("hosted" as const) : ("manual" as const),
     readyForHostedCheckout: missing.length === 0,
     missing,
     label:
@@ -252,6 +254,7 @@ export default function SettingsPage() {
         storeOnlinePaymentsEnabled: s.storeOnlinePaymentsEnabled,
         storePaymentProvider: s.storePaymentProvider,
         storePaymentMode: s.storePaymentMode,
+        storeStripeTaxEnabled: s.storeStripeTaxEnabled,
         stripePublishableKey: s.stripePublishableKey,
         stripeStatementDescriptor: s.stripeStatementDescriptor,
       };
@@ -560,6 +563,7 @@ export default function SettingsPage() {
                   update("storePaymentProvider", provider);
                   if (provider === "manual") {
                     update("storeOnlinePaymentsEnabled", false);
+                    update("storeStripeTaxEnabled", false);
                   }
                 }}
               >
@@ -593,12 +597,30 @@ export default function SettingsPage() {
               disabled={!stripeSelected}
             />
             <span>
-              <span className="block font-medium">
-                Enable hosted Stripe checkout
-              </span>
+              <span className="block font-medium">Enable hosted Stripe checkout</span>
               <span className="block text-xs text-[hsl(var(--muted-foreground))]">
                 When all Stripe fields are present, public cart and invoice pages can
                 send clients to Stripe Checkout.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={s.storeStripeTaxEnabled}
+              onChange={(e) => update("storeStripeTaxEnabled", e.target.checked)}
+              disabled={!stripeSelected}
+            />
+            <span>
+              <span className="block font-medium">
+                Use Stripe Tax for hosted cart checkout
+              </span>
+              <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                Stripe calculates tax during public cart checkout and the paid receipt
+                is updated from the completed Checkout Session. Manual invoices keep the
+                fixed tax settings above.
               </span>
             </span>
           </label>

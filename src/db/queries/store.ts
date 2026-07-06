@@ -78,6 +78,7 @@ export interface CartSummaryDTO {
     hostedCheckoutAvailable: boolean;
     provider: "manual" | "stripe";
     activeCheckoutPath: "manual" | "hosted";
+    taxMode: "manual" | "stripe";
   };
 }
 
@@ -238,6 +239,8 @@ export async function resolveCartItems(
     getStorePaymentSettings(),
   ]);
   const paymentStatus = storePaymentStatus(paymentSettings);
+  const useStripeTax =
+    paymentStatus.readyForHostedCheckout && paymentSettings.stripeTaxEnabled;
   const normalized = normalizeCartItems(items);
   const products = await listActiveProductsByIds(
     normalized.map((item) => item.productId),
@@ -269,7 +272,14 @@ export async function resolveCartItems(
   });
   const currencies = [...new Set(lines.map((line) => line.product.currency))];
   const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
-  const totals = calculateStoreTotals(subtotalCents, checkoutSettings);
+  const effectiveCheckoutSettings = useStripeTax
+    ? {
+        ...checkoutSettings,
+        taxEnabled: false,
+        taxRateBps: 0,
+      }
+    : checkoutSettings;
+  const totals = calculateStoreTotals(subtotalCents, effectiveCheckoutSettings);
   return {
     lines,
     unavailableProductIds: normalized
@@ -282,11 +292,12 @@ export async function resolveCartItems(
     totalCents: totals.totalCents,
     currency: currencies[0] ?? "USD",
     hasMixedCurrency: currencies.length > 1,
-    checkoutSettings: publicStoreCheckoutSettings(checkoutSettings),
+    checkoutSettings: publicStoreCheckoutSettings(effectiveCheckoutSettings),
     payment: {
       hostedCheckoutAvailable: paymentStatus.readyForHostedCheckout,
       provider: paymentSettings.paymentProvider,
       activeCheckoutPath: paymentStatus.activeCheckoutPath,
+      taxMode: useStripeTax ? "stripe" : "manual",
     },
   };
 }

@@ -612,10 +612,7 @@ export async function updateOrderStatusAdmin(
         })
         .where(eq(invoice.orderId, id));
     } else if (status === "cancelled") {
-      await tx
-        .update(invoice)
-        .set({ status: "void" })
-        .where(eq(invoice.orderId, id));
+      await tx.update(invoice).set({ status: "void" }).where(eq(invoice.orderId, id));
     }
   });
   return getOrderAdmin(id);
@@ -699,7 +696,8 @@ export async function saveInvoiceAdmin(
   if (!order) return null;
   return {
     order,
-    invoiceToken: input.issue && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
+    invoiceToken:
+      input.issue && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
   };
 }
 
@@ -855,10 +853,7 @@ export async function recordOrderRefundAdmin(
         .select({ amountCents: orderRefund.amountCents })
         .from(orderRefund)
         .where(
-          and(
-            eq(orderRefund.orderId, orderId),
-            eq(orderRefund.status, "succeeded"),
-          ),
+          and(eq(orderRefund.orderId, orderId), eq(orderRefund.status, "succeeded")),
         );
       const refundedCents = refundRows.reduce(
         (sum, refund) => sum + refund.amountCents,
@@ -924,13 +919,13 @@ export async function recordStripeRefundUpdated(input: {
 
     if (input.status !== "succeeded") return;
     const invoiceRows = refund.invoiceId
-      ? await tx
-          .select()
-          .from(invoice)
-          .where(eq(invoice.id, refund.invoiceId))
-          .limit(1)
+      ? await tx.select().from(invoice).where(eq(invoice.id, refund.invoiceId)).limit(1)
       : input.invoiceId
-        ? await tx.select().from(invoice).where(eq(invoice.id, input.invoiceId)).limit(1)
+        ? await tx
+            .select()
+            .from(invoice)
+            .where(eq(invoice.id, input.invoiceId))
+            .limit(1)
         : input.paymentIntentId
           ? await tx
               .select()
@@ -1119,14 +1114,13 @@ export async function recordStripeCheckoutPaid(input: {
   sessionId: string;
   paymentIntentId?: string | null;
   amountPaidCents?: number | null;
-}): Promise<
-  | {
-      order: AdminOrderDTO;
-      invoice: AdminInvoiceDTO;
-      wasAlreadyPaid: boolean;
-    }
-  | null
-> {
+  amountTaxCents?: number | null;
+  automaticTaxEnabled?: boolean | null;
+}): Promise<{
+  order: AdminOrderDTO;
+  invoice: AdminInvoiceDTO;
+  wasAlreadyPaid: boolean;
+} | null> {
   const current = await invoiceByOnlinePayment(input);
   if (!current) return null;
   const wasAlreadyPaid = current.status === "paid";
@@ -1135,6 +1129,10 @@ export async function recordStripeCheckoutPaid(input: {
     input.amountPaidCents && input.amountPaidCents > 0
       ? input.amountPaidCents
       : (current.paidAmountCents ?? current.amountCents);
+  const taxCents =
+    input.automaticTaxEnabled && typeof input.amountTaxCents === "number"
+      ? Math.max(0, Math.round(input.amountTaxCents))
+      : null;
 
   if (!wasAlreadyPaid) {
     await db.transaction(async (tx) => {
@@ -1142,6 +1140,7 @@ export async function recordStripeCheckoutPaid(input: {
         .update(invoice)
         .set({
           status: "paid",
+          amountCents: paidAmountCents,
           paidAt,
           paidAmountCents,
           paymentMethod: "Stripe Checkout",
@@ -1158,6 +1157,12 @@ export async function recordStripeCheckoutPaid(input: {
         .update(orderTable)
         .set({
           status: "paid",
+          ...(taxCents !== null
+            ? {
+                taxCents,
+                totalCents: paidAmountCents,
+              }
+            : {}),
           paymentProvider: "stripe",
           paymentRef: input.paymentIntentId ?? input.sessionId,
         })
@@ -1197,11 +1202,7 @@ export async function getPublicInvoiceByToken(
 ): Promise<PublicInvoiceDTO | null> {
   const signedInvoiceId = verifyInvoiceToken(rawToken);
   const invoiceRows = signedInvoiceId
-    ? await db
-        .select()
-        .from(invoice)
-        .where(eq(invoice.id, signedInvoiceId))
-        .limit(1)
+    ? await db.select().from(invoice).where(eq(invoice.id, signedInvoiceId)).limit(1)
     : await db
         .select()
         .from(invoice)

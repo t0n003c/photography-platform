@@ -516,26 +516,26 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 
 ### 13.2 `order`
 
-| Field                        | Type                     | Notes                                                |
-| ---------------------------- | ------------------------ | ---------------------------------------------------- |
-| id                           | text PK                  |                                                      |
-| client_id                    | text FK → client.id NULL | placed by                                            |
-| email                        | text                     | guest email                                          |
-| status                       | text                     | `draft`\|`pending`\|`invoiced`\|`paid`\|`fulfilled`\|`cancelled` |
-| subtotal_cents / total_cents | integer                  |                                                      |
-| currency                     | text                     |                                                      |
-| payment_provider             | text NULL                | `'manual'` or `'stripe'`                             |
-| payment_ref                  | text NULL                | manual note, Stripe session id, or external ref      |
+| Field                        | Type                     | Notes                                                                      |
+| ---------------------------- | ------------------------ | -------------------------------------------------------------------------- |
+| id                           | text PK                  |                                                                            |
+| client_id                    | text FK → client.id NULL | placed by                                                                  |
+| email                        | text                     | guest email                                                                |
+| status                       | text                     | `draft`\|`pending`\|`invoiced`\|`paid`\|`fulfilled`\|`cancelled`           |
+| subtotal_cents / total_cents | integer                  |                                                                            |
+| currency                     | text                     |                                                                            |
+| payment_provider             | text NULL                | `'manual'` or `'stripe'`                                                   |
+| payment_ref                  | text NULL                | manual note, Stripe session id, or external ref                            |
 | fulfillment_status           | text                     | `unfulfilled`\|`in_progress`\|`ready`\|`shipped`\|`delivered`\|`cancelled` |
-| fulfillment_carrier          | text NULL                | client-facing carrier/pickup method                  |
-| fulfillment_tracking_number  | text NULL                | client-facing tracking or handoff reference          |
-| fulfillment_tracking_url     | text NULL                | optional tracking link                               |
-| fulfillment_ready_at         | timestamptz NULL         | auto-filled when marked ready/shipped/delivered      |
-| fulfillment_shipped_at       | timestamptz NULL         | auto-filled when marked shipped/delivered            |
-| fulfillment_delivered_at     | timestamptz NULL         | auto-filled when marked delivered                    |
-| fulfillment_notes            | text NULL                | internal admin notes; never shown on public receipts |
-| store_settings_snapshot      | jsonb                    | saved checkout copy/tax/shipping settings            |
-| created_at / updated_at      | timestamptz              |                                                      |
+| fulfillment_carrier          | text NULL                | client-facing carrier/pickup method                                        |
+| fulfillment_tracking_number  | text NULL                | client-facing tracking or handoff reference                                |
+| fulfillment_tracking_url     | text NULL                | optional tracking link                                                     |
+| fulfillment_ready_at         | timestamptz NULL         | auto-filled when marked ready/shipped/delivered                            |
+| fulfillment_shipped_at       | timestamptz NULL         | auto-filled when marked shipped/delivered                                  |
+| fulfillment_delivered_at     | timestamptz NULL         | auto-filled when marked delivered                                          |
+| fulfillment_notes            | text NULL                | internal admin notes; never shown on public receipts                       |
+| store_settings_snapshot      | jsonb                    | saved checkout copy/tax/shipping settings                                  |
+| created_at / updated_at      | timestamptz              |                                                                            |
 
 ### 13.3 `order_item`
 
@@ -562,25 +562,25 @@ fields (`paid_at`, `paid_amount_cents`, `payment_method`, `payment_reference`,
 Durable refund records for manual/provider refunds. Multiple rows per order are allowed so
 partial refunds remain auditable.
 
-| Field              | Type                     | Notes                                                |
-| ------------------ | ------------------------ | ---------------------------------------------------- |
-| id                 | text PK                  |                                                      |
-| order_id           | text FK → order          | CASCADE                                              |
-| invoice_id         | text FK → invoice NULL   | SET NULL                                             |
-| amount_cents       | integer                  | positive refund amount                              |
-| currency           | text                     | copied from invoice/order                            |
-| status             | text                     | `pending`\|`succeeded`\|`failed`\|`cancelled`        |
-| provider           | text                     | `manual` or `stripe`; default `manual`               |
-| provider_refund_id | text NULL                | external refund id/reference                         |
-| provider_error     | text NULL                | provider failure/status detail for failed attempts   |
-| method             | text NULL                | check, cash, Stripe dashboard, etc.                  |
-| reference          | text NULL                | check number / transaction id                        |
-| reason             | text NULL                | customer-facing reason                               |
-| note               | text NULL                | customer-facing note shown on receipts/emails        |
-| refunded_at        | timestamptz NULL         | effective refund date                                |
-| receipt_sent_at    | timestamptz NULL         | when refund email was sent                           |
-| created_by         | text FK → user.id NULL   | admin who recorded it                                |
-| created_at/updated_at | timestamptz           |                                                      |
+| Field                 | Type                   | Notes                                              |
+| --------------------- | ---------------------- | -------------------------------------------------- |
+| id                    | text PK                |                                                    |
+| order_id              | text FK → order        | CASCADE                                            |
+| invoice_id            | text FK → invoice NULL | SET NULL                                           |
+| amount_cents          | integer                | positive refund amount                             |
+| currency              | text                   | copied from invoice/order                          |
+| status                | text                   | `pending`\|`succeeded`\|`failed`\|`cancelled`      |
+| provider              | text                   | `manual` or `stripe`; default `manual`             |
+| provider_refund_id    | text NULL              | external refund id/reference                       |
+| provider_error        | text NULL              | provider failure/status detail for failed attempts |
+| method                | text NULL              | check, cash, Stripe dashboard, etc.                |
+| reference             | text NULL              | check number / transaction id                      |
+| reason                | text NULL              | customer-facing reason                             |
+| note                  | text NULL              | customer-facing note shown on receipts/emails      |
+| refunded_at           | timestamptz NULL       | effective refund date                              |
+| receipt_sent_at       | timestamptz NULL       | when refund email was sent                         |
+| created_by            | text FK → user.id NULL | admin who recorded it                              |
+| created_at/updated_at | timestamptz            |                                                    |
 
 Indexes: `INDEX(order_id)`, `INDEX(invoice_id)`.
 
@@ -594,6 +594,7 @@ adds:
 | store_online_payments_enabled | boolean   | permits hosted checkout only when provider + Stripe fields are ready   |
 | store_payment_provider        | text      | `manual`\|`stripe`; default `manual`                                   |
 | store_payment_mode            | text      | `test`\|`live`; default `test`                                         |
+| store_stripe_tax_enabled      | boolean   | optional Stripe Tax for hosted public cart checkout only               |
 | stripe_publishable_key        | text NULL | non-secret Stripe key                                                  |
 | stripe_secret_key_enc         | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                               |
 | stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
@@ -603,19 +604,19 @@ adds:
 
 Stores Stripe event IDs for webhook idempotency and operator audit:
 
-| Field                | Type        | Notes                                           |
-| -------------------- | ----------- | ----------------------------------------------- |
-| id                   | text PK     | Stripe event id, e.g. `evt_...`                 |
-| type                 | text        | Stripe event type                               |
-| livemode             | boolean     | copied from Stripe                              |
-| api_version          | text NULL   | copied from Stripe                              |
-| invoice_id           | text FK     | nullable link to `invoice`                      |
-| session_id           | text NULL   | Checkout session id                             |
-| payment_intent_id    | text NULL   | Stripe PaymentIntent id                         |
-| status               | text        | `processing`\|`processed`\|`ignored`\|`failed`  |
-| error                | text NULL   | last processing error, if any                   |
-| received_at          | timestamptz | when the event first reached the app            |
-| processed_at         | timestamptz | when processing/ignore/failure was recorded     |
+| Field                 | Type        | Notes                                          |
+| --------------------- | ----------- | ---------------------------------------------- |
+| id                    | text PK     | Stripe event id, e.g. `evt_...`                |
+| type                  | text        | Stripe event type                              |
+| livemode              | boolean     | copied from Stripe                             |
+| api_version           | text NULL   | copied from Stripe                             |
+| invoice_id            | text FK     | nullable link to `invoice`                     |
+| session_id            | text NULL   | Checkout session id                            |
+| payment_intent_id     | text NULL   | Stripe PaymentIntent id                        |
+| status                | text        | `processing`\|`processed`\|`ignored`\|`failed` |
+| error                 | text NULL   | last processing error, if any                  |
+| received_at           | timestamptz | when the event first reached the app           |
+| processed_at          | timestamptz | when processing/ignore/failure was recorded    |
 | created_at/updated_at | timestamptz | standard timestamps                            |
 
 ---

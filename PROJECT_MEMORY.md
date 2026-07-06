@@ -39,7 +39,7 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
    their shoot, via real auth + expiring shareable links, favorites, download controls.
 3. **Light print store** — product management, public product browsing, browser-local
    cart, manual invoice requests, manual receipts, refund tracking, and optional Stripe
-   Checkout when Settings -> Payments is fully configured.
+   Checkout/refunds/Stripe Tax for hosted cart checkout when Settings -> Payments is fully configured.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + optional Stripe Checkout/refunds                                       | Admin link refresh/status visibility + webhook/refund idempotency; tax/VAT still deferred |
+| Payments       | Manual invoice checkout + optional Stripe Checkout/refunds/hosted-cart Stripe Tax                | Admin link refresh/status visibility + webhook/refund idempotency; tax/VAT compliance ops still deferred            |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -477,7 +477,9 @@ is gitignored):
   Stripe Checkout now creates hosted sessions for cart orders and issued public invoices,
   and signed webhooks reconcile paid/expired invoice state when Settings -> Payments is
   ready. `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety,
-  including refund update events. Tax/VAT automation is still deferred.
+  including refund update events. Stripe Tax can be enabled for hosted public cart checkout
+  only; issued invoice links still use saved totals, and tax/VAT registration/reporting
+  remain deferred/compliance work.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -1265,10 +1267,19 @@ is gitignored):
   emails only succeeded refunds. `/api/v1/webhooks/stripe` now handles
   `charge.refund.updated` / `refund.*` events and updates the matching refund row by
   Stripe refund id. Public receipts show settled refunds separately from pending refunds.
-  Tax/VAT automation remains deferred.
+  Follow-up: Stripe Tax automation foundation is active for hosted public cart checkout.
+  Migration `0023_clean_epoch.sql` adds `site_settings.store_stripe_tax_enabled`.
+  Settings -> Payments exposes "Use Stripe Tax for hosted cart checkout"; when enabled and
+  hosted checkout is ready, `/api/v1/checkout` creates Stripe Checkout sessions with
+  `automatic_tax[enabled]=true`, address collection, and tax-exclusive line items instead
+  of adding the app's fixed tax line. Paid Stripe webhooks read
+  `total_details.amount_tax` and `amount_total` to update the saved order/invoice tax and
+  total before sending the receipt. Issued public invoice checkout links intentionally keep
+  the already-saved invoice total for now. Remaining tax/VAT work: registrations/nexus,
+  product tax-code strategy, filing/reporting, and automatic tax for already-issued invoices.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0022`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0023`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

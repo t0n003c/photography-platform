@@ -155,6 +155,8 @@ export async function getStorePaymentSettings(): Promise<StorePaymentSettings> {
     paymentProvider:
       row?.storePaymentProvider ?? SETTINGS_DEFAULTS.storePayment.paymentProvider,
     paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
+    stripeTaxEnabled:
+      row?.storeStripeTaxEnabled ?? SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
     stripePublishableKey:
       row?.stripePublishableKey ??
       env.STRIPE_PUBLISHABLE_KEY ??
@@ -189,6 +191,8 @@ export async function getResolvedStorePaymentConfig(): Promise<ResolvedStorePaym
     paymentProvider:
       row?.storePaymentProvider ?? SETTINGS_DEFAULTS.storePayment.paymentProvider,
     paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
+    stripeTaxEnabled:
+      row?.storeStripeTaxEnabled ?? SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
     stripePublishableKey:
       row?.stripePublishableKey ??
       env.STRIPE_PUBLISHABLE_KEY ??

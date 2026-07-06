@@ -17,6 +17,7 @@ export interface StorePaymentSettings {
   onlinePaymentsEnabled: boolean;
   paymentProvider: StorePaymentProvider;
   paymentMode: StorePaymentMode;
+  stripeTaxEnabled: boolean;
   stripePublishableKey: string | null;
   stripeSecretKeySet: boolean;
   stripeWebhookSecretSet: boolean;
@@ -55,6 +56,7 @@ export const STORE_PAYMENT_DEFAULTS: StorePaymentSettings = {
   onlinePaymentsEnabled: false,
   paymentProvider: "manual",
   paymentMode: "test",
+  stripeTaxEnabled: false,
   stripePublishableKey: null,
   stripeSecretKeySet: false,
   stripeWebhookSecretSet: false,
@@ -130,6 +132,8 @@ export function normalizeStorePaymentSettings(
       paymentProvider === "stripe" ? Boolean(input.onlinePaymentsEnabled) : false,
     paymentProvider,
     paymentMode: normalizePaymentMode(input.paymentMode),
+    stripeTaxEnabled:
+      paymentProvider === "stripe" ? Boolean(input.stripeTaxEnabled) : false,
     stripePublishableKey: normalizeOptionalText(input.stripePublishableKey),
     stripeSecretKeySet: Boolean(input.stripeSecretKeySet),
     stripeWebhookSecretSet: Boolean(input.stripeWebhookSecretSet),

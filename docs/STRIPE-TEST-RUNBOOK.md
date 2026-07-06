@@ -9,7 +9,10 @@ Payments is complete.
 1. In Stripe, use test mode.
 2. Copy the test publishable key and secret key into Settings -> Payments.
 3. Set provider to Stripe, mode to Test, and enable hosted Stripe checkout.
-4. Configure the webhook secret after starting the local listener below.
+4. Optional: enable **Use Stripe Tax for hosted cart checkout** after Stripe Tax is
+   configured in the Stripe dashboard. This only affects new public cart Checkout
+   sessions; issued invoice payment links keep their saved invoice totals.
+5. Configure the webhook secret after starting the local listener below.
 
 Required local webhook URL:
 
@@ -57,6 +60,8 @@ The payment status should switch to hosted checkout ready once all fields are pr
    - hosted Stripe status becomes `paid`
    - Stripe session/payment intent refs are visible
    - receipt email is queued/sent through the configured email provider
+   - if Stripe Tax is enabled, the saved invoice/order total and tax line match the
+     completed Checkout Session `amount_total` and `total_details.amount_tax`
 
 ## 4. Issued invoice checkout smoke
 

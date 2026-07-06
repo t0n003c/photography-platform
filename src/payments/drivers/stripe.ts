@@ -49,6 +49,12 @@ export class StripePaymentProvider implements PaymentProvider {
     params.set("cancel_url", input.cancelUrl);
     params.set("client_reference_id", input.invoiceId);
 
+    if (input.automaticTax) {
+      params.set("automatic_tax[enabled]", "true");
+      params.set("billing_address_collection", "auto");
+      params.set("customer_creation", "always");
+    }
+
     if (input.customerEmail) {
       params.set("customer_email", input.customerEmail);
     }
@@ -84,6 +90,9 @@ export class StripePaymentProvider implements PaymentProvider {
         `line_items[${index}][price_data][product_data][name]`,
         item.description.slice(0, 250),
       );
+      if (input.automaticTax) {
+        params.set(`line_items[${index}][price_data][tax_behavior]`, "exclusive");
+      }
     });
 
     const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -96,15 +105,13 @@ export class StripePaymentProvider implements PaymentProvider {
       body: params,
     });
 
-    const body = (await res.json().catch(() => null)) as
-      | {
-          id?: string;
-          url?: string;
-          payment_intent?: string | null;
-          expires_at?: number | null;
-          error?: { message?: string };
-        }
-      | null;
+    const body = (await res.json().catch(() => null)) as {
+      id?: string;
+      url?: string;
+      payment_intent?: string | null;
+      expires_at?: number | null;
+      error?: { message?: string };
+    } | null;
 
     if (!res.ok || !body?.id || !body.url) {
       throw new PaymentProviderError(
@@ -152,17 +159,15 @@ export class StripePaymentProvider implements PaymentProvider {
       body: params,
     });
 
-    const body = (await res.json().catch(() => null)) as
-      | {
-          id?: string;
-          amount?: number | null;
-          currency?: string | null;
-          status?: string | null;
-          failure_reason?: string | null;
-          created?: number | null;
-          error?: { message?: string; code?: string };
-        }
-      | null;
+    const body = (await res.json().catch(() => null)) as {
+      id?: string;
+      amount?: number | null;
+      currency?: string | null;
+      status?: string | null;
+      failure_reason?: string | null;
+      created?: number | null;
+      error?: { message?: string; code?: string };
+    } | null;
 
     if (!res.ok || !body?.id) {
       throw new PaymentProviderError(

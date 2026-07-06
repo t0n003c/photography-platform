@@ -523,6 +523,7 @@ export const siteSettings = pgTable("site_settings", {
   })
     .notNull()
     .default("test"),
+  storeStripeTaxEnabled: boolean("store_stripe_tax_enabled").notNull().default(false),
   stripePublishableKey: text("stripe_publishable_key"),
   stripeSecretKeyEnc: text("stripe_secret_key_enc"), // AES-256-GCM ciphertext
   stripeWebhookSecretEnc: text("stripe_webhook_secret_enc"), // AES-256-GCM ciphertext
@@ -669,14 +670,7 @@ export const order = pgTable("order", {
   paymentProvider: text("payment_provider"),
   paymentRef: text("payment_ref"),
   fulfillmentStatus: text("fulfillment_status", {
-    enum: [
-      "unfulfilled",
-      "in_progress",
-      "ready",
-      "shipped",
-      "delivered",
-      "cancelled",
-    ],
+    enum: ["unfulfilled", "in_progress", "ready", "shipped", "delivered", "cancelled"],
   })
     .notNull()
     .default("unfulfilled"),
@@ -813,9 +807,7 @@ export const stripeWebhookEvent = pgTable(
       .notNull()
       .default("processing"),
     error: text("error"),
-    receivedAt: timestamp("received_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
     processedAt: timestamp("processed_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

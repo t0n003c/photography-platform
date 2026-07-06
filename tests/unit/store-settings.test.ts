@@ -41,8 +41,10 @@ describe("store checkout settings", () => {
       paymentProvider: "manual",
       stripePublishableKey: "pk_test_demo",
       stripeSecretKeySet: true,
+      stripeTaxEnabled: true,
     });
     expect(settings.onlinePaymentsEnabled).toBe(false);
+    expect(settings.stripeTaxEnabled).toBe(false);
     expect(storePaymentStatus(settings)).toMatchObject({
       activeCheckoutPath: "manual",
       readyForHostedCheckout: false,
@@ -74,8 +76,10 @@ describe("store checkout settings", () => {
       stripePublishableKey: "pk_live_demo",
       stripeSecretKeySet: true,
       stripeWebhookSecretSet: true,
+      stripeTaxEnabled: true,
       stripeStatementDescriptor: "A very long studio statement descriptor",
     });
+    expect(settings.stripeTaxEnabled).toBe(true);
     expect(settings.stripeStatementDescriptor).toHaveLength(22);
     expect(storePaymentStatus(settings)).toMatchObject({
       activeCheckoutPath: "hosted",
