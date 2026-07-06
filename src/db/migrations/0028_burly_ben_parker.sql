@@ -1,0 +1,1 @@
+ALTER TABLE "order" ADD COLUMN "packing_checklist" jsonb DEFAULT '[]'::jsonb NOT NULL;

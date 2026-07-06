@@ -37,6 +37,7 @@ import {
   type ProductOptionValue,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
+import type { OrderPackingChecklistEntry } from "@/src/lib/store-fulfillment";
 
 type ProductKind = "print" | "digital" | "bundle";
 
@@ -153,6 +154,7 @@ interface OrderRow {
   fulfillmentShippedAt: string | null;
   fulfillmentDeliveredAt: string | null;
   fulfillmentNotes: string | null;
+  packingChecklist: OrderPackingChecklistEntry[];
   invoice: InvoiceRow | null;
   createdAt: string;
   updatedAt: string;
@@ -947,6 +949,7 @@ function auditActionTitle(action: string) {
     "order.refund.record": "Refund recorded",
     "order.fulfillment.email": "Fulfillment update emailed",
     "order.fulfillment.update": "Fulfillment updated",
+    "order.packing_checklist.update": "Packing checklist updated",
     "order.checkout.refresh": "Checkout link refreshed",
     "order.checkout.open": "Checkout link opened",
   };
@@ -1968,6 +1971,7 @@ function OrderDetailModal({
   onPaymentSubmit,
   onRefundSubmit,
   onFulfillmentSubmit,
+  onPackingChecklistSubmit,
   onInvoiceLinkAction,
   onCheckoutLinkAction,
   onStatusLinkAction,
@@ -1988,6 +1992,9 @@ function OrderDetailModal({
   onFulfillmentSubmit: (
     values: FulfillmentFormValues,
     sendEmail: boolean,
+  ) => Promise<void>;
+  onPackingChecklistSubmit: (
+    items: Array<{ itemId: string; checked: boolean }>,
   ) => Promise<void>;
   onInvoiceLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
   onCheckoutLinkAction: (order: OrderRow, action: "open" | "copy") => Promise<void>;
@@ -2026,11 +2033,27 @@ function OrderDetailModal({
     fulfillmentDeliveredAt: "",
     fulfillmentNotes: "",
   });
+  const [packingCheckedIds, setPackingCheckedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [preview, setPreview] = useState<EmailPreviewMessage | null>(null);
   const [previewing, setPreviewing] = useState<EmailPreviewKind | null>(null);
   const activity = useMemo(
     () => orderActivityEntries(order, auditRows),
     [order, auditRows],
+  );
+  const savedPackingByItemId = useMemo(
+    () => new Map(order.packingChecklist.map((entry) => [entry.itemId, entry])),
+    [order.packingChecklist],
+  );
+  const savedPackedIds = useMemo(
+    () =>
+      new Set(
+        order.packingChecklist
+          .filter((entry) => entry.checked)
+          .map((entry) => entry.itemId),
+      ),
+    [order.packingChecklist],
   );
   const readinessWarnings = orderReadinessWarnings(order);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -2051,6 +2074,12 @@ function OrderDetailModal({
   const canRefreshCheckout = order.invoice?.status === "issued";
   const fulfillmentCanEmail =
     Boolean(order.email) && canEmailFulfillment(fulfillmentForm.fulfillmentStatus);
+  const packedItemCount = order.items.filter((item) =>
+    packingCheckedIds.has(item.id),
+  ).length;
+  const packingChecklistDirty = order.items.some(
+    (item) => packingCheckedIds.has(item.id) !== savedPackedIds.has(item.id),
+  );
   const nextStatus: OrderStatus | null =
     order.status === "draft" ||
     order.status === "pending" ||
@@ -2091,13 +2120,29 @@ function OrderDetailModal({
       fulfillmentDeliveredAt: dateInputValue(order.fulfillmentDeliveredAt),
       fulfillmentNotes: order.fulfillmentNotes ?? "",
     });
-  }, [order.id, order.invoice, order.totalCents, order, stripeRefundAvailable]);
+    setPackingCheckedIds(savedPackedIds);
+  }, [
+    order.id,
+    order.invoice,
+    order.totalCents,
+    order,
+    savedPackedIds,
+    stripeRefundAvailable,
+  ]);
 
   const submitFulfillmentStatus = (status: FulfillmentStatus, sendEmail: boolean) => {
     const values = { ...fulfillmentForm, fulfillmentStatus: status };
     setFulfillmentForm(values);
     return onFulfillmentSubmit(values, sendEmail);
   };
+
+  const savePackingChecklist = () =>
+    onPackingChecklistSubmit(
+      order.items.map((item) => ({
+        itemId: item.id,
+        checked: packingCheckedIds.has(item.id),
+      })),
+    );
 
   const previewEmail = async (kind: EmailPreviewKind) => {
     setPreviewing(kind);
@@ -2386,11 +2431,19 @@ function OrderDetailModal({
                 Packing checklist
               </h4>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Temporary checklist for this order drawer.
+                Saved checklist for packing, pickup, and shipment prep.
               </p>
             </div>
-            <Badge tone="neutral">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
+            <Badge
+              tone={
+                order.items.length > 0 && packedItemCount === order.items.length
+                  ? "green"
+                  : packingChecklistDirty
+                    ? "amber"
+                    : "neutral"
+              }
+            >
+              {packedItemCount}/{order.items.length} packed
             </Badge>
           </div>
           <div className="space-y-2">
@@ -2404,7 +2457,21 @@ function OrderDetailModal({
                   key={`pack-${item.id}`}
                   className="flex gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
                 >
-                  <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" />
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 shrink-0"
+                    checked={packingCheckedIds.has(item.id)}
+                    disabled={saving}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setPackingCheckedIds((current) => {
+                        const next = new Set(current);
+                        if (checked) next.add(item.id);
+                        else next.delete(item.id);
+                        return next;
+                      });
+                    }}
+                  />
                   <span className="min-w-0">
                     <span className="block font-medium">
                       {item.quantity} × {orderItemTitle(item)}
@@ -2416,10 +2483,74 @@ function OrderDetailModal({
                           .join(" · ")}
                       </span>
                     )}
+                    {savedPackingByItemId.get(item.id)?.checkedAt && (
+                      <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
+                        Packed{" "}
+                        {formatDate(
+                          savedPackingByItemId.get(item.id)?.checkedAt ?? "",
+                        )}
+                      </span>
+                    )}
                   </span>
                 </label>
               ))
             )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              {packingChecklistDirty
+                ? "Unsaved packing changes"
+                : "Packing checklist is saved"}
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving || order.items.length === 0}
+                onClick={() =>
+                  window.open(
+                    `/admin/store/orders/${encodeURIComponent(
+                      order.id,
+                    )}/packing-slip`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
+              >
+                <ExternalLink className="h-4 w-4" />
+                Packing slip
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving || order.items.length === 0}
+                onClick={() =>
+                  setPackingCheckedIds(new Set(order.items.map((item) => item.id)))
+                }
+              >
+                Mark all packed
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving || order.items.length === 0}
+                onClick={() => setPackingCheckedIds(new Set())}
+              >
+                Clear
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving || !packingChecklistDirty}
+                onClick={savePackingChecklist}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Save checklist
+              </Button>
+            </div>
           </div>
           <div className="grid gap-2 rounded-md border p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
             <span>
@@ -3926,6 +4057,28 @@ export default function StorePage() {
     }
   };
 
+  const savePackingChecklist = async (
+    row: OrderRow,
+    items: Array<{ itemId: string; checked: boolean }>,
+  ) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{ data: OrderRow }>(
+        `/api/v1/admin/orders/${row.id}/packing-checklist`,
+        { items },
+      );
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data : order)),
+      );
+      setSelectedOrder(res.data);
+      toast("Packing checklist saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const useInvoiceLink = async (row: OrderRow, action: "open" | "copy") => {
     try {
       const res = await api.get<{
@@ -4703,6 +4856,9 @@ export default function StorePage() {
           }
           onFulfillmentSubmit={(values, sendEmail) =>
             saveFulfillment(selectedOrder, values, sendEmail)
+          }
+          onPackingChecklistSubmit={(items) =>
+            savePackingChecklist(selectedOrder, items)
           }
           onInvoiceLinkAction={useInvoiceLink}
           onCheckoutLinkAction={useCheckoutLink}

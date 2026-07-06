@@ -91,6 +91,7 @@ const adminOrder: AdminOrderDTO = {
   fulfillmentShippedAt: null,
   fulfillmentDeliveredAt: null,
   fulfillmentNotes: null,
+  packingChecklist: [],
   storeSettingsSnapshot: order.checkoutSettings,
   invoice: null,
   createdAt: order.createdAt,

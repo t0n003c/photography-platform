@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
+import type { OrderPackingChecklistEntry } from "@/src/lib/store-fulfillment";
 import type { ProductOption, SelectedProductOption } from "@/src/lib/store-options";
 import type {
   PublicStoreCheckoutSettings,
@@ -710,6 +711,10 @@ export const order = pgTable("order", {
     withTimezone: true,
   }),
   fulfillmentNotes: text("fulfillment_notes"),
+  packingChecklist: jsonb("packing_checklist")
+    .$type<OrderPackingChecklistEntry[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   storeSettingsSnapshot: jsonb("store_settings_snapshot")
     .$type<PublicStoreCheckoutSettings>()
     .notNull()

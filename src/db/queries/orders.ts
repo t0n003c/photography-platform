@@ -27,6 +27,10 @@ import {
   type StoreInvoiceTaxMode,
   type PublicStoreCheckoutSettings,
 } from "@/src/lib/store-settings";
+import {
+  normalizePackingChecklist,
+  type OrderPackingChecklistEntry,
+} from "@/src/lib/store-fulfillment";
 
 export interface CheckoutCustomerInput {
   name?: string | null;
@@ -167,6 +171,7 @@ export interface AdminOrderDTO {
   fulfillmentShippedAt: string | null;
   fulfillmentDeliveredAt: string | null;
   fulfillmentNotes: string | null;
+  packingChecklist: OrderPackingChecklistEntry[];
   storeSettingsSnapshot: PublicStoreCheckoutSettings;
   invoice: AdminInvoiceDTO | null;
   createdAt: string;
@@ -411,6 +416,7 @@ function fulfillmentFieldsToDTO(row: typeof orderTable.$inferSelect) {
     fulfillmentShippedAt: row.fulfillmentShippedAt?.toISOString() ?? null,
     fulfillmentDeliveredAt: row.fulfillmentDeliveredAt?.toISOString() ?? null,
     fulfillmentNotes: row.fulfillmentNotes,
+    packingChecklist: normalizePackingChecklist(row.packingChecklist),
   };
 }
 
@@ -1508,6 +1514,70 @@ export async function updateOrderFulfillmentAdmin(
     ) {
       await decrementInventoryForOrder(tx, orderId);
     }
+  });
+
+  return getOrderAdmin(orderId);
+}
+
+export async function updateOrderPackingChecklistAdmin(
+  orderId: string,
+  input: Array<{ itemId: string; checked: boolean }>,
+  actorId: string | null,
+): Promise<AdminOrderDTO | null> {
+  await db.transaction(async (tx) => {
+    const orderRows = await tx
+      .select({
+        id: orderTable.id,
+        packingChecklist: orderTable.packingChecklist,
+      })
+      .from(orderTable)
+      .where(eq(orderTable.id, orderId))
+      .limit(1);
+    const row = orderRows[0];
+    if (!row) return;
+
+    const itemRows = await tx
+      .select({ id: orderItem.id })
+      .from(orderItem)
+      .where(eq(orderItem.orderId, orderId));
+    const itemIds = itemRows.map((item) => item.id);
+    const itemIdSet = new Set(itemIds);
+    const currentById = new Map(
+      normalizePackingChecklist(row.packingChecklist).map((entry) => [
+        entry.itemId,
+        entry,
+      ]),
+    );
+    const requestedById = new Map(
+      input
+        .filter((entry) => itemIdSet.has(entry.itemId))
+        .map((entry) => [entry.itemId, entry.checked]),
+    );
+    const checkedAt = new Date();
+    const checkedAtIso = checkedAt.toISOString();
+    const next = itemIds.map<OrderPackingChecklistEntry>((itemId) => {
+      const previous = currentById.get(itemId);
+      const checked = requestedById.get(itemId) ?? previous?.checked ?? false;
+      return {
+        itemId,
+        checked,
+        checkedAt: checked
+          ? previous?.checked
+            ? (previous.checkedAt ?? checkedAtIso)
+            : checkedAtIso
+          : null,
+        checkedBy: checked
+          ? previous?.checked
+            ? (previous.checkedBy ?? actorId)
+            : actorId
+          : null,
+      };
+    });
+
+    await tx
+      .update(orderTable)
+      .set({ packingChecklist: next, updatedAt: checkedAt })
+      .where(eq(orderTable.id, orderId));
   });
 
   return getOrderAdmin(orderId);

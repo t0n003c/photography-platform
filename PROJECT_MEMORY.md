@@ -1609,6 +1609,12 @@ is gitignored):
   Order drawers include a readiness panel and temporary packing checklist. Bulk paid/fulfilled/
   cancelled actions now show confirmation warnings when selected orders are missing invoices,
   payment, email, tracking, or already have fulfillment/payment progress.
+  Persistent fulfillment follow-up: orders now store `packing_checklist` JSONB entries keyed by
+  order item id with checked state, timestamp, and actor id. The Store admin order drawer saves
+  checklist state through `/api/v1/admin/orders/[id]/packing-checklist`, shows packed progress
+  and saved timestamps, and opens a clean printable packing slip at
+  `/admin/store/orders/[id]/packing-slip`. This is intentionally order-scoped JSON for now; add a
+  dedicated packing-history table only if multi-actor item-level audit history becomes important.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
