@@ -1335,7 +1335,11 @@ is gitignored):
   provider error details.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0024`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0027`
+  (`0027` is recorded locally as migration table id `28`). If browser smoke suddenly shows
+  `/api/auth/get-session` 500s while logged out, check Redis logs for `MISCONF` / `No space
+  left on device`; pruning unused Docker build cache/images restored Redis writes during the
+  2026-07-06 release audit.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,
