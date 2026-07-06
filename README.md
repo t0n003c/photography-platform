@@ -83,6 +83,7 @@ canonical local target is the Docker `:3001` stack above.)
 | `npm test` / `test:watch`                                      | Vitest unit tests                                                                                                                     |
 | `npm run test:e2e`                                             | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack; store smoke also uses host Postgres on `:5432`) |
 | `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed                                                                                                    |
+| `npm run seed:store-examples`                                  | Local shop/store examples for products, cart, checkout, invoices, receipts, refunds, fulfillment, inventory, and tax                  |
 
 ## Repository layout (short)
 

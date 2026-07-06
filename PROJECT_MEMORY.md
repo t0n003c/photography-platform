@@ -1615,6 +1615,12 @@ is gitignored):
   and saved timestamps, and opens a clean printable packing slip at
   `/admin/store/orders/[id]/packing-slip`. This is intentionally order-scoped JSON for now; add a
   dedicated packing-history table only if multi-actor item-level audit history becomes important.
+  Store example-data follow-up: `npm run seed:store-examples` now creates a repeatable local
+  `/shop` page, Shop menu item, product set, demo tax/shipping/promo settings, and store orders
+  covering pending checkout, issued invoices, paid receipts, shipped fulfillment, delivered
+  partial refunds, expired hosted-checkout link state, tax export rows, inventory filters, and
+  packing checklist persistence. It only deletes/replaces `store-example-*` rows and preserves
+  Stripe/payment provider readiness. Details live in [`docs/STORE-EXAMPLES.md`](docs/STORE-EXAMPLES.md).
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
