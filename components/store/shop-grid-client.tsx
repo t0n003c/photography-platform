@@ -5,6 +5,7 @@ import { ShoppingBag } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { AddToCartButton } from "@/components/store/add-to-cart-button";
 import type { ProductDTO } from "@/src/db/queries/store";
+import { inventoryAvailable } from "@/src/lib/store-inventory";
 import { cn } from "@/src/lib/utils";
 
 type SortMode = "default" | "name-asc" | "price-asc" | "price-desc";
@@ -61,6 +62,7 @@ function ToraProductCard({
 }) {
   const sale = productSalePrice(product);
   const needsOptions = product.options.length > 0;
+  const availability = inventoryAvailable(product);
   return (
     <article className="tora-shop-card">
       <a
@@ -82,6 +84,9 @@ function ToraProductCard({
         {showSaleBadge && sale !== null && (
           <span className="tora-shop-card__sale">Sale!</span>
         )}
+        {product.inventoryTracked && availability.status !== "in_stock" && (
+          <span className="tora-shop-card__stock">{availability.label}</span>
+        )}
       </a>
       <h3>
         <a href={productHref(product)}>{product.name}</a>
@@ -98,7 +103,9 @@ function ToraProductCard({
           )}
         </p>
       )}
-      {needsOptions ? (
+      {!availability.available ? (
+        <AddToCartButton productId={product.id} label="Sold out" compact disabled />
+      ) : needsOptions ? (
         <div className="tora-add-to-cart is-compact">
           <a href={productHref(product)} className="tora-add-to-cart__button">
             <ShoppingBag aria-hidden className="h-3.5 w-3.5" />

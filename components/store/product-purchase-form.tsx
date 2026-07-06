@@ -8,6 +8,7 @@ import type {
   ProductOption,
   ProductOptionSelectionInput,
 } from "@/src/lib/store-options";
+import { inventoryAvailable, optionValueAvailable } from "@/src/lib/store-inventory";
 
 function formatMoney(cents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -25,7 +26,9 @@ function formatDelta(cents: number, currency: string) {
 function initialSelection(options: ProductOption[]): ProductOptionSelectionInput {
   return Object.fromEntries(
     options.flatMap((option) => {
-      const first = option.values[0];
+      const first =
+        option.values.find((value) => optionValueAvailable(value).available) ??
+        option.values[0];
       if (!option.required || !first) return [];
       return [[option.id, first.id]];
     }),
@@ -36,11 +39,19 @@ export function ProductPurchaseForm({
   productId,
   currency,
   basePriceCents,
+  inventoryTracked,
+  stockQuantity,
+  lowStockThreshold,
+  allowBackorder,
   options,
 }: {
   productId: string;
   currency: string;
   basePriceCents: number;
+  inventoryTracked: boolean;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  allowBackorder: boolean;
   options: ProductOption[];
 }) {
   const [selection, setSelection] = useState<ProductOptionSelectionInput>(() =>
@@ -65,8 +76,31 @@ export function ProductPurchaseForm({
   );
 
   const finalPriceCents = Math.max(0, basePriceCents + optionDeltaCents);
+  const productAvailability = inventoryAvailable({
+    inventoryTracked,
+    stockQuantity,
+    lowStockThreshold,
+    allowBackorder,
+  });
+  const selectedUnavailable = options
+    .map((option) => {
+      const value = option.values.find((item) => item.id === selection[option.id]);
+      if (!value) return null;
+      const availability = optionValueAvailable(value);
+      return availability.available ? null : `${option.name}: ${value.label}`;
+    })
+    .find(Boolean);
+  const canAdd = productAvailability.available && !selectedUnavailable;
 
   function addToCart() {
+    if (!productAvailability.available) {
+      setError("This product is sold out.");
+      return;
+    }
+    if (selectedUnavailable) {
+      setError(`${selectedUnavailable} is sold out.`);
+      return;
+    }
     const missing = options.find((option) => option.required && !selection[option.id]);
     if (missing) {
       setError(`Choose ${missing.name.toLowerCase()} before adding this product.`);
@@ -95,16 +129,31 @@ export function ProductPurchaseForm({
                 }
               >
                 {!option.required && <option value="">No preference</option>}
-                {option.values.map((value) => (
-                  <option key={value.id} value={value.id}>
-                    {value.label}
-                    {formatDelta(value.priceDeltaCents, currency)}
-                  </option>
-                ))}
+                {option.values.map((value) => {
+                  const availability = optionValueAvailable(value);
+                  return (
+                    <option
+                      key={value.id}
+                      value={value.id}
+                      disabled={!availability.available}
+                    >
+                      {value.label}
+                      {formatDelta(value.priceDeltaCents, currency)}
+                      {!availability.available ? " — sold out" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </label>
           ))}
         </div>
+      )}
+
+      {inventoryTracked && (
+        <p className="tora-product-options__stock">
+          {productAvailability.label}
+          {productAvailability.status !== "sold_out" ? ` · ${stockQuantity}` : ""}
+        </p>
       )}
 
       {options.length > 0 && (
@@ -116,9 +165,14 @@ export function ProductPurchaseForm({
       {error && <p className="tora-product-options__error">{error}</p>}
 
       <div className="tora-add-to-cart">
-        <button type="button" className="tora-add-to-cart__button" onClick={addToCart}>
+        <button
+          type="button"
+          className="tora-add-to-cart__button"
+          onClick={addToCart}
+          disabled={!canAdd}
+        >
           <ShoppingBag aria-hidden className="h-3.5 w-3.5" />
-          <span>{added ? "Added" : "Add to cart"}</span>
+          <span>{canAdd ? (added ? "Added" : "Add to cart") : "Sold out"}</span>
         </button>
         {added && (
           <Link href="/cart" className="tora-add-to-cart__link">

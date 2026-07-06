@@ -6,14 +6,17 @@ import {
   order as orderTable,
   orderRefund,
   orderItem,
+  product,
 } from "@/src/db/schema";
 import { hashToken } from "@/src/auth/grant";
 import { issueInvoiceToken, verifyInvoiceToken } from "@/src/auth/invoice-token";
 import { newId } from "@/src/lib/id";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
 import {
+  normalizeProductOptions,
   normalizeSelectedOptions,
   selectedOptionsLabel,
+  type ProductOption,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
 import {
@@ -401,6 +404,77 @@ function invoiceNumber() {
 
 function isClosedStatus(status: OrderStatus) {
   return status === "paid" || status === "fulfilled" || status === "cancelled";
+}
+
+function isInventoryDecrementedStatus(status: OrderStatus) {
+  return status === "paid" || status === "fulfilled";
+}
+
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function decrementInventoryForOrder(tx: DbTransaction, orderId: string) {
+  const itemRows = await tx.select().from(orderItem).where(eq(orderItem.orderId, orderId));
+  const productIds = [
+    ...new Set(itemRows.map((item) => item.productId).filter(Boolean)),
+  ] as string[];
+  if (productIds.length === 0) return;
+
+  const productRows = await tx
+    .select()
+    .from(product)
+    .where(inArray(product.id, productIds));
+  const productsById = new Map(productRows.map((row) => [row.id, row]));
+  const quantityByProduct = new Map<string, number>();
+
+  for (const item of itemRows) {
+    if (!item.productId) continue;
+    quantityByProduct.set(
+      item.productId,
+      (quantityByProduct.get(item.productId) ?? 0) + item.quantity,
+    );
+  }
+
+  const now = new Date();
+  for (const row of productRows) {
+    const quantity = quantityByProduct.get(row.id) ?? 0;
+    if (row.inventoryTracked && quantity > 0) {
+      await tx
+        .update(product)
+        .set({
+          stockQuantity: sql`${product.stockQuantity} - ${quantity}`,
+          updatedAt: now,
+        })
+        .where(eq(product.id, row.id));
+    }
+  }
+
+  const optionsByProduct = new Map<string, ProductOption[]>();
+  const changedProducts = new Set<string>();
+  for (const item of itemRows) {
+    if (!item.productId) continue;
+    const row = productsById.get(item.productId);
+    if (!row) continue;
+    const options =
+      optionsByProduct.get(row.id) ?? normalizeProductOptions(row.options);
+    optionsByProduct.set(row.id, options);
+
+    for (const selected of normalizeSelectedOptions(item.options)) {
+      const option = options.find((entry) => entry.id === selected.optionId);
+      const value = option?.values.find((entry) => entry.id === selected.valueId);
+      if (!value?.inventoryTracked) continue;
+      value.stockQuantity -= item.quantity;
+      changedProducts.add(row.id);
+    }
+  }
+
+  for (const productId of changedProducts) {
+    const options = optionsByProduct.get(productId);
+    if (!options) continue;
+    await tx
+      .update(product)
+      .set({ options, updatedAt: now })
+      .where(eq(product.id, productId));
+  }
 }
 
 async function findExistingClientByEmail(email: string) {
@@ -912,6 +986,14 @@ export async function updateOrderStatusAdmin(
   status: OrderStatus,
 ): Promise<AdminOrderDTO | null> {
   await db.transaction(async (tx) => {
+    const orderRows = await tx
+      .select()
+      .from(orderTable)
+      .where(eq(orderTable.id, id))
+      .limit(1);
+    const row = orderRows[0];
+    if (!row) return;
+
     await tx.update(orderTable).set({ status }).where(eq(orderTable.id, id));
     if (status === "paid") {
       const now = new Date();
@@ -925,6 +1007,13 @@ export async function updateOrderStatusAdmin(
         .where(eq(invoice.orderId, id));
     } else if (status === "cancelled") {
       await tx.update(invoice).set({ status: "void" }).where(eq(invoice.orderId, id));
+    }
+
+    if (
+      isInventoryDecrementedStatus(status) &&
+      !isInventoryDecrementedStatus(row.status as OrderStatus)
+    ) {
+      await decrementInventoryForOrder(tx, id);
     }
   });
   return getOrderAdmin(id);
@@ -1087,6 +1176,10 @@ export async function recordInvoicePaymentAdmin(
       .update(orderTable)
       .set({ status: "paid" })
       .where(eq(orderTable.id, orderId));
+
+    if (!isInventoryDecrementedStatus(row.status as OrderStatus)) {
+      await decrementInventoryForOrder(tx, orderId);
+    }
   });
 
   const order = await getOrderAdmin(orderId);
@@ -1348,6 +1441,13 @@ export async function updateOrderFulfillmentAdmin(
         updatedAt: now,
       })
       .where(eq(orderTable.id, orderId));
+
+    if (
+      isInventoryDecrementedStatus(nextOrderStatus) &&
+      !isInventoryDecrementedStatus(currentStatus)
+    ) {
+      await decrementInventoryForOrder(tx, orderId);
+    }
   });
 
   return getOrderAdmin(orderId);
@@ -1479,6 +1579,7 @@ export async function recordStripeCheckoutPaid(input: {
           paymentRef: input.paymentIntentId ?? input.sessionId,
         })
         .where(eq(orderTable.id, current.orderId));
+      await decrementInventoryForOrder(tx, current.orderId);
     });
   }
 

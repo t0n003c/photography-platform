@@ -12,6 +12,7 @@ import {
   type ProductOptionSelectionInput,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
+import { selectedOptionValues } from "@/src/lib/store-inventory";
 import {
   getStoreCheckoutSettings,
   getStorePaymentSettings,
@@ -39,6 +40,10 @@ export interface ProductDTO {
   currency: string;
   category: string | null;
   stripeTaxCode: string | null;
+  inventoryTracked: boolean;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  allowBackorder: boolean;
   tags: string[];
   options: ProductOption[];
   isFeatured: boolean;
@@ -64,10 +69,19 @@ export interface CartLineDTO {
   lineTotalCents: number;
 }
 
+export interface CartAvailabilityError {
+  productId: string;
+  optionId?: string;
+  valueId?: string;
+  message: string;
+  availableQuantity: number;
+}
+
 export interface CartSummaryDTO {
   lines: CartLineDTO[];
   unavailableProductIds: string[];
   optionErrors: CartOptionError[];
+  availabilityErrors: CartAvailabilityError[];
   subtotalCents: number;
   taxCents: number;
   shippingCents: number;
@@ -142,6 +156,10 @@ export async function serializeProducts(rows: ProductRow[]): Promise<ProductDTO[
     currency: row.currency,
     category: row.category,
     stripeTaxCode: row.stripeTaxCode,
+    inventoryTracked: row.inventoryTracked,
+    stockQuantity: row.stockQuantity,
+    lowStockThreshold: row.lowStockThreshold,
+    allowBackorder: row.allowBackorder,
     tags: Array.isArray(row.tags) ? row.tags : [],
     options: normalizeProductOptions(row.options),
     isFeatured: row.isFeatured,
@@ -234,6 +252,85 @@ function resolveSelectedOptions(
   return { selectedOptions, errors };
 }
 
+function collectAvailabilityErrors(lines: CartLineDTO[]): CartAvailabilityError[] {
+  const errors: CartAvailabilityError[] = [];
+  const productQuantities = new Map<
+    string,
+    { product: ProductDTO; quantity: number }
+  >();
+  const optionQuantities = new Map<
+    string,
+    {
+      product: ProductDTO;
+      optionId: string;
+      optionName: string;
+      valueId: string;
+      valueLabel: string;
+      stockQuantity: number;
+      quantity: number;
+    }
+  >();
+
+  for (const line of lines) {
+    const current = productQuantities.get(line.product.id);
+    productQuantities.set(line.product.id, {
+      product: line.product,
+      quantity: (current?.quantity ?? 0) + line.quantity,
+    });
+
+    for (const value of selectedOptionValues(
+      line.product.options,
+      line.selectedOptions,
+    )) {
+      if (!value.inventoryTracked || value.allowBackorder) continue;
+      const selected = line.selectedOptions.find((item) => item.valueId === value.id);
+      if (!selected) continue;
+      const key = `${line.product.id}:${selected.optionId}:${value.id}`;
+      const currentValue = optionQuantities.get(key);
+      optionQuantities.set(key, {
+        product: line.product,
+        optionId: selected.optionId,
+        optionName: selected.optionName,
+        valueId: value.id,
+        valueLabel: value.label,
+        stockQuantity: value.stockQuantity,
+        quantity: (currentValue?.quantity ?? 0) + line.quantity,
+      });
+    }
+  }
+
+  for (const { product: row, quantity } of productQuantities.values()) {
+    if (!row.inventoryTracked || row.allowBackorder) continue;
+    if (quantity <= row.stockQuantity) continue;
+    const availableQuantity = Math.max(0, row.stockQuantity);
+    errors.push({
+      productId: row.id,
+      message:
+        availableQuantity > 0
+          ? `Only ${availableQuantity} left for ${row.name}.`
+          : `${row.name} is sold out.`,
+      availableQuantity,
+    });
+  }
+
+  for (const item of optionQuantities.values()) {
+    if (item.quantity <= item.stockQuantity) continue;
+    const availableQuantity = Math.max(0, item.stockQuantity);
+    errors.push({
+      productId: item.product.id,
+      optionId: item.optionId,
+      valueId: item.valueId,
+      message:
+        availableQuantity > 0
+          ? `Only ${availableQuantity} left for ${item.product.name} (${item.optionName}: ${item.valueLabel}).`
+          : `${item.product.name} (${item.optionName}: ${item.valueLabel}) is sold out.`,
+      availableQuantity,
+    });
+  }
+
+  return errors;
+}
+
 export async function resolveCartItems(
   items: CartItemInput[],
 ): Promise<CartSummaryDTO> {
@@ -274,6 +371,7 @@ export async function resolveCartItems(
     ];
   });
   const currencies = [...new Set(lines.map((line) => line.product.currency))];
+  const availabilityErrors = collectAvailabilityErrors(lines);
   const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
   const effectiveCheckoutSettings = useStripeTax
     ? {
@@ -289,6 +387,7 @@ export async function resolveCartItems(
       .map((item) => item.productId)
       .filter((id) => !productsById.has(id)),
     optionErrors,
+    availabilityErrors,
     subtotalCents,
     taxCents: totals.taxCents,
     shippingCents: totals.shippingCents,

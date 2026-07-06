@@ -638,6 +638,10 @@ export const product = pgTable("product", {
   currency: text("currency").notNull().default("USD"),
   category: text("category"),
   stripeTaxCode: text("stripe_tax_code"),
+  inventoryTracked: boolean("inventory_tracked").notNull().default(false),
+  stockQuantity: integer("stock_quantity").notNull().default(0),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
+  allowBackorder: boolean("allow_backorder").notNull().default(false),
   tags: jsonb("tags")
     .$type<string[]>()
     .notNull()

@@ -34,6 +34,7 @@ const emptySummary: CartSummaryDTO = {
   lines: [],
   unavailableProductIds: [],
   optionErrors: [],
+  availabilityErrors: [],
   subtotalCents: 0,
   taxCents: 0,
   shippingCents: 0,
@@ -323,6 +324,11 @@ export function StoreCartPage() {
                   {summary.optionErrors.map((item) => item.message).join(" ")}
                 </div>
               )}
+              {summary.availabilityErrors.length > 0 && (
+                <div className="tora-cart-warning">
+                  {summary.availabilityErrors.map((item) => item.message).join(" ")}
+                </div>
+              )}
             </div>
 
             <form className="tora-cart-checkout" onSubmit={submit}>
@@ -395,7 +401,8 @@ export function StoreCartPage() {
                   submitting ||
                   checking ||
                   summary.lines.length === 0 ||
-                  summary.optionErrors.length > 0
+                  summary.optionErrors.length > 0 ||
+                  summary.availabilityErrors.length > 0
                 }
               >
                 {submitting

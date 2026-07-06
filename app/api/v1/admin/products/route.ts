@@ -19,6 +19,10 @@ const ProductOptionValueSchema = z.object({
   id: z.string().optional(),
   label: z.string().min(1),
   priceDeltaCents: z.number().int().default(0),
+  inventoryTracked: z.boolean().default(false),
+  stockQuantity: z.number().int().default(0),
+  lowStockThreshold: z.number().int().min(0).default(0),
+  allowBackorder: z.boolean().default(false),
 });
 
 const ProductOptionSchema = z.object({
@@ -40,6 +44,10 @@ const CreateSchema = z.object({
   currency: z.string().min(3).max(3).default("USD"),
   category: z.string().nullable().optional(),
   stripeTaxCode: z.string().max(80).nullable().optional(),
+  inventoryTracked: z.boolean().default(false),
+  stockQuantity: z.number().int().default(0),
+  lowStockThreshold: z.number().int().min(0).default(0),
+  allowBackorder: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
   options: z.array(ProductOptionSchema).default([]),
   isFeatured: z.boolean().default(false),
@@ -102,6 +110,10 @@ export async function POST(req: Request) {
     currency: body.currency.toUpperCase(),
     category: body.category?.trim() || null,
     stripeTaxCode: normalizeStripeTaxCode(body.stripeTaxCode),
+    inventoryTracked: body.inventoryTracked,
+    stockQuantity: body.stockQuantity,
+    lowStockThreshold: body.lowStockThreshold,
+    allowBackorder: body.allowBackorder,
     tags: cleanTags(body.tags),
     options: normalizeProductOptions(body.options),
     isFeatured: body.isFeatured,

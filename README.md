@@ -20,7 +20,8 @@ contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout su
 **manual invoice requests**, customer order-status lookup, receipts, fulfillment tracking,
 refund tracking, tax CSV export, and optional Stripe Checkout/refunds/Stripe Tax for hosted
 cart checkout from Settings -> Payments only when the account, keys, and webhook secret are
-configured.
+configured. Store products can track inventory at the product level and, when needed, per
+option choice; sold-out items are blocked at cart/checkout and paid orders decrement stock.
 Stripe test-mode validation is documented in [`docs/STRIPE-TEST-RUNBOOK.md`](docs/STRIPE-TEST-RUNBOOK.md). See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 

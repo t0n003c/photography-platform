@@ -23,8 +23,24 @@ describe("store product options", () => {
         name: "Size",
         required: true,
         values: [
-          { id: "small", label: "Small", priceDeltaCents: 0 },
-          { id: "large", label: "Large", priceDeltaCents: 2500 },
+          {
+            id: "small",
+            label: "Small",
+            priceDeltaCents: 0,
+            inventoryTracked: false,
+            stockQuantity: 0,
+            lowStockThreshold: 0,
+            allowBackorder: false,
+          },
+          {
+            id: "large",
+            label: "Large",
+            priceDeltaCents: 2500,
+            inventoryTracked: false,
+            stockQuantity: 0,
+            lowStockThreshold: 0,
+            allowBackorder: false,
+          },
         ],
       },
     ]);

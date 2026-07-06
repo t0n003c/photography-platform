@@ -122,6 +122,19 @@ export async function POST(req: Request) {
       },
     );
   }
+  if (summary.availabilityErrors.length > 0) {
+    return problem(
+      409,
+      "PRODUCT_OUT_OF_STOCK",
+      summary.availabilityErrors.map((error) => error.message).join(" "),
+      {
+        details: summary.availabilityErrors.map((error) => ({
+          field: "items",
+          issue: error.message,
+        })),
+      },
+    );
+  }
   if (summary.hasMixedCurrency) {
     return problem(
       422,

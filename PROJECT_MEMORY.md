@@ -1289,6 +1289,19 @@ is gitignored):
   Admin -> Store has a Tax CSV download backed by
   `/api/v1/admin/orders/tax-export` with order/invoice/payment/refund totals and item tax
   codes for accounting review.
+  Follow-up: Store inventory controls are active. Migration
+  `0025_ambiguous_black_bolt.sql` adds `product.inventory_tracked`,
+  `stock_quantity`, `low_stock_threshold`, and `allow_backorder`. Option values in
+  `product.options` now also normalize optional inventory metadata
+  (`inventoryTracked`, `stockQuantity`, `lowStockThreshold`, `allowBackorder`) so
+  individual sizes/finishes can sell out without adding a separate variant table yet.
+  Admin -> Store product forms expose product-level stock settings and per-choice stock
+  controls; product rows show stock/low-stock/sold-out/backorder badges. Cart resolution
+  and `/api/v1/checkout` return `PRODUCT_OUT_OF_STOCK` for exhausted product or option
+  stock, while public product/shop controls disable sold-out adds. Stock decrements once
+  when an order transitions from unpaid to paid/fulfilled through manual status update,
+  manual receipt recording, fulfillment delivery, or a first successful Stripe paid
+  webhook. Already-paid orders/webhook retries do not decrement again.
   Follow-up: Customer order status lookup is active without a schema migration.
   `/orders/status` loads a customer-safe order summary from a signed HMAC order-status
   token or from an email + order id / invoice number lookup via

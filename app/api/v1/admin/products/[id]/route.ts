@@ -18,6 +18,10 @@ const ProductOptionValueSchema = z.object({
   id: z.string().optional(),
   label: z.string().min(1),
   priceDeltaCents: z.number().int().default(0),
+  inventoryTracked: z.boolean().default(false),
+  stockQuantity: z.number().int().default(0),
+  lowStockThreshold: z.number().int().min(0).default(0),
+  allowBackorder: z.boolean().default(false),
 });
 
 const ProductOptionSchema = z.object({
@@ -39,6 +43,10 @@ const PatchSchema = z.object({
   currency: z.string().min(3).max(3).optional(),
   category: z.string().nullable().optional(),
   stripeTaxCode: z.string().max(80).nullable().optional(),
+  inventoryTracked: z.boolean().optional(),
+  stockQuantity: z.number().int().optional(),
+  lowStockThreshold: z.number().int().min(0).optional(),
+  allowBackorder: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
   options: z.array(ProductOptionSchema).optional(),
   isFeatured: z.boolean().optional(),
@@ -121,6 +129,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (body.stripeTaxCode !== undefined) {
     updates.stripeTaxCode = normalizeStripeTaxCode(body.stripeTaxCode);
   }
+  if (body.inventoryTracked !== undefined)
+    updates.inventoryTracked = body.inventoryTracked;
+  if (body.stockQuantity !== undefined) updates.stockQuantity = body.stockQuantity;
+  if (body.lowStockThreshold !== undefined)
+    updates.lowStockThreshold = body.lowStockThreshold;
+  if (body.allowBackorder !== undefined) updates.allowBackorder = body.allowBackorder;
   if (body.tags !== undefined) updates.tags = cleanTags(body.tags);
   if (body.options !== undefined)
     updates.options = normalizeProductOptions(body.options);

@@ -10,10 +10,12 @@ export function AddToCartButton({
   productId,
   label = "Add to cart",
   compact = false,
+  disabled = false,
 }: {
   productId: string;
   label?: string;
   compact?: boolean;
+  disabled?: boolean;
 }) {
   const [added, setAdded] = useState(false);
 
@@ -28,7 +30,9 @@ export function AddToCartButton({
       <button
         type="button"
         className="tora-add-to-cart__button"
+        disabled={disabled}
         onClick={() => {
+          if (disabled) return;
           addStoredCartItem(productId);
           setAdded(true);
         }}

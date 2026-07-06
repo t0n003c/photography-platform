@@ -78,6 +78,10 @@ export default async function ProductPage({
             productId={product.id}
             currency={product.currency}
             basePriceCents={sale ?? product.basePriceCents}
+            inventoryTracked={product.inventoryTracked}
+            stockQuantity={product.stockQuantity}
+            lowStockThreshold={product.lowStockThreshold}
+            allowBackorder={product.allowBackorder}
             options={product.options}
           />
           <dl className="tora-product-page__meta">

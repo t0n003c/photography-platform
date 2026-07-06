@@ -35,6 +35,7 @@ import {
   type ProductOptionValue,
   type SelectedProductOption,
 } from "@/src/lib/store-options";
+import { inventoryAvailable } from "@/src/lib/store-inventory";
 
 type ProductKind = "print" | "digital" | "bundle";
 
@@ -107,6 +108,10 @@ interface ProductRow {
   currency: string;
   category: string | null;
   stripeTaxCode: string | null;
+  inventoryTracked: boolean;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  allowBackorder: boolean;
   tags: string[];
   options: ProductOption[];
   isFeatured: boolean;
@@ -241,6 +246,10 @@ interface ProductFormValues {
   currency: string;
   category: string;
   tags: string;
+  inventoryTracked: boolean;
+  stockQuantity: string;
+  lowStockThreshold: string;
+  allowBackorder: boolean;
   options: ProductOption[];
   isFeatured: boolean;
   isActive: boolean;
@@ -260,6 +269,10 @@ const EMPTY_FORM: ProductFormValues = {
   currency: "USD",
   category: "",
   tags: "",
+  inventoryTracked: false,
+  stockQuantity: "0",
+  lowStockThreshold: "0",
+  allowBackorder: false,
   options: [],
   isFeatured: false,
   isActive: true,
@@ -356,6 +369,20 @@ function refundTone(status: RefundStatus): ComponentProps<typeof Badge>["tone"] 
 
 function refundLabel(status: RefundStatus) {
   return status.replace(/_/g, " ");
+}
+
+function inventoryTone(row: ProductRow): ComponentProps<typeof Badge>["tone"] {
+  const status = inventoryAvailable(row).status;
+  if (status === "sold_out") return "red";
+  if (status === "low_stock" || status === "backorder") return "amber";
+  if (status === "in_stock") return "green";
+  return "neutral";
+}
+
+function inventoryLabel(row: ProductRow) {
+  const status = inventoryAvailable(row);
+  if (!row.inventoryTracked) return status.label;
+  return `${status.label} · ${row.stockQuantity}`;
 }
 
 function successfulRefundedCents(row: OrderRow) {
@@ -556,6 +583,10 @@ function toForm(product: ProductRow): ProductFormValues {
     currency: product.currency,
     category: product.category ?? "",
     tags: product.tags.join(", "),
+    inventoryTracked: product.inventoryTracked,
+    stockQuantity: String(product.stockQuantity),
+    lowStockThreshold: String(product.lowStockThreshold),
+    allowBackorder: product.allowBackorder,
     options: normalizeProductOptions(product.options),
     isFeatured: product.isFeatured,
     isActive: product.isActive,
@@ -576,6 +607,10 @@ function toPayload(form: ProductFormValues) {
     salePriceCents: nullablePriceToCents(form.salePrice),
     currency: (form.currency.trim() || "USD").toUpperCase(),
     category: form.category.trim() || null,
+    inventoryTracked: form.inventoryTracked,
+    stockQuantity: Math.round(Number(form.stockQuantity) || 0),
+    lowStockThreshold: Math.max(0, Math.round(Number(form.lowStockThreshold) || 0)),
+    allowBackorder: form.allowBackorder,
     tags: form.tags
       .split(",")
       .map((tag) => tag.trim())
@@ -636,6 +671,10 @@ function newProductOptionValue(label = "Choice"): ProductOptionValue {
     id: createStoreOptionId("value"),
     label,
     priceDeltaCents: 0,
+    inventoryTracked: false,
+    stockQuantity: 0,
+    lowStockThreshold: 0,
+    allowBackorder: false,
   };
 }
 
@@ -757,7 +796,7 @@ function ProductOptionsEditor({
                 {option.values.map((choice, choiceIndex) => (
                   <div
                     key={choice.id}
-                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_auto]"
+                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_6.5rem_6.5rem_auto_auto_auto]"
                   >
                     <Input
                       value={choice.label}
@@ -783,6 +822,63 @@ function ProductOptionsEditor({
                       placeholder="0.00"
                       aria-label="Price adjustment"
                     />
+                    <Input
+                      type="number"
+                      value={String(choice.stockQuantity)}
+                      onChange={(event) =>
+                        setChoice(optionIndex, choiceIndex, {
+                          ...choice,
+                          stockQuantity: Math.round(Number(event.target.value) || 0),
+                        })
+                      }
+                      placeholder="Stock"
+                      aria-label="Choice stock quantity"
+                      disabled={!choice.inventoryTracked}
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={String(choice.lowStockThreshold)}
+                      onChange={(event) =>
+                        setChoice(optionIndex, choiceIndex, {
+                          ...choice,
+                          lowStockThreshold: Math.max(
+                            0,
+                            Math.round(Number(event.target.value) || 0),
+                          ),
+                        })
+                      }
+                      placeholder="Low"
+                      aria-label="Choice low stock threshold"
+                      disabled={!choice.inventoryTracked}
+                    />
+                    <label className="inline-flex items-center gap-2 rounded border px-2 py-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={choice.inventoryTracked}
+                        onChange={(event) =>
+                          setChoice(optionIndex, choiceIndex, {
+                            ...choice,
+                            inventoryTracked: event.target.checked,
+                          })
+                        }
+                      />
+                      Stock
+                    </label>
+                    <label className="inline-flex items-center gap-2 rounded border px-2 py-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={choice.allowBackorder}
+                        onChange={(event) =>
+                          setChoice(optionIndex, choiceIndex, {
+                            ...choice,
+                            allowBackorder: event.target.checked,
+                          })
+                        }
+                        disabled={!choice.inventoryTracked}
+                      />
+                      Backorder
+                    </label>
                     <Button
                       type="button"
                       variant="outline"
@@ -975,6 +1071,62 @@ function ProductModal({
               placeholder="Abstract, Nature, Wedding"
             />
           </Field>
+        </div>
+        <div className="space-y-3 rounded-lg border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Inventory</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Track product-level stock. Option choices can also track stock below.
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.inventoryTracked}
+                onChange={(event) =>
+                  setForm({ ...form, inventoryTracked: event.target.checked })
+                }
+              />
+              Track inventory
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Stock quantity" htmlFor="product-stock-quantity">
+              <Input
+                id="product-stock-quantity"
+                type="number"
+                value={form.stockQuantity}
+                onChange={(event) =>
+                  setForm({ ...form, stockQuantity: event.target.value })
+                }
+                disabled={!form.inventoryTracked}
+              />
+            </Field>
+            <Field label="Low stock threshold" htmlFor="product-low-stock-threshold">
+              <Input
+                id="product-low-stock-threshold"
+                type="number"
+                min="0"
+                value={form.lowStockThreshold}
+                onChange={(event) =>
+                  setForm({ ...form, lowStockThreshold: event.target.value })
+                }
+                disabled={!form.inventoryTracked}
+              />
+            </Field>
+            <label className="inline-flex items-center gap-2 self-end pb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.allowBackorder}
+                onChange={(event) =>
+                  setForm({ ...form, allowBackorder: event.target.checked })
+                }
+                disabled={!form.inventoryTracked}
+              />
+              Allow backorder
+            </label>
+          </div>
         </div>
         <Field label="Product image">
           <ProductPhotoPicker
@@ -2711,6 +2863,9 @@ export default function StorePage() {
                         <div className="flex flex-wrap gap-1">
                           <Badge tone={product.isActive ? "green" : "neutral"}>
                             {product.isActive ? "Active" : "Hidden"}
+                          </Badge>
+                          <Badge tone={inventoryTone(product)}>
+                            {inventoryLabel(product)}
                           </Badge>
                           {product.isFeatured && <Badge tone="blue">Featured</Badge>}
                         </div>

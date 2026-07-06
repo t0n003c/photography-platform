@@ -508,11 +508,18 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 
 `id` PK, `slug` UNIQUE, `sku` UNIQUE, `name`, `description`, `kind`
 (`print`\|`digital`\|`bundle`), `photo_id` FK→photo NULL, `base_price_cents`,
-`sale_price_cents` NULL, `currency`, `category` NULL, `stripe_tax_code` NULL, JSON `tags`,
+`sale_price_cents` NULL, `currency`, `category` NULL, `stripe_tax_code` NULL,
+`inventory_tracked`, `stock_quantity`, `low_stock_threshold`, `allow_backorder`, JSON `tags`,
 JSON `options`, `is_featured`, `is_active`, `sort_order`, timestamps.
 
 `options` stores reusable product choice groups such as size, finish, license, or framing:
-`[{ id, name, required, values: [{ id, label, priceDeltaCents }] }]`.
+`[{ id, name, required, values: [{ id, label, priceDeltaCents, inventoryTracked,
+stockQuantity, lowStockThreshold, allowBackorder }] }]`.
+
+Product-level stock blocks checkout when `inventory_tracked=true`, `stock_quantity <= 0`, and
+`allow_backorder=false`. Option-choice stock works the same way for selected values. Paid order
+transitions decrement tracked product stock and selected tracked option values once; already-paid
+orders/webhooks do not decrement again.
 
 ### 13.2 `order`
 

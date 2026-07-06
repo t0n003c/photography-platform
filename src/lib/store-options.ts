@@ -2,6 +2,10 @@ export interface ProductOptionValue {
   id: string;
   label: string;
   priceDeltaCents: number;
+  inventoryTracked: boolean;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  allowBackorder: boolean;
 }
 
 export interface ProductOption {
@@ -83,6 +87,8 @@ export function normalizeProductOptions(input: unknown): ProductOption[] {
           const priceDeltaCents = Number.isFinite(parsedDelta)
             ? Math.round(parsedDelta)
             : 0;
+          const parsedStock = Number(valueRecord.stockQuantity ?? 0);
+          const parsedLowStock = Number(valueRecord.lowStockThreshold ?? 0);
           return {
             id: uniqueId(
               cleanText(valueRecord.id) || label,
@@ -91,6 +97,12 @@ export function normalizeProductOptions(input: unknown): ProductOption[] {
             ),
             label,
             priceDeltaCents,
+            inventoryTracked: valueRecord.inventoryTracked === true,
+            stockQuantity: Number.isFinite(parsedStock) ? Math.round(parsedStock) : 0,
+            lowStockThreshold: Number.isFinite(parsedLowStock)
+              ? Math.max(0, Math.round(parsedLowStock))
+              : 0,
+            allowBackorder: valueRecord.allowBackorder === true,
           };
         })
         .filter((value): value is ProductOptionValue => Boolean(value));

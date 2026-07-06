@@ -415,7 +415,9 @@ Response `201` (raw token shown exactly once):
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
 product options must resolve against the current active product definition, or checkout returns
-`409 PRODUCT_OPTIONS_REQUIRED`.
+`409 PRODUCT_OPTIONS_REQUIRED`. Product-level and option-choice inventory are checked during
+cart resolution and again during checkout; out-of-stock requests return
+`409 PRODUCT_OUT_OF_STOCK` with item-specific messages.
 
 `POST /checkout` returns a manual request confirmation when hosted payments are not ready.
 When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`, and the
