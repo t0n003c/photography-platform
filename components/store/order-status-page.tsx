@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Copy, PackageCheck, Search, Truck } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  Copy,
+  CreditCard,
+  PackageCheck,
+  PackageOpen,
+  Search,
+  Truck,
+} from "lucide-react";
 import type { SelectedProductOption } from "@/src/lib/store-options";
 
 interface PublicOrderStatusItem {
@@ -118,12 +127,164 @@ function optionLine(option: SelectedProductOption, currency: string) {
   return `${option.optionName}: ${option.valueLabel}${delta}`;
 }
 
-function trackingStage(order: PublicOrderStatus) {
-  if (order.fulfillmentStatus === "delivered") return 4;
-  if (order.fulfillmentStatus === "shipped") return 3;
-  if (order.fulfillmentStatus === "ready") return 2;
-  if (order.status === "paid" || order.fulfillmentStatus === "in_progress") return 1;
-  return 0;
+function isPaid(order: PublicOrderStatus) {
+  return (
+    order.status === "paid" ||
+    order.status === "fulfilled" ||
+    order.invoice?.status === "paid"
+  );
+}
+
+function isCancelled(order: PublicOrderStatus) {
+  return order.status === "cancelled" || order.fulfillmentStatus === "cancelled";
+}
+
+function shippingText(order: PublicOrderStatus) {
+  if (order.shippingCents > 0) return formatMoney(order.shippingCents, order.currency);
+  if (order.shippingProfileLabel) {
+    return order.shippingProfileLabel.toLowerCase().includes("quote")
+      ? "Quoted after review"
+      : "Free";
+  }
+  return formatMoney(0, order.currency);
+}
+
+function nextStepCopy(order: PublicOrderStatus) {
+  if (isCancelled(order)) {
+    return {
+      title: "Order closed",
+      body: "This order is marked cancelled. Contact the studio if you think this is incorrect.",
+    };
+  }
+  if (!order.invoice) {
+    return {
+      title: "Studio review",
+      body: "Your request is in review. The studio will confirm details and send an invoice when it is ready.",
+    };
+  }
+  if (!isPaid(order)) {
+    return {
+      title: "Payment due",
+      body: order.invoice.dueAt
+        ? `Invoice ${order.invoice.number} is due ${formatDate(order.invoice.dueAt)}.`
+        : `Invoice ${order.invoice.number} is ready for payment.`,
+    };
+  }
+  if (
+    order.fulfillmentStatus === "unfulfilled" ||
+    order.fulfillmentStatus === "in_progress"
+  ) {
+    return {
+      title: "Studio prep",
+      body: "Payment is recorded. The studio is preparing your order and will update this page when it is ready or shipped.",
+    };
+  }
+  if (order.fulfillmentStatus === "ready") {
+    return {
+      title: "Ready for handoff",
+      body: "Your order is ready. Watch for pickup, delivery, or shipping details from the studio.",
+    };
+  }
+  if (order.fulfillmentStatus === "shipped") {
+    return {
+      title: "On the way",
+      body: order.fulfillmentTrackingNumber
+        ? `Your order has shipped with tracking ${order.fulfillmentTrackingNumber}.`
+        : "Your order has shipped. Tracking details will appear here when available.",
+    };
+  }
+  return {
+    title: "Delivered",
+    body: "Your order has been marked delivered. Thank you for ordering from the studio.",
+  };
+}
+
+function progressSteps(order: PublicOrderStatus) {
+  const paid = isPaid(order);
+  const cancelled = isCancelled(order);
+  const prepStarted =
+    paid ||
+    order.fulfillmentStatus === "in_progress" ||
+    order.fulfillmentStatus === "ready" ||
+    order.fulfillmentStatus === "shipped" ||
+    order.fulfillmentStatus === "delivered";
+  const ready = order.fulfillmentStatus === "ready";
+  const shipped =
+    order.fulfillmentStatus === "shipped" ||
+    order.fulfillmentStatus === "delivered";
+  const delivered = order.fulfillmentStatus === "delivered";
+
+  return [
+    {
+      title: "Request received",
+      body: "Your order request is in the studio queue.",
+      date: order.createdAt,
+      state: "complete",
+      Icon: CheckCircle2,
+    },
+    {
+      title: paid ? "Payment received" : order.invoice ? "Invoice sent" : "Invoice pending",
+      body: paid
+        ? "Payment is recorded."
+        : order.invoice
+          ? "Invoice is ready for review and payment."
+          : "The studio is preparing your invoice.",
+      date: paid ? order.invoice?.paidAt : (order.invoice?.issuedAt ?? null),
+      state: cancelled
+        ? "waiting"
+        : paid
+          ? "complete"
+          : order.invoice
+            ? "current"
+            : "waiting",
+      Icon: CreditCard,
+    },
+    {
+      title: "Studio prep",
+      body: prepStarted
+        ? "Your order is being prepared."
+        : "Preparation begins after payment.",
+      date: order.fulfillmentReadyAt,
+      state: cancelled
+        ? "waiting"
+        : ready || shipped || delivered
+          ? "complete"
+          : prepStarted
+            ? "current"
+            : "waiting",
+      Icon: PackageOpen,
+    },
+    {
+      title: shipped ? "Shipped" : ready ? "Ready" : "Handoff",
+      body: shipped
+        ? "Your order is on the way."
+        : ready
+          ? "Your order is ready for pickup or handoff."
+          : "Shipping or pickup details will appear here.",
+      date: shipped
+        ? order.fulfillmentShippedAt
+        : ready
+          ? order.fulfillmentReadyAt
+          : null,
+      state: cancelled
+        ? "waiting"
+        : shipped
+          ? "complete"
+          : ready
+            ? "current"
+            : "waiting",
+      Icon: Truck,
+    },
+    {
+      title: "Delivered",
+      body: delivered
+        ? "Delivery is complete."
+        : "The final delivery update will appear here.",
+      date: order.fulfillmentDeliveredAt,
+      state: cancelled ? "waiting" : delivered ? "complete" : "waiting",
+      Icon: PackageCheck,
+    },
+  ];
 }
 
 async function readStatus(res: Response): Promise<StatusResponse> {
@@ -170,11 +331,19 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
     };
   }, [token]);
 
-  const stage = useMemo(() => (order ? trackingStage(order) : 0), [order]);
+  const timeline = useMemo(() => (order ? progressSteps(order) : []), [order]);
+  const nextStep = useMemo(() => (order ? nextStepCopy(order) : null), [order]);
   const refundedCents = useMemo(
     () =>
       order?.refunds
         .filter((refund) => refund.status === "succeeded")
+        .reduce((sum, refund) => sum + refund.amountCents, 0) ?? 0,
+    [order],
+  );
+  const pendingRefundCents = useMemo(
+    () =>
+      order?.refunds
+        .filter((refund) => refund.status === "pending")
         .reduce((sum, refund) => sum + refund.amountCents, 0) ?? 0,
     [order],
   );
@@ -273,10 +442,30 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
                 <div className="tora-order-confirmation__hero">
                   <CheckCircle2 aria-hidden className="h-8 w-8" />
                   <div>
-                    <p>{order.invoice?.number ?? "Order"}</p>
+                    <p>
+                      {order.invoice?.number ?? "Order"} · Updated{" "}
+                      {formatDate(order.updatedAt)}
+                    </p>
                     <h2>{order.id}</h2>
+                    {(order.customerName || order.maskedEmail) && (
+                      <span className="tora-order-status__identity">
+                        {order.customerName}
+                        {order.customerName && order.maskedEmail ? " · " : ""}
+                        {order.maskedEmail}
+                      </span>
+                    )}
                   </div>
                 </div>
+
+                {nextStep && (
+                  <div className="tora-order-status__next">
+                    <Clock3 aria-hidden className="h-5 w-5" />
+                    <div>
+                      <strong>{nextStep.title}</strong>
+                      <p>{nextStep.body}</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="tora-order-confirmation__grid">
                   <div>
@@ -296,25 +485,25 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
                     <strong>{label(order.fulfillmentStatus)}</strong>
                   </div>
                   <div>
-                    <span>Total</span>
-                    <strong>{formatMoney(order.totalCents, order.currency)}</strong>
+                    <span>Shipping</span>
+                    <strong>{shippingText(order)}</strong>
                   </div>
                 </div>
 
-                <div className="tora-order-status__timeline">
-                  {[
-                    ["Received", order.createdAt],
-                    ["Preparing", order.fulfillmentReadyAt],
-                    ["Shipped", order.fulfillmentShippedAt],
-                    ["Delivered", order.fulfillmentDeliveredAt],
-                  ].map(([name, date], index) => (
+                <div className="tora-order-status__timeline" aria-label="Order progress">
+                  {timeline.map(({ title, body, date, state, Icon }, index) => (
                     <div
-                      key={name}
-                      className={index <= stage ? "is-active" : undefined}
+                      key={title}
+                      className={`is-${state}`}
+                      aria-current={state === "current" ? "step" : undefined}
                     >
-                      <span>{index + 1}</span>
-                      <strong>{name}</strong>
-                      <p>{formatDate(date)}</p>
+                      <span>
+                        <Icon aria-hidden className="h-4 w-4" />
+                        <i>{index + 1}</i>
+                      </span>
+                      <strong>{title}</strong>
+                      <p>{body}</p>
+                      <time>{formatDate(date ?? null)}</time>
                     </div>
                   ))}
                 </div>
@@ -324,14 +513,24 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
                   order.fulfillmentTrackingUrl) && (
                   <div className="tora-order-confirmation__message">
                     <h3>Tracking</h3>
-                    <p>
-                      {order.fulfillmentCarrier
-                        ? `Carrier: ${order.fulfillmentCarrier}`
-                        : "Shipment details are available."}
-                      {order.fulfillmentTrackingNumber
-                        ? ` Tracking: ${order.fulfillmentTrackingNumber}`
-                        : ""}
-                    </p>
+                    <div className="tora-order-status__tracking">
+                      {order.fulfillmentCarrier && (
+                        <p>
+                          <span>Carrier</span>
+                          <strong>{order.fulfillmentCarrier}</strong>
+                        </p>
+                      )}
+                      {order.fulfillmentTrackingNumber && (
+                        <p>
+                          <span>Tracking</span>
+                          <strong>{order.fulfillmentTrackingNumber}</strong>
+                        </p>
+                      )}
+                      {!order.fulfillmentCarrier &&
+                        !order.fulfillmentTrackingNumber && (
+                          <p>Shipment details are available.</p>
+                        )}
+                    </div>
                     {order.fulfillmentTrackingUrl && (
                       <a
                         href={order.fulfillmentTrackingUrl}
@@ -406,6 +605,14 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
                       <span>Refunded</span>
                       <strong>
                         {formatMoney(refundedCents, order.currency)}
+                      </strong>
+                    </div>
+                  )}
+                  {pendingRefundCents > 0 && (
+                    <div>
+                      <span>Pending refund</span>
+                      <strong>
+                        {formatMoney(pendingRefundCents, order.currency)}
                       </strong>
                     </div>
                   )}

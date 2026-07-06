@@ -1,17 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { CheckCircle2, FileText } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  FileText,
+  PackageCheck,
+  PackageOpen,
+  Truck,
+} from "lucide-react";
 import { InvoicePrintActions } from "@/components/invoice/invoice-print-actions";
 import { StripePaymentButton } from "@/components/invoice/stripe-payment-button";
 import { getPublicInvoiceByToken } from "@/src/db/queries/orders";
-import type { AdminOrderDTO } from "@/src/db/queries/orders";
+import type { AdminInvoiceDTO, AdminOrderDTO } from "@/src/db/queries/orders";
+import { issueOrderStatusToken } from "@/src/auth/order-status-token";
 import {
   getSiteSettings,
   getSiteSettingsRow,
   getStoreCheckoutSettings,
   getStorePaymentSettings,
 } from "@/src/db/queries/settings";
+import { orderStatusUrl } from "@/src/lib/order-status";
 import { storePaymentStatus } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +64,109 @@ function invoiceItemTitle(item: AdminOrderDTO["items"][number]) {
 
 function fulfillmentLabel(status: AdminOrderDTO["fulfillmentStatus"]) {
   return status.replace(/_/g, " ");
+}
+
+function invoiceNextStep(
+  order: AdminOrderDTO,
+  invoice: AdminInvoiceDTO,
+  isPaid: boolean,
+) {
+  if (order.status === "cancelled" || order.fulfillmentStatus === "cancelled") {
+    return {
+      title: "Order closed",
+      body: "This order is marked cancelled. Contact the studio if you think this is incorrect.",
+    };
+  }
+  if (!isPaid) {
+    return {
+      title: "Payment due",
+      body: invoice.dueAt
+        ? `Payment is due ${formatDate(invoice.dueAt)}. Use the payment details on this invoice when you are ready.`
+        : "Use the payment details on this invoice when you are ready.",
+    };
+  }
+  if (
+    order.fulfillmentStatus === "unfulfilled" ||
+    order.fulfillmentStatus === "in_progress"
+  ) {
+    return {
+      title: "Studio prep",
+      body: "Payment is recorded. The studio is preparing your order and will update the status page when it is ready or shipped.",
+    };
+  }
+  if (order.fulfillmentStatus === "ready") {
+    return {
+      title: "Ready for handoff",
+      body: "Your order is ready. Watch the status page for pickup, delivery, or shipping details.",
+    };
+  }
+  if (order.fulfillmentStatus === "shipped") {
+    return {
+      title: "On the way",
+      body: order.fulfillmentTrackingNumber
+        ? `Your order has shipped with tracking ${order.fulfillmentTrackingNumber}.`
+        : "Your order has shipped. Tracking details will appear on the status page when available.",
+    };
+  }
+  return {
+    title: "Delivered",
+    body: "Your order has been marked delivered. Thank you for ordering from the studio.",
+  };
+}
+
+function invoiceProgressSteps(
+  order: AdminOrderDTO,
+  invoice: AdminInvoiceDTO,
+  isPaid: boolean,
+) {
+  const prepStarted =
+    isPaid ||
+    order.fulfillmentStatus === "in_progress" ||
+    order.fulfillmentStatus === "ready" ||
+    order.fulfillmentStatus === "shipped" ||
+    order.fulfillmentStatus === "delivered";
+  const ready = order.fulfillmentStatus === "ready";
+  const shipped =
+    order.fulfillmentStatus === "shipped" ||
+    order.fulfillmentStatus === "delivered";
+  const delivered = order.fulfillmentStatus === "delivered";
+
+  return [
+    {
+      title: "Invoice sent",
+      date: invoice.sentAt ?? invoice.issuedAt,
+      active: true,
+      Icon: FileText,
+    },
+    {
+      title: "Payment received",
+      date: invoice.paidAt,
+      active: isPaid,
+      Icon: CreditCard,
+    },
+    {
+      title: "Studio prep",
+      date: order.fulfillmentReadyAt,
+      active: prepStarted,
+      Icon: PackageOpen,
+    },
+    {
+      title: shipped ? "Shipped" : ready ? "Ready" : "Handoff",
+      date: shipped
+        ? order.fulfillmentShippedAt
+        : ready
+          ? order.fulfillmentReadyAt
+          : null,
+      active: ready || shipped || delivered,
+      Icon: Truck,
+    },
+    {
+      title: "Delivered",
+      date: order.fulfillmentDeliveredAt,
+      active: delivered,
+      Icon: PackageCheck,
+    },
+  ];
 }
 
 export default async function PublicInvoicePage({
@@ -150,6 +263,9 @@ export default async function PublicInvoicePage({
     settingsRow?.emailFrom?.trim() ||
     null;
   const printLabel = `${isPaid ? "Receipt" : "Invoice"} ${invoice.number}`;
+  const statusUrl = orderStatusUrl(issueOrderStatusToken(order.id));
+  const nextStep = invoiceNextStep(order, invoice, isPaid);
+  const progressSteps = invoiceProgressSteps(order, invoice, isPaid);
 
   return (
     <main className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] print:bg-white print:text-black">
@@ -174,12 +290,20 @@ export default async function PublicInvoicePage({
 
         <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
           <InvoicePrintActions label={printLabel} />
-          {canPayOnline && (
-            <StripePaymentButton
-              token={token}
-              label={hostedPaymentExpired ? "Get fresh payment link" : "Pay online"}
-            />
-          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Link
+              href={statusUrl}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 text-sm font-medium transition hover:bg-[hsl(var(--muted))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            >
+              Track order status
+            </Link>
+            {canPayOnline && (
+              <StripePaymentButton
+                token={token}
+                label={hostedPaymentExpired ? "Get fresh payment link" : "Pay online"}
+              />
+            )}
+          </div>
         </div>
 
         {paymentNotice && (
@@ -207,6 +331,19 @@ export default async function PublicInvoicePage({
             </p>
           </div>
         )}
+
+        <div className="flex gap-3 rounded-xl border bg-[hsl(var(--card))] px-4 py-3 text-sm shadow-sm print:hidden">
+          <Clock3
+            className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(var(--muted-foreground))]"
+            aria-hidden
+          />
+          <div>
+            <p className="font-semibold">{nextStep.title}</p>
+            <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+              {nextStep.body}
+            </p>
+          </div>
+        </div>
 
         <div className="rounded-2xl border bg-[hsl(var(--card))] p-5 shadow-sm sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="mb-6 hidden items-start justify-between gap-6 border-b pb-5 print:flex">
@@ -440,39 +577,60 @@ export default async function PublicInvoicePage({
                   </div>
                 </div>
               )}
-              {hasFulfillmentDetails && (
+              {(hasFulfillmentDetails || isPaid || invoice.status === "issued") && (
                 <div>
-                  <h2 className="text-sm font-semibold">Fulfillment</h2>
-                  <div className="mt-2 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
-                    <p className="capitalize">
-                      Status: {fulfillmentLabel(order.fulfillmentStatus)}
+                  <h2 className="text-sm font-semibold">Order progress</h2>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 print:grid-cols-2">
+                    {progressSteps.map(({ title, date, active, Icon }) => (
+                      <div
+                        key={title}
+                        className={[
+                          "rounded-lg border p-3 text-sm",
+                          active
+                            ? "border-[hsl(var(--foreground))] bg-[hsl(var(--muted))]"
+                            : "text-[hsl(var(--muted-foreground))]",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                          <span className="font-medium">{title}</span>
+                        </div>
+                        <p className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
+                          {formatDate(date)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                    <p>
+                      Current fulfillment status:{" "}
+                      <span className="capitalize">
+                        {fulfillmentLabel(order.fulfillmentStatus)}
+                      </span>
                     </p>
-                    {order.fulfillmentCarrier && (
-                      <p>Carrier: {order.fulfillmentCarrier}</p>
-                    )}
-                    {order.fulfillmentTrackingNumber && (
-                      <p>Tracking: {order.fulfillmentTrackingNumber}</p>
-                    )}
-                    {order.fulfillmentReadyAt && (
-                      <p>Ready: {formatDate(order.fulfillmentReadyAt)}</p>
-                    )}
-                    {order.fulfillmentShippedAt && (
-                      <p>Shipped: {formatDate(order.fulfillmentShippedAt)}</p>
-                    )}
-                    {order.fulfillmentDeliveredAt && (
-                      <p>Delivered: {formatDate(order.fulfillmentDeliveredAt)}</p>
-                    )}
-                    {order.fulfillmentTrackingUrl && (
-                      <p className="print:hidden">
-                        <a
-                          href={order.fulfillmentTrackingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-medium text-[hsl(var(--foreground))] underline underline-offset-4"
-                        >
-                          Track shipment
-                        </a>
-                      </p>
+                    {(order.fulfillmentCarrier ||
+                      order.fulfillmentTrackingNumber ||
+                      order.fulfillmentTrackingUrl) && (
+                      <div className="mt-1 rounded-lg bg-[hsl(var(--muted))] p-3 print:bg-neutral-100">
+                        {order.fulfillmentCarrier && (
+                          <p>Carrier: {order.fulfillmentCarrier}</p>
+                        )}
+                        {order.fulfillmentTrackingNumber && (
+                          <p>Tracking: {order.fulfillmentTrackingNumber}</p>
+                        )}
+                        {order.fulfillmentTrackingUrl && (
+                          <p className="mt-2 print:hidden">
+                            <a
+                              href={order.fulfillmentTrackingUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-medium text-[hsl(var(--foreground))] underline underline-offset-4"
+                            >
+                              Track shipment
+                            </a>
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

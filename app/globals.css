@@ -2520,6 +2520,17 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   word-break: break-word;
 }
 
+.tora-order-status__identity {
+  color: var(--shop-muted);
+  display: block;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.8px;
+  line-height: 1.5;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
 .tora-order-confirmation__grid {
   display: grid;
   gap: 14px;
@@ -2564,6 +2575,40 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   font-weight: 300;
   line-height: 1.65;
   margin: 10px 0 0;
+}
+
+.tora-order-status__next {
+  align-items: flex-start;
+  background: var(--shop-panel);
+  border-left: 3px solid var(--shop-accent);
+  color: var(--shop-muted);
+  display: flex;
+  gap: 14px;
+  padding: 20px;
+}
+
+.tora-order-status__next svg {
+  color: var(--shop-accent);
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.tora-order-status__next strong {
+  color: var(--shop-text);
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.tora-order-status__next p {
+  color: var(--shop-muted);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.65;
+  margin: 7px 0 0;
 }
 
 .tora-order-confirmation__items {
@@ -2761,7 +2806,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .tora-order-status__timeline {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .tora-order-status__timeline div {
@@ -2769,11 +2814,18 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   color: var(--shop-muted);
   display: grid;
   gap: 8px;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 190px;
   padding: 16px;
 }
 
-.tora-order-status__timeline div.is-active {
+.tora-order-status__timeline div.is-complete,
+.tora-order-status__timeline div.is-current {
   border-color: var(--shop-accent);
+}
+
+.tora-order-status__timeline div.is-current {
+  background: var(--shop-panel);
   color: var(--shop-text);
 }
 
@@ -2785,9 +2837,17 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
+  gap: 4px;
   height: 28px;
   justify-content: center;
-  width: 28px;
+  min-width: 48px;
+  padding: 0 8px;
+  width: max-content;
+}
+
+.tora-order-status__timeline span i {
+  font-style: normal;
+  line-height: 1;
 }
 
 .tora-order-status__timeline strong {
@@ -2801,8 +2861,47 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .tora-order-status__timeline p {
   color: var(--shop-muted);
   font-size: 13px;
-  line-height: 1.4;
+  font-weight: 300;
+  line-height: 1.5;
   margin: 0;
+}
+
+.tora-order-status__timeline time {
+  color: var(--shop-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.tora-order-status__tracking {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tora-order-status__tracking p {
+  border: 1px solid var(--shop-subtle);
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 12px;
+}
+
+.tora-order-status__tracking span {
+  color: var(--shop-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.tora-order-status__tracking strong {
+  color: var(--shop-text);
+  font-size: 15px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {

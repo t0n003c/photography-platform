@@ -1205,6 +1205,11 @@ is gitignored):
   before sending; `/api/v1/admin/orders/[id]/email-preview` renders the same email templates
   against draft form values and uses a placeholder recipient only when the order has no customer
   email yet.
+  Follow-up: Customer-facing Store status pages were polished to match the admin/email flow.
+  `/orders/status` now presents a clearer five-step progress timeline, next-step guidance,
+  masked customer identity, tracking details, pending refunds, and quoted/free shipping text.
+  Public invoice/receipt pages now link directly to the order status page and show matching
+  next-step/progress guidance alongside payment, refund, and fulfillment details.
   Follow-up: Store checkout now redirects successful manual-invoice requests to
   `/cart/confirmation?order=...`. The confirmation page reads the just-created order
   summary from browser session storage instead of exposing a public raw-order lookup,
