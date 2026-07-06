@@ -143,7 +143,7 @@ jobs:
           sed -i "s|^BETTER_AUTH_URL=.*|BETTER_AUTH_URL=http://localhost:3000|" .env
 
       - name: Bring up stack
-        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env up -d --build
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.dev.yaml --env-file .env up -d --build
 
       - name: Wait for /api/health
         run: |
@@ -154,17 +154,19 @@ jobs:
             sleep 5
           done
           echo "web never became healthy"
-          docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env logs --no-color | tail -200
+          docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.dev.yaml --env-file .env logs --no-color | tail -200
           exit 1
 
       - name: Seed (owner + taxonomy)
-        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env run --rm worker npm run db:seed
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.dev.yaml --env-file .env run --rm worker npm run db:seed
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: npm run test:e2e
+        env:
+          E2E_DATABASE_URL: postgres://photog:photog@127.0.0.1:5432/photography
 
       - name: Upload Playwright artifacts
         if: always()
@@ -178,4 +180,4 @@ jobs:
 
       - name: Tear down stack
         if: always()
-        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml --env-file .env down -v
+        run: docker compose -f docker/compose.yaml -f docker/compose.prod.yaml -f docker/compose.dev.yaml --env-file .env down -v

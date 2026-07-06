@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright E2E config.
  *
- * The application stack (DB + Redis + MinIO + web + worker) is started
+ * The application stack (DB + Redis + SeaweedFS + web + worker) is started
  * externally — by CI (see .github/workflows/ci.yml) or via the docker compose
  * dev script — so there is intentionally NO `webServer` here. Tests just hit
  * the already-running server at baseURL.

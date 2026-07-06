@@ -241,6 +241,11 @@ Then either:
 - **External tunnel / NPM:** run `cloudflared` (and/or NPM) outside this project and skip the `tunnel` profile.
 
 Verify: `https://photos.example.com/api/health` returns `{"status":"ok","service":"web"}`.
+For a dependency-aware readiness check, use
+`https://photos.example.com/api/health?deep=1`; it pings Postgres and Redis and
+returns `503` with per-check details if either dependency is degraded. Keep Docker
+healthchecks on the lightweight `/api/health` route so brief backing-service blips do
+not cause unnecessary web restarts.
 
 ---
 
@@ -329,6 +334,7 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
 | Service status / health        | `dc ps`                                                                                                                                                                                                                                           |
 | Logs (follow)                  | `dc logs -f web` · `dc logs -f worker` · `dc logs -f`                                                                                                                                                                                             |
 | Web health                     | `curl -fsS http://localhost:${WEB_PORT:-3000}/api/health` or `https://photos.example.com/api/health`                                                                                                                                              |
+| Deep web readiness             | `curl -fsS http://localhost:${WEB_PORT:-3000}/api/health?deep=1` (checks Postgres + Redis)                                                                                                                                                        |
 | Worker health                  | `dc exec worker node -e "fetch('http://localhost:9091/health').then(r=>r.text()).then(console.log)"`                                                                                                                                              |
 | Run migrations manually        | set `RUN_MIGRATIONS=false`, then `dc run --rm worker npm run db:migrate` (drizzle-kit)                                                                                                                                                            |
 | Seed owner + taxonomy          | `dc run --rm worker npm run db:seed` (idempotent)                                                                                                                                                                                                 |
@@ -345,6 +351,7 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
 
 - **`web` unhealthy / won't boot in prod** — most common cause is a weak/default `BETTER_AUTH_SECRET` (`instrumentation.ts` refuses to start). Check `dc logs web`; regenerate with `openssl rand -base64 48` and `dc up -d`. Also confirm `db`/`redis`/`seaweedfs` are healthy (`dc ps`).
 - **`worker` stuck / jobs not processing** — check `dc logs -f worker` for `listening on queue` and migration output. Confirm `redis` is healthy and reachable (`dc exec redis redis-cli ping`). Restart with `dc restart worker`; in-flight jobs survive via the Redis AOF.
+- **Redis `MISCONF` / "No space left on device" / auth/session 500s while Redis says healthy** — Redis can answer `PING` while refusing writes if its AOF snapshot failed because the Docker VM or NAS volume is full. Confirm with `dc logs redis`, `dc exec redis redis-cli set healthcheck-write ok`, and `docker system df`. Free space by pruning unused Docker build cache/images (`docker builder prune -af`, then `docker image prune -af` if appropriate; do **not** prune volumes unless you are intentionally deleting data), then restart Redis or the stack and re-check `/api/health?deep=1`.
 - **`seaweedfs` crash-loops / `seaweedfs-init` stuck "waiting for s3 gateway…" / `:8333` connection refused** — the container can't read `seaweedfs/s3.json`. Logs (`dc logs seaweedfs`) show `fail to load config file … s3.json: permission denied` and the master restarting every ~15s. Since the container runs as root, this is a **host-side perm/ACL** problem, classic on **Synology** (DSM/File Station adds a restrictive ACL — the `+` in `ls -l` — that blocks even container-root, and the file open also needs **execute on the parent dir**). Fix:
   ```bash
   chmod 755 <stack-dir>/seaweedfs && chmod 644 <stack-dir>/seaweedfs/s3.json
@@ -353,4 +360,4 @@ Set an alias to keep commands short: `alias dc='docker compose -f docker/compose
   ```
   Want: no "permission denied" and a `Start S3 API Server` line. Then `seaweedfs-init` goes healthy and `web`/`worker` start. (Find the real mounted path with `docker inspect <seaweedfs> --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'` if the stack dir differs.) **Don't trust the `seaweedfs` healthcheck here** — it only probes the master (`:9333`) and can read "healthy" while the S3 gateway is dead.
 - **A `docker compose pull` broke a backing service** — third-party images are pinned to avoid exactly this; if one drifted, check the running image vs the pinned tag in `docker/compose.yaml` / `docker/compose.nas.yaml` and recreate.
-- **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), and check `seaweeddata` growth (`docker system df -v`). Move `seaweeddata`/`pgdata` to a larger NAS share if needed and copy backups offsite.
+- **Disk full** — prune old backups (`./scripts/backup.sh` enforces `BACKUP_RETENTION`), trim Docker logs (capped at 10 MB × 3 via the prod overlay), prune unused Docker build cache/images, and check `seaweeddata` growth (`docker system df -v`). Move `seaweeddata`/`pgdata` to a larger NAS share if needed and copy backups offsite.

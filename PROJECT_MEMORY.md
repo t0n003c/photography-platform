@@ -342,6 +342,15 @@ is gitignored):
   CI Lighthouse previously reported `/` SEO at 0.92 vs the 0.95 budget because the home page
   emitted no `<title>`; `buildMetadata()` now emits an absolute fallback title when no route
   title is provided.
+- **Store reliability follow-up:** `/api/health` remains a dependency-free liveness check,
+  while `/api/health?deep=1` now pings Postgres + Redis and returns per-check readiness details.
+  Playwright has a fixture-safe store smoke (`tests/e2e/store-checkout.spec.ts`) that temporarily
+  inserts one product, forces manual/no-tax/no-shipping checkout settings, exercises cart →
+  checkout → order status, loads the surrounding public/admin pages, then restores/deletes
+  everything it touched. It needs the Docker dev DB port (`E2E_DATABASE_URL` or localhost `:5432`);
+  CI's e2e job layers `compose.dev.yaml` on top of prod for this reason. If logged-out auth or
+  session calls start 500ing while Redis still pings, check Redis logs for `MISCONF` / Docker disk
+  full and prune unused build cache/images before restarting.
 - **Recent UI/effect scope:** gallery/mobile UI and Alternative Scroll refinements, plus a
   Pages editor fix so Gallery block grid changes update the live preview and support the newer
   grid types. Latest Pages editor work adds

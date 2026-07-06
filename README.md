@@ -66,6 +66,7 @@ docker compose -p photography-platform --env-file ../.env \
 ```
 
 - Web: http://localhost:3001 · health: http://localhost:3001/api/health
+  · deep health: http://localhost:3001/api/health?deep=1
 - Admin: http://localhost:3001/admin (auth-gated; 307→/login when logged out)
 - Clear caches if needed: `docker exec photography-platform-redis-1 redis-cli FLUSHALL`
 
@@ -74,14 +75,14 @@ canonical local target is the Docker `:3001` stack above.)
 
 ## Scripts
 
-| Command                                                        | Purpose                                                                               |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `npm run dev` / `build` / `start`                              | Next.js dev / production build / serve                                                |
-| `npm run worker` / `worker:dev`                                | BullMQ worker (run / watch)                                                           |
-| `npm run typecheck` / `lint` / `format`                        | TS check / lint / Prettier                                                            |
-| `npm test` / `test:watch`                                      | Vitest unit tests                                                                     |
-| `npm run test:e2e`                                             | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack) |
-| `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed                                                    |
+| Command                                                        | Purpose                                                                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev` / `build` / `start`                              | Next.js dev / production build / serve                                                                                                |
+| `npm run worker` / `worker:dev`                                | BullMQ worker (run / watch)                                                                                                           |
+| `npm run typecheck` / `lint` / `format`                        | TS check / lint / Prettier                                                                                                            |
+| `npm test` / `test:watch`                                      | Vitest unit tests                                                                                                                     |
+| `npm run test:e2e`                                             | Playwright end-to-end (`E2E_BASE_URL=http://localhost:3001` for the Docker dev stack; store smoke also uses host Postgres on `:5432`) |
+| `npm run db:generate` / `db:migrate` / `db:studio` / `db:seed` | Drizzle migrations / studio / seed                                                                                                    |
 
 ## Repository layout (short)
 

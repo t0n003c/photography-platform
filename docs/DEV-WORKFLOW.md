@@ -5,12 +5,14 @@ gotchas that used to live in scattered Claude file-memories. The founding intent
 [`PROJECT-BRIEF.md`](./PROJECT-BRIEF.md); architectural decisions in [`DECISIONS.md`](./DECISIONS.md).
 
 **Memory model (decided 2026-06-22):**
+
 - **claude-mem** (plugin, worker on `127.0.0.1:37701`, local SQLite+Chroma in `~/.claude-mem`) is the **source of truth for cross-session recall** — it auto-captures via the SessionStart hook; nothing to invoke.
 - **This `docs/` tree + `.claude/skills/` + `.claude/agents/`** are the **durable, git-tracked, human-facing layer** — and the real disaster-recovery, since claude-mem's DB is local-only and not in git.
 - The Claude file-memory (`MEMORY.md` + `memory/*.md`) is **retired down to a thin pointer index**; content was folded here to avoid maintaining three overlapping stores.
 - ⚠️ **Privacy:** claude-mem captures tool outputs, which here include `.env` secrets, `BETTER_AUTH_SECRET`, client PII, and grant tokens. Wrap sensitive command output in `<private>…</private>` so it isn't ingested.
 
 ## 1. Working agreements
+
 - **Phase-gated.** Built Phase 0 (planning) → Phases 1–7. Work in small, one-concern, reviewable increments; after each phase summarize what changed + what's next, then **pause for explicit approval**. Don't write app code before the plan is approved. Document every meaningful decision in `/docs`. No secrets in code. Ask before a new paid service / new top-level dependency category / anything that changes the deployment shape. Challenge-and-recommend rather than silently comply.
 - **Git: commit directly to `main`, no PRs** (solo project, decided 2026-06-17). No feature branches, no merge step. `main` is the single source of truth; the whole CMS stack is already merged.
   - Caveat: the Claude Code auto-classifier blocks pushes to the default branch unless a Bash permission rule allows it — `Bash(git push origin main:*)` is in `.claude/settings.local.json`. If a push is denied, add the rule rather than re-attempting.
@@ -24,14 +26,20 @@ gotchas that used to live in scattered Claude file-memories. The founding intent
     -f compose.yaml -f compose.dev.yaml up -d web
   ```
   Flush Redis when needed: `docker exec photography-platform-redis-1 redis-cli FLUSHALL`. `/admin/*` is auth-gated (307→/login when logged out = the page is up).
+- **E2E assumes the Docker dev overlay.** `npm run test:e2e` hits the already-running app; use
+  `E2E_BASE_URL=http://localhost:3001`. The store checkout smoke also creates a temporary
+  product/order through host Postgres, so the dev overlay must publish `db` on `localhost:5432`
+  (or set `E2E_DATABASE_URL`).
 - App-code pushes to `main` auto-trigger the GHCR rebuild (`ghcr.io/t0n003c/photography-platform-{web,worker}`); the owner then pulls + redeploys on the NAS. Compose/`.env`-only changes need no rebuild (edit in Dockge).
 
 ## 2. Open follow-ups (owner actions, not bugs)
+
 - **GHCR packages:** after a `publish-images` run, make the two GHCR packages **Public** (or `docker login`) before the NAS pull works.
 - **Finish Home migration:** opening `/admin/pages` seeds a DRAFT "Home" page reproducing the old homepage; the live home stays bespoke until the owner previews and **publishes** it.
 - **Production secret:** set a dedicated `SETTINGS_ENCRYPTION_KEY` (`openssl rand -hex 32`); until then it's derived from `BETTER_AUTH_SECRET`.
 
 ## 3. Gotchas & lessons (durable)
+
 - **Demo/example page state lives in Postgres, not Redis.** The `scroll-showcase-example` page's block style is `page.blocks[2].style`. A `redis-cli FLUSHALL` reverts any Redis-only change to the DB value, so persist with SQL then flush:
   ```sql
   UPDATE page SET blocks = jsonb_set(blocks, '{2,style}', '"carousel3d"') WHERE slug='scroll-showcase-example';
