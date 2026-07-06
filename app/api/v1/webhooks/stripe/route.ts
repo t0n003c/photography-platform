@@ -4,6 +4,7 @@ import { enqueueEmail } from "@/src/email/send";
 import { storeReceiptIssued } from "@/src/email/templates";
 import { getSiteSettings, getResolvedStorePaymentConfig } from "@/src/db/queries/settings";
 import {
+  recordStripeRefundUpdated,
   recordStripeCheckoutExpired,
   recordStripeCheckoutPaid,
 } from "@/src/db/queries/orders";
@@ -13,8 +14,11 @@ import {
 } from "@/src/db/queries/payment-events";
 import {
   type StripeCheckoutSessionEvent,
+  type StripeRefundEvent,
+  type StripeWebhookEvent,
   verifyStripeWebhookSignature,
 } from "@/src/payments/stripe-webhook";
+import { stripeRefundStatusToPaymentStatus } from "@/src/payments";
 import { getEnv } from "@/src/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +29,14 @@ function trimSlash(value: string) {
 
 function sessionObject(event: StripeCheckoutSessionEvent) {
   return event.data.object;
+}
+
+function refundObject(event: StripeRefundEvent) {
+  return event.data.object;
+}
+
+function isRefundEvent(event: StripeWebhookEvent): event is StripeRefundEvent {
+  return event.type === "charge.refund.updated" || event.type.startsWith("refund.");
 }
 
 export async function POST(req: Request) {
@@ -45,9 +57,9 @@ export async function POST(req: Request) {
     return problem(400, "INVALID_STRIPE_SIGNATURE", "Invalid Stripe signature.");
   }
 
-  let event: StripeCheckoutSessionEvent;
+  let event: StripeWebhookEvent;
   try {
-    event = JSON.parse(payload) as StripeCheckoutSessionEvent;
+    event = JSON.parse(payload) as StripeWebhookEvent;
   } catch {
     return problem(400, "INVALID_STRIPE_EVENT", "Stripe event payload is invalid.");
   }
@@ -55,12 +67,18 @@ export async function POST(req: Request) {
     return problem(400, "INVALID_STRIPE_EVENT", "Stripe event id is missing.");
   }
 
-  const session = sessionObject(event);
-  const eventRef = {
-    invoiceId: session.metadata?.invoiceId ?? null,
-    sessionId: session.id ?? null,
-    paymentIntentId: session.payment_intent ?? null,
-  };
+  const eventRef = isRefundEvent(event)
+    ? {
+        invoiceId: refundObject(event).metadata?.invoiceId ?? null,
+        sessionId: null,
+        paymentIntentId: refundObject(event).payment_intent ?? null,
+      }
+    : {
+        invoiceId: sessionObject(event as StripeCheckoutSessionEvent).metadata?.invoiceId ?? null,
+        sessionId: sessionObject(event as StripeCheckoutSessionEvent).id ?? null,
+        paymentIntentId:
+          sessionObject(event as StripeCheckoutSessionEvent).payment_intent ?? null,
+      };
   const eventState = await beginStripeWebhookEvent({
     id: event.id,
     type: event.type,
@@ -82,6 +100,7 @@ export async function POST(req: Request) {
       event.type === "checkout.session.completed" ||
       event.type === "checkout.session.async_payment_succeeded"
     ) {
+      const session = sessionObject(event as StripeCheckoutSessionEvent);
       if (session.payment_status && session.payment_status !== "paid") {
         ignored = "payment_not_paid";
       } else if (!session.id) {
@@ -112,6 +131,7 @@ export async function POST(req: Request) {
         }
       }
     } else if (event.type === "checkout.session.expired") {
+      const session = sessionObject(event as StripeCheckoutSessionEvent);
       if (!session.id) {
         ignored = "missing_session_id";
       } else {
@@ -119,6 +139,21 @@ export async function POST(req: Request) {
           invoiceId: session.metadata?.invoiceId ?? null,
           sessionId: session.id,
         });
+      }
+    } else if (isRefundEvent(event)) {
+      const refund = refundObject(event);
+      if (!refund.id) {
+        ignored = "missing_refund_id";
+      } else {
+        const result = await recordStripeRefundUpdated({
+          providerRefundId: refund.id,
+          status: stripeRefundStatusToPaymentStatus(refund.status),
+          providerError: refund.failure_reason ?? null,
+          invoiceId: refund.metadata?.invoiceId ?? null,
+          paymentIntentId: refund.payment_intent ?? null,
+          refundedAt: refund.created ? new Date(refund.created * 1000) : null,
+        });
+        if (!result) ignored = "refund_not_found";
       }
     } else {
       ignored = "unhandled_event_type";

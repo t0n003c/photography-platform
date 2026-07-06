@@ -155,7 +155,8 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Stripe payment operations hardening: webhook event ID de-duplication, admin payment status visibility, checkout link refresh, invoice success/cancel/expired states, and test-mode runbook.
 - [x] Store fulfillment basics: admin status/carrier/tracking/milestone notes, public receipt tracking details, and optional customer update emails.
 - [x] Store refund tracking basics: manual refund records, public receipt refund history, optional refund emails, and admin audit metadata.
-- [ ] Store operations still deferred: tax/VAT automation and provider-side live Stripe refund execution.
+- [x] Provider-side live Stripe refund execution: partial/full refunds against Stripe PaymentIntents, provider status/error tracking, and refund status webhook updates.
+- [ ] Store operations still deferred: tax/VAT automation.
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).
 

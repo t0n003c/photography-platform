@@ -115,7 +115,15 @@ export default async function PublicInvoicePage({
   const successfulRefunds = order.refunds.filter(
     (refund) => refund.status === "succeeded",
   );
+  const pendingRefunds = order.refunds.filter((refund) => refund.status === "pending");
+  const visibleRefunds = order.refunds.filter(
+    (refund) => refund.status === "succeeded" || refund.status === "pending",
+  );
   const refundedAmount = successfulRefunds.reduce(
+    (sum, refund) => sum + refund.amountCents,
+    0,
+  );
+  const pendingRefundAmount = pendingRefunds.reduce(
     (sum, refund) => sum + refund.amountCents,
     0,
   );
@@ -353,6 +361,12 @@ export default async function PublicInvoicePage({
                         <p>Net paid: {formatMoney(netPaidAmount, invoice.currency)}</p>
                       </>
                     )}
+                    {pendingRefundAmount > 0 && (
+                      <p>
+                        Pending refund:{" "}
+                        {formatMoney(pendingRefundAmount, invoice.currency)}
+                      </p>
+                    )}
                     <p>Paid: {formatDate(invoice.paidAt)}</p>
                     {invoice.paymentMethod && <p>Method: {invoice.paymentMethod}</p>}
                     {invoice.paymentReference && (
@@ -372,22 +386,29 @@ export default async function PublicInvoicePage({
                   </p>
                 </div>
               )}
-              {successfulRefunds.length > 0 && (
+              {visibleRefunds.length > 0 && (
                 <div>
                   <h2 className="text-sm font-semibold">Refunds</h2>
                   <div className="mt-2 grid gap-3 text-sm text-[hsl(var(--muted-foreground))]">
-                    {successfulRefunds.map((refund) => (
-                      <div key={refund.id} className="rounded-lg bg-[hsl(var(--muted))] p-3 print:bg-neutral-100">
+                    {visibleRefunds.map((refund) => (
+                      <div
+                        key={refund.id}
+                        className="rounded-lg bg-[hsl(var(--muted))] p-3 print:bg-neutral-100"
+                      >
                         <p className="font-medium text-[hsl(var(--foreground))]">
                           {formatMoney(refund.amountCents, refund.currency)}
                         </p>
                         <div className="mt-1 grid gap-1">
                           <p>
-                            Refunded:{" "}
+                            {refund.status === "pending"
+                              ? "Refund pending"
+                              : "Refunded"}
+                            :{" "}
                             {refund.refundedAt
                               ? formatDate(refund.refundedAt)
                               : formatDate(refund.createdAt)}
                           </p>
+                          {refund.provider === "stripe" && <p>Provider: Stripe</p>}
                           {refund.method && <p>Method: {refund.method}</p>}
                           {refund.reference && <p>Reference: {refund.reference}</p>}
                           {refund.reason && <p>Reason: {refund.reason}</p>}
@@ -473,6 +494,12 @@ export default async function PublicInvoicePage({
                     <strong>{formatMoney(netPaidAmount, invoice.currency)}</strong>
                   </div>
                 </>
+              )}
+              {pendingRefundAmount > 0 && (
+                <div className="flex justify-between gap-4">
+                  <span>Pending refund</span>
+                  <strong>{formatMoney(pendingRefundAmount, invoice.currency)}</strong>
+                </div>
               )}
             </div>
           </div>

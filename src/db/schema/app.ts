@@ -776,6 +776,7 @@ export const orderRefund = pgTable(
       .default("succeeded"),
     provider: text("provider").notNull().default("manual"),
     providerRefundId: text("provider_refund_id"),
+    providerError: text("provider_error"),
     method: text("method"),
     reference: text("reference"),
     reason: text("reason"),

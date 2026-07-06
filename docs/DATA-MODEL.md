@@ -570,8 +570,9 @@ partial refunds remain auditable.
 | amount_cents       | integer                  | positive refund amount                              |
 | currency           | text                     | copied from invoice/order                            |
 | status             | text                     | `pending`\|`succeeded`\|`failed`\|`cancelled`        |
-| provider           | text                     | default `manual`; future Stripe refunds can reuse it |
+| provider           | text                     | `manual` or `stripe`; default `manual`               |
 | provider_refund_id | text NULL                | external refund id/reference                         |
+| provider_error     | text NULL                | provider failure/status detail for failed attempts   |
 | method             | text NULL                | check, cash, Stripe dashboard, etc.                  |
 | reference          | text NULL                | check number / transaction id                        |
 | reason             | text NULL                | customer-facing reason                               |
@@ -720,6 +721,5 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/VAT automation and provider-side live Stripe refund execution — deferred beyond
-  the current manual invoice, optional Stripe Checkout, refund-tracking, and fulfillment basics
-  slices.
+- Store tax/VAT automation — deferred beyond the current manual invoice, optional Stripe
+  Checkout/refunds, refund-tracking, and fulfillment basics slices.

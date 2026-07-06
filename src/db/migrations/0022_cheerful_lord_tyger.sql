@@ -1,0 +1,1 @@
+ALTER TABLE "order_refund" ADD COLUMN "provider_error" text;

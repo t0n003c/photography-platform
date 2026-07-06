@@ -116,6 +116,7 @@ export interface AdminOrderRefundDTO {
   status: RefundStatus;
   provider: string;
   providerRefundId: string | null;
+  providerError: string | null;
   method: string | null;
   reference: string | null;
   reason: string | null;
@@ -222,6 +223,7 @@ function refundToDTO(row: typeof orderRefund.$inferSelect): AdminOrderRefundDTO 
     status: row.status as RefundStatus,
     provider: row.provider,
     providerRefundId: row.providerRefundId,
+    providerError: row.providerError,
     method: row.method,
     reference: row.reference,
     reason: row.reason,
@@ -789,11 +791,13 @@ export async function recordInvoicePaymentAdmin(
 export async function recordOrderRefundAdmin(
   orderId: string,
   input: {
+    id?: string;
     actorId?: string | null;
     amountCents: number;
     status?: RefundStatus;
     provider?: string | null;
     providerRefundId?: string | null;
+    providerError?: string | null;
     method?: string | null;
     reference?: string | null;
     reason?: string | null;
@@ -806,7 +810,7 @@ export async function recordOrderRefundAdmin(
   refund: AdminOrderRefundDTO;
   invoiceToken: string | null;
 } | null> {
-  const refundId = newId();
+  const refundId = input.id ?? newId();
   const status = input.status ?? "succeeded";
 
   await db.transaction(async (tx) => {
@@ -836,6 +840,7 @@ export async function recordOrderRefundAdmin(
       status,
       provider: cleanOptionalText(input.provider) ?? "manual",
       providerRefundId: cleanOptionalText(input.providerRefundId),
+      providerError: cleanOptionalText(input.providerError),
       method: cleanOptionalText(input.method),
       reference: cleanOptionalText(input.reference),
       reason: cleanOptionalText(input.reason),
@@ -882,6 +887,80 @@ export async function recordOrderRefundAdmin(
     invoiceToken:
       input.sendEmail && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
   };
+}
+
+export async function recordStripeRefundUpdated(input: {
+  providerRefundId: string;
+  status: RefundStatus;
+  providerError?: string | null;
+  invoiceId?: string | null;
+  paymentIntentId?: string | null;
+  refundedAt?: Date | null;
+}): Promise<AdminOrderDTO | null> {
+  let orderId: string | null = null;
+  await db.transaction(async (tx) => {
+    const refundRows = await tx
+      .select()
+      .from(orderRefund)
+      .where(eq(orderRefund.providerRefundId, input.providerRefundId))
+      .limit(1);
+    const refund = refundRows[0];
+    if (!refund) return;
+    orderId = refund.orderId;
+    const now = new Date();
+
+    await tx
+      .update(orderRefund)
+      .set({
+        status: input.status,
+        providerError: cleanOptionalText(input.providerError),
+        refundedAt:
+          input.status === "succeeded"
+            ? (input.refundedAt ?? refund.refundedAt ?? now)
+            : refund.refundedAt,
+        updatedAt: now,
+      })
+      .where(eq(orderRefund.id, refund.id));
+
+    if (input.status !== "succeeded") return;
+    const invoiceRows = refund.invoiceId
+      ? await tx
+          .select()
+          .from(invoice)
+          .where(eq(invoice.id, refund.invoiceId))
+          .limit(1)
+      : input.invoiceId
+        ? await tx.select().from(invoice).where(eq(invoice.id, input.invoiceId)).limit(1)
+        : input.paymentIntentId
+          ? await tx
+              .select()
+              .from(invoice)
+              .where(eq(invoice.onlinePaymentIntentId, input.paymentIntentId))
+              .limit(1)
+          : [];
+    const currentInvoice = invoiceRows[0] ?? null;
+    if (!currentInvoice?.onlinePaymentProvider) return;
+
+    const refundSums = await tx
+      .select({ amountCents: orderRefund.amountCents })
+      .from(orderRefund)
+      .where(
+        and(
+          eq(orderRefund.orderId, refund.orderId),
+          eq(orderRefund.status, "succeeded"),
+        ),
+      );
+    const refundedCents = refundSums.reduce((sum, row) => sum + row.amountCents, 0);
+    const paidCents = currentInvoice.paidAmountCents ?? currentInvoice.amountCents;
+    if (paidCents > 0 && refundedCents >= paidCents) {
+      await tx
+        .update(invoice)
+        .set({ onlinePaymentStatus: "refunded" })
+        .where(eq(invoice.id, currentInvoice.id));
+    }
+  });
+
+  return orderId ? getOrderAdmin(orderId) : null;
 }
 
 export async function updateOrderFulfillmentAdmin(

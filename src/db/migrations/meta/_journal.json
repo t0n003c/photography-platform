@@ -155,6 +155,13 @@
       "when": 1783295461738,
       "tag": "0021_calm_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783297361329,
+      "tag": "0022_cheerful_lord_tyger",
+      "breakpoints": true
     }
   ]
 }

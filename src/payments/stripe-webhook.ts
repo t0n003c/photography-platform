@@ -49,3 +49,24 @@ export interface StripeCheckoutSessionEvent {
     };
   };
 }
+
+export interface StripeRefundEvent {
+  id: string;
+  type: string;
+  api_version?: string | null;
+  livemode?: boolean;
+  data: {
+    object: {
+      id?: string;
+      amount?: number | null;
+      currency?: string | null;
+      status?: string | null;
+      payment_intent?: string | null;
+      failure_reason?: string | null;
+      created?: number | null;
+      metadata?: Record<string, string | undefined> | null;
+    };
+  };
+}
+
+export type StripeWebhookEvent = StripeCheckoutSessionEvent | StripeRefundEvent;

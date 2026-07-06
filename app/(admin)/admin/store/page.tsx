@@ -80,6 +80,7 @@ interface RefundRow {
   status: "pending" | "succeeded" | "failed" | "cancelled";
   provider: string;
   providerRefundId: string | null;
+  providerError: string | null;
   method: string | null;
   reference: string | null;
   reason: string | null;
@@ -158,6 +159,7 @@ interface OrderRow {
 type OrderStatus = OrderRow["status"];
 type FulfillmentStatus = OrderRow["fulfillmentStatus"];
 type RefundStatus = RefundRow["status"];
+type RefundProvider = "manual" | "stripe";
 type OrderFilter = "all" | "open" | OrderStatus;
 
 const ORDER_STATUS_OPTIONS: OrderStatus[] = [
@@ -203,6 +205,7 @@ interface PaymentFormValues {
 }
 
 interface RefundFormValues {
+  provider: RefundProvider;
   refundedAt: string;
   amount: string;
   method: string;
@@ -356,13 +359,19 @@ function successfulRefundedCents(row: OrderRow) {
     .reduce((sum, refund) => sum + refund.amountCents, 0);
 }
 
+function reservedRefundedCents(row: OrderRow) {
+  return row.refunds
+    .filter((refund) => refund.status === "succeeded" || refund.status === "pending")
+    .reduce((sum, refund) => sum + refund.amountCents, 0);
+}
+
 function paidAmountCents(row: OrderRow) {
   return row.invoice?.paidAmountCents ?? row.invoice?.amountCents ?? row.totalCents;
 }
 
 function refundableCents(row: OrderRow) {
   if (row.invoice?.status !== "paid") return 0;
-  return Math.max(0, paidAmountCents(row) - successfulRefundedCents(row));
+  return Math.max(0, paidAmountCents(row) - reservedRefundedCents(row));
 }
 
 function fulfillmentTone(
@@ -437,6 +446,7 @@ function orderSearchText(row: OrderRow) {
       refund.status,
       refund.provider,
       refund.providerRefundId,
+      refund.providerError,
       refund.method,
       refund.reference,
       refund.reason,
@@ -495,7 +505,9 @@ function orderSummary(row: OrderRow) {
         `Refund ${refundLabel(refund.status)}: ${formatMoney(
           refund.amountCents,
           refund.currency,
-        )}${refund.reference ? ` (${refund.reference})` : ""}`,
+        )}${refund.reference ? ` (${refund.reference})` : ""}${
+          refund.providerError ? ` - ${refund.providerError}` : ""
+        }`,
     ),
     row.invoice?.onlinePaymentSessionId
       ? `Stripe session: ${row.invoice.onlinePaymentSessionId}`
@@ -1040,6 +1052,7 @@ function OrderDetailModal({
     paymentNote: "",
   });
   const [refundForm, setRefundForm] = useState<RefundFormValues>({
+    provider: "manual",
     refundedAt: "",
     amount: "",
     method: "",
@@ -1063,7 +1076,12 @@ function OrderDetailModal({
     0,
   );
   const invoicePaid = order.invoice?.status === "paid";
+  const stripeRefundAvailable =
+    invoicePaid &&
+    order.invoice?.onlinePaymentProvider === "stripe" &&
+    Boolean(order.invoice.onlinePaymentIntentId);
   const refundedCents = successfulRefundedCents(order);
+  const reservedRefundCents = reservedRefundedCents(order);
   const remainingRefundCents = refundableCents(order);
   const canRecordRefund =
     invoicePaid && remainingRefundCents > 0 && inputToCents(refundForm.amount) > 0;
@@ -1090,6 +1108,7 @@ function OrderDetailModal({
       paymentNote: order.invoice?.paymentNote ?? "",
     });
     setRefundForm({
+      provider: stripeRefundAvailable ? "stripe" : "manual",
       refundedAt: dateInputValue(new Date().toISOString()),
       amount: centsToInput(refundableCents(order)),
       method: "",
@@ -1107,7 +1126,7 @@ function OrderDetailModal({
       fulfillmentDeliveredAt: dateInputValue(order.fulfillmentDeliveredAt),
       fulfillmentNotes: order.fulfillmentNotes ?? "",
     });
-  }, [order.id, order.invoice, order.totalCents, order]);
+  }, [order.id, order.invoice, order.totalCents, order, stripeRefundAvailable]);
 
   const submitFulfillmentStatus = (
     status: FulfillmentStatus,
@@ -1677,6 +1696,11 @@ function OrderDetailModal({
                         <span>Receipt sent {formatDate(refund.receiptSentAt)}</span>
                       )}
                     </div>
+                    {refund.providerError && (
+                      <p className="mt-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                        Provider error: {refund.providerError}
+                      </p>
+                    )}
                     {refund.note && (
                       <p className="mt-2 whitespace-pre-wrap text-xs text-[hsl(var(--muted-foreground))]">
                         {refund.note}
@@ -1700,6 +1724,12 @@ function OrderDetailModal({
             </span>
             <span>
               Refundable {formatMoney(remainingRefundCents, order.currency)}
+              {reservedRefundCents > refundedCents
+                ? ` (${formatMoney(
+                    reservedRefundCents - refundedCents,
+                    order.currency,
+                  )} pending)`
+                : ""}
             </span>
           </div>
 
@@ -1708,6 +1738,40 @@ function OrderDetailModal({
               Record payment before adding a refund.
             </p>
           )}
+
+          {invoicePaid && !stripeRefundAvailable && order.invoice?.onlinePaymentProvider === "stripe" && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              This Stripe invoice is missing a payment intent, so only a manual refund
+              record is available.
+            </p>
+          )}
+
+          <Field
+            label="Refund action"
+            htmlFor="refund-provider"
+            hint={
+              stripeRefundAvailable
+                ? "Stripe refunds move money through Stripe; manual records only document outside refunds."
+                : "Manual refund records document refunds handled outside this app."
+            }
+          >
+            <Select
+              id="refund-provider"
+              value={refundForm.provider}
+              disabled={saving || !invoicePaid}
+              onChange={(event) =>
+                setRefundForm((current) => ({
+                  ...current,
+                  provider: event.target.value as RefundProvider,
+                }))
+              }
+            >
+              {stripeRefundAvailable && (
+                <option value="stripe">Refund through Stripe</option>
+              )}
+              <option value="manual">Manual record only</option>
+            </Select>
+          </Field>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Refund date" htmlFor="refund-refunded-at">
@@ -1744,8 +1808,10 @@ function OrderDetailModal({
             <Field label="Method" htmlFor="refund-method">
               <Input
                 id="refund-method"
-                value={refundForm.method}
-                disabled={saving || !invoicePaid}
+                value={
+                  refundForm.provider === "stripe" ? "Stripe" : refundForm.method
+                }
+                disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
                 placeholder="Zelle, check, cash, Stripe dashboard"
                 onChange={(event) =>
                   setRefundForm((current) => ({
@@ -1762,8 +1828,12 @@ function OrderDetailModal({
               <Input
                 id="refund-reference"
                 value={refundForm.reference}
-                disabled={saving || !invoicePaid}
-                placeholder="Refund ID, check number, transaction ID"
+                disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
+                placeholder={
+                  refundForm.provider === "stripe"
+                    ? "Stripe refund ID is filled after creation"
+                    : "Refund ID, check number, transaction ID"
+                }
                 onChange={(event) =>
                   setRefundForm((current) => ({
                     ...current,
@@ -1836,7 +1906,9 @@ function OrderDetailModal({
                 onClick={() => onRefundSubmit(refundForm, false)}
               >
                 <CreditCard className="h-4 w-4" />
-                Record refund
+                {refundForm.provider === "stripe"
+                  ? "Refund through Stripe"
+                  : "Record refund"}
               </Button>
               <Button
                 type="button"
@@ -1848,7 +1920,9 @@ function OrderDetailModal({
                 ) : (
                   <ReceiptText className="h-4 w-4" />
                 )}
-                Record & email refund
+                {refundForm.provider === "stripe"
+                  ? "Refund & email receipt"
+                  : "Record & email refund"}
               </Button>
             </div>
           </div>
@@ -2297,13 +2371,19 @@ export default function StorePage() {
     setUpdatingOrderId(row.id);
     try {
       const res = await api.post<{
-        data: { order: OrderRow; refund: RefundRow; receiptUrl: string | null };
+        data: {
+          order: OrderRow;
+          refund: RefundRow;
+          receiptUrl: string | null;
+          warning: string | null;
+        };
       }>(`/api/v1/admin/orders/${row.id}/refunds`, {
         amountCents: inputToCents(values.amount),
         status: "succeeded",
-        provider: "manual",
-        method: values.method.trim() || null,
-        reference: values.reference.trim() || null,
+        provider: values.provider,
+        method: values.provider === "stripe" ? null : values.method.trim() || null,
+        reference:
+          values.provider === "stripe" ? null : values.reference.trim() || null,
         reason: values.reason.trim() || null,
         note: values.note.trim() || null,
         refundedAt: values.refundedAt || null,
@@ -2313,7 +2393,21 @@ export default function StorePage() {
         current.map((order) => (order.id === row.id ? res.data.order : order)),
       );
       setSelectedOrder(res.data.order);
-      toast(sendEmail ? "Refund recorded and emailed" : "Refund recorded", "success");
+      const refund = res.data.refund;
+      if (refund.status === "failed") {
+        toast(
+          refund.providerError
+            ? `Stripe refund failed: ${refund.providerError}`
+            : "Stripe refund failed",
+          "error",
+        );
+      } else if (values.provider === "stripe" && refund.status === "pending") {
+        toast("Stripe refund started", "success");
+      } else if (values.provider === "stripe") {
+        toast(sendEmail ? "Stripe refund completed and emailed" : "Stripe refund completed", "success");
+      } else {
+        toast(sendEmail ? "Refund recorded and emailed" : "Refund recorded", "success");
+      }
     } catch (err) {
       toast(errMsg(err), "error");
     } finally {

@@ -26,8 +26,33 @@ export interface CheckoutSession {
   expiresAt: Date | null;
 }
 
+export type PaymentRefundStatus = "pending" | "succeeded" | "failed" | "cancelled";
+
+export interface CreateRefundInput {
+  refundId: string;
+  orderId: string;
+  invoiceId: string;
+  paymentIntentId: string;
+  amountCents: number;
+  currency: string;
+  reason?: string | null;
+  note?: string | null;
+  metadata?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface PaymentRefund {
+  id: string;
+  amountCents: number;
+  currency: string;
+  status: PaymentRefundStatus;
+  providerStatus: string | null;
+  failureReason: string | null;
+  createdAt: Date | null;
+}
+
 export interface PaymentProvider {
   createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession>;
+  createRefund(input: CreateRefundInput): Promise<PaymentRefund>;
 }
 
 export interface PaymentProviderReadiness {

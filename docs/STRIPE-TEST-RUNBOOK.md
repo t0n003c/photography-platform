@@ -29,6 +29,7 @@ Required events:
 checkout.session.completed
 checkout.session.async_payment_succeeded
 checkout.session.expired
+charge.refund.updated
 ```
 
 ## 2. Local webhook listener
@@ -91,3 +92,24 @@ Expected:
 Stripe may retry events. The app stores each Stripe event id in `stripe_webhook_event`.
 Already processed or ignored event ids return a successful duplicate response without
 changing invoice/order state again. Previously failed event ids are allowed to run again.
+
+## 7. Stripe refund smoke
+
+1. Complete a cart or issued-invoice checkout in test mode so Admin -> Store shows:
+   - invoice status `paid`
+   - hosted Stripe status `paid`
+   - a Stripe payment intent id
+2. Open the order in Admin -> Store, then Refunds.
+3. Choose **Refund through Stripe**. Enter a partial amount, for example `$5.00`.
+4. Click **Refund through Stripe**.
+5. Expected:
+   - the refund appears in the order's refund history with provider `stripe`
+   - the reference is the Stripe refund id (`re_...`)
+   - status is `succeeded` or `pending`, depending on Stripe's test response
+   - the refundable balance is reduced by succeeded and pending refunds
+   - the public receipt shows settled refunds and pending refunds separately
+6. If Stripe returns a provider error, the failed attempt remains visible in the refund
+   history with the provider error and does not reduce the refundable balance.
+7. To verify webhook updates, trigger or replay a `charge.refund.updated` event from the
+   Stripe CLI/dashboard and confirm the stored refund status changes without creating a
+   duplicate refund row.

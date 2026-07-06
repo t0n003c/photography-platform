@@ -415,6 +415,8 @@ export function storeRefundIssued(opts: {
   const refundDate = emailDate(opts.refund.refundedAt);
   const details = [
     refundDate ? `Refunded ${refundDate}` : null,
+    opts.refund.provider === "stripe" ? "Provider: Stripe" : null,
+    opts.refund.status !== "succeeded" ? `Status: ${opts.refund.status}` : null,
     opts.refund.method ? `Method: ${opts.refund.method}` : null,
     opts.refund.reference ? `Reference: ${opts.refund.reference}` : null,
     opts.refund.reason ? `Reason: ${opts.refund.reason}` : null,

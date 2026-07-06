@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + optional Stripe Checkout                                               | Admin link refresh/status visibility + webhook event idempotency; refund tracking active; provider-side refunds/tax still deferred |
+| Payments       | Manual invoice checkout + optional Stripe Checkout/refunds                                       | Admin link refresh/status visibility + webhook/refund idempotency; tax/VAT still deferred |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -472,12 +472,12 @@ is gitignored):
 - **GHCR packages:** the public image manifests for `photography-platform-web:latest` and
   `photography-platform-worker:latest` were readable without auth on 2026-06-26. If future pulls
   fail on the NAS, re-check package visibility or run `docker login ghcr.io`.
-- **Payments + fulfillment:** manual invoice checkout/receipts, refund tracking, and
-  fulfillment tracking remain active. Optional Stripe Checkout now creates hosted sessions
-  for cart orders and issued public invoices, and signed webhooks reconcile paid/expired
-  invoice state when Settings -> Payments is ready. `stripe_webhook_event` stores Stripe
-  event IDs for duplicate/retry safety. Provider-side live Stripe refunds and tax/VAT
-  automation are still deferred.
+- **Payments + fulfillment:** manual invoice checkout/receipts, provider-side Stripe
+  refunds, manual refund tracking, and fulfillment tracking remain active. Optional
+  Stripe Checkout now creates hosted sessions for cart orders and issued public invoices,
+  and signed webhooks reconcile paid/expired invoice state when Settings -> Payments is
+  ready. `stripe_webhook_event` stores Stripe event IDs for duplicate/retry safety,
+  including refund update events. Tax/VAT automation is still deferred.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -510,7 +510,7 @@ is gitignored):
 
 - **Keep deploy pushes intentional:** public-repo Actions minutes should be free, but each push to
   `main` still builds/publishes images and runs the full CI/Lighthouse stack.
-- **Store payment follow-ups:** tax/VAT automation and provider-side live Stripe refund execution.
+- **Store payment follow-ups:** tax/VAT automation.
 - **Finish + publish the Home page** through the CMS so the homepage is fully data-driven.
 - **When porting another reference animation**, follow `.claude/skills/gsap-scroll-animations`
   (fetch source → beat list → invert eases → match full transform state → verify visually) and
@@ -1233,7 +1233,7 @@ is gitignored):
   `/api/v1/invoices/[token]/checkout` creates invoice-specific Checkout sessions, and
   `/api/v1/webhooks/stripe` verifies `stripe-signature` before marking sessions paid or
   expired. Paid webhooks update order/invoice state idempotently and enqueue the existing
-  receipt email when appropriate. Stripe still does not handle refunds or tax/VAT automation.
+  receipt email when appropriate. Stripe still does not handle tax/VAT automation.
   Follow-up: Stripe payment operations were hardened. Migration `0019_yellow_phalanx.sql`
   adds `stripe_webhook_event` so duplicate/replayed Stripe event IDs do not re-apply
   payment mutations; previously failed events can retry. Admin -> Store now shows hosted
@@ -1255,10 +1255,20 @@ is gitignored):
   an updated refund receipt email. Public invoice/receipt pages show refund history,
   amount refunded, and net paid. `POST /api/v1/admin/orders/[id]/refunds` records the
   refund, writes audit metadata, and enqueues the optional `storeRefundIssued` email.
-  Provider-side live Stripe refund execution and tax/VAT automation remain deferred.
+  Follow-up: Provider-side live Stripe refunds are active. Migration
+  `0022_cheerful_lord_tyger.sql` adds `order_refund.provider_error` so failed provider
+  attempts remain auditable. Admin -> Store refund actions now offer "Refund through
+  Stripe" for Stripe-paid invoices with a stored PaymentIntent; manual records remain
+  available for outside refunds. `StripePaymentProvider.createRefund` calls
+  `/v1/refunds` with the local refund id as the idempotency key, stores the Stripe
+  refund id/reference/status, reserves pending refunds from the refundable balance, and
+  emails only succeeded refunds. `/api/v1/webhooks/stripe` now handles
+  `charge.refund.updated` / `refund.*` events and updates the matching refund row by
+  Stripe refund id. Public receipts show settled refunds separately from pending refunds.
+  Tax/VAT automation remains deferred.
   Local note: `npm run db:migrate` currently exits nonzero without a diagnostic even
   when migrations are present; generated SQL was applied directly to Docker Postgres
-  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0021`.
+  and `drizzle.__drizzle_migrations` hashes were verified for `0015` through `0022`.
   Page block follow-up: Pages now include a `featureCarousel` block based on
   `21st.dev/@ravikatiyar/components/feature-carousel`. The block stores a headline,
   highlight text + gradient colors, subtitle, ordered `photoIds`, autoplay/speed,

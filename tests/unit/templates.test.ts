@@ -286,6 +286,7 @@ describe("storeRefundIssued", () => {
         status: "succeeded",
         provider: "manual",
         providerRefundId: null,
+        providerError: null,
         method: "Check",
         reference: "1099",
         reason: "Client change",

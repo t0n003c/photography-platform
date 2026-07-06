@@ -8,10 +8,14 @@ import { StripePaymentProvider } from "@/src/payments/drivers/stripe";
 export type {
   PaymentProvider,
   CreateCheckoutInput,
+  CreateRefundInput,
   CheckoutSession,
+  PaymentRefund,
+  PaymentRefundStatus,
   PaymentProviderReadiness,
 } from "@/src/payments/provider";
 export { PaymentProviderError } from "@/src/payments/provider";
+export { stripeRefundStatusToPaymentStatus } from "@/src/payments/drivers/stripe";
 
 // Legacy env switch retained for older call sites. Public checkout now uses the
 // Settings -> Payments readiness helper below instead of this flag.
