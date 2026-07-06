@@ -570,7 +570,7 @@ later product edits do not rewrite historical order requests or tax exports.
 `payment_instructions`, `public_token_hash`, `issued_at`, `sent_at`, `due_at`, manual receipt
 fields (`paid_at`, `paid_amount_cents`, `payment_method`, `payment_reference`,
 `payment_note`, `receipt_sent_at`), hosted-payment fields
-(`online_payment_provider`, `online_payment_status`, `online_payment_session_id`,
+(`online_payment_provider`, `online_payment_tax_mode`, `online_payment_status`, `online_payment_session_id`,
 `online_payment_intent_id`, `online_payment_url`, `online_payment_expires_at`),
 `pdf_storage_key`, timestamps.
 
@@ -621,7 +621,8 @@ before tax and shipping. Usage limits count orders whose `promo_code` matches th
 | store_online_payments_enabled  | boolean   | permits hosted checkout only when provider + Stripe fields are ready   |
 | store_payment_provider         | text      | `manual`\|`stripe`; default `manual`                                   |
 | store_payment_mode             | text      | `test`\|`live`; default `test`                                         |
-| store_stripe_tax_enabled       | boolean   | optional Stripe Tax for hosted public cart checkout only               |
+| store_stripe_tax_enabled       | boolean   | optional Stripe Tax for hosted checkout                                |
+| store_invoice_tax_mode         | text      | `fixed`\|`stripe`; defaults fixed for invoice payment links            |
 | store_stripe_shipping_tax_code | text NULL | optional Stripe Tax category for the app's flat shipping line          |
 | stripe_publishable_key         | text NULL | non-secret Stripe key                                                  |
 | stripe_secret_key_enc          | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`                               |
@@ -750,5 +751,5 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/VAT compliance operations — registrations/nexus decisions, filing/reporting,
-  and automatic tax for already-issued invoice links remain deferred.
+- Store tax/VAT compliance operations — registrations/nexus decisions and filing/reporting
+  remain deferred.

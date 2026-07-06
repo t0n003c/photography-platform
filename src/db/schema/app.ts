@@ -536,6 +536,11 @@ export const siteSettings = pgTable("site_settings", {
     .notNull()
     .default("test"),
   storeStripeTaxEnabled: boolean("store_stripe_tax_enabled").notNull().default(false),
+  storeInvoiceTaxMode: text("store_invoice_tax_mode", {
+    enum: ["fixed", "stripe"],
+  })
+    .notNull()
+    .default("fixed"),
   storeStripeShippingTaxCode: text("store_stripe_shipping_tax_code"),
   stripePublishableKey: text("stripe_publishable_key"),
   stripeSecretKeyEnc: text("stripe_secret_key_enc"), // AES-256-GCM ciphertext
@@ -760,6 +765,11 @@ export const invoice = pgTable("invoice", {
   onlinePaymentProvider: text("online_payment_provider", {
     enum: ["stripe"],
   }),
+  onlinePaymentTaxMode: text("online_payment_tax_mode", {
+    enum: ["fixed", "stripe"],
+  })
+    .notNull()
+    .default("fixed"),
   onlinePaymentStatus: text("online_payment_status", {
     enum: ["requires_payment", "pending", "paid", "failed", "expired", "refunded"],
   }),

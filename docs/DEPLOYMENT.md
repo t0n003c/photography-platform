@@ -119,8 +119,9 @@ cp .env.example .env
   **Settings -> Payments**, where secret values are encrypted in `site_settings` by
   `SETTINGS_ENCRYPTION_KEY`; env values are optional fallbacks. Hosted checkout activates
   only when Stripe is selected, online payments are enabled, and publishable/secret/webhook
-  values are present. Optional Stripe Tax for hosted cart checkout is controlled from
-  Settings -> Payments and still requires Stripe Tax setup in the Stripe dashboard.
+  values are present. Optional Stripe Tax for hosted checkout, plus the invoice payment-link
+  tax-mode selector, is controlled from Settings -> Payments and still requires Stripe Tax
+  setup in the Stripe dashboard.
   Configure Stripe to send Checkout events to `/api/v1/webhooks/stripe`; see
   [`STRIPE-TEST-RUNBOOK.md`](./STRIPE-TEST-RUNBOOK.md).
 - **Worker** — `WORKER_HEALTH_PORT` (default `9091`), `RUN_MIGRATIONS` (default `true`; set `false` to run migrations out-of-band).

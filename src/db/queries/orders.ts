@@ -11,6 +11,7 @@ import {
 import { hashToken } from "@/src/auth/grant";
 import { issueInvoiceToken, verifyInvoiceToken } from "@/src/auth/invoice-token";
 import { newId } from "@/src/lib/id";
+import { getStorePaymentSettings } from "@/src/db/queries/settings";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
 import {
   normalizeProductOptions,
@@ -20,8 +21,10 @@ import {
   type SelectedProductOption,
 } from "@/src/lib/store-options";
 import {
+  effectiveInvoiceTaxMode,
   normalizeStoreCheckoutSettings,
   publicStoreCheckoutSettings,
+  type StoreInvoiceTaxMode,
   type PublicStoreCheckoutSettings,
 } from "@/src/lib/store-settings";
 
@@ -94,6 +97,7 @@ export interface AdminInvoiceDTO {
   paymentNote: string | null;
   receiptSentAt: string | null;
   onlinePaymentProvider: "stripe" | null;
+  onlinePaymentTaxMode: StoreInvoiceTaxMode;
   onlinePaymentStatus: OnlinePaymentStatus | null;
   onlinePaymentSessionId: string | null;
   onlinePaymentIntentId: string | null;
@@ -363,6 +367,7 @@ function invoiceToDTO(row: typeof invoice.$inferSelect): AdminInvoiceDTO {
     paymentNote: row.paymentNote,
     receiptSentAt: row.receiptSentAt?.toISOString() ?? null,
     onlinePaymentProvider: row.onlinePaymentProvider as "stripe" | null,
+    onlinePaymentTaxMode: (row.onlinePaymentTaxMode ?? "fixed") as StoreInvoiceTaxMode,
     onlinePaymentStatus: row.onlinePaymentStatus as OnlinePaymentStatus | null,
     onlinePaymentSessionId: row.onlinePaymentSessionId,
     onlinePaymentIntentId: row.onlinePaymentIntentId,
@@ -674,6 +679,7 @@ export async function createHostedCheckoutOrder(
       paymentInstructions: "Pay securely online by card.",
       issuedAt: createdAt,
       onlinePaymentProvider: "stripe",
+      onlinePaymentTaxMode: summary.payment.taxMode === "stripe" ? "stripe" : "fixed",
       onlinePaymentStatus: "pending",
       onlinePaymentSessionId: session.id,
       onlinePaymentIntentId: session.paymentIntentId ?? null,
@@ -1075,6 +1081,7 @@ export async function saveInvoiceAdmin(
     issue?: boolean;
   },
 ): Promise<{ order: AdminOrderDTO; invoiceToken: string | null } | null> {
+  const invoiceTaxMode = effectiveInvoiceTaxMode(await getStorePaymentSettings());
   await db.transaction(async (tx) => {
     const orderRows = await tx
       .select()
@@ -1101,6 +1108,10 @@ export async function saveInvoiceAdmin(
           : (current?.status ?? "draft");
     const issuedAt = input.issue ? (current?.issuedAt ?? now) : current?.issuedAt;
     const sentAt = input.issue ? now : current?.sentAt;
+    const nextInvoiceTaxMode =
+      input.issue && current?.status !== "issued"
+        ? invoiceTaxMode
+        : ((current?.onlinePaymentTaxMode ?? "fixed") as StoreInvoiceTaxMode);
 
     if (current) {
       await tx
@@ -1114,6 +1125,7 @@ export async function saveInvoiceAdmin(
           dueAt: input.dueAt ?? null,
           issuedAt,
           sentAt,
+          onlinePaymentTaxMode: nextInvoiceTaxMode,
         })
         .where(eq(invoice.id, current.id));
     } else {
@@ -1126,6 +1138,7 @@ export async function saveInvoiceAdmin(
         currency: row.currency,
         notes,
         paymentInstructions,
+        onlinePaymentTaxMode: input.issue ? invoiceTaxMode : "fixed",
         dueAt: input.dueAt ?? null,
         issuedAt: issuedAt ?? null,
         sentAt: sentAt ?? null,
@@ -1503,6 +1516,7 @@ export async function updateOrderFulfillmentAdmin(
 export async function attachInvoiceOnlineCheckoutSession(
   invoiceId: string,
   session: HostedCheckoutSessionRecord,
+  taxMode: StoreInvoiceTaxMode,
 ): Promise<AdminOrderDTO | null> {
   const invoiceRows = await db
     .select()
@@ -1517,6 +1531,7 @@ export async function attachInvoiceOnlineCheckoutSession(
       .update(invoice)
       .set({
         onlinePaymentProvider: "stripe",
+        onlinePaymentTaxMode: taxMode,
         onlinePaymentStatus: "pending",
         onlinePaymentSessionId: session.id,
         onlinePaymentIntentId: session.paymentIntentId ?? null,
@@ -1575,6 +1590,7 @@ export async function recordStripeCheckoutPaid(input: {
   amountPaidCents?: number | null;
   amountTaxCents?: number | null;
   automaticTaxEnabled?: boolean | null;
+  taxMode?: StoreInvoiceTaxMode | null;
 }): Promise<{
   order: AdminOrderDTO;
   invoice: AdminInvoiceDTO;
@@ -1589,7 +1605,9 @@ export async function recordStripeCheckoutPaid(input: {
       ? input.amountPaidCents
       : (current.paidAmountCents ?? current.amountCents);
   const taxCents =
-    input.automaticTaxEnabled && typeof input.amountTaxCents === "number"
+    (current.onlinePaymentTaxMode === "stripe" || input.taxMode === "stripe") &&
+    input.automaticTaxEnabled &&
+    typeof input.amountTaxCents === "number"
       ? Math.max(0, Math.round(input.amountTaxCents))
       : null;
 
@@ -1606,6 +1624,10 @@ export async function recordStripeCheckoutPaid(input: {
           paymentReference: input.paymentIntentId ?? input.sessionId,
           paymentNote: "Paid online via Stripe Checkout.",
           onlinePaymentProvider: "stripe",
+          onlinePaymentTaxMode:
+            current.onlinePaymentTaxMode === "stripe" || input.taxMode === "stripe"
+              ? "stripe"
+              : "fixed",
           onlinePaymentStatus: "paid",
           onlinePaymentSessionId: input.sessionId,
           onlinePaymentIntentId:

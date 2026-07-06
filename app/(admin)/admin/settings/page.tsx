@@ -52,6 +52,7 @@ interface SettingsDTO {
   storePaymentProvider: "manual" | "stripe";
   storePaymentMode: "test" | "live";
   storeStripeTaxEnabled: boolean;
+  storeInvoiceTaxMode: "fixed" | "stripe";
   storeStripeShippingTaxCode: string | null;
   stripePublishableKey: string;
   stripeSecretKeySet: boolean;
@@ -334,6 +335,7 @@ export default function SettingsPage() {
         storePaymentProvider: s.storePaymentProvider,
         storePaymentMode: s.storePaymentMode,
         storeStripeTaxEnabled: s.storeStripeTaxEnabled,
+        storeInvoiceTaxMode: s.storeInvoiceTaxMode,
         storeStripeShippingTaxCode: s.storeStripeShippingTaxCode,
         stripePublishableKey: s.stripePublishableKey,
         stripeStatementDescriptor: s.stripeStatementDescriptor,
@@ -972,6 +974,7 @@ export default function SettingsPage() {
                   if (provider === "manual") {
                     update("storeOnlinePaymentsEnabled", false);
                     update("storeStripeTaxEnabled", false);
+                    update("storeInvoiceTaxMode", "fixed");
                     update("storeStripeShippingTaxCode", null);
                   }
                 }}
@@ -1019,20 +1022,43 @@ export default function SettingsPage() {
               type="checkbox"
               className="mt-1"
               checked={s.storeStripeTaxEnabled}
-              onChange={(e) => update("storeStripeTaxEnabled", e.target.checked)}
+              onChange={(e) => {
+                update("storeStripeTaxEnabled", e.target.checked);
+                if (!e.target.checked) update("storeInvoiceTaxMode", "fixed");
+              }}
               disabled={!stripeSelected}
             />
             <span>
               <span className="block font-medium">
-                Use Stripe Tax for hosted cart checkout
+                Use Stripe Tax for hosted checkout
               </span>
               <span className="block text-xs text-[hsl(var(--muted-foreground))]">
-                Stripe calculates tax during public cart checkout and the paid receipt
-                is updated from the completed Checkout Session. Manual invoices keep the
-                fixed tax settings above.
+                Stripe can calculate tax during public cart checkout and invoice payment
+                links that opt into the Stripe Tax mode below. Fixed invoice links keep
+                the saved tax settings above.
               </span>
             </span>
           </label>
+
+          {stripeSelected && s.storeStripeTaxEnabled && (
+            <Field
+              label="Invoice payment link tax mode"
+              hint="Fixed keeps issued invoice totals unchanged. Stripe Tax recalculates tax only for newly issued or intentionally refreshed invoice payment links."
+            >
+              <Select
+                value={s.storeInvoiceTaxMode}
+                onChange={(event) =>
+                  update(
+                    "storeInvoiceTaxMode",
+                    event.target.value as SettingsDTO["storeInvoiceTaxMode"],
+                  )
+                }
+              >
+                <option value="fixed">Keep saved invoice total</option>
+                <option value="stripe">Recalculate tax with Stripe Tax</option>
+              </Select>
+            </Field>
+          )}
 
           {stripeSelected && s.storeStripeTaxEnabled && (
             <Field

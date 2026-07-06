@@ -9,12 +9,14 @@ Payments is complete.
 1. In Stripe, use test mode.
 2. Copy the test publishable key and secret key into Settings -> Payments.
 3. Set provider to Stripe, mode to Test, and enable hosted Stripe checkout.
-4. Optional: enable **Use Stripe Tax for hosted cart checkout** after Stripe Tax is
-   configured in the Stripe dashboard. This only affects new public cart Checkout
-   sessions; issued invoice payment links keep their saved invoice totals.
-5. Optional: set product-level Stripe tax codes in Admin -> Store and a shipping tax code
+4. Optional: enable **Use Stripe Tax for hosted checkout** after Stripe Tax is configured
+   in the Stripe dashboard.
+5. Optional: set **Invoice payment link tax mode** to **Recalculate tax with Stripe Tax**.
+   Existing invoice links stay fixed; newly issued or intentionally refreshed invoice links
+   snapshot the selected mode.
+6. Optional: set product-level Stripe tax codes in Admin -> Store and a shipping tax code
    in Settings -> Payments if flat shipping should use its own Stripe Tax category.
-6. Configure the webhook secret after starting the local listener below.
+7. Configure the webhook secret after starting the local listener below.
 
 Required local webhook URL:
 
@@ -74,6 +76,9 @@ The payment status should switch to hosted checkout ready once all fields are pr
 4. Click Pay online.
 5. Complete Stripe Checkout with a test card.
 6. Expected: the same paid states as cart checkout.
+7. If the invoice tax mode is Stripe Tax, Admin -> Store shows `Stripe Tax recalculated`
+   for the payment link and the paid webhook reconciles the saved tax/total from the
+   completed Checkout Session. If the mode is fixed, the saved invoice total is preserved.
 
 ## 5. Cancel and expired states
 

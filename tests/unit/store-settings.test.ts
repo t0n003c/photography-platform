@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateStoreTotals,
+  effectiveInvoiceTaxMode,
   normalizeStoreCheckoutSettings,
   normalizeStorePaymentSettings,
   storePaymentStatus,
@@ -94,10 +95,12 @@ describe("store checkout settings", () => {
       stripePublishableKey: "pk_test_demo",
       stripeSecretKeySet: true,
       stripeTaxEnabled: true,
+      invoiceTaxMode: "stripe",
       stripeShippingTaxCode: "txcd_shipping",
     });
     expect(settings.onlinePaymentsEnabled).toBe(false);
     expect(settings.stripeTaxEnabled).toBe(false);
+    expect(settings.invoiceTaxMode).toBe("fixed");
     expect(settings.stripeShippingTaxCode).toBeNull();
     expect(storePaymentStatus(settings)).toMatchObject({
       activeCheckoutPath: "manual",
@@ -131,10 +134,12 @@ describe("store checkout settings", () => {
       stripeSecretKeySet: true,
       stripeWebhookSecretSet: true,
       stripeTaxEnabled: true,
+      invoiceTaxMode: "stripe",
       stripeShippingTaxCode: " txcd_shipping ",
       stripeStatementDescriptor: "A very long studio statement descriptor",
     });
     expect(settings.stripeTaxEnabled).toBe(true);
+    expect(settings.invoiceTaxMode).toBe("stripe");
     expect(settings.stripeShippingTaxCode).toBe("txcd_shipping");
     expect(settings.stripeStatementDescriptor).toHaveLength(22);
     expect(storePaymentStatus(settings)).toMatchObject({
@@ -142,6 +147,33 @@ describe("store checkout settings", () => {
       readyForHostedCheckout: true,
       label: "Stripe settings ready",
     });
+    expect(effectiveInvoiceTaxMode(settings)).toBe("stripe");
+  });
+
+  it("keeps invoice links on fixed totals unless Stripe Tax is both enabled and ready", () => {
+    const missingWebhook = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "stripe",
+      stripePublishableKey: "pk_test_demo",
+      stripeSecretKeySet: true,
+      stripeWebhookSecretSet: false,
+      stripeTaxEnabled: true,
+      invoiceTaxMode: "stripe",
+    });
+    expect(missingWebhook.invoiceTaxMode).toBe("stripe");
+    expect(effectiveInvoiceTaxMode(missingWebhook)).toBe("fixed");
+
+    const taxDisabled = normalizeStorePaymentSettings({
+      onlinePaymentsEnabled: true,
+      paymentProvider: "stripe",
+      stripePublishableKey: "pk_test_demo",
+      stripeSecretKeySet: true,
+      stripeWebhookSecretSet: true,
+      stripeTaxEnabled: false,
+      invoiceTaxMode: "stripe",
+    });
+    expect(taxDisabled.invoiceTaxMode).toBe("fixed");
+    expect(effectiveInvoiceTaxMode(taxDisabled)).toBe("fixed");
   });
 
   it("requires a Stripe webhook secret before hosted checkout becomes active", () => {

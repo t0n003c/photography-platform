@@ -160,6 +160,8 @@ export async function getStorePaymentSettings(): Promise<StorePaymentSettings> {
     paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
     stripeTaxEnabled:
       row?.storeStripeTaxEnabled ?? SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
+    invoiceTaxMode:
+      row?.storeInvoiceTaxMode ?? SETTINGS_DEFAULTS.storePayment.invoiceTaxMode,
     stripeShippingTaxCode:
       row?.storeStripeShippingTaxCode ??
       SETTINGS_DEFAULTS.storePayment.stripeShippingTaxCode,
@@ -199,6 +201,8 @@ export async function getResolvedStorePaymentConfig(): Promise<ResolvedStorePaym
     paymentMode: row?.storePaymentMode ?? SETTINGS_DEFAULTS.storePayment.paymentMode,
     stripeTaxEnabled:
       row?.storeStripeTaxEnabled ?? SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
+    invoiceTaxMode:
+      row?.storeInvoiceTaxMode ?? SETTINGS_DEFAULTS.storePayment.invoiceTaxMode,
     stripeShippingTaxCode:
       row?.storeStripeShippingTaxCode ??
       SETTINGS_DEFAULTS.storePayment.stripeShippingTaxCode,

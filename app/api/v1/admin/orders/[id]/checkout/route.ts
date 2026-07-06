@@ -10,10 +10,15 @@ import {
   attachInvoiceOnlineCheckoutSession,
   getOrderAdmin,
 } from "@/src/db/queries/orders";
+import { getStorePaymentSettings } from "@/src/db/queries/settings";
 import { getEnv } from "@/src/lib/env";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { writeAudit } from "@/src/lib/audit";
 import { notFound, ok, problem, parseJson } from "@/src/lib/http";
+import {
+  effectiveInvoiceTaxMode,
+  type StoreInvoiceTaxMode,
+} from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +32,14 @@ function trimSlash(value: string) {
 
 function invoiceUrl(token: string, suffix = "") {
   return `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(token)}${suffix}`;
+}
+
+function expectedInvoiceCheckoutTotal(
+  amountCents: number,
+  taxCents: number,
+  taxMode: StoreInvoiceTaxMode,
+) {
+  return taxMode === "stripe" ? Math.max(0, amountCents - taxCents) : amountCents;
 }
 
 export async function POST(
@@ -58,8 +71,21 @@ export async function POST(
     return problem(422, "INVOICE_NOT_PAYABLE", "This invoice has no amount due.");
   }
 
-  const lineItems = checkoutLineItemsFromOrder(current);
-  if (checkoutLineItemsTotal(lineItems) !== current.invoice.amountCents) {
+  const paymentSettings = await getStorePaymentSettings();
+  const taxMode = effectiveInvoiceTaxMode(paymentSettings);
+  const lineItems = checkoutLineItemsFromOrder(current, {
+    taxMode,
+    shippingTaxCode:
+      taxMode === "stripe" ? paymentSettings.stripeShippingTaxCode : null,
+  });
+  if (
+    checkoutLineItemsTotal(lineItems) !==
+    expectedInvoiceCheckoutTotal(
+      current.invoice.amountCents,
+      current.taxCents,
+      taxMode,
+    )
+  ) {
     return problem(
       500,
       "CHECKOUT_TOTAL_MISMATCH",
@@ -78,8 +104,10 @@ export async function POST(
       lineItems,
       successUrl: invoiceUrl(token, "?payment=success"),
       cancelUrl: invoiceUrl(token, "?payment=cancelled"),
+      automaticTax: taxMode === "stripe",
       metadata: {
         source: "admin-refresh",
+        taxMode,
         orderId: current.id,
         invoiceId: current.invoice.id,
       },
@@ -87,6 +115,7 @@ export async function POST(
     const order = await attachInvoiceOnlineCheckoutSession(
       current.invoice.id,
       session,
+      taxMode,
     );
     if (!order) return notFound();
 
@@ -102,6 +131,7 @@ export async function POST(
         invoiceNumber: current.invoice.number,
         sessionId: session.id,
         paymentIntentId: session.paymentIntentId,
+        taxMode,
         openNow: parsed.data.openNow ?? false,
       },
     });
@@ -111,6 +141,11 @@ export async function POST(
         order,
         checkoutUrl: session.url,
         invoiceUrl: invoiceUrl(token),
+        taxMode,
+        warning:
+          taxMode === "stripe"
+            ? "Stripe Tax will recalculate tax at checkout. The paid receipt total may differ from the saved invoice estimate."
+            : null,
       },
     });
   } catch (err) {

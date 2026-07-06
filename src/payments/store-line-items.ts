@@ -1,6 +1,7 @@
 import type { AdminOrderDTO } from "@/src/db/queries/orders";
 import type { CartSummaryDTO } from "@/src/db/queries/store";
 import type { CheckoutLineItem } from "@/src/payments/provider";
+import type { StoreInvoiceTaxMode } from "@/src/lib/store-settings";
 
 function cleanDescription(value: string | null | undefined, fallback: string) {
   const cleaned = value?.trim();
@@ -13,9 +14,10 @@ function appendAdjustmentLines(
     taxCents: number;
     shippingCents: number;
     shippingTaxCode?: string | null;
+    includeTaxLine?: boolean;
   },
 ) {
-  if (input.taxCents > 0) {
+  if (input.includeTaxLine !== false && input.taxCents > 0) {
     lines.push({
       description: "Tax",
       amountCents: input.taxCents,
@@ -84,7 +86,10 @@ export function checkoutLineItemsFromCartSummary(
   return lines;
 }
 
-export function checkoutLineItemsFromOrder(order: AdminOrderDTO): CheckoutLineItem[] {
+export function checkoutLineItemsFromOrder(
+  order: AdminOrderDTO,
+  opts: { taxMode?: StoreInvoiceTaxMode; shippingTaxCode?: string | null } = {},
+): CheckoutLineItem[] {
   const discountedTotals = prorateDiscount(
     order.items.map((item) => item.lineTotalCents),
     order.discountCents,
@@ -106,7 +111,11 @@ export function checkoutLineItemsFromOrder(order: AdminOrderDTO): CheckoutLineIt
       taxCode: item.stripeTaxCode,
     };
   });
-  appendAdjustmentLines(lines, order);
+  appendAdjustmentLines(lines, {
+    ...order,
+    shippingTaxCode: opts.shippingTaxCode,
+    includeTaxLine: (opts.taxMode ?? "fixed") === "fixed",
+  });
   return lines;
 }
 

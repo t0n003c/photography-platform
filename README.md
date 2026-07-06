@@ -18,9 +18,10 @@ full admin **CMS** (upload, library, galleries, page builder, layout/design edit
 settings, menus). The page builder includes curated blocks such as galleries, banners,
 contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout supports
 **manual invoice requests**, customer order-status lookup, receipts, fulfillment tracking,
-refund tracking, tax CSV export, and optional Stripe Checkout/refunds/Stripe Tax for hosted
-cart checkout from Settings -> Payments only when the account, keys, and webhook secret are
-configured. Store products can track inventory at the product level and, when needed, per
+refund tracking, tax CSV export, and optional Stripe Checkout/refunds/Stripe Tax from
+Settings -> Payments only when the account, keys, and webhook secret are configured. Stripe
+Tax can be used for hosted cart checkout and intentionally issued/refreshed invoice payment
+links; existing invoices default to fixed saved totals. Store products can track inventory at the product level and, when needed, per
 option choice; sold-out items are blocked at cart/checkout and paid orders decrement stock.
 Settings -> Store can also define customer-selectable shipping profiles and promo codes; selected
 shipping/discount details are snapshotted onto orders and included in receipts/status views.

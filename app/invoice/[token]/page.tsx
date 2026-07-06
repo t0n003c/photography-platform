@@ -85,6 +85,10 @@ export default async function PublicInvoicePage({
     invoice.status === "issued" &&
     paymentStatus.readyForHostedCheckout &&
     invoice.amountCents > 0;
+  const stripeTaxCheckout =
+    canPayOnline &&
+    invoice.onlinePaymentProvider === "stripe" &&
+    invoice.onlinePaymentTaxMode === "stripe";
   const paymentNotice =
     paymentQuery === "success" && isPaid
       ? {
@@ -191,6 +195,16 @@ export default async function PublicInvoicePage({
           >
             <p className="font-semibold">{paymentNotice.title}</p>
             <p className="mt-1">{paymentNotice.body}</p>
+          </div>
+        )}
+
+        {stripeTaxCheckout && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/35 dark:text-blue-200 print:hidden">
+            <p className="font-semibold">Tax calculated at checkout</p>
+            <p className="mt-1">
+              Stripe Tax will confirm tax during secure checkout. Your final paid
+              total may update before the receipt is issued.
+            </p>
           </div>
         )}
 

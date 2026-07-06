@@ -435,13 +435,15 @@ sends Stripe `automatic_tax[enabled]=true`, omits the app's fixed tax line to av
 and lets the paid webhook update the order/invoice from the Checkout Session `amount_total`
 and `total_details.amount_tax`. Product-level `stripe_tax_code` values are sent to Stripe
 Checkout as inline product tax codes; the optional `store_stripe_shipping_tax_code` is sent on
-the flat shipping line. Issued invoice checkout links keep the saved invoice amount and fixed
-tax breakdown for now.
+the flat shipping line. Issued invoice checkout links snapshot `online_payment_tax_mode` as
+`fixed` by default; when Settings -> Payments has invoice tax mode set to Stripe Tax and hosted
+payments are ready, newly issued or intentionally refreshed invoice links omit the saved tax
+line, enable Stripe Tax, and let the paid webhook reconcile the final tax/total.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,
-`store_stripe_tax_enabled`, `store_stripe_shipping_tax_code`, `store_shipping_profiles`,
-`store_promo_codes`, `stripe_publishable_key`,
+`store_stripe_tax_enabled`, `store_invoice_tax_mode`, `store_stripe_shipping_tax_code`,
+`store_shipping_profiles`, `store_promo_codes`, `stripe_publishable_key`,
 `stripe_secret_key_enc` presence, `stripe_webhook_secret_enc` presence, and
 `stripe_statement_descriptor`) through sanitized camelCase DTO fields.
 Secret values are write-only: a non-empty value replaces the encrypted key, `null` clears it,

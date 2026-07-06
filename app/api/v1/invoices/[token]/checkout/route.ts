@@ -5,11 +5,13 @@ import {
   attachInvoiceOnlineCheckoutSession,
   getPublicInvoiceByToken,
 } from "@/src/db/queries/orders";
+import { getStorePaymentSettings } from "@/src/db/queries/settings";
 import { getPaymentProvider, PaymentProviderError } from "@/src/payments";
 import {
   checkoutLineItemsFromOrder,
   checkoutLineItemsTotal,
 } from "@/src/payments/store-line-items";
+import type { StoreInvoiceTaxMode } from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,14 @@ function trimSlash(value: string) {
 
 function invoiceUrl(token: string, suffix: string) {
   return `${trimSlash(getEnv().APP_BASE_URL)}/invoice/${encodeURIComponent(token)}${suffix}`;
+}
+
+function expectedInvoiceCheckoutTotal(
+  amountCents: number,
+  taxCents: number,
+  taxMode: StoreInvoiceTaxMode,
+) {
+  return taxMode === "stripe" ? Math.max(0, amountCents - taxCents) : amountCents;
 }
 
 export async function POST(
@@ -37,8 +47,21 @@ export async function POST(
     return problem(422, "INVOICE_NOT_PAYABLE", "This invoice has no amount due.");
   }
 
-  const lineItems = checkoutLineItemsFromOrder(data.order);
-  if (checkoutLineItemsTotal(lineItems) !== data.invoice.amountCents) {
+  const paymentSettings = await getStorePaymentSettings();
+  const taxMode = data.invoice.onlinePaymentTaxMode;
+  const lineItems = checkoutLineItemsFromOrder(data.order, {
+    taxMode,
+    shippingTaxCode:
+      taxMode === "stripe" ? paymentSettings.stripeShippingTaxCode : null,
+  });
+  if (
+    checkoutLineItemsTotal(lineItems) !==
+    expectedInvoiceCheckoutTotal(
+      data.invoice.amountCents,
+      data.order.taxCents,
+      taxMode,
+    )
+  ) {
     return problem(
       500,
       "CHECKOUT_TOTAL_MISMATCH",
@@ -57,13 +80,15 @@ export async function POST(
       lineItems,
       successUrl: invoiceUrl(signedToken, "?payment=success"),
       cancelUrl: invoiceUrl(signedToken, "?payment=cancelled"),
+      automaticTax: taxMode === "stripe",
       metadata: {
         source: "invoice",
+        taxMode,
         orderId: data.order.id,
         invoiceId: data.invoice.id,
       },
     });
-    await attachInvoiceOnlineCheckoutSession(data.invoice.id, session);
+    await attachInvoiceOnlineCheckoutSession(data.invoice.id, session, taxMode);
     return ok({
       data: {
         checkoutUrl: session.url,

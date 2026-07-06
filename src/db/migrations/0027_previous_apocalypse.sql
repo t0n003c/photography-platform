@@ -1,0 +1,2 @@
+ALTER TABLE "invoice" ADD COLUMN "online_payment_tax_mode" text DEFAULT 'fixed' NOT NULL;--> statement-breakpoint
+ALTER TABLE "site_settings" ADD COLUMN "store_invoice_tax_mode" text DEFAULT 'fixed' NOT NULL;

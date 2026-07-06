@@ -118,6 +118,7 @@ export async function POST(req: Request) {
           amountPaidCents: session.amount_total ?? null,
           amountTaxCents: session.total_details?.amount_tax ?? null,
           automaticTaxEnabled: session.automatic_tax?.enabled ?? false,
+          taxMode: session.metadata?.taxMode === "stripe" ? "stripe" : "fixed",
         });
         if (!result) {
           ignored = "invoice_not_found";

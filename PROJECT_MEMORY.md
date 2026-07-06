@@ -39,7 +39,7 @@ products in one app, aiming for the UX bar of Pixieset / Pic-Time / Format / Smu
    their shoot, via real auth + expiring shareable links, favorites, download controls.
 3. **Light print store** — product management, public product browsing, browser-local
    cart, manual invoice requests, manual receipts, refund tracking, tax CSV export, and
-   optional Stripe Checkout/refunds/Stripe Tax for hosted cart checkout when Settings -> Payments is fully configured.
+   optional Stripe Checkout/refunds/Stripe Tax for hosted checkout when Settings -> Payments is fully configured.
 
 Plus: contact form (spam-protected), Instagram-style feed, About/hero, a full admin CMS,
 dark mode, installable PWA, strong Lighthouse/accessibility. Runs entirely on a NAS.
@@ -95,7 +95,7 @@ or under `prefers-reduced-motion`. SSR renders a real fallback; JS enhances on m
 | Storage        | `StorageProvider` interface                                                                      | **SeaweedFS (S3) default**, filesystem alternate; AWS SDK v3 client                                                 |
 | PWA            | **Serwist** (`@serwist/next`)                                                                    | offline shell, manifest, thumbnail caching                                                                          |
 | Email          | `EmailProvider` interface                                                                        | **SMTP** (nodemailer) + **Resend** drivers                                                                          |
-| Payments       | Manual invoice checkout + optional Stripe Checkout/refunds/hosted-cart Stripe Tax                | Admin link refresh/status visibility + webhook/refund idempotency; tax/VAT compliance ops still deferred            |
+| Payments       | Manual invoice checkout + optional Stripe Checkout/refunds/hosted Stripe Tax                     | Admin link refresh/status visibility + webhook/refund idempotency; tax/VAT compliance ops still deferred            |
 | Animation      | **GSAP** (+ ScrollTrigger/SplitText/ScrollToPlugin), **Lenis** smooth scroll, **Three.js / R3F** | all progressive enhancement                                                                                         |
 | Video          | **Remotion** (optional, worker `INSTALL_REMOTION_DEPS`)                                          | gallery slideshow render                                                                                            |
 | Bot defense    | **Cloudflare Turnstile**                                                                         | contact form + auth                                                                                                 |
@@ -478,9 +478,10 @@ is gitignored):
   issued public invoices, and signed webhooks reconcile paid/expired invoice state when
   Settings -> Payments is ready. `stripe_webhook_event` stores Stripe event IDs for
   duplicate/retry safety, including refund update events. Stripe Tax can be enabled for
-  hosted public cart checkout only; products and flat shipping can carry Stripe tax codes,
-  order items snapshot tax codes for later export, issued invoice links still use saved
-  totals, and tax/VAT registration/reporting remain deferred/compliance work.
+  hosted cart checkout and newly issued/refreshed invoice payment links; products and flat
+  shipping can carry Stripe tax codes, order items snapshot tax codes for later export,
+  existing invoices default to fixed saved totals, and tax/VAT registration/reporting remain
+  deferred/compliance work.
 - **Consider** switching `publish-images.yml` to `workflow_dispatch`/tags-only only if routine
   pushes become noisy; public-repo Actions minutes are no longer the main concern.
 - Roadmap + deferred items: [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -1270,16 +1271,24 @@ is gitignored):
   emails only succeeded refunds. `/api/v1/webhooks/stripe` now handles
   `charge.refund.updated` / `refund.*` events and updates the matching refund row by
   Stripe refund id. Public receipts show settled refunds separately from pending refunds.
-  Follow-up: Stripe Tax automation foundation is active for hosted public cart checkout.
+  Follow-up: Stripe Tax automation foundation is active for hosted checkout.
   Migration `0023_clean_epoch.sql` adds `site_settings.store_stripe_tax_enabled`.
-  Settings -> Payments exposes "Use Stripe Tax for hosted cart checkout"; when enabled and
+  Settings -> Payments exposes "Use Stripe Tax for hosted checkout"; when enabled and
   hosted checkout is ready, `/api/v1/checkout` creates Stripe Checkout sessions with
   `automatic_tax[enabled]=true`, address collection, and tax-exclusive line items instead
   of adding the app's fixed tax line. Paid Stripe webhooks read
   `total_details.amount_tax` and `amount_total` to update the saved order/invoice tax and
-  total before sending the receipt. Issued public invoice checkout links intentionally keep
-  the already-saved invoice total for now. Remaining tax/VAT work: registrations/nexus,
-  filing/reporting, and automatic tax for already-issued invoices.
+  total before sending the receipt. Remaining tax/VAT work: registrations/nexus and
+  filing/reporting.
+  Follow-up: Invoice payment links now have explicit tax-mode parity. Migration
+  `0027_previous_apocalypse.sql` adds `site_settings.store_invoice_tax_mode` and
+  `invoice.online_payment_tax_mode`, both defaulting to `fixed`. Settings -> Payments exposes
+  an invoice tax-mode selector only when Stripe Tax is enabled. New invoices snapshot the
+  effective mode when first issued; admin refresh intentionally uses the current effective
+  mode; public invoice Pay online uses the invoice snapshot. Stripe-mode invoice links omit
+  the saved fixed tax line, pass `automatic_tax[enabled]=true`, record `metadata.taxMode`, and
+  paid webhooks update tax/total only when the invoice/session mode is `stripe`. Fixed-mode
+  links preserve saved invoice totals.
   Follow-up: Store tax operations basics are active. Migration
   `0024_boring_emma_frost.sql` adds `product.stripe_tax_code`,
   `order_item.stripe_tax_code`, and `site_settings.store_stripe_shipping_tax_code`.

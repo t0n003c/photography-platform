@@ -3,6 +3,7 @@ export type StoreShippingProfileMode = StoreShippingMode | "pickup";
 export type StorePaymentProvider = "manual" | "stripe";
 export type StorePaymentMode = "test" | "live";
 export type StorePromoDiscountType = "percent" | "fixed";
+export type StoreInvoiceTaxMode = "fixed" | "stripe";
 
 export interface StoreShippingProfile {
   id: string;
@@ -61,6 +62,7 @@ export interface StorePaymentSettings {
   paymentProvider: StorePaymentProvider;
   paymentMode: StorePaymentMode;
   stripeTaxEnabled: boolean;
+  invoiceTaxMode: StoreInvoiceTaxMode;
   stripeShippingTaxCode: string | null;
   stripePublishableKey: string | null;
   stripeSecretKeySet: boolean;
@@ -110,6 +112,7 @@ export const STORE_PAYMENT_DEFAULTS: StorePaymentSettings = {
   paymentProvider: "manual",
   paymentMode: "test",
   stripeTaxEnabled: false,
+  invoiceTaxMode: "fixed",
   stripeShippingTaxCode: null,
   stripePublishableKey: null,
   stripeSecretKeySet: false,
@@ -187,6 +190,10 @@ export function normalizePaymentMode(value: unknown): StorePaymentMode {
   return value === "live" || value === "test"
     ? value
     : STORE_PAYMENT_DEFAULTS.paymentMode;
+}
+
+export function normalizeInvoiceTaxMode(value: unknown): StoreInvoiceTaxMode {
+  return value === "stripe" ? "stripe" : "fixed";
 }
 
 export function normalizeOptionalText(value: unknown) {
@@ -295,6 +302,12 @@ export function normalizeStorePaymentSettings(
     paymentMode: normalizePaymentMode(input.paymentMode),
     stripeTaxEnabled:
       paymentProvider === "stripe" ? Boolean(input.stripeTaxEnabled) : false,
+    invoiceTaxMode:
+      paymentProvider === "stripe" &&
+      Boolean(input.stripeTaxEnabled) &&
+      normalizeInvoiceTaxMode(input.invoiceTaxMode) === "stripe"
+        ? "stripe"
+        : "fixed",
     stripeShippingTaxCode:
       paymentProvider === "stripe"
         ? normalizeStripeTaxCode(input.stripeShippingTaxCode)
@@ -333,6 +346,17 @@ export function storePaymentStatus(settings: StorePaymentSettings): StorePayment
     label:
       missing.length === 0 ? "Stripe settings ready" : "Stripe settings incomplete",
   };
+}
+
+export function effectiveInvoiceTaxMode(
+  settings: StorePaymentSettings,
+): StoreInvoiceTaxMode {
+  const paymentStatus = storePaymentStatus(settings);
+  return paymentStatus.readyForHostedCheckout &&
+    settings.stripeTaxEnabled &&
+    settings.invoiceTaxMode === "stripe"
+    ? "stripe"
+    : "fixed";
 }
 
 function legacyShippingProfile(settings: StoreCheckoutSettings): StoreShippingProfile {

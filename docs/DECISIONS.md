@@ -188,8 +188,9 @@ This is the running decision log for the self-hosted photography platform.
   now available when Settings -> Payments has Stripe selected, online payments enabled,
   and publishable/secret/webhook values present. Cart checkout and issued public invoices
   create Stripe Checkout sessions; signed webhooks reconcile paid/expired invoice state.
-  Hosted public cart checkout can optionally enable Stripe Tax; issued invoice payment
-  links still use their saved invoice totals.
+  Hosted public cart checkout can optionally enable Stripe Tax. Invoice payment links default
+  to fixed saved totals, but newly issued or intentionally refreshed links can snapshot a
+  Stripe Tax mode when Settings -> Payments opts into invoice recalculation.
 - **Consequences:**
   - Card data stays with Stripe Checkout; this app stores only session/intent references and invoice state.
   - Manual invoice requests remain the default/fallback when Stripe readiness is incomplete.

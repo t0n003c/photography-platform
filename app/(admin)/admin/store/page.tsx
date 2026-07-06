@@ -57,6 +57,7 @@ interface InvoiceRow {
   paymentNote: string | null;
   receiptSentAt: string | null;
   onlinePaymentProvider: "stripe" | null;
+  onlinePaymentTaxMode: "fixed" | "stripe";
   onlinePaymentStatus:
     | "requires_payment"
     | "pending"
@@ -364,6 +365,10 @@ function onlinePaymentLabel(status: InvoiceRow["onlinePaymentStatus"]) {
   return status.replace(/_/g, " ");
 }
 
+function onlinePaymentTaxModeLabel(mode: InvoiceRow["onlinePaymentTaxMode"]) {
+  return mode === "stripe" ? "Stripe Tax recalculated" : "Fixed saved total";
+}
+
 function refundTone(status: RefundStatus): ComponentProps<typeof Badge>["tone"] {
   if (status === "succeeded") return "green";
   if (status === "pending") return "amber";
@@ -542,6 +547,9 @@ function orderSummary(row: OrderRow) {
       : null,
     row.invoice?.onlinePaymentStatus
       ? `Hosted payment: ${onlinePaymentLabel(row.invoice.onlinePaymentStatus)}`
+      : null,
+    row.invoice?.onlinePaymentProvider
+      ? `Payment link tax mode: ${onlinePaymentTaxModeLabel(row.invoice.onlinePaymentTaxMode)}`
       : null,
     row.refunds.length
       ? `Refunded: ${formatMoney(successfulRefundedCents(row), row.currency)}`
@@ -1584,6 +1592,12 @@ function OrderDetailModal({
                 </div>
                 <div>
                   <span className="font-medium text-[hsl(var(--foreground))]">
+                    Tax mode
+                  </span>
+                  <p>{onlinePaymentTaxModeLabel(order.invoice.onlinePaymentTaxMode)}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-[hsl(var(--foreground))]">
                     Checkout URL
                   </span>
                   <p className="truncate">
@@ -1593,6 +1607,12 @@ function OrderDetailModal({
                   </p>
                 </div>
               </div>
+              {order.invoice.onlinePaymentTaxMode === "stripe" && (
+                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-200">
+                  Stripe Tax will recalculate tax at checkout. The paid receipt total
+                  may differ from the saved invoice estimate.
+                </p>
+              )}
               <div className="flex flex-wrap justify-end gap-2">
                 {order.invoice.onlinePaymentUrl && (
                   <>
@@ -2733,7 +2753,13 @@ export default function StorePage() {
     setUpdatingOrderId(row.id);
     try {
       const res = await api.post<{
-        data: { order: OrderRow; checkoutUrl: string; invoiceUrl: string };
+        data: {
+          order: OrderRow;
+          checkoutUrl: string;
+          invoiceUrl: string;
+          taxMode: InvoiceRow["onlinePaymentTaxMode"];
+          warning: string | null;
+        };
       }>(`/api/v1/admin/orders/${row.id}/checkout`, { openNow: false });
       setOrders((current) =>
         current.map((order) => (order.id === row.id ? res.data.order : order)),
@@ -2741,9 +2767,15 @@ export default function StorePage() {
       setSelectedOrder(res.data.order);
       try {
         await navigator.clipboard.writeText(res.data.checkoutUrl);
-        toast("Payment link refreshed and copied", "success");
+        toast(
+          res.data.warning ?? "Payment link refreshed and copied",
+          res.data.warning ? "info" : "success",
+        );
       } catch {
-        toast("Payment link refreshed", "success");
+        toast(
+          res.data.warning ?? "Payment link refreshed",
+          res.data.warning ? "info" : "success",
+        );
       }
     } catch (err) {
       toast(errMsg(err), "error");

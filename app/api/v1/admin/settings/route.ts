@@ -71,6 +71,9 @@ export async function GET() {
       storeStripeTaxEnabled:
         paymentSettings.stripeTaxEnabled ??
         SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
+      storeInvoiceTaxMode:
+        paymentSettings.invoiceTaxMode ??
+        SETTINGS_DEFAULTS.storePayment.invoiceTaxMode,
       storeStripeShippingTaxCode:
         paymentSettings.stripeShippingTaxCode ??
         SETTINGS_DEFAULTS.storePayment.stripeShippingTaxCode,
@@ -142,6 +145,7 @@ const PatchSchema = z.object({
   storePaymentProvider: z.enum(["manual", "stripe"]).optional(),
   storePaymentMode: z.enum(["test", "live"]).optional(),
   storeStripeTaxEnabled: z.boolean().optional(),
+  storeInvoiceTaxMode: z.enum(["fixed", "stripe"]).optional(),
   storeStripeShippingTaxCode: z.string().max(80).nullable().optional(),
   stripePublishableKey: z.string().max(255).nullable().optional(),
   stripeStatementDescriptor: z.string().max(22).nullable().optional(),
@@ -214,6 +218,9 @@ export async function PATCH(req: Request) {
   if (body.storeStripeTaxEnabled !== undefined) {
     updates.storeStripeTaxEnabled = body.storeStripeTaxEnabled;
   }
+  if (body.storeInvoiceTaxMode !== undefined) {
+    updates.storeInvoiceTaxMode = body.storeInvoiceTaxMode;
+  }
   if (body.storeStripeShippingTaxCode !== undefined) {
     updates.storeStripeShippingTaxCode = normalizeStripeTaxCode(
       body.storeStripeShippingTaxCode,
@@ -248,10 +255,24 @@ export async function PATCH(req: Request) {
       : null;
   }
 
+  const currentPaymentSettings = await getStorePaymentSettings();
+  const nextPaymentProvider =
+    updates.storePaymentProvider ?? currentPaymentSettings.paymentProvider;
+  const nextStripeTaxEnabled =
+    updates.storeStripeTaxEnabled ?? currentPaymentSettings.stripeTaxEnabled;
+
   if (updates.storePaymentProvider === "manual") {
     updates.storeOnlinePaymentsEnabled = false;
     updates.storeStripeTaxEnabled = false;
+    updates.storeInvoiceTaxMode = "fixed";
     updates.storeStripeShippingTaxCode = null;
+  }
+  if (
+    updates.storeStripeTaxEnabled === false ||
+    nextPaymentProvider !== "stripe" ||
+    !nextStripeTaxEnabled
+  ) {
+    updates.storeInvoiceTaxMode = "fixed";
   }
 
   await db
