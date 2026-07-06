@@ -1210,6 +1210,11 @@ is gitignored):
   masked customer identity, tracking details, pending refunds, and quoted/free shipping text.
   Public invoice/receipt pages now link directly to the order status page and show matching
   next-step/progress guidance alongside payment, refund, and fulfillment details.
+  Follow-up: Store admin operations were polished for daily order handling. `/admin/store`
+  now has saved triage filters (needs invoice, awaiting payment, ready to ship, pending
+  refunds, completed, missing email), richer order badges, explicit desktop/mobile order
+  selection, audited bulk status updates, selected-order CSV export/copy summaries, and an
+  order detail activity timeline that combines derived milestones with existing audit-log rows.
   Follow-up: Store checkout now redirects successful manual-invoice requests to
   `/cart/confirmation?order=...`. The confirmation page reads the just-created order
   summary from browser session storage instead of exposing a public raw-order lookup,

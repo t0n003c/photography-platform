@@ -173,7 +173,36 @@ type OrderStatus = OrderRow["status"];
 type FulfillmentStatus = OrderRow["fulfillmentStatus"];
 type RefundStatus = RefundRow["status"];
 type RefundProvider = "manual" | "stripe";
-type OrderFilter = "all" | "open" | OrderStatus;
+type SavedOrderFilter =
+  | "needs_invoice"
+  | "awaiting_payment"
+  | "ready_to_ship"
+  | "refunds_pending"
+  | "completed"
+  | "missing_email";
+type OrderFilter = "all" | "open" | OrderStatus | SavedOrderFilter;
+
+interface AuditLogRow {
+  id: string;
+  actorId: string | null;
+  actorType: "user" | "client" | "system";
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: unknown;
+  createdAt: string;
+}
+
+interface ActivityEntry {
+  id: string;
+  at: string;
+  title: string;
+  detail: string | null;
+  tone: ComponentProps<typeof Badge>["tone"];
+  source: "order" | "audit";
+}
 
 const ORDER_STATUS_OPTIONS: OrderStatus[] = [
   "draft",
@@ -202,6 +231,43 @@ const FULFILLMENT_EMAIL_STATUSES = new Set<FulfillmentStatus>([
   "shipped",
   "delivered",
 ]);
+
+const SAVED_ORDER_FILTERS: Array<{
+  value: SavedOrderFilter;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "needs_invoice",
+    label: "Needs invoice",
+    description: "Open requests without an issued invoice.",
+  },
+  {
+    value: "awaiting_payment",
+    label: "Awaiting payment",
+    description: "Invoices sent but not marked paid.",
+  },
+  {
+    value: "ready_to_ship",
+    label: "Ready to ship",
+    description: "Paid orders not yet shipped or delivered.",
+  },
+  {
+    value: "refunds_pending",
+    label: "Refunds pending",
+    description: "Orders with pending refund records.",
+  },
+  {
+    value: "completed",
+    label: "Completed",
+    description: "Fulfilled or delivered orders.",
+  },
+  {
+    value: "missing_email",
+    label: "Missing email",
+    description: "Orders that cannot receive client emails yet.",
+  },
+];
 
 interface InvoiceFormValues {
   dueAt: string;
@@ -427,6 +493,12 @@ function refundableCents(row: OrderRow) {
   return Math.max(0, paidAmountCents(row) - reservedRefundedCents(row));
 }
 
+function pendingRefundCents(row: OrderRow) {
+  return row.refunds
+    .filter((refund) => refund.status === "pending")
+    .reduce((sum, refund) => sum + refund.amountCents, 0);
+}
+
 function fulfillmentTone(
   status: FulfillmentStatus,
 ): ComponentProps<typeof Badge>["tone"] {
@@ -443,6 +515,314 @@ function fulfillmentLabel(status: FulfillmentStatus) {
 
 function canEmailFulfillment(status: FulfillmentStatus) {
   return FULFILLMENT_EMAIL_STATUSES.has(status);
+}
+
+function isOrderFilterSaved(value: OrderFilter): value is SavedOrderFilter {
+  return SAVED_ORDER_FILTERS.some((filter) => filter.value === value);
+}
+
+function orderMatchesSavedFilter(row: OrderRow, filter: SavedOrderFilter) {
+  if (filter === "needs_invoice") {
+    return (
+      OPEN_ORDER_STATUSES.has(row.status) &&
+      (!row.invoice || row.invoice.status === "draft")
+    );
+  }
+  if (filter === "awaiting_payment") {
+    return Boolean(row.invoice && row.invoice.status === "issued");
+  }
+  if (filter === "ready_to_ship") {
+    return (
+      row.invoice?.status === "paid" &&
+      row.fulfillmentStatus !== "shipped" &&
+      row.fulfillmentStatus !== "delivered" &&
+      row.fulfillmentStatus !== "cancelled"
+    );
+  }
+  if (filter === "refunds_pending") {
+    return row.refunds.some((refund) => refund.status === "pending");
+  }
+  if (filter === "completed") {
+    return row.status === "fulfilled" || row.fulfillmentStatus === "delivered";
+  }
+  return !row.email;
+}
+
+function orderMatchesFilter(row: OrderRow, filter: OrderFilter) {
+  if (filter === "all") return true;
+  if (filter === "open") return OPEN_ORDER_STATUSES.has(row.status);
+  if (isOrderFilterSaved(filter)) return orderMatchesSavedFilter(row, filter);
+  return row.status === filter;
+}
+
+function orderFilterLabel(filter: OrderFilter) {
+  if (filter === "all") return "All";
+  if (filter === "open") return "Open";
+  const saved = SAVED_ORDER_FILTERS.find((item) => item.value === filter);
+  return saved?.label ?? filter.replace(/_/g, " ");
+}
+
+function orderTriageBadges(row: OrderRow): Array<{
+  key: string;
+  label: string;
+  tone: ComponentProps<typeof Badge>["tone"];
+}> {
+  const badges: Array<{
+    key: string;
+    label: string;
+    tone: ComponentProps<typeof Badge>["tone"];
+  }> = [];
+  if (!row.email) {
+    badges.push({ key: "missing-email", label: "Missing email", tone: "amber" });
+  }
+  if (!row.invoice || row.invoice.status === "draft") {
+    badges.push({ key: "needs-invoice", label: "Needs invoice", tone: "amber" });
+  } else if (row.invoice.status === "issued") {
+    badges.push({ key: "payment-due", label: "Payment due", tone: "blue" });
+  } else if (row.invoice.status === "paid") {
+    badges.push({ key: "paid", label: "Paid", tone: "green" });
+  }
+  if (row.invoice?.onlinePaymentStatus) {
+    badges.push({
+      key: "online-payment",
+      label: `Stripe ${onlinePaymentLabel(row.invoice.onlinePaymentStatus)}`,
+      tone: onlinePaymentTone(row.invoice.onlinePaymentStatus),
+    });
+  }
+  if (row.fulfillmentStatus === "ready") {
+    badges.push({ key: "ready", label: "Ready", tone: "blue" });
+  } else if (row.fulfillmentStatus === "shipped") {
+    badges.push({ key: "shipped", label: "Shipped", tone: "blue" });
+  } else if (row.fulfillmentStatus === "delivered") {
+    badges.push({ key: "delivered", label: "Delivered", tone: "green" });
+  } else if (row.fulfillmentStatus === "in_progress") {
+    badges.push({ key: "in-progress", label: "In progress", tone: "amber" });
+  }
+  if (pendingRefundCents(row) > 0) {
+    badges.push({
+      key: "refund-pending",
+      label: `Refund pending ${formatMoney(pendingRefundCents(row), row.currency)}`,
+      tone: "amber",
+    });
+  }
+  if (successfulRefundedCents(row) > 0) {
+    badges.push({
+      key: "refunded",
+      label: `Refunded ${formatMoney(successfulRefundedCents(row), row.currency)}`,
+      tone: "neutral",
+    });
+  }
+  return badges;
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function metadataString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function auditActionTitle(action: string) {
+  const labels: Record<string, string> = {
+    "order.status.update": "Order status updated",
+    "order.invoice.send": "Invoice sent",
+    "order.invoice.save": "Invoice saved",
+    "order.payment.receipt": "Payment recorded and receipt sent",
+    "order.payment.record": "Payment recorded",
+    "order.refund.email": "Refund recorded and emailed",
+    "order.refund.record": "Refund recorded",
+    "order.fulfillment.email": "Fulfillment update emailed",
+    "order.fulfillment.update": "Fulfillment updated",
+    "order.checkout.refresh": "Checkout link refreshed",
+    "order.checkout.open": "Checkout link opened",
+  };
+  return labels[action] ?? action.replace(/\./g, " ");
+}
+
+function auditEntryDetail(row: AuditLogRow) {
+  const meta = metadataRecord(row.metadata);
+  const parts = [
+    metadataString(meta.fromStatus) && metadataString(meta.toStatus)
+      ? `${metadataString(meta.fromStatus)} -> ${metadataString(meta.toStatus)}`
+      : null,
+    metadataString(meta.fromOrderStatus) && metadataString(meta.toOrderStatus)
+      ? `${metadataString(meta.fromOrderStatus)} -> ${metadataString(meta.toOrderStatus)}`
+      : null,
+    metadataString(meta.fromFulfillmentStatus) &&
+    metadataString(meta.toFulfillmentStatus)
+      ? `${metadataString(meta.fromFulfillmentStatus)} -> ${metadataString(meta.toFulfillmentStatus)}`
+      : null,
+    metadataString(meta.invoiceNumber)
+      ? `Invoice ${metadataString(meta.invoiceNumber)}`
+      : null,
+    typeof meta.paidAmountCents === "number"
+      ? `Paid ${(meta.paidAmountCents / 100).toFixed(2)}`
+      : null,
+    metadataString(meta.paymentMethod)
+      ? `Method ${metadataString(meta.paymentMethod)}`
+      : null,
+    metadataString(meta.trackingNumber)
+      ? `Tracking ${metadataString(meta.trackingNumber)}`
+      : null,
+    typeof meta.emailSent === "boolean" ? `Email ${meta.emailSent ? "sent" : "not sent"}` : null,
+    typeof meta.sent === "boolean" ? `Email ${meta.sent ? "sent" : "not sent"}` : null,
+    typeof meta.receiptSent === "boolean"
+      ? `Receipt ${meta.receiptSent ? "sent" : "not sent"}`
+      : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+function auditTone(action: string): ComponentProps<typeof Badge>["tone"] {
+  if (action.includes("payment") || action.includes("receipt")) return "green";
+  if (action.includes("invoice") || action.includes("fulfillment")) return "blue";
+  if (action.includes("refund")) return "amber";
+  return "neutral";
+}
+
+function orderActivityEntries(order: OrderRow, auditRows: AuditLogRow[]) {
+  const entries: ActivityEntry[] = [
+    {
+      id: "created",
+      at: order.createdAt,
+      title: "Order request received",
+      detail: `${order.items.length} item${order.items.length === 1 ? "" : "s"} · ${formatMoney(
+        order.totalCents,
+        order.currency,
+      )}`,
+      tone: "neutral",
+      source: "order",
+    },
+  ];
+  if (order.invoice?.issuedAt) {
+    entries.push({
+      id: "invoice-issued",
+      at: order.invoice.issuedAt,
+      title: "Invoice issued",
+      detail: order.invoice.number,
+      tone: "blue",
+      source: "order",
+    });
+  }
+  if (order.invoice?.sentAt) {
+    entries.push({
+      id: "invoice-sent",
+      at: order.invoice.sentAt,
+      title: "Invoice sent to client",
+      detail: order.invoice.number,
+      tone: "blue",
+      source: "order",
+    });
+  }
+  if (order.invoice?.paidAt) {
+    entries.push({
+      id: "paid",
+      at: order.invoice.paidAt,
+      title: "Payment recorded",
+      detail: formatMoney(
+        order.invoice.paidAmountCents ?? order.invoice.amountCents,
+        order.invoice.currency,
+      ),
+      tone: "green",
+      source: "order",
+    });
+  }
+  if (order.fulfillmentReadyAt) {
+    entries.push({
+      id: "ready",
+      at: order.fulfillmentReadyAt,
+      title: "Marked ready",
+      detail: null,
+      tone: "blue",
+      source: "order",
+    });
+  }
+  if (order.fulfillmentShippedAt) {
+    entries.push({
+      id: "shipped",
+      at: order.fulfillmentShippedAt,
+      title: "Marked shipped",
+      detail: order.fulfillmentTrackingNumber,
+      tone: "blue",
+      source: "order",
+    });
+  }
+  if (order.fulfillmentDeliveredAt) {
+    entries.push({
+      id: "delivered",
+      at: order.fulfillmentDeliveredAt,
+      title: "Marked delivered",
+      detail: null,
+      tone: "green",
+      source: "order",
+    });
+  }
+  for (const refund of order.refunds) {
+    entries.push({
+      id: `refund-${refund.id}`,
+      at: refund.refundedAt ?? refund.createdAt,
+      title:
+        refund.status === "pending"
+          ? "Refund pending"
+          : refund.status === "succeeded"
+            ? "Refund recorded"
+            : `Refund ${refund.status}`,
+      detail: formatMoney(refund.amountCents, refund.currency),
+      tone: refundTone(refund.status),
+      source: "order",
+    });
+  }
+  for (const row of auditRows) {
+    entries.push({
+      id: `audit-${row.id}`,
+      at: row.createdAt,
+      title: auditActionTitle(row.action),
+      detail: auditEntryDetail(row),
+      tone: auditTone(row.action),
+      source: "audit",
+    });
+  }
+  return entries.sort(
+    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
+  );
+}
+
+function csvCell(value: string | number | null | undefined) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function selectedOrdersCsv(rows: OrderRow[]) {
+  const header = [
+    "Order ID",
+    "Customer",
+    "Email",
+    "Status",
+    "Fulfillment",
+    "Invoice",
+    "Payment",
+    "Total",
+    "Currency",
+    "Received",
+  ];
+  const body = rows.map((row) => [
+    row.id,
+    row.clientName ?? "",
+    row.email ?? "",
+    row.status,
+    fulfillmentLabel(row.fulfillmentStatus),
+    row.invoice?.number ?? "",
+    row.invoice?.status ?? "",
+    (row.totalCents / 100).toFixed(2),
+    row.currency,
+    row.createdAt,
+  ]);
+  return [header, ...body]
+    .map((line) => line.map((value) => csvCell(value)).join(","))
+    .join("\n");
 }
 
 function shortRef(value: string | null | undefined) {
@@ -1281,9 +1661,13 @@ function OrderDetailModal({
   onCheckoutLinkAction,
   onStatusLinkAction,
   onRefreshCheckout,
+  auditRows,
+  auditLoading,
 }: {
   order: OrderRow;
   saving: boolean;
+  auditRows: AuditLogRow[];
+  auditLoading: boolean;
   onClose: () => void;
   onCopy: (order: OrderRow) => void;
   onStatusChange: (status: OrderStatus) => Promise<void>;
@@ -1333,6 +1717,10 @@ function OrderDetailModal({
   });
   const [preview, setPreview] = useState<EmailPreviewMessage | null>(null);
   const [previewing, setPreviewing] = useState<EmailPreviewKind | null>(null);
+  const activity = useMemo(
+    () => orderActivityEntries(order, auditRows),
+    [order, auditRows],
+  );
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const selectedOptionCount = order.items.reduce(
     (sum, item) => sum + item.options.length,
@@ -1506,6 +1894,11 @@ function OrderDetailModal({
             >
               {fulfillmentLabel(order.fulfillmentStatus)}
             </Badge>
+            {orderTriageBadges(order).map((badge) => (
+              <Badge key={badge.key} tone={badge.tone} className="capitalize">
+                {badge.label}
+              </Badge>
+            ))}
           </div>
         </div>
 
@@ -1542,6 +1935,54 @@ function OrderDetailModal({
               <p className="whitespace-pre-wrap">{order.clientNotes}</p>
             </div>
           )}
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 className="font-medium">Activity timeline</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Order milestones plus admin audit entries for this request.
+              </p>
+            </div>
+            {auditLoading && (
+              <Badge tone="neutral" className="gap-1">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading audit
+              </Badge>
+            )}
+          </div>
+          <div className="mt-4 space-y-3">
+            {activity.length === 0 ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                No activity yet.
+              </p>
+            ) : (
+              activity.slice(0, 14).map((entry) => (
+                <div
+                  key={entry.id}
+                  className="grid gap-2 rounded-md border bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[9rem_1fr]"
+                >
+                  <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {formatDate(entry.at)}
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{entry.title}</p>
+                      <Badge tone={entry.tone}>
+                        {entry.source === "audit" ? "Audit" : "Milestone"}
+                      </Badge>
+                    </div>
+                    {entry.detail && (
+                      <p className="break-words text-[hsl(var(--muted-foreground))]">
+                        {entry.detail}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-lg border">
@@ -2634,6 +3075,16 @@ export default function StorePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [orderAuditRows, setOrderAuditRows] = useState<
+    Record<string, AuditLogRow[]>
+  >({});
+  const [loadingAuditOrderId, setLoadingAuditOrderId] = useState<string | null>(
+    null,
+  );
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("open");
   const [orderQuery, setOrderQuery] = useState("");
 
@@ -2650,25 +3101,65 @@ export default function StorePage() {
       counts[order.status] += 1;
     }
     const open = orders.filter((order) => OPEN_ORDER_STATUSES.has(order.status)).length;
-    return { counts, open };
+    const saved = Object.fromEntries(
+      SAVED_ORDER_FILTERS.map((filter) => [
+        filter.value,
+        orders.filter((order) => orderMatchesSavedFilter(order, filter.value))
+          .length,
+      ]),
+    ) as Record<SavedOrderFilter, number>;
+    return { counts, open, saved };
   }, [orders]);
 
   const visibleOrders = useMemo(() => {
     const query = orderQuery.trim().toLowerCase();
     return orders.filter((order) => {
-      if (orderFilter === "open" && !OPEN_ORDER_STATUSES.has(order.status))
-        return false;
-      if (
-        orderFilter !== "all" &&
-        orderFilter !== "open" &&
-        order.status !== orderFilter
-      ) {
-        return false;
-      }
+      if (!orderMatchesFilter(order, orderFilter)) return false;
       if (query && !orderSearchText(order).includes(query)) return false;
       return true;
     });
   }, [orderFilter, orderQuery, orders]);
+
+  const selectedVisibleOrders = useMemo(
+    () => visibleOrders.filter((order) => selectedOrderIds.has(order.id)),
+    [selectedOrderIds, visibleOrders],
+  );
+
+  useEffect(() => {
+    setSelectedOrderIds((current) => {
+      const valid = new Set(orders.map((order) => order.id));
+      const next = new Set([...current].filter((id) => valid.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [orders]);
+
+  useEffect(() => {
+    if (!selectedOrder) return;
+    let cancelled = false;
+    setLoadingAuditOrderId(selectedOrder.id);
+    api
+      .get<{ data: AuditLogRow[] }>(
+        `/api/v1/admin/audit-log?entityType=order&entityId=${encodeURIComponent(
+          selectedOrder.id,
+        )}&limit=50`,
+      )
+      .then((res) => {
+        if (cancelled) return;
+        setOrderAuditRows((current) => ({
+          ...current,
+          [selectedOrder.id]: res.data,
+        }));
+      })
+      .catch((err) => {
+        if (!cancelled) toast(errMsg(err), "error");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAuditOrderId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedOrder, toast]);
 
   const load = async () => {
     setLoading(true);
@@ -2750,6 +3241,86 @@ export default function StorePage() {
     } finally {
       setUpdatingOrderId(null);
     }
+  };
+
+  const toggleOrderSelection = (id: string, checked: boolean) => {
+    setSelectedOrderIds((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const setVisibleOrderSelection = (checked: boolean) => {
+    setSelectedOrderIds((current) => {
+      const next = new Set(current);
+      for (const order of visibleOrders) {
+        if (checked) next.add(order.id);
+        else next.delete(order.id);
+      }
+      return next;
+    });
+  };
+
+  const bulkUpdateOrderStatus = async (status: OrderStatus) => {
+    const targets = selectedVisibleOrders.filter((order) => order.status !== status);
+    if (targets.length === 0) return;
+    setBulkUpdating(true);
+    try {
+      const updated: OrderRow[] = [];
+      for (const order of targets) {
+        const res = await api.patch<{ data: OrderRow }>(
+          `/api/v1/admin/orders/${order.id}`,
+          { status },
+        );
+        updated.push(res.data);
+      }
+      setOrders((current) =>
+        current.map((order) => updated.find((row) => row.id === order.id) ?? order),
+      );
+      if (selectedOrder) {
+        const nextSelected = updated.find((row) => row.id === selectedOrder.id);
+        if (nextSelected) setSelectedOrder(nextSelected);
+      }
+      setSelectedOrderIds(new Set());
+      toast(
+        `${updated.length} order${updated.length === 1 ? "" : "s"} updated`,
+        "success",
+      );
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  const copySelectedOrders = async () => {
+    if (selectedVisibleOrders.length === 0) return;
+    await navigator.clipboard.writeText(
+      selectedVisibleOrders.map(orderSummary).join("\n\n---\n\n"),
+    );
+    toast(
+      `${selectedVisibleOrders.length} order summary${
+        selectedVisibleOrders.length === 1 ? "" : "s"
+      } copied`,
+      "success",
+    );
+  };
+
+  const exportSelectedOrders = () => {
+    if (selectedVisibleOrders.length === 0) return;
+    const blob = new Blob([selectedOrdersCsv(selectedVisibleOrders)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `store-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const saveInvoice = async (
@@ -3182,43 +3753,153 @@ export default function StorePage() {
               </div>
             </div>
             {orders.length > 0 && (
-              <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    {
-                      value: "open" as OrderFilter,
-                      label: "Open",
-                      count: orderCounts.open,
-                    },
-                    { value: "all" as OrderFilter, label: "All", count: orders.length },
-                    ...ORDER_STATUS_OPTIONS.map((status) => ({
-                      value: status as OrderFilter,
-                      label: status,
-                      count: orderCounts.counts[status],
-                    })),
-                  ].map((item) => (
-                    <Button
-                      key={item.value}
-                      type="button"
-                      variant={orderFilter === item.value ? "default" : "outline"}
-                      size="sm"
-                      className="capitalize"
-                      onClick={() => setOrderFilter(item.value)}
-                    >
-                      {item.label}
-                      <span className="text-[0.68rem] opacity-75">{item.count}</span>
-                    </Button>
-                  ))}
+              <div className="space-y-3">
+                <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        {
+                          value: "open" as OrderFilter,
+                          label: "Open",
+                          count: orderCounts.open,
+                        },
+                        {
+                          value: "all" as OrderFilter,
+                          label: "All",
+                          count: orders.length,
+                        },
+                        ...ORDER_STATUS_OPTIONS.map((status) => ({
+                          value: status as OrderFilter,
+                          label: status,
+                          count: orderCounts.counts[status],
+                        })),
+                      ].map((item) => (
+                        <Button
+                          key={item.value}
+                          type="button"
+                          variant={orderFilter === item.value ? "default" : "outline"}
+                          size="sm"
+                          className="capitalize"
+                          onClick={() => setOrderFilter(item.value)}
+                        >
+                          {item.label}
+                          <span className="text-[0.68rem] opacity-75">
+                            {item.count}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {SAVED_ORDER_FILTERS.map((item) => (
+                        <Button
+                          key={item.value}
+                          type="button"
+                          variant={orderFilter === item.value ? "default" : "outline"}
+                          size="sm"
+                          title={item.description}
+                          onClick={() => setOrderFilter(item.value)}
+                        >
+                          {item.label}
+                          <span className="text-[0.68rem] opacity-75">
+                            {orderCounts.saved[item.value]}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+                    <Input
+                      value={orderQuery}
+                      onChange={(event) => setOrderQuery(event.target.value)}
+                      placeholder={`Search ${orderFilterLabel(orderFilter).toLowerCase()} orders`}
+                      className="pl-9"
+                    />
+                  </label>
                 </div>
-                <label className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
-                  <Input
-                    value={orderQuery}
-                    onChange={(event) => setOrderQuery(event.target.value)}
-                    placeholder="Search orders"
-                    className="pl-9"
-                  />
-                </label>
+                {visibleOrders.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <label className="inline-flex items-center gap-2 text-[hsl(var(--muted-foreground))]">
+                      <input
+                        type="checkbox"
+                        checked={
+                          visibleOrders.length > 0 &&
+                          visibleOrders.every((order) =>
+                            selectedOrderIds.has(order.id),
+                          )
+                        }
+                        onChange={(event) =>
+                          setVisibleOrderSelection(event.target.checked)
+                        }
+                      />
+                      Select visible orders
+                    </label>
+                    <p className="text-[hsl(var(--muted-foreground))]">
+                      Viewing {orderFilterLabel(orderFilter).toLowerCase()}
+                    </p>
+                  </div>
+                )}
+                {selectedVisibleOrders.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-[hsl(var(--muted))] p-3 text-sm">
+                    <div>
+                      <p className="font-medium">
+                        {selectedVisibleOrders.length} selected from this view
+                      </p>
+                      <p className="text-[hsl(var(--muted-foreground))]">
+                        Bulk status changes use the normal audited order update path.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(["paid", "fulfilled", "cancelled"] as OrderStatus[]).map(
+                        (status) => (
+                          <Button
+                            key={status}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={bulkUpdating}
+                            className="capitalize"
+                            onClick={() => bulkUpdateOrderStatus(status)}
+                          >
+                            {bulkUpdating && (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            )}
+                            Mark {status}
+                          </Button>
+                        ),
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={bulkUpdating}
+                        onClick={copySelectedOrders}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy summaries
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={bulkUpdating}
+                        onClick={exportSelectedOrders}
+                      >
+                        <Download className="h-4 w-4" />
+                        Export selected
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={bulkUpdating}
+                        onClick={() => setSelectedOrderIds(new Set())}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {orders.length === 0 ? (
@@ -3235,15 +3916,26 @@ export default function StorePage() {
                   {visibleOrders.map((row) => (
                     <div key={row.id} className="rounded-lg border p-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="break-words font-medium">
-                            {row.clientName || row.email || "Unknown"}
-                          </p>
-                          {row.email && (
-                            <p className="break-words text-xs text-[hsl(var(--muted-foreground))]">
-                              {row.email}
+                        <div className="flex min-w-0 items-start gap-2">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select order ${row.id}`}
+                            checked={selectedOrderIds.has(row.id)}
+                            onChange={(event) =>
+                              toggleOrderSelection(row.id, event.target.checked)
+                            }
+                            className="mt-1"
+                          />
+                          <div className="min-w-0">
+                            <p className="break-words font-medium">
+                              {row.clientName || row.email || "Unknown"}
                             </p>
-                          )}
+                            {row.email && (
+                              <p className="break-words text-xs text-[hsl(var(--muted-foreground))]">
+                                {row.email}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <Badge
                           tone={orderTone(row.status)}
@@ -3252,32 +3944,17 @@ export default function StorePage() {
                           {row.status}
                         </Badge>
                       </div>
-                      {row.invoice?.onlinePaymentStatus && (
-                        <div className="mt-2">
-                          <Badge
-                            tone={onlinePaymentTone(row.invoice.onlinePaymentStatus)}
-                            className="capitalize"
-                          >
-                            Stripe {onlinePaymentLabel(row.invoice.onlinePaymentStatus)}
-                          </Badge>
-                        </div>
-                      )}
-                      {row.fulfillmentStatus !== "unfulfilled" && (
-                        <div className="mt-2">
-                          <Badge
-                            tone={fulfillmentTone(row.fulfillmentStatus)}
-                            className="capitalize"
-                          >
-                            Fulfillment {fulfillmentLabel(row.fulfillmentStatus)}
-                          </Badge>
-                        </div>
-                      )}
-                      {successfulRefundedCents(row) > 0 && (
-                        <div className="mt-2">
-                          <Badge tone="amber">
-                            Refunded{" "}
-                            {formatMoney(successfulRefundedCents(row), row.currency)}
-                          </Badge>
+                      {orderTriageBadges(row).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {orderTriageBadges(row).map((badge) => (
+                            <Badge
+                              key={badge.key}
+                              tone={badge.tone}
+                              className="capitalize"
+                            >
+                              {badge.label}
+                            </Badge>
+                          ))}
                         </div>
                       )}
 
@@ -3343,6 +4020,21 @@ export default function StorePage() {
                   <table className="w-full min-w-[54rem] text-sm">
                     <thead>
                       <tr className="border-b text-left text-[hsl(var(--muted-foreground))]">
+                        <th className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            aria-label="Select visible orders"
+                            checked={
+                              visibleOrders.length > 0 &&
+                              visibleOrders.every((order) =>
+                                selectedOrderIds.has(order.id),
+                              )
+                            }
+                            onChange={(event) =>
+                              setVisibleOrderSelection(event.target.checked)
+                            }
+                          />
+                        </th>
                         <th className="px-3 py-2 font-medium">Customer</th>
                         <th className="px-3 py-2 font-medium">Items</th>
                         <th className="px-3 py-2 font-medium">Total</th>
@@ -3354,6 +4046,16 @@ export default function StorePage() {
                     <tbody>
                       {visibleOrders.map((row) => (
                         <tr key={row.id} className="border-b last:border-0">
+                          <td className="px-3 py-3 align-top">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select order ${row.id}`}
+                              checked={selectedOrderIds.has(row.id)}
+                              onChange={(event) =>
+                                toggleOrderSelection(row.id, event.target.checked)
+                              }
+                            />
+                          </td>
                           <td className="px-3 py-3">
                             <p className="font-medium">
                               {row.clientName || row.email || "Unknown"}
@@ -3406,34 +4108,15 @@ export default function StorePage() {
                               >
                                 {row.status}
                               </Badge>
-                              {row.invoice?.onlinePaymentStatus && (
+                              {orderTriageBadges(row).map((badge) => (
                                 <Badge
-                                  tone={onlinePaymentTone(
-                                    row.invoice.onlinePaymentStatus,
-                                  )}
+                                  key={badge.key}
+                                  tone={badge.tone}
                                   className="capitalize"
                                 >
-                                  Stripe{" "}
-                                  {onlinePaymentLabel(row.invoice.onlinePaymentStatus)}
+                                  {badge.label}
                                 </Badge>
-                              )}
-                              {row.fulfillmentStatus !== "unfulfilled" && (
-                                <Badge
-                                  tone={fulfillmentTone(row.fulfillmentStatus)}
-                                  className="capitalize"
-                                >
-                                  Fulfillment {fulfillmentLabel(row.fulfillmentStatus)}
-                                </Badge>
-                              )}
-                              {successfulRefundedCents(row) > 0 && (
-                                <Badge tone="amber">
-                                  Refunded{" "}
-                                  {formatMoney(
-                                    successfulRefundedCents(row),
-                                    row.currency,
-                                  )}
-                                </Badge>
-                              )}
+                              ))}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
@@ -3487,6 +4170,8 @@ export default function StorePage() {
         <OrderDetailModal
           order={selectedOrder}
           saving={updatingOrderId === selectedOrder.id}
+          auditRows={orderAuditRows[selectedOrder.id] ?? []}
+          auditLoading={loadingAuditOrderId === selectedOrder.id}
           onClose={() => setSelectedOrder(null)}
           onCopy={copyOrder}
           onStatusChange={(status) => updateOrderStatus(selectedOrder, status)}
