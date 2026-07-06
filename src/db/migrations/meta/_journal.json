@@ -148,6 +148,13 @@
       "when": 1783293966857,
       "tag": "0020_thankful_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1783295461738,
+      "tag": "0021_calm_william_stryker",
+      "breakpoints": true
     }
   ]
 }

@@ -112,6 +112,14 @@ export default async function PublicInvoicePage({
             : null;
   const statusLabel = isPaid ? "Payment received" : "Payment due";
   const paidAmount = invoice.paidAmountCents ?? invoice.amountCents;
+  const successfulRefunds = order.refunds.filter(
+    (refund) => refund.status === "succeeded",
+  );
+  const refundedAmount = successfulRefunds.reduce(
+    (sum, refund) => sum + refund.amountCents,
+    0,
+  );
+  const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
   const hasFulfillmentDetails =
     order.fulfillmentStatus !== "unfulfilled" ||
     Boolean(order.fulfillmentCarrier) ||
@@ -336,6 +344,15 @@ export default async function PublicInvoicePage({
                   <h2 className="text-sm font-semibold">Payment receipt</h2>
                   <div className="mt-2 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
                     <p>Amount paid: {formatMoney(paidAmount, invoice.currency)}</p>
+                    {refundedAmount > 0 && (
+                      <>
+                        <p>
+                          Amount refunded:{" "}
+                          {formatMoney(refundedAmount, invoice.currency)}
+                        </p>
+                        <p>Net paid: {formatMoney(netPaidAmount, invoice.currency)}</p>
+                      </>
+                    )}
                     <p>Paid: {formatDate(invoice.paidAt)}</p>
                     {invoice.paymentMethod && <p>Method: {invoice.paymentMethod}</p>}
                     {invoice.paymentReference && (
@@ -353,6 +370,34 @@ export default async function PublicInvoicePage({
                     {invoice.paymentInstructions ||
                       "The studio will follow up with payment instructions."}
                   </p>
+                </div>
+              )}
+              {successfulRefunds.length > 0 && (
+                <div>
+                  <h2 className="text-sm font-semibold">Refunds</h2>
+                  <div className="mt-2 grid gap-3 text-sm text-[hsl(var(--muted-foreground))]">
+                    {successfulRefunds.map((refund) => (
+                      <div key={refund.id} className="rounded-lg bg-[hsl(var(--muted))] p-3 print:bg-neutral-100">
+                        <p className="font-medium text-[hsl(var(--foreground))]">
+                          {formatMoney(refund.amountCents, refund.currency)}
+                        </p>
+                        <div className="mt-1 grid gap-1">
+                          <p>
+                            Refunded:{" "}
+                            {refund.refundedAt
+                              ? formatDate(refund.refundedAt)
+                              : formatDate(refund.createdAt)}
+                          </p>
+                          {refund.method && <p>Method: {refund.method}</p>}
+                          {refund.reference && <p>Reference: {refund.reference}</p>}
+                          {refund.reason && <p>Reason: {refund.reason}</p>}
+                          {refund.note && (
+                            <p className="whitespace-pre-wrap">{refund.note}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {hasFulfillmentDetails && (
@@ -416,6 +461,18 @@ export default async function PublicInvoicePage({
                   <span>Amount paid</span>
                   <strong>{formatMoney(paidAmount, invoice.currency)}</strong>
                 </div>
+              )}
+              {refundedAmount > 0 && (
+                <>
+                  <div className="flex justify-between gap-4">
+                    <span>Amount refunded</span>
+                    <strong>{formatMoney(refundedAmount, invoice.currency)}</strong>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t pt-3">
+                    <span>Net paid</span>
+                    <strong>{formatMoney(netPaidAmount, invoice.currency)}</strong>
+                  </div>
+                </>
               )}
             </div>
           </div>

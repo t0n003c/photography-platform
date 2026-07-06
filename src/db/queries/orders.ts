@@ -4,6 +4,7 @@ import {
   client,
   invoice,
   order as orderTable,
+  orderRefund,
   orderItem,
 } from "@/src/db/schema";
 import { hashToken } from "@/src/auth/grant";
@@ -59,6 +60,7 @@ export type FulfillmentStatus =
   | "cancelled";
 
 export type InvoiceStatus = "draft" | "issued" | "paid" | "void";
+export type RefundStatus = "pending" | "succeeded" | "failed" | "cancelled";
 export type OnlinePaymentStatus =
   | "requires_payment"
   | "pending"
@@ -105,6 +107,26 @@ export interface AdminOrderItemDTO {
   lineTotalCents: number;
 }
 
+export interface AdminOrderRefundDTO {
+  id: string;
+  orderId: string;
+  invoiceId: string | null;
+  amountCents: number;
+  currency: string;
+  status: RefundStatus;
+  provider: string;
+  providerRefundId: string | null;
+  method: string | null;
+  reference: string | null;
+  reason: string | null;
+  note: string | null;
+  refundedAt: string | null;
+  receiptSentAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminOrderDTO {
   id: string;
   clientId: string | null;
@@ -133,6 +155,7 @@ export interface AdminOrderDTO {
   createdAt: string;
   updatedAt: string;
   items: AdminOrderItemDTO[];
+  refunds: AdminOrderRefundDTO[];
 }
 
 export interface PublicInvoiceDTO {
@@ -184,6 +207,28 @@ function invoiceToDTO(row: typeof invoice.$inferSelect): AdminInvoiceDTO {
     onlinePaymentIntentId: row.onlinePaymentIntentId,
     onlinePaymentUrl: row.onlinePaymentUrl,
     onlinePaymentExpiresAt: row.onlinePaymentExpiresAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function refundToDTO(row: typeof orderRefund.$inferSelect): AdminOrderRefundDTO {
+  return {
+    id: row.id,
+    orderId: row.orderId,
+    invoiceId: row.invoiceId,
+    amountCents: row.amountCents,
+    currency: row.currency,
+    status: row.status as RefundStatus,
+    provider: row.provider,
+    providerRefundId: row.providerRefundId,
+    method: row.method,
+    reference: row.reference,
+    reason: row.reason,
+    note: row.note,
+    refundedAt: row.refundedAt?.toISOString() ?? null,
+    receiptSentAt: row.receiptSentAt?.toISOString() ?? null,
+    createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -418,7 +463,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
   const orderIds = rows.map((row) => row.id);
   const clientIds = rows.map((row) => row.clientId).filter(Boolean) as string[];
 
-  const [itemRows, clientRows, invoiceRows] = await Promise.all([
+  const [itemRows, clientRows, invoiceRows, refundRows] = await Promise.all([
     db.select().from(orderItem).where(inArray(orderItem.orderId, orderIds)),
     clientIds.length
       ? db
@@ -433,6 +478,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
           .where(inArray(client.id, clientIds))
       : Promise.resolve([]),
     db.select().from(invoice).where(inArray(invoice.orderId, orderIds)),
+    db.select().from(orderRefund).where(inArray(orderRefund.orderId, orderIds)),
   ]);
 
   const itemsByOrder = new Map<string, AdminOrderItemDTO[]>();
@@ -453,6 +499,12 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
 
   const clientsById = new Map(clientRows.map((row) => [row.id, row]));
   const invoicesByOrder = new Map(invoiceRows.map((row) => [row.orderId, row]));
+  const refundsByOrder = new Map<string, AdminOrderRefundDTO[]>();
+  for (const refund of refundRows) {
+    const list = refundsByOrder.get(refund.orderId) ?? [];
+    list.push(refundToDTO(refund));
+    refundsByOrder.set(refund.orderId, list);
+  }
   return rows.map((row) => {
     const clientRow = row.clientId ? (clientsById.get(row.clientId) ?? null) : null;
     const invoiceRow = invoicesByOrder.get(row.id);
@@ -477,6 +529,7 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       items: itemsByOrder.get(row.id) ?? [],
+      refunds: refundsByOrder.get(row.id) ?? [],
     };
   });
 }
@@ -485,7 +538,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
   const rows = await db.select().from(orderTable).where(eq(orderTable.id, id)).limit(1);
   if (!rows[0]) return null;
 
-  const [itemRows, clientRows, invoiceRows] = await Promise.all([
+  const [itemRows, clientRows, invoiceRows, refundRows] = await Promise.all([
     db.select().from(orderItem).where(eq(orderItem.orderId, id)),
     rows[0].clientId
       ? db
@@ -501,6 +554,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
           .limit(1)
       : Promise.resolve([]),
     db.select().from(invoice).where(eq(invoice.orderId, id)).limit(1),
+    db.select().from(orderRefund).where(eq(orderRefund.orderId, id)),
   ]);
 
   const row = rows[0];
@@ -535,6 +589,7 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
       unitPriceCents: item.unitPriceCents,
       lineTotalCents: item.lineTotalCents,
     })),
+    refunds: refundRows.map(refundToDTO),
   };
 }
 
@@ -728,6 +783,104 @@ export async function recordInvoicePaymentAdmin(
     order,
     invoiceToken:
       input.sendReceipt && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
+  };
+}
+
+export async function recordOrderRefundAdmin(
+  orderId: string,
+  input: {
+    actorId?: string | null;
+    amountCents: number;
+    status?: RefundStatus;
+    provider?: string | null;
+    providerRefundId?: string | null;
+    method?: string | null;
+    reference?: string | null;
+    reason?: string | null;
+    note?: string | null;
+    refundedAt?: Date | null;
+    sendEmail?: boolean;
+  },
+): Promise<{
+  order: AdminOrderDTO;
+  refund: AdminOrderRefundDTO;
+  invoiceToken: string | null;
+} | null> {
+  const refundId = newId();
+  const status = input.status ?? "succeeded";
+
+  await db.transaction(async (tx) => {
+    const orderRows = await tx
+      .select()
+      .from(orderTable)
+      .where(eq(orderTable.id, orderId))
+      .limit(1);
+    const row = orderRows[0];
+    if (!row) return;
+
+    const invoiceRows = await tx
+      .select()
+      .from(invoice)
+      .where(eq(invoice.orderId, orderId))
+      .limit(1);
+    const currentInvoice = invoiceRows[0] ?? null;
+    const now = new Date();
+    const refundedAt = input.refundedAt ?? now;
+
+    await tx.insert(orderRefund).values({
+      id: refundId,
+      orderId,
+      invoiceId: currentInvoice?.id ?? null,
+      amountCents: input.amountCents,
+      currency: currentInvoice?.currency ?? row.currency,
+      status,
+      provider: cleanOptionalText(input.provider) ?? "manual",
+      providerRefundId: cleanOptionalText(input.providerRefundId),
+      method: cleanOptionalText(input.method),
+      reference: cleanOptionalText(input.reference),
+      reason: cleanOptionalText(input.reason),
+      note: cleanOptionalText(input.note),
+      refundedAt,
+      receiptSentAt: input.sendEmail ? now : null,
+      createdBy: input.actorId ?? null,
+    });
+
+    if (currentInvoice && status === "succeeded") {
+      const refundRows = await tx
+        .select({ amountCents: orderRefund.amountCents })
+        .from(orderRefund)
+        .where(
+          and(
+            eq(orderRefund.orderId, orderId),
+            eq(orderRefund.status, "succeeded"),
+          ),
+        );
+      const refundedCents = refundRows.reduce(
+        (sum, refund) => sum + refund.amountCents,
+        0,
+      );
+      const paidCents = currentInvoice.paidAmountCents ?? currentInvoice.amountCents;
+      if (
+        paidCents > 0 &&
+        refundedCents >= paidCents &&
+        currentInvoice.onlinePaymentProvider
+      ) {
+        await tx
+          .update(invoice)
+          .set({ onlinePaymentStatus: "refunded" })
+          .where(eq(invoice.id, currentInvoice.id));
+      }
+    }
+  });
+
+  const order = await getOrderAdmin(orderId);
+  const refund = order?.refunds.find((row) => row.id === refundId) ?? null;
+  if (!order || !refund) return null;
+  return {
+    order,
+    refund,
+    invoiceToken:
+      input.sendEmail && order.invoice ? issueInvoiceToken(order.invoice.id) : null,
   };
 }
 

@@ -71,6 +71,26 @@ interface InvoiceRow {
   updatedAt: string;
 }
 
+interface RefundRow {
+  id: string;
+  orderId: string;
+  invoiceId: string | null;
+  amountCents: number;
+  currency: string;
+  status: "pending" | "succeeded" | "failed" | "cancelled";
+  provider: string;
+  providerRefundId: string | null;
+  method: string | null;
+  reference: string | null;
+  reason: string | null;
+  note: string | null;
+  refundedAt: string | null;
+  receiptSentAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProductRow {
   id: string;
   slug: string;
@@ -132,10 +152,12 @@ interface OrderRow {
     unitPriceCents: number;
     lineTotalCents: number;
   }[];
+  refunds: RefundRow[];
 }
 
 type OrderStatus = OrderRow["status"];
 type FulfillmentStatus = OrderRow["fulfillmentStatus"];
+type RefundStatus = RefundRow["status"];
 type OrderFilter = "all" | "open" | OrderStatus;
 
 const ORDER_STATUS_OPTIONS: OrderStatus[] = [
@@ -178,6 +200,15 @@ interface PaymentFormValues {
   paymentMethod: string;
   paymentReference: string;
   paymentNote: string;
+}
+
+interface RefundFormValues {
+  refundedAt: string;
+  amount: string;
+  method: string;
+  reference: string;
+  reason: string;
+  note: string;
 }
 
 interface FulfillmentFormValues {
@@ -308,6 +339,32 @@ function onlinePaymentLabel(status: InvoiceRow["onlinePaymentStatus"]) {
   return status.replace(/_/g, " ");
 }
 
+function refundTone(status: RefundStatus): ComponentProps<typeof Badge>["tone"] {
+  if (status === "succeeded") return "green";
+  if (status === "pending") return "amber";
+  if (status === "failed" || status === "cancelled") return "red";
+  return "neutral";
+}
+
+function refundLabel(status: RefundStatus) {
+  return status.replace(/_/g, " ");
+}
+
+function successfulRefundedCents(row: OrderRow) {
+  return row.refunds
+    .filter((refund) => refund.status === "succeeded")
+    .reduce((sum, refund) => sum + refund.amountCents, 0);
+}
+
+function paidAmountCents(row: OrderRow) {
+  return row.invoice?.paidAmountCents ?? row.invoice?.amountCents ?? row.totalCents;
+}
+
+function refundableCents(row: OrderRow) {
+  if (row.invoice?.status !== "paid") return 0;
+  return Math.max(0, paidAmountCents(row) - successfulRefundedCents(row));
+}
+
 function fulfillmentTone(
   status: FulfillmentStatus,
 ): ComponentProps<typeof Badge>["tone"] {
@@ -376,6 +433,15 @@ function orderSearchText(row: OrderRow) {
     row.fulfillmentStatus,
     row.fulfillmentCarrier,
     row.fulfillmentTrackingNumber,
+    ...row.refunds.flatMap((refund) => [
+      refund.status,
+      refund.provider,
+      refund.providerRefundId,
+      refund.method,
+      refund.reference,
+      refund.reason,
+      refund.note,
+    ]),
     row.clientNotes,
     ...row.items.map((item) => itemSearchText(item, row.currency)),
   ]
@@ -421,6 +487,16 @@ function orderSummary(row: OrderRow) {
     row.invoice?.onlinePaymentStatus
       ? `Hosted payment: ${onlinePaymentLabel(row.invoice.onlinePaymentStatus)}`
       : null,
+    row.refunds.length
+      ? `Refunded: ${formatMoney(successfulRefundedCents(row), row.currency)}`
+      : null,
+    ...row.refunds.map(
+      (refund) =>
+        `Refund ${refundLabel(refund.status)}: ${formatMoney(
+          refund.amountCents,
+          refund.currency,
+        )}${refund.reference ? ` (${refund.reference})` : ""}`,
+    ),
     row.invoice?.onlinePaymentSessionId
       ? `Stripe session: ${row.invoice.onlinePaymentSessionId}`
       : null,
@@ -929,6 +1005,7 @@ function OrderDetailModal({
   onStatusChange,
   onInvoiceSubmit,
   onPaymentSubmit,
+  onRefundSubmit,
   onFulfillmentSubmit,
   onInvoiceLinkAction,
   onCheckoutLinkAction,
@@ -941,6 +1018,7 @@ function OrderDetailModal({
   onStatusChange: (status: OrderStatus) => Promise<void>;
   onInvoiceSubmit: (values: InvoiceFormValues, sendEmail: boolean) => Promise<void>;
   onPaymentSubmit: (values: PaymentFormValues, sendReceipt: boolean) => Promise<void>;
+  onRefundSubmit: (values: RefundFormValues, sendEmail: boolean) => Promise<void>;
   onFulfillmentSubmit: (
     values: FulfillmentFormValues,
     sendEmail: boolean,
@@ -961,6 +1039,14 @@ function OrderDetailModal({
     paymentReference: "",
     paymentNote: "",
   });
+  const [refundForm, setRefundForm] = useState<RefundFormValues>({
+    refundedAt: "",
+    amount: "",
+    method: "",
+    reference: "",
+    reason: "",
+    note: "",
+  });
   const [fulfillmentForm, setFulfillmentForm] = useState<FulfillmentFormValues>({
     fulfillmentStatus: "unfulfilled",
     fulfillmentCarrier: "",
@@ -977,6 +1063,10 @@ function OrderDetailModal({
     0,
   );
   const invoicePaid = order.invoice?.status === "paid";
+  const refundedCents = successfulRefundedCents(order);
+  const remainingRefundCents = refundableCents(order);
+  const canRecordRefund =
+    invoicePaid && remainingRefundCents > 0 && inputToCents(refundForm.amount) > 0;
   const canRefreshCheckout = order.invoice?.status === "issued";
   const fulfillmentCanEmail =
     Boolean(order.email) && canEmailFulfillment(fulfillmentForm.fulfillmentStatus);
@@ -998,6 +1088,14 @@ function OrderDetailModal({
       paymentMethod: order.invoice?.paymentMethod ?? "",
       paymentReference: order.invoice?.paymentReference ?? "",
       paymentNote: order.invoice?.paymentNote ?? "",
+    });
+    setRefundForm({
+      refundedAt: dateInputValue(new Date().toISOString()),
+      amount: centsToInput(refundableCents(order)),
+      method: "",
+      reference: "",
+      reason: "",
+      note: "",
     });
     setFulfillmentForm({
       fulfillmentStatus: order.fulfillmentStatus,
@@ -1536,6 +1634,229 @@ function OrderDetailModal({
         <div className="space-y-4 rounded-lg border p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
+              <h4 className="font-medium">Refunds</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Record manual refunds and optionally send a refund receipt.
+              </p>
+            </div>
+            {refundedCents > 0 ? (
+              <Badge tone={remainingRefundCents > 0 ? "amber" : "green"}>
+                Refunded {formatMoney(refundedCents, order.currency)}
+              </Badge>
+            ) : (
+              <Badge tone="neutral">No refunds</Badge>
+            )}
+          </div>
+
+          {order.refunds.length > 0 && (
+            <div className="space-y-2">
+              {order.refunds.map((refund) => (
+                <div
+                  key={refund.id}
+                  className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">
+                        {formatMoney(refund.amountCents, refund.currency)}
+                      </p>
+                      <Badge tone={refundTone(refund.status)} className="capitalize">
+                        {refundLabel(refund.status)}
+                      </Badge>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                        {refund.refundedAt
+                          ? formatDate(refund.refundedAt)
+                          : formatDate(refund.createdAt)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
+                      {refund.method && <span>Method: {refund.method}</span>}
+                      {refund.reference && <span>Reference: {refund.reference}</span>}
+                      {refund.reason && <span>Reason: {refund.reason}</span>}
+                      {refund.receiptSentAt && (
+                        <span>Receipt sent {formatDate(refund.receiptSentAt)}</span>
+                      )}
+                    </div>
+                    {refund.note && (
+                      <p className="mt-2 whitespace-pre-wrap text-xs text-[hsl(var(--muted-foreground))]">
+                        {refund.note}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    {refund.provider}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-3">
+            <span>
+              Paid {formatMoney(paidAmountCents(order), order.currency)}
+            </span>
+            <span>
+              Refunded {formatMoney(refundedCents, order.currency)}
+            </span>
+            <span>
+              Refundable {formatMoney(remainingRefundCents, order.currency)}
+            </span>
+          </div>
+
+          {!invoicePaid && (
+            <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
+              Record payment before adding a refund.
+            </p>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Refund date" htmlFor="refund-refunded-at">
+              <Input
+                id="refund-refunded-at"
+                type="date"
+                value={refundForm.refundedAt}
+                disabled={saving || !invoicePaid}
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    refundedAt: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Amount" htmlFor="refund-amount">
+              <Input
+                id="refund-amount"
+                type="number"
+                min="0.01"
+                max={centsToInput(remainingRefundCents)}
+                step="0.01"
+                value={refundForm.amount}
+                disabled={saving || !invoicePaid || remainingRefundCents <= 0}
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    amount: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Method" htmlFor="refund-method">
+              <Input
+                id="refund-method"
+                value={refundForm.method}
+                disabled={saving || !invoicePaid}
+                placeholder="Zelle, check, cash, Stripe dashboard"
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    method: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Reference" htmlFor="refund-reference">
+              <Input
+                id="refund-reference"
+                value={refundForm.reference}
+                disabled={saving || !invoicePaid}
+                placeholder="Refund ID, check number, transaction ID"
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    reference: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Reason" htmlFor="refund-reason">
+              <Input
+                id="refund-reason"
+                value={refundForm.reason}
+                disabled={saving || !invoicePaid}
+                placeholder="Client change, damaged print, duplicate payment"
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+
+          <Field
+            label="Refund note"
+            htmlFor="refund-note"
+            hint="Shown on the customer receipt if you send or share the link."
+          >
+            <Textarea
+              id="refund-note"
+              rows={3}
+              value={refundForm.note}
+              disabled={saving || !invoicePaid}
+              placeholder="Optional customer-facing refund note."
+              onChange={(event) =>
+                setRefundForm((current) => ({
+                  ...current,
+                  note: event.target.value,
+                }))
+              }
+            />
+          </Field>
+
+          {!order.email && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              Add a customer email before sending a refund receipt.
+            </p>
+          )}
+
+          <div className="flex flex-wrap justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || !invoicePaid || remainingRefundCents <= 0}
+              onClick={() =>
+                setRefundForm((current) => ({
+                  ...current,
+                  amount: centsToInput(remainingRefundCents),
+                }))
+              }
+            >
+              Fill remaining
+            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || !canRecordRefund}
+                onClick={() => onRefundSubmit(refundForm, false)}
+              >
+                <CreditCard className="h-4 w-4" />
+                Record refund
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !canRecordRefund || !order.email}
+                onClick={() => onRefundSubmit(refundForm, true)}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ReceiptText className="h-4 w-4" />
+                )}
+                Record & email refund
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-lg border p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
               <h4 className="font-medium">Fulfillment</h4>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
                 Track preparation, delivery, and shipping details for this order.
@@ -1968,6 +2289,38 @@ export default function StorePage() {
     }
   };
 
+  const recordRefund = async (
+    row: OrderRow,
+    values: RefundFormValues,
+    sendEmail: boolean,
+  ) => {
+    setUpdatingOrderId(row.id);
+    try {
+      const res = await api.post<{
+        data: { order: OrderRow; refund: RefundRow; receiptUrl: string | null };
+      }>(`/api/v1/admin/orders/${row.id}/refunds`, {
+        amountCents: inputToCents(values.amount),
+        status: "succeeded",
+        provider: "manual",
+        method: values.method.trim() || null,
+        reference: values.reference.trim() || null,
+        reason: values.reason.trim() || null,
+        note: values.note.trim() || null,
+        refundedAt: values.refundedAt || null,
+        sendEmail,
+      });
+      setOrders((current) =>
+        current.map((order) => (order.id === row.id ? res.data.order : order)),
+      );
+      setSelectedOrder(res.data.order);
+      toast(sendEmail ? "Refund recorded and emailed" : "Refund recorded", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const saveFulfillment = async (
     row: OrderRow,
     values: FulfillmentFormValues,
@@ -2322,6 +2675,14 @@ export default function StorePage() {
                           </Badge>
                         </div>
                       )}
+                      {successfulRefundedCents(row) > 0 && (
+                        <div className="mt-2">
+                          <Badge tone="amber">
+                            Refunded{" "}
+                            {formatMoney(successfulRefundedCents(row), row.currency)}
+                          </Badge>
+                        </div>
+                      )}
 
                       <div className="mt-3 space-y-2 text-sm">
                         {row.items.length === 0 ? (
@@ -2466,6 +2827,15 @@ export default function StorePage() {
                                   {fulfillmentLabel(row.fulfillmentStatus)}
                                 </Badge>
                               )}
+                              {successfulRefundedCents(row) > 0 && (
+                                <Badge tone="amber">
+                                  Refunded{" "}
+                                  {formatMoney(
+                                    successfulRefundedCents(row),
+                                    row.currency,
+                                  )}
+                                </Badge>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-[hsl(var(--muted-foreground))]">
@@ -2527,6 +2897,9 @@ export default function StorePage() {
           }
           onPaymentSubmit={(values, sendReceipt) =>
             recordPayment(selectedOrder, values, sendReceipt)
+          }
+          onRefundSubmit={(values, sendEmail) =>
+            recordRefund(selectedOrder, values, sendEmail)
           }
           onFulfillmentSubmit={(values, sendEmail) =>
             saveFulfillment(selectedOrder, values, sendEmail)

@@ -500,8 +500,9 @@ Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default p
 ## 13. Store (light catalog + optional hosted checkout)
 
 > Product catalog, public browse/cart, manual invoice order requests, issued invoices,
-> manual payment receipts, fulfillment tracking, and optional Stripe Checkout are active.
-> Hosted checkout is enabled only when Settings -> Payments has all required Stripe values.
+> manual payment receipts, refund tracking, fulfillment tracking, and optional Stripe Checkout
+> are active. Hosted checkout is enabled only when Settings -> Payments has all required
+> Stripe values.
 
 ### 13.1 `product`
 
@@ -556,7 +557,33 @@ fields (`paid_at`, `paid_amount_cents`, `payment_method`, `payment_reference`,
 `online_payment_intent_id`, `online_payment_url`, `online_payment_expires_at`),
 `pdf_storage_key`, timestamps.
 
-### 13.5 Store payment settings (`site_settings`)
+### 13.5 `order_refund`
+
+Durable refund records for manual/provider refunds. Multiple rows per order are allowed so
+partial refunds remain auditable.
+
+| Field              | Type                     | Notes                                                |
+| ------------------ | ------------------------ | ---------------------------------------------------- |
+| id                 | text PK                  |                                                      |
+| order_id           | text FK → order          | CASCADE                                              |
+| invoice_id         | text FK → invoice NULL   | SET NULL                                             |
+| amount_cents       | integer                  | positive refund amount                              |
+| currency           | text                     | copied from invoice/order                            |
+| status             | text                     | `pending`\|`succeeded`\|`failed`\|`cancelled`        |
+| provider           | text                     | default `manual`; future Stripe refunds can reuse it |
+| provider_refund_id | text NULL                | external refund id/reference                         |
+| method             | text NULL                | check, cash, Stripe dashboard, etc.                  |
+| reference          | text NULL                | check number / transaction id                        |
+| reason             | text NULL                | customer-facing reason                               |
+| note               | text NULL                | customer-facing note shown on receipts/emails        |
+| refunded_at        | timestamptz NULL         | effective refund date                                |
+| receipt_sent_at    | timestamptz NULL         | when refund email was sent                           |
+| created_by         | text FK → user.id NULL   | admin who recorded it                                |
+| created_at/updated_at | timestamptz           |                                                      |
+
+Indexes: `INDEX(order_id)`, `INDEX(invoice_id)`.
+
+### 13.6 Store payment settings (`site_settings`)
 
 Store checkout settings live on the singleton `site_settings` row. Hosted payment readiness
 adds:
@@ -571,7 +598,7 @@ adds:
 | stripe_webhook_secret_enc     | text NULL | encrypted with `SETTINGS_ENCRYPTION_KEY`; required for hosted checkout |
 | stripe_statement_descriptor   | text NULL | optional Stripe statement descriptor                                   |
 
-### 13.6 `stripe_webhook_event`
+### 13.7 `stripe_webhook_event`
 
 Stores Stripe event IDs for webhook idempotency and operator audit:
 
@@ -693,5 +720,6 @@ favorite-toggling idempotent.
 - Tagging/keywords beyond category/location (free-form tags) — deferred.
 - Watermarking policy + per-gallery download size caps — interface exists (`download_enabled`,
   variant selection); enforcement detail deferred.
-- Store tax/VAT automation and refunds — deferred beyond the current manual invoice,
-  optional Stripe Checkout, and fulfillment basics slice.
+- Store tax/VAT automation and provider-side live Stripe refund execution — deferred beyond
+  the current manual invoice, optional Stripe Checkout, refund-tracking, and fulfillment basics
+  slices.

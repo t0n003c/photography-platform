@@ -408,6 +408,7 @@ Response `201` (raw token shown exactly once):
 | GET/PATCH    | `/admin/orders/{id}`   | admin  | view an order request and update status                                                                          |
 | POST         | `/admin/orders/{id}/fulfillment` | admin | save fulfillment status, carrier/tracking, milestone dates, internal notes, and optional customer update email |
 | POST         | `/admin/orders/{id}/checkout` | admin | refresh a hosted Stripe Checkout link for an unpaid issued invoice |
+| POST         | `/admin/orders/{id}/refunds` | admin | record a manual refund against a paid invoice and optionally email the customer an updated receipt |
 
 Cart and checkout line items accept `options` as an option-id to choice-id map. Required
 product options must resolve against the current active product definition, or checkout returns

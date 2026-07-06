@@ -757,6 +757,43 @@ export const invoice = pgTable("invoice", {
   updatedAt: updatedAt(),
 });
 
+export const orderRefund = pgTable(
+  "order_refund",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => order.id, { onDelete: "cascade" }),
+    invoiceId: text("invoice_id").references(() => invoice.id, {
+      onDelete: "set null",
+    }),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    status: text("status", {
+      enum: ["pending", "succeeded", "failed", "cancelled"],
+    })
+      .notNull()
+      .default("succeeded"),
+    provider: text("provider").notNull().default("manual"),
+    providerRefundId: text("provider_refund_id"),
+    method: text("method"),
+    reference: text("reference"),
+    reason: text("reason"),
+    note: text("note"),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    receiptSentAt: timestamp("receipt_sent_at", { withTimezone: true }),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("order_refund_order_idx").on(t.orderId),
+    index("order_refund_invoice_idx").on(t.invoiceId),
+  ],
+);
+
 export const stripeWebhookEvent = pgTable(
   "stripe_webhook_event",
   {

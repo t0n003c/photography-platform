@@ -4,6 +4,7 @@ import {
   galleryInvite,
   manualOrderAdminNotification,
   manualOrderCustomerConfirmation,
+  storeRefundIssued,
   storeOrderShipped,
   storeInvoiceIssued,
   storeReceiptIssued,
@@ -82,6 +83,7 @@ const adminOrder: AdminOrderDTO = {
   invoice: null,
   createdAt: order.createdAt,
   updatedAt: order.createdAt,
+  refunds: [],
   items: [
     {
       id: "item-1",
@@ -267,6 +269,41 @@ describe("storeReceiptIssued", () => {
     expect(msg.html).toContain("Reference: 1042");
     expect(msg.text ?? "").toContain("Method: Check");
     expect(msg.text ?? "").toContain("https://example.com/invoice/signed-receipt");
+  });
+});
+
+describe("storeRefundIssued", () => {
+  it("builds a refund email with amount and receipt link", () => {
+    const msg = storeRefundIssued({
+      to: "riley@example.com",
+      order: { ...adminOrder, status: "paid" },
+      refund: {
+        id: "refund-1",
+        orderId: adminOrder.id,
+        invoiceId: "invoice-1",
+        amountCents: 2500,
+        currency: "USD",
+        status: "succeeded",
+        provider: "manual",
+        providerRefundId: null,
+        method: "Check",
+        reference: "1099",
+        reason: "Client change",
+        note: "Refunded the extra print.",
+        refundedAt: "2026-07-12T18:00:00.000Z",
+        receiptSentAt: "2026-07-12T18:05:00.000Z",
+        createdBy: "user-1",
+        createdAt: "2026-07-12T18:00:00.000Z",
+        updatedAt: "2026-07-12T18:05:00.000Z",
+      },
+      receiptUrl: "https://example.com/invoice/refund-receipt",
+      siteName: "Studio",
+    });
+    expect(msg.subject).toContain("Refund");
+    expect(msg.html).toContain("Amount refunded: $25.00");
+    expect(msg.html).toContain("Reference: 1099");
+    expect(msg.text ?? "").toContain("Refunded the extra print.");
+    expect(msg.text ?? "").toContain("https://example.com/invoice/refund-receipt");
   });
 });
 

@@ -1,6 +1,10 @@
 import type { EmailMessage } from "@/src/email/provider";
 import type { StoreOrderConfirmation } from "@/src/lib/store-order-confirmation";
-import type { AdminOrderDTO, AdminInvoiceDTO } from "@/src/db/queries/orders";
+import type {
+  AdminOrderDTO,
+  AdminInvoiceDTO,
+  AdminOrderRefundDTO,
+} from "@/src/db/queries/orders";
 
 function escape(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -394,6 +398,58 @@ ${orderLinesText(receiptOrder)}
 
 ${totalsText(receiptOrder)}
 
+View receipt: ${opts.receiptUrl}`,
+  };
+}
+
+export function storeRefundIssued(opts: {
+  to: string;
+  order: AdminOrderDTO;
+  refund: AdminOrderRefundDTO;
+  receiptUrl: string;
+  siteName: string;
+}): EmailMessage {
+  const customerName = opts.order.clientName?.trim();
+  const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
+  const amount = formatMoney(opts.refund.amountCents, opts.refund.currency);
+  const refundDate = emailDate(opts.refund.refundedAt);
+  const details = [
+    refundDate ? `Refunded ${refundDate}` : null,
+    opts.refund.method ? `Method: ${opts.refund.method}` : null,
+    opts.refund.reference ? `Reference: ${opts.refund.reference}` : null,
+    opts.refund.reason ? `Reason: ${opts.refund.reason}` : null,
+  ].filter(Boolean) as string[];
+  const body = `
+    <p>${greeting}</p>
+    <p>A refund has been recorded for order <strong>${escape(opts.order.id)}</strong>.</p>
+    <p style="font-size:18px"><strong>Amount refunded: ${escape(amount)}</strong></p>
+    ${
+      details.length
+        ? `<ul style="color:#666;font-size:13px;margin:8px 0 18px;padding-left:18px">${details
+            .map((detail) => `<li>${escape(detail)}</li>`)
+            .join("")}</ul>`
+        : ""
+    }
+    ${
+      opts.refund.note
+        ? `<p style="white-space:pre-wrap">${escape(opts.refund.note)}</p>`
+        : ""
+    }
+    <p><a href="${escape(opts.receiptUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">View receipt</a></p>
+    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.receiptUrl)}</p>`;
+  return {
+    to: opts.to,
+    subject: `Refund for order ${opts.order.id} from ${opts.siteName}`,
+    html: layout("Refund recorded", body),
+    text: `${customerName ? `Hi ${customerName},` : "Hi,"}
+
+A refund has been recorded for order ${opts.order.id}.
+Amount refunded: ${amount}
+${refundDate ? `Refunded: ${refundDate}\n` : ""}${
+      opts.refund.method ? `Method: ${opts.refund.method}\n` : ""
+    }${opts.refund.reference ? `Reference: ${opts.refund.reference}\n` : ""}${
+      opts.refund.reason ? `Reason: ${opts.refund.reason}\n` : ""
+    }${opts.refund.note ? `\n${opts.refund.note}\n` : ""}
 View receipt: ${opts.receiptUrl}`,
   };
 }
