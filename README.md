@@ -22,6 +22,8 @@ refund tracking, tax CSV export, and optional Stripe Checkout/refunds/Stripe Tax
 cart checkout from Settings -> Payments only when the account, keys, and webhook secret are
 configured. Store products can track inventory at the product level and, when needed, per
 option choice; sold-out items are blocked at cart/checkout and paid orders decrement stock.
+Settings -> Store can also define customer-selectable shipping profiles and promo codes; selected
+shipping/discount details are snapshotted onto orders and included in receipts/status views.
 Stripe test-mode validation is documented in [`docs/STRIPE-TEST-RUNBOOK.md`](docs/STRIPE-TEST-RUNBOOK.md). See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) and `PROJECT_MEMORY.md` §12 for what's left.
 

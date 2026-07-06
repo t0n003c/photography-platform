@@ -127,8 +127,12 @@ interface OrderRow {
   email: string | null;
   status: "draft" | "pending" | "invoiced" | "paid" | "fulfilled" | "cancelled";
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileId: string | null;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   paymentProvider: string | null;
@@ -516,8 +520,17 @@ function orderSummary(row: OrderRow) {
     ...(lines.length ? lines : ["- No items"]),
     "",
     `Subtotal: ${formatMoney(row.subtotalCents, row.currency)}`,
+    row.discountCents > 0
+      ? `Discount${row.promoCode ? ` (${row.promoCode})` : ""}: -${formatMoney(
+          row.discountCents,
+          row.currency,
+        )}`
+      : null,
     `Tax: ${formatMoney(row.taxCents, row.currency)}`,
-    `Shipping: ${formatMoney(row.shippingCents, row.currency)}`,
+    `Shipping${row.shippingProfileLabel ? ` (${row.shippingProfileLabel})` : ""}: ${formatMoney(
+      row.shippingCents,
+      row.currency,
+    )}`,
     `Total: ${formatMoney(row.totalCents, row.currency)}`,
     row.invoice ? `Invoice: ${row.invoice.number} (${row.invoice.status})` : null,
     row.invoice?.paidAt
@@ -2363,11 +2376,19 @@ function OrderDetailModal({
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
               Subtotal {formatMoney(order.subtotalCents, order.currency)}
             </p>
+            {order.discountCents > 0 && (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Discount{order.promoCode ? ` (${order.promoCode})` : ""} -
+                {formatMoney(order.discountCents, order.currency)}
+              </p>
+            )}
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
               Tax {formatMoney(order.taxCents, order.currency)}
             </p>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Shipping {formatMoney(order.shippingCents, order.currency)}
+              Shipping
+              {order.shippingProfileLabel ? ` (${order.shippingProfileLabel})` : ""}{" "}
+              {formatMoney(order.shippingCents, order.currency)}
             </p>
             <p className="text-lg font-semibold">
               Total {formatMoney(order.totalCents, order.currency)}

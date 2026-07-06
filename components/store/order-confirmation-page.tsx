@@ -34,6 +34,11 @@ function shippingText(confirmation: StoreOrderConfirmation) {
   if (confirmation.shippingCents > 0) {
     return formatMoney(confirmation.shippingCents, confirmation.currency);
   }
+  if (confirmation.shippingProfileLabel) {
+    return confirmation.shippingProfileLabel.toLowerCase().includes("quote")
+      ? "Quoted after review"
+      : "Free";
+  }
   if (confirmation.checkoutSettings.shippingMode === "free") return "Free";
   if (confirmation.checkoutSettings.shippingMode === "manual") {
     return "Quoted after review";
@@ -48,8 +53,11 @@ function parseConfirmation(value: string | null, orderId: string) {
     if (parsed.orderId !== orderId) return null;
     return {
       ...parsed,
+      discountCents: parsed.discountCents ?? 0,
+      promoCode: parsed.promoCode ?? null,
       taxCents: parsed.taxCents ?? 0,
       shippingCents: parsed.shippingCents ?? 0,
+      shippingProfileLabel: parsed.shippingProfileLabel ?? null,
       checkoutSettings: publicStoreCheckoutSettings(
         normalizeStoreCheckoutSettings(parsed.checkoutSettings ?? {}),
       ),
@@ -183,6 +191,17 @@ export function StoreOrderConfirmationPage({
                   {formatMoney(confirmation.subtotalCents, confirmation.currency)}
                 </strong>
               </div>
+              {confirmation.discountCents > 0 && (
+                <div>
+                  <span>
+                    Discount
+                    {confirmation.promoCode ? ` · ${confirmation.promoCode}` : ""}
+                  </span>
+                  <strong>
+                    -{formatMoney(confirmation.discountCents, confirmation.currency)}
+                  </strong>
+                </div>
+              )}
               <div>
                 <span>Tax</span>
                 <strong>
@@ -190,7 +209,12 @@ export function StoreOrderConfirmationPage({
                 </strong>
               </div>
               <div>
-                <span>Shipping</span>
+                <span>
+                  Shipping
+                  {confirmation.shippingProfileLabel
+                    ? ` · ${confirmation.shippingProfileLabel}`
+                    : ""}
+                </span>
                 <strong>{shippingText(confirmation)}</strong>
               </div>
               <div>

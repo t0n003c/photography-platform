@@ -14,10 +14,13 @@ describe("store checkout settings", () => {
       shippingMode: "flat",
       shippingFlatCents: 1200,
     });
-    expect(calculateStoreTotals(13900, settings)).toEqual({
+    expect(calculateStoreTotals(13900, settings)).toMatchObject({
+      discountCents: 0,
       taxCents: 1147,
       shippingCents: 1200,
       totalCents: 16247,
+      promo: null,
+      promoError: null,
     });
   });
 
@@ -28,10 +31,59 @@ describe("store checkout settings", () => {
       shippingMode: "flat",
       shippingFlatCents: 9999,
     });
-    expect(calculateStoreTotals(0, settings)).toEqual({
+    expect(calculateStoreTotals(0, settings)).toMatchObject({
+      discountCents: 0,
       taxCents: 0,
       shippingCents: 0,
       totalCents: 0,
+      promo: null,
+      promoError: null,
+    });
+  });
+
+  it("applies promo codes before tax and shipping profiles", () => {
+    const settings = normalizeStoreCheckoutSettings({
+      taxEnabled: true,
+      taxRateBps: 1000,
+      shippingProfiles: [
+        {
+          id: "domestic",
+          label: "Domestic shipping",
+          mode: "flat",
+          amountCents: 1500,
+          freeThresholdCents: 10000,
+          enabled: true,
+        },
+      ],
+      promoCodes: [
+        {
+          id: "promo-1",
+          code: "SAVE20",
+          label: "Save 20%",
+          active: true,
+          discountType: "percent",
+          amountCents: 0,
+          percentBps: 2000,
+          minimumSubtotalCents: 0,
+          usageLimit: null,
+          expiresAt: null,
+        },
+      ],
+    });
+
+    expect(
+      calculateStoreTotals(12000, settings, {
+        shippingProfileId: "domestic",
+        promoCode: " save20 ",
+      }),
+    ).toMatchObject({
+      discountCents: 2400,
+      taxCents: 960,
+      shippingCents: 1500,
+      totalCents: 12060,
+      promo: { code: "SAVE20", label: "Save 20%", discountCents: 2400 },
+      promoError: null,
+      shippingProfile: { id: "domestic", label: "Domestic shipping" },
     });
   });
 

@@ -12,6 +12,8 @@ const CartItemSchema = z.object({
 
 const CartSchema = z.object({
   items: z.array(CartItemSchema).max(50).default([]),
+  shippingProfileId: z.string().max(80).nullable().optional(),
+  promoCode: z.string().max(40).nullable().optional(),
 });
 
 // POST /api/v1/cart — resolve browser-local cart contents against active
@@ -19,6 +21,9 @@ const CartSchema = z.object({
 export async function POST(req: Request) {
   const parsed = await parseJson(req, CartSchema);
   if ("error" in parsed) return parsed.error;
-  const data = await resolveCartItems(parsed.data.items);
+  const data = await resolveCartItems(parsed.data.items, {
+    shippingProfileId: parsed.data.shippingProfileId,
+    promoCode: parsed.data.promoCode,
+  });
   return ok({ data });
 }

@@ -159,6 +159,7 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Stripe Tax automation foundation for hosted public cart checkout: optional Checkout automatic tax, address collection, and webhook reconciliation of paid tax/total.
 - [x] Store tax operations basics: product/shipping Stripe tax-code capture, order-item tax-code snapshots, and admin tax/accounting CSV export.
 - [x] Store inventory controls: product and option-choice stock, low-stock/sold-out/backorder labels, checkout stock blocking, and paid-order stock decrement.
+- [x] Store operations polish: customer-selectable shipping profiles, store-wide promo codes, order discount/shipping snapshots, and tax export fields.
 - [ ] Store operations still deferred: tax/VAT compliance operations (registrations/nexus decisions, filing/reporting) and automatic tax for already-issued invoice links.
 - [ ] **AI auto-tagging / smart alt-text** (Hugging Face / local model) — proposed in `AI-INTEGRATIONS.md`.
 - [ ] Anything else needing explicit owner sign-off (new external integrations, scope expansions).

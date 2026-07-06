@@ -16,7 +16,11 @@ import {
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
 import type { ProductOption, SelectedProductOption } from "@/src/lib/store-options";
-import type { PublicStoreCheckoutSettings } from "@/src/lib/store-settings";
+import type {
+  PublicStoreCheckoutSettings,
+  StorePromoCode,
+  StoreShippingProfile,
+} from "@/src/lib/store-settings";
 
 // Application tables (DATA-MODEL §4–§15). Drizzle is the source of truth.
 // Conventions: text ULID PKs, timestamptz, money in integer cents, enums typed
@@ -510,6 +514,14 @@ export const siteSettings = pgTable("site_settings", {
     .notNull()
     .default("manual"),
   storeShippingFlatCents: integer("store_shipping_flat_cents").notNull().default(0),
+  storeShippingProfiles: jsonb("store_shipping_profiles")
+    .$type<StoreShippingProfile[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  storePromoCodes: jsonb("store_promo_codes")
+    .$type<StorePromoCode[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   storeOnlinePaymentsEnabled: boolean("store_online_payments_enabled")
     .notNull()
     .default(false),
@@ -669,8 +681,12 @@ export const order = pgTable("order", {
     .notNull()
     .default("draft"),
   subtotalCents: integer("subtotal_cents").notNull().default(0),
+  discountCents: integer("discount_cents").notNull().default(0),
+  promoCode: text("promo_code"),
   taxCents: integer("tax_cents").notNull().default(0),
   shippingCents: integer("shipping_cents").notNull().default(0),
+  shippingProfileId: text("shipping_profile_id"),
+  shippingProfileLabel: text("shipping_profile_label"),
   totalCents: integer("total_cents").notNull().default(0),
   currency: text("currency").notNull().default("USD"),
   paymentProvider: text("payment_provider"),

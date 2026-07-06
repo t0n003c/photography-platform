@@ -20,6 +20,7 @@ import {
 } from "@/src/lib/store-order-confirmation";
 import {
   publicStoreCheckoutSettings,
+  resolveStoreShippingProfile,
   STORE_CHECKOUT_DEFAULTS,
 } from "@/src/lib/store-settings";
 
@@ -36,8 +37,12 @@ const emptySummary: CartSummaryDTO = {
   optionErrors: [],
   availabilityErrors: [],
   subtotalCents: 0,
+  discountCents: 0,
+  promo: null,
+  promoError: null,
   taxCents: 0,
   shippingCents: 0,
+  shippingProfile: resolveStoreShippingProfile(0, STORE_CHECKOUT_DEFAULTS),
   totalCents: 0,
   currency: "USD",
   hasMixedCurrency: false,
@@ -84,6 +89,9 @@ export function StoreCartPage() {
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [shippingProfileId, setShippingProfileId] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState("");
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
     email: "",
@@ -119,14 +127,23 @@ export function StoreCartPage() {
     fetch("/api/v1/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({
+        items,
+        shippingProfileId: shippingProfileId || undefined,
+        promoCode: appliedPromoCode || undefined,
+      }),
       signal: controller.signal,
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(await readError(res));
         return (await res.json()) as { data: CartSummaryDTO };
       })
-      .then((body) => setSummary(body.data))
+      .then((body) => {
+        setSummary(body.data);
+        if (!shippingProfileId && body.data.shippingProfile?.id) {
+          setShippingProfileId(body.data.shippingProfile.id);
+        }
+      })
       .catch((err) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not refresh cart.");
@@ -134,7 +151,7 @@ export function StoreCartPage() {
       .finally(() => setChecking(false));
 
     return () => controller.abort();
-  }, [items, loaded]);
+  }, [items, loaded, shippingProfileId, appliedPromoCode]);
 
   const itemCount = useMemo(
     () => summary.lines.reduce((sum, line) => sum + line.quantity, 0),
@@ -184,6 +201,8 @@ export function StoreCartPage() {
             notes: form.notes.trim() || undefined,
           },
           items: checkoutItems,
+          shippingProfileId: summary.shippingProfile.id,
+          promoCode: summary.promo?.code ?? (appliedPromoCode || undefined),
         }),
       });
       if (!res.ok) throw new Error(await readError(res));
@@ -373,6 +392,62 @@ export function StoreCartPage() {
                 />
               </label>
               <div className="tora-cart-summary">
+                {summary.checkoutSettings.shippingProfiles.length > 1 && (
+                  <label className="tora-cart-select">
+                    Shipping option
+                    <select
+                      value={summary.shippingProfile.id}
+                      onChange={(e) => setShippingProfileId(e.target.value)}
+                    >
+                      {summary.checkoutSettings.shippingProfiles.map((profile) => (
+                        <option key={profile.id} value={profile.id}>
+                          {profile.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <div className="tora-cart-promo">
+                  <label>
+                    Promo code
+                    <span>
+                      <input
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        placeholder="SUMMER10"
+                        autoCapitalize="characters"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAppliedPromoCode(promoInput)}
+                        disabled={!promoInput.trim()}
+                      >
+                        Apply
+                      </button>
+                    </span>
+                  </label>
+                  {appliedPromoCode && (
+                    <button
+                      type="button"
+                      className="tora-cart-promo__clear"
+                      onClick={() => {
+                        setAppliedPromoCode("");
+                        setPromoInput("");
+                      }}
+                    >
+                      Clear promo
+                    </button>
+                  )}
+                  {summary.promo && (
+                    <p>
+                      {summary.promo.label} applied · -
+                      {formatMoney(summary.discountCents, summary.currency)}
+                    </p>
+                  )}
+                  {summary.promoError && (
+                    <p className="is-error">{summary.promoError}</p>
+                  )}
+                </div>
                 <div>
                   <span>
                     Subtotal · {itemCount} item{itemCount === 1 ? "" : "s"}
@@ -381,12 +456,20 @@ export function StoreCartPage() {
                     {formatMoney(summary.subtotalCents, summary.currency)}
                   </strong>
                 </div>
+                {(summary.discountCents > 0 || summary.promo) && (
+                  <div>
+                    <span>Discount{summary.promo ? ` · ${summary.promo.code}` : ""}</span>
+                    <strong>
+                      -{formatMoney(summary.discountCents, summary.currency)}
+                    </strong>
+                  </div>
+                )}
                 <div>
                   <span>Tax</span>
                   <strong>{formatMoney(summary.taxCents, summary.currency)}</strong>
                 </div>
                 <div>
-                  <span>Shipping</span>
+                  <span>Shipping · {summary.shippingProfile.label}</span>
                   <strong>{shippingSummaryText(summary)}</strong>
                 </div>
                 <div className="is-total">
@@ -402,7 +485,8 @@ export function StoreCartPage() {
                   checking ||
                   summary.lines.length === 0 ||
                   summary.optionErrors.length > 0 ||
-                  summary.availabilityErrors.length > 0
+                  summary.availabilityErrors.length > 0 ||
+                  Boolean(summary.promoError)
                 }
               >
                 {submitting

@@ -183,6 +183,13 @@
       "when": 1783306370703,
       "tag": "0025_ambiguous_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1783307781720,
+      "tag": "0026_faithful_catseye",
+      "breakpoints": true
     }
   ]
 }

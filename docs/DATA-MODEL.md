@@ -529,7 +529,12 @@ orders/webhooks do not decrement again.
 | client_id                    | text FK → client.id NULL | placed by                                                                  |
 | email                        | text                     | guest email                                                                |
 | status                       | text                     | `draft`\|`pending`\|`invoiced`\|`paid`\|`fulfilled`\|`cancelled`           |
-| subtotal_cents / total_cents | integer                  |                                                                            |
+| subtotal_cents / total_cents | integer                  | product subtotal and final customer total                                  |
+| discount_cents               | integer                  | promo discount snapshot; default 0                                         |
+| promo_code                   | text NULL                | normalized applied code snapshot                                           |
+| tax_cents / shipping_cents   | integer                  | saved checkout adjustments                                                 |
+| shipping_profile_id          | text NULL                | selected shipping profile id at checkout                                   |
+| shipping_profile_label       | text NULL                | selected shipping label at checkout                                        |
 | currency                     | text                     |                                                                            |
 | payment_provider             | text NULL                | `'manual'` or `'stripe'`                                                   |
 | payment_ref                  | text NULL                | manual note, Stripe session id, or external ref                            |
@@ -600,6 +605,16 @@ Indexes: `INDEX(order_id)`, `INDEX(invoice_id)`.
 
 Store checkout settings live on the singleton `site_settings` row. Hosted payment readiness
 adds:
+
+`store_shipping_profiles` is JSON for customer-selectable shipping options:
+`[{ id, label, mode: "manual"|"free"|"flat"|"pickup", amountCents, freeThresholdCents,
+enabled }]`. If no active profile exists, the legacy `store_shipping_mode` /
+`store_shipping_flat_cents` settings are used as a fallback.
+
+`store_promo_codes` is JSON for store-wide cart discounts:
+`[{ id, code, label, active, discountType: "percent"|"fixed", amountCents, percentBps,
+minimumSubtotalCents, usageLimit, expiresAt }]`. Codes are normalized uppercase and applied
+before tax and shipping. Usage limits count orders whose `promo_code` matches the code.
 
 | Field                          | Type      | Notes                                                                  |
 | ------------------------------ | --------- | ---------------------------------------------------------------------- |

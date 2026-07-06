@@ -18,8 +18,11 @@ const order: StoreOrderConfirmation = {
   customerName: "Riley",
   customerEmail: "riley@example.com",
   subtotalCents: 13900,
+  discountCents: 0,
+  promoCode: null,
   taxCents: 1147,
   shippingCents: 1200,
+  shippingProfileLabel: "Standard shipping",
   totalCents: 16247,
   currency: "USD",
   itemCount: 1,
@@ -33,6 +36,7 @@ const order: StoreOrderConfirmation = {
     taxRateBps: 825,
     shippingMode: "flat",
     shippingFlatCents: 1200,
+    shippingProfiles: [],
   },
   lines: [
     {
@@ -65,8 +69,12 @@ const adminOrder: AdminOrderDTO = {
   email: order.customerEmail,
   status: "invoiced",
   subtotalCents: order.subtotalCents,
+  discountCents: order.discountCents,
+  promoCode: order.promoCode,
   taxCents: order.taxCents,
   shippingCents: order.shippingCents,
+  shippingProfileId: "default",
+  shippingProfileLabel: order.shippingProfileLabel,
   totalCents: order.totalCents,
   currency: order.currency,
   paymentProvider: "manual",
@@ -160,7 +168,7 @@ describe("manual order email templates", () => {
     expect(msg.html).toContain("Fine Art Print");
     expect(msg.html).toContain("Size: 16 x 20");
     expect(msg.text ?? "").toContain("Tax: $11.47");
-    expect(msg.text ?? "").toContain("Shipping: $12.00");
+    expect(msg.text ?? "").toContain("Shipping (Standard shipping): $12.00");
     expect(msg.text ?? "").toContain("Total: $162.47");
   });
 

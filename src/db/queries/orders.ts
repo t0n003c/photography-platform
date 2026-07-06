@@ -37,8 +37,12 @@ export interface ManualCheckoutOrderDTO {
   clientId: string | null;
   status: "pending";
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileId: string | null;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   itemCount: number;
@@ -141,8 +145,12 @@ export interface AdminOrderDTO {
   email: string | null;
   status: OrderStatus;
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileId: string | null;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   paymentProvider: string | null;
@@ -178,8 +186,11 @@ export interface AdminOrderTaxExportDTO {
   paidAt: string | null;
   currency: string;
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileLabel: string | null;
   totalCents: number;
   invoiceAmountCents: number | null;
   paidAmountCents: number | null;
@@ -227,8 +238,11 @@ export interface PublicOrderStatusDTO {
   fulfillmentShippedAt: string | null;
   fulfillmentDeliveredAt: string | null;
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   invoice: Pick<
@@ -269,8 +283,11 @@ function publicOrderStatusFromAdmin(order: AdminOrderDTO): PublicOrderStatusDTO 
     fulfillmentShippedAt: order.fulfillmentShippedAt,
     fulfillmentDeliveredAt: order.fulfillmentDeliveredAt,
     subtotalCents: order.subtotalCents,
+    discountCents: order.discountCents,
+    promoCode: order.promoCode,
     taxCents: order.taxCents,
     shippingCents: order.shippingCents,
+    shippingProfileLabel: order.shippingProfileLabel,
     totalCents: order.totalCents,
     currency: order.currency,
     invoice: order.invoice
@@ -530,8 +547,12 @@ export async function createManualCheckoutOrder(
       email: customer.email.trim().toLowerCase(),
       status: "pending",
       subtotalCents: summary.subtotalCents,
+      discountCents: summary.discountCents,
+      promoCode: summary.promo?.code ?? null,
       taxCents: summary.taxCents,
       shippingCents: summary.shippingCents,
+      shippingProfileId: summary.shippingProfile.id,
+      shippingProfileLabel: summary.shippingProfile.label,
       totalCents: summary.totalCents,
       currency: summary.currency,
       paymentProvider: "manual",
@@ -562,8 +583,12 @@ export async function createManualCheckoutOrder(
     clientId,
     status: "pending",
     subtotalCents: summary.subtotalCents,
+    discountCents: summary.discountCents,
+    promoCode: summary.promo?.code ?? null,
     taxCents: summary.taxCents,
     shippingCents: summary.shippingCents,
+    shippingProfileId: summary.shippingProfile.id,
+    shippingProfileLabel: summary.shippingProfile.label,
     totalCents: summary.totalCents,
     currency: summary.currency,
     itemCount: summary.lines.reduce((sum, line) => sum + line.quantity, 0),
@@ -609,8 +634,12 @@ export async function createHostedCheckoutOrder(
       email: customer.email.trim().toLowerCase(),
       status: "pending",
       subtotalCents: summary.subtotalCents,
+      discountCents: summary.discountCents,
+      promoCode: summary.promo?.code ?? null,
       taxCents: summary.taxCents,
       shippingCents: summary.shippingCents,
+      shippingProfileId: summary.shippingProfile.id,
+      shippingProfileLabel: summary.shippingProfile.label,
       totalCents: summary.totalCents,
       currency: summary.currency,
       paymentProvider: "stripe",
@@ -660,8 +689,12 @@ export async function createHostedCheckoutOrder(
     clientId,
     status: "pending",
     subtotalCents: summary.subtotalCents,
+    discountCents: summary.discountCents,
+    promoCode: summary.promo?.code ?? null,
     taxCents: summary.taxCents,
     shippingCents: summary.shippingCents,
+    shippingProfileId: summary.shippingProfile.id,
+    shippingProfileLabel: summary.shippingProfile.label,
     totalCents: summary.totalCents,
     currency: summary.currency,
     itemCount: summary.lines.reduce((sum, line) => sum + line.quantity, 0),
@@ -736,8 +769,12 @@ export async function listOrdersAdmin(limit = 50): Promise<AdminOrderDTO[]> {
       email: row.email ?? clientRow?.email ?? null,
       status: row.status,
       subtotalCents: row.subtotalCents,
+      discountCents: row.discountCents,
+      promoCode: row.promoCode,
       taxCents: row.taxCents,
       shippingCents: row.shippingCents,
+      shippingProfileId: row.shippingProfileId,
+      shippingProfileLabel: row.shippingProfileLabel,
       totalCents: row.totalCents,
       currency: row.currency,
       paymentProvider: row.paymentProvider,
@@ -762,8 +799,11 @@ export async function listOrdersTaxExportAdmin(
       orderEmail: orderTable.email,
       status: orderTable.status,
       subtotalCents: orderTable.subtotalCents,
+      discountCents: orderTable.discountCents,
+      promoCode: orderTable.promoCode,
       taxCents: orderTable.taxCents,
       shippingCents: orderTable.shippingCents,
+      shippingProfileLabel: orderTable.shippingProfileLabel,
       totalCents: orderTable.totalCents,
       currency: orderTable.currency,
       createdAt: orderTable.createdAt,
@@ -871,8 +911,11 @@ export async function listOrdersTaxExportAdmin(
       paidAt: row.paidAt?.toISOString() ?? null,
       currency: row.currency,
       subtotalCents: row.subtotalCents,
+      discountCents: row.discountCents,
+      promoCode: row.promoCode,
       taxCents: row.taxCents,
       shippingCents: row.shippingCents,
+      shippingProfileLabel: row.shippingProfileLabel,
       totalCents: row.totalCents,
       invoiceAmountCents: row.invoiceAmountCents,
       paidAmountCents,
@@ -923,8 +966,12 @@ export async function getOrderAdmin(id: string): Promise<AdminOrderDTO | null> {
     email: row.email ?? clientRow?.email ?? null,
     status: row.status,
     subtotalCents: row.subtotalCents,
+    discountCents: row.discountCents,
+    promoCode: row.promoCode,
     taxCents: row.taxCents,
     shippingCents: row.shippingCents,
+    shippingProfileId: row.shippingProfileId,
+    shippingProfileLabel: row.shippingProfileLabel,
     totalCents: row.totalCents,
     currency: row.currency,
     paymentProvider: row.paymentProvider,

@@ -83,6 +83,11 @@ function orderLinesText(order: StoreOrderConfirmation) {
 
 function shippingText(order: StoreOrderConfirmation) {
   if (order.shippingCents > 0) return formatMoney(order.shippingCents, order.currency);
+  if (order.shippingProfileLabel) {
+    return order.shippingProfileLabel.toLowerCase().includes("quote")
+      ? "Quoted after review"
+      : "Free";
+  }
   if (order.checkoutSettings.shippingMode === "free") return "Free";
   if (order.checkoutSettings.shippingMode === "manual") return "Quoted after review";
   return formatMoney(0, order.currency);
@@ -94,10 +99,21 @@ function totalsHtml(order: StoreOrderConfirmation) {
       <tr><td style="padding:4px 0;color:#666">Subtotal</td><td style="padding:4px 0;text-align:right">${escape(
         formatMoney(order.subtotalCents, order.currency),
       )}</td></tr>
+      ${
+        order.discountCents > 0
+          ? `<tr><td style="padding:4px 0;color:#666">Discount${
+              order.promoCode ? ` · ${escape(order.promoCode)}` : ""
+            }</td><td style="padding:4px 0;text-align:right">-${escape(
+              formatMoney(order.discountCents, order.currency),
+            )}</td></tr>`
+          : ""
+      }
       <tr><td style="padding:4px 0;color:#666">Tax</td><td style="padding:4px 0;text-align:right">${escape(
         formatMoney(order.taxCents, order.currency),
       )}</td></tr>
-      <tr><td style="padding:4px 0;color:#666">Shipping</td><td style="padding:4px 0;text-align:right">${escape(
+      <tr><td style="padding:4px 0;color:#666">Shipping${
+        order.shippingProfileLabel ? ` · ${escape(order.shippingProfileLabel)}` : ""
+      }</td><td style="padding:4px 0;text-align:right">${escape(
         shippingText(order),
       )}</td></tr>
       <tr><td style="padding:10px 0 0;font-size:18px"><strong>Total</strong></td><td style="padding:10px 0 0;text-align:right;font-size:18px"><strong>${escape(
@@ -110,8 +126,16 @@ function totalsHtml(order: StoreOrderConfirmation) {
 function totalsText(order: StoreOrderConfirmation) {
   return [
     `Subtotal: ${formatMoney(order.subtotalCents, order.currency)}`,
+    ...(order.discountCents > 0
+      ? [
+          `Discount${order.promoCode ? ` (${order.promoCode})` : ""}: -${formatMoney(
+            order.discountCents,
+            order.currency,
+          )}`,
+        ]
+      : []),
     `Tax: ${formatMoney(order.taxCents, order.currency)}`,
-    `Shipping: ${shippingText(order)}`,
+    `Shipping${order.shippingProfileLabel ? ` (${order.shippingProfileLabel})` : ""}: ${shippingText(order)}`,
     `Total: ${formatMoney(order.totalCents, order.currency)}`,
   ].join("\n");
 }
@@ -253,8 +277,11 @@ function adminOrderToConfirmation(
     customerName: order.clientName,
     customerEmail: order.email ?? "",
     subtotalCents: order.subtotalCents,
+    discountCents: order.discountCents,
+    promoCode: order.promoCode,
     taxCents: order.taxCents,
     shippingCents: order.shippingCents,
+    shippingProfileLabel: order.shippingProfileLabel,
     totalCents: order.totalCents,
     currency: order.currency,
     itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),

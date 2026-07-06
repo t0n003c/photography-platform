@@ -37,6 +37,11 @@ function formatDate(value: string | null) {
 
 function shippingText(order: AdminOrderDTO) {
   if (order.shippingCents > 0) return formatMoney(order.shippingCents, order.currency);
+  if (order.shippingProfileLabel) {
+    return order.shippingProfileLabel.toLowerCase().includes("quote")
+      ? "Quoted"
+      : "Free";
+  }
   if (order.storeSettingsSnapshot.shippingMode === "free") return "Free";
   if (order.storeSettingsSnapshot.shippingMode === "manual") return "Quoted";
   return formatMoney(0, order.currency);
@@ -465,12 +470,25 @@ export default async function PublicInvoicePage({
                 <span>Subtotal</span>
                 <strong>{formatMoney(order.subtotalCents, order.currency)}</strong>
               </div>
+              {order.discountCents > 0 && (
+                <div className="flex justify-between gap-4">
+                  <span>
+                    Discount{order.promoCode ? ` · ${order.promoCode}` : ""}
+                  </span>
+                  <strong>-{formatMoney(order.discountCents, order.currency)}</strong>
+                </div>
+              )}
               <div className="flex justify-between gap-4">
                 <span>Tax</span>
                 <strong>{formatMoney(order.taxCents, order.currency)}</strong>
               </div>
               <div className="flex justify-between gap-4">
-                <span>Shipping</span>
+                <span>
+                  Shipping
+                  {order.shippingProfileLabel
+                    ? ` · ${order.shippingProfileLabel}`
+                    : ""}
+                </span>
                 <strong>{shippingText(order)}</strong>
               </div>
               <div className="flex justify-between gap-4 border-t pt-3 text-lg">

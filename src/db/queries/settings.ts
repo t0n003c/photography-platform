@@ -142,6 +142,9 @@ export async function getStoreCheckoutSettings(): Promise<StoreCheckoutSettings>
       row?.storeShippingMode ?? SETTINGS_DEFAULTS.storeCheckout.shippingMode,
     shippingFlatCents:
       row?.storeShippingFlatCents ?? SETTINGS_DEFAULTS.storeCheckout.shippingFlatCents,
+    shippingProfiles:
+      row?.storeShippingProfiles ?? SETTINGS_DEFAULTS.storeCheckout.shippingProfiles,
+    promoCodes: row?.storePromoCodes ?? SETTINGS_DEFAULTS.storeCheckout.promoCodes,
   });
 }
 

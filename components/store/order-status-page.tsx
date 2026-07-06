@@ -42,8 +42,11 @@ interface PublicOrderStatus {
   fulfillmentShippedAt: string | null;
   fulfillmentDeliveredAt: string | null;
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   invoice: {
@@ -373,12 +376,27 @@ export function OrderStatusPage({ token }: OrderStatusPageProps) {
                       {formatMoney(order.subtotalCents, order.currency)}
                     </strong>
                   </div>
+                  {order.discountCents > 0 && (
+                    <div>
+                      <span>
+                        Discount{order.promoCode ? ` · ${order.promoCode}` : ""}
+                      </span>
+                      <strong>
+                        -{formatMoney(order.discountCents, order.currency)}
+                      </strong>
+                    </div>
+                  )}
                   <div>
                     <span>Tax</span>
                     <strong>{formatMoney(order.taxCents, order.currency)}</strong>
                   </div>
                   <div>
-                    <span>Shipping</span>
+                    <span>
+                      Shipping
+                      {order.shippingProfileLabel
+                        ? ` · ${order.shippingProfileLabel}`
+                        : ""}
+                    </span>
                     <strong>
                       {formatMoney(order.shippingCents, order.currency)}
                     </strong>

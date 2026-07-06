@@ -9,7 +9,11 @@ function cleanDescription(value: string | null | undefined, fallback: string) {
 
 function appendAdjustmentLines(
   lines: CheckoutLineItem[],
-  input: { taxCents: number; shippingCents: number; shippingTaxCode?: string | null },
+  input: {
+    taxCents: number;
+    shippingCents: number;
+    shippingTaxCode?: string | null;
+  },
 ) {
   if (input.taxCents > 0) {
     lines.push({
@@ -28,15 +32,51 @@ function appendAdjustmentLines(
   }
 }
 
+function prorateDiscount(
+  lineTotals: number[],
+  discountCents: number,
+): number[] {
+  const subtotal = lineTotals.reduce((sum, value) => sum + value, 0);
+  const discount = Math.min(Math.max(Math.round(discountCents), 0), subtotal);
+  if (subtotal <= 0 || discount <= 0) return lineTotals;
+
+  let remainingDiscount = discount;
+  return lineTotals.map((lineTotal, index) => {
+    const lineDiscount =
+      index === lineTotals.length - 1
+        ? remainingDiscount
+        : Math.min(
+            lineTotal,
+            Math.round((discount * lineTotal) / Math.max(subtotal, 1)),
+          );
+    remainingDiscount -= lineDiscount;
+    return Math.max(0, lineTotal - lineDiscount);
+  });
+}
+
 export function checkoutLineItemsFromCartSummary(
   summary: CartSummaryDTO,
 ): CheckoutLineItem[] {
-  const lines = summary.lines.map((line) => ({
-    description: cleanDescription(line.product.name, "Product"),
-    amountCents: line.unitPriceCents,
-    quantity: line.quantity,
-    taxCode: line.product.stripeTaxCode,
-  }));
+  const discountedTotals = prorateDiscount(
+    summary.lines.map((line) => line.lineTotalCents),
+    summary.discountCents,
+  );
+  const lines = summary.lines.map((line, index) => {
+    if (summary.discountCents > 0) {
+      return {
+        description: `${cleanDescription(line.product.name, "Product")} × ${line.quantity}`,
+        amountCents: discountedTotals[index] ?? line.lineTotalCents,
+        quantity: 1,
+        taxCode: line.product.stripeTaxCode,
+      };
+    }
+    return {
+      description: cleanDescription(line.product.name, "Product"),
+      amountCents: line.unitPriceCents,
+      quantity: line.quantity,
+      taxCode: line.product.stripeTaxCode,
+    };
+  });
   appendAdjustmentLines(lines, {
     ...summary,
     shippingTaxCode: summary.payment.shippingTaxCode,
@@ -45,12 +85,27 @@ export function checkoutLineItemsFromCartSummary(
 }
 
 export function checkoutLineItemsFromOrder(order: AdminOrderDTO): CheckoutLineItem[] {
-  const lines = order.items.map((item) => ({
-    description: cleanDescription(item.description?.split(" — ")[0], "Product"),
-    amountCents: item.unitPriceCents,
-    quantity: item.quantity,
-    taxCode: item.stripeTaxCode,
-  }));
+  const discountedTotals = prorateDiscount(
+    order.items.map((item) => item.lineTotalCents),
+    order.discountCents,
+  );
+  const lines = order.items.map((item, index) => {
+    const description = cleanDescription(item.description?.split(" — ")[0], "Product");
+    if (order.discountCents > 0) {
+      return {
+        description: `${description} × ${item.quantity}`,
+        amountCents: discountedTotals[index] ?? item.lineTotalCents,
+        quantity: 1,
+        taxCode: item.stripeTaxCode,
+      };
+    }
+    return {
+      description,
+      amountCents: item.unitPriceCents,
+      quantity: item.quantity,
+      taxCode: item.stripeTaxCode,
+    };
+  });
   appendAdjustmentLines(lines, order);
   return lines;
 }

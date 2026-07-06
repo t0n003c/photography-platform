@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/src/db/client";
-import { product } from "@/src/db/schema";
+import { order as orderTable, product } from "@/src/db/schema";
 import { serializePhotos, type PhotoDTO } from "@/src/db/queries/photos";
 import { photo } from "@/src/db/schema";
 import {
@@ -19,8 +19,11 @@ import {
 } from "@/src/db/queries/settings";
 import {
   calculateStoreTotals,
+  normalizePromoCodeInput,
   publicStoreCheckoutSettings,
   storePaymentStatus,
+  type ResolvedStoreShippingProfile,
+  type StorePromoApplication,
   type PublicStoreCheckoutSettings,
 } from "@/src/lib/store-settings";
 
@@ -59,6 +62,11 @@ export interface CartItemInput {
   options?: ProductOptionSelectionInput;
 }
 
+export interface CartAdjustmentInput {
+  shippingProfileId?: string | null;
+  promoCode?: string | null;
+}
+
 export interface CartLineDTO {
   key: string;
   product: ProductDTO;
@@ -83,8 +91,12 @@ export interface CartSummaryDTO {
   optionErrors: CartOptionError[];
   availabilityErrors: CartAvailabilityError[];
   subtotalCents: number;
+  discountCents: number;
+  promo: StorePromoApplication | null;
+  promoError: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfile: ResolvedStoreShippingProfile;
   totalCents: number;
   currency: string;
   hasMixedCurrency: boolean;
@@ -333,6 +345,7 @@ function collectAvailabilityErrors(lines: CartLineDTO[]): CartAvailabilityError[
 
 export async function resolveCartItems(
   items: CartItemInput[],
+  adjustments: CartAdjustmentInput = {},
 ): Promise<CartSummaryDTO> {
   const [checkoutSettings, paymentSettings] = await Promise.all([
     getStoreCheckoutSettings(),
@@ -373,6 +386,17 @@ export async function resolveCartItems(
   const currencies = [...new Set(lines.map((line) => line.product.currency))];
   const availabilityErrors = collectAvailabilityErrors(lines);
   const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
+  const promoCode = normalizePromoCodeInput(adjustments.promoCode);
+  const promoUsageCount = promoCode
+    ? Number(
+        (
+          await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(orderTable)
+            .where(eq(orderTable.promoCode, promoCode))
+        )[0]?.count ?? 0,
+      )
+    : 0;
   const effectiveCheckoutSettings = useStripeTax
     ? {
         ...checkoutSettings,
@@ -380,7 +404,11 @@ export async function resolveCartItems(
         taxRateBps: 0,
       }
     : checkoutSettings;
-  const totals = calculateStoreTotals(subtotalCents, effectiveCheckoutSettings);
+  const totals = calculateStoreTotals(subtotalCents, effectiveCheckoutSettings, {
+    shippingProfileId: adjustments.shippingProfileId,
+    promoCode,
+    promoUsageCount,
+  });
   return {
     lines,
     unavailableProductIds: normalized
@@ -389,8 +417,12 @@ export async function resolveCartItems(
     optionErrors,
     availabilityErrors,
     subtotalCents,
+    discountCents: totals.discountCents,
+    promo: totals.promo,
+    promoError: totals.promoError,
     taxCents: totals.taxCents,
     shippingCents: totals.shippingCents,
+    shippingProfile: totals.shippingProfile,
     totalCents: totals.totalCents,
     currency: currencies[0] ?? "USD",
     hasMixedCurrency: currencies.length > 1,

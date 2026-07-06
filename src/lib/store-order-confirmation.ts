@@ -20,8 +20,11 @@ export interface StoreOrderConfirmation {
   customerName: string | null;
   customerEmail: string;
   subtotalCents: number;
+  discountCents: number;
+  promoCode: string | null;
   taxCents: number;
   shippingCents: number;
+  shippingProfileLabel: string | null;
   totalCents: number;
   currency: string;
   itemCount: number;

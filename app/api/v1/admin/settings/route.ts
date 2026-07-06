@@ -14,7 +14,12 @@ import {
   getSiteSettingsRow,
   invalidateSiteSettings,
 } from "@/src/db/queries/settings";
-import { normalizeStripeTaxCode, storePaymentStatus } from "@/src/lib/store-settings";
+import {
+  normalizePromoCodes,
+  normalizeShippingProfiles,
+  normalizeStripeTaxCode,
+  storePaymentStatus,
+} from "@/src/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +58,8 @@ export async function GET() {
       storeTaxRateBps: row?.storeTaxRateBps ?? 0,
       storeShippingMode: row?.storeShippingMode ?? "manual",
       storeShippingFlatCents: row?.storeShippingFlatCents ?? 0,
+      storeShippingProfiles: normalizeShippingProfiles(row?.storeShippingProfiles),
+      storePromoCodes: normalizePromoCodes(row?.storePromoCodes),
       storeOnlinePaymentsEnabled:
         paymentSettings.onlinePaymentsEnabled ??
         SETTINGS_DEFAULTS.storePayment.onlinePaymentsEnabled,
@@ -101,6 +108,36 @@ const PatchSchema = z.object({
   storeTaxRateBps: z.number().int().min(0).max(10000).optional(),
   storeShippingMode: z.enum(["manual", "free", "flat"]).optional(),
   storeShippingFlatCents: z.number().int().min(0).max(100_000_000).optional(),
+  storeShippingProfiles: z
+    .array(
+      z.object({
+        id: z.string().max(80),
+        label: z.string().max(80),
+        mode: z.enum(["manual", "free", "flat", "pickup"]),
+        amountCents: z.number().int().min(0).max(100_000_000),
+        freeThresholdCents: z.number().int().min(0).max(100_000_000),
+        enabled: z.boolean(),
+      }),
+    )
+    .max(12)
+    .optional(),
+  storePromoCodes: z
+    .array(
+      z.object({
+        id: z.string().max(80),
+        code: z.string().max(40),
+        label: z.string().max(100),
+        active: z.boolean(),
+        discountType: z.enum(["percent", "fixed"]),
+        amountCents: z.number().int().min(0).max(100_000_000),
+        percentBps: z.number().int().min(0).max(10000),
+        minimumSubtotalCents: z.number().int().min(0).max(100_000_000),
+        usageLimit: z.number().int().min(1).max(1_000_000).nullable(),
+        expiresAt: z.string().max(40).nullable(),
+      }),
+    )
+    .max(50)
+    .optional(),
   storeOnlinePaymentsEnabled: z.boolean().optional(),
   storePaymentProvider: z.enum(["manual", "stripe"]).optional(),
   storePaymentMode: z.enum(["test", "live"]).optional(),
@@ -162,6 +199,12 @@ export async function PATCH(req: Request) {
   setIf("storeShippingMode", "storeShippingMode");
   if (body.storeShippingFlatCents !== undefined) {
     updates.storeShippingFlatCents = body.storeShippingFlatCents;
+  }
+  if (body.storeShippingProfiles !== undefined) {
+    updates.storeShippingProfiles = normalizeShippingProfiles(body.storeShippingProfiles);
+  }
+  if (body.storePromoCodes !== undefined) {
+    updates.storePromoCodes = normalizePromoCodes(body.storePromoCodes);
   }
   if (body.storeOnlinePaymentsEnabled !== undefined) {
     updates.storeOnlinePaymentsEnabled = body.storeOnlinePaymentsEnabled;

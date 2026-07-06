@@ -1302,6 +1302,19 @@ is gitignored):
   when an order transitions from unpaid to paid/fulfilled through manual status update,
   manual receipt recording, fulfillment delivery, or a first successful Stripe paid
   webhook. Already-paid orders/webhook retries do not decrement again.
+  Follow-up: Store operations polish is active. Migration `0026_faithful_catseye.sql`
+  adds `site_settings.store_shipping_profiles`, `site_settings.store_promo_codes`,
+  `order.discount_cents`, `order.promo_code`, `order.shipping_profile_id`, and
+  `order.shipping_profile_label`. Settings -> Store now has editable shipping profiles
+  (`manual`, `free`, `flat`, `pickup`, optional free-over threshold) and store-wide promo
+  codes (`percent`/`fixed`, active toggle, minimum subtotal, usage limit, expiration).
+  `/api/v1/cart` and `/api/v1/checkout` accept `shippingProfileId` and `promoCode`; checkout
+  revalidates invalid/expired/used-up codes with `PROMO_CODE_INVALID`. Discounts apply before
+  tax/shipping, selected shipping + promo details snapshot onto orders, customer emails/status
+  pages/invoices/admin order details show the discount/profile lines, and the tax CSV export
+  includes discount, promo, and shipping profile columns. Hosted Stripe Checkout cannot use
+  negative line items, so payment line items prorate the discount across product lines while
+  local receipts keep an explicit Discount row.
   Follow-up: Customer order status lookup is active without a schema migration.
   `/orders/status` loads a customer-safe order summary from a signed HMAC order-status
   token or from an email + order id / invoice number lookup via

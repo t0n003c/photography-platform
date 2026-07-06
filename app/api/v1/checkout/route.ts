@@ -39,6 +39,8 @@ const CheckoutSchema = z.object({
     notes: z.string().max(1000).optional(),
   }),
   items: z.array(CheckoutItemSchema).min(1).max(50),
+  shippingProfileId: z.string().max(80).nullable().optional(),
+  promoCode: z.string().max(40).nullable().optional(),
 });
 
 function trimSlash(value: string) {
@@ -62,6 +64,9 @@ function buildConfirmation(opts: {
     subtotalCents: opts.order.subtotalCents,
     taxCents: opts.order.taxCents,
     shippingCents: opts.order.shippingCents,
+    discountCents: opts.order.discountCents,
+    promoCode: opts.order.promoCode,
+    shippingProfileLabel: opts.order.shippingProfileLabel,
     totalCents: opts.order.totalCents,
     currency: opts.order.currency,
     itemCount: opts.order.itemCount,
@@ -92,7 +97,10 @@ export async function POST(req: Request) {
   const parsed = await parseJson(req, CheckoutSchema);
   if ("error" in parsed) return parsed.error;
 
-  const summary = await resolveCartItems(parsed.data.items);
+  const summary = await resolveCartItems(parsed.data.items, {
+    shippingProfileId: parsed.data.shippingProfileId,
+    promoCode: parsed.data.promoCode,
+  });
   if (summary.lines.length === 0) {
     return problem(422, "EMPTY_CART", "Add at least one available product first.");
   }
@@ -141,6 +149,11 @@ export async function POST(req: Request) {
       "MIXED_CURRENCY_CART",
       "Products with different currencies cannot be checked out together yet.",
     );
+  }
+  if (summary.promoError) {
+    return problem(409, "PROMO_CODE_INVALID", summary.promoError, {
+      details: [{ field: "promoCode", issue: summary.promoError }],
+    });
   }
 
   if (summary.payment.hostedCheckoutAvailable) {

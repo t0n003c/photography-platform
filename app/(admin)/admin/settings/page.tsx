@@ -1,13 +1,24 @@
 "use client";
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Loader2, Upload as UploadIcon, Send } from "lucide-react";
+import {
+  ChevronDown,
+  Loader2,
+  Plus,
+  Trash2,
+  Upload as UploadIcon,
+  Send,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
+import type {
+  StorePromoCode,
+  StoreShippingProfile,
+} from "@/src/lib/store-settings";
 
 interface SettingsDTO {
   siteTitle: string;
@@ -35,6 +46,8 @@ interface SettingsDTO {
   storeTaxRateBps: number;
   storeShippingMode: "manual" | "free" | "flat";
   storeShippingFlatCents: number;
+  storeShippingProfiles: StoreShippingProfile[];
+  storePromoCodes: StorePromoCode[];
   storeOnlinePaymentsEnabled: boolean;
   storePaymentProvider: "manual" | "stripe";
   storePaymentMode: "test" | "live";
@@ -96,6 +109,42 @@ function percentToBps(value: string) {
   return Number.isFinite(parsed)
     ? Math.min(Math.max(Math.round(parsed * 100), 0), 10000)
     : 0;
+}
+
+function profileId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 7)}`;
+}
+
+function newShippingProfile(): StoreShippingProfile {
+  return {
+    id: profileId("ship"),
+    label: "Standard shipping",
+    mode: "flat",
+    amountCents: 0,
+    freeThresholdCents: 0,
+    enabled: true,
+  };
+}
+
+function newPromoCode(): StorePromoCode {
+  return {
+    id: profileId("promo"),
+    code: "NEWCODE",
+    label: "New promo",
+    active: true,
+    discountType: "percent",
+    amountCents: 0,
+    percentBps: 1000,
+    minimumSubtotalCents: 0,
+    usageLimit: null,
+    expiresAt: null,
+  };
+}
+
+function normalizeCodeInput(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, "").slice(0, 40);
 }
 
 function paymentStatusFor(settings: {
@@ -226,6 +275,33 @@ export default function SettingsPage() {
   const update = <K extends keyof SettingsDTO>(key: K, value: SettingsDTO[K]) =>
     setS((prev) => (prev ? { ...prev, [key]: value } : prev));
 
+  const updateShippingProfile = (
+    id: string,
+    patch: Partial<StoreShippingProfile>,
+  ) =>
+    setS((prev) =>
+      prev
+        ? {
+            ...prev,
+            storeShippingProfiles: prev.storeShippingProfiles.map((profile) =>
+              profile.id === id ? { ...profile, ...patch } : profile,
+            ),
+          }
+        : prev,
+    );
+
+  const updatePromoCode = (id: string, patch: Partial<StorePromoCode>) =>
+    setS((prev) =>
+      prev
+        ? {
+            ...prev,
+            storePromoCodes: prev.storePromoCodes.map((promo) =>
+              promo.id === id ? { ...promo, ...patch } : promo,
+            ),
+          }
+        : prev,
+    );
+
   const save = async () => {
     if (!s) return;
     setSaving(true);
@@ -252,6 +328,8 @@ export default function SettingsPage() {
         storeTaxRateBps: s.storeTaxRateBps,
         storeShippingMode: s.storeShippingMode,
         storeShippingFlatCents: s.storeShippingFlatCents,
+        storeShippingProfiles: s.storeShippingProfiles,
+        storePromoCodes: s.storePromoCodes,
         storeOnlinePaymentsEnabled: s.storeOnlinePaymentsEnabled,
         storePaymentProvider: s.storePaymentProvider,
         storePaymentMode: s.storePaymentMode,
@@ -538,6 +616,334 @@ export default function SettingsPage() {
                 disabled={s.storeShippingMode !== "flat"}
               />
             </Field>
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Shipping profiles</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Let customers choose pickup, free, flat-rate, or quote-after-review
+                  options. If no profile is active, the fallback mode above is used.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setS((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          storeShippingProfiles: [
+                            ...prev.storeShippingProfiles,
+                            newShippingProfile(),
+                          ],
+                        }
+                      : prev,
+                  )
+                }
+              >
+                <Plus className="h-4 w-4" />
+                Add profile
+              </Button>
+            </div>
+
+            {s.storeShippingProfiles.length === 0 ? (
+              <p className="rounded-lg bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))]">
+                No custom profiles yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {s.storeShippingProfiles.map((profile) => (
+                  <div key={profile.id} className="rounded-lg border p-3">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={profile.enabled}
+                          onChange={(event) =>
+                            updateShippingProfile(profile.id, {
+                              enabled: event.target.checked,
+                            })
+                          }
+                        />
+                        Active
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setS((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  storeShippingProfiles:
+                                    prev.storeShippingProfiles.filter(
+                                      (item) => item.id !== profile.id,
+                                    ),
+                                }
+                              : prev,
+                          )
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Profile label">
+                        <Input
+                          value={profile.label}
+                          onChange={(event) =>
+                            updateShippingProfile(profile.id, {
+                              label: event.target.value,
+                            })
+                          }
+                          placeholder="Domestic shipping"
+                        />
+                      </Field>
+                      <Field label="Profile type">
+                        <Select
+                          value={profile.mode}
+                          onChange={(event) =>
+                            updateShippingProfile(profile.id, {
+                              mode: event.target
+                                .value as StoreShippingProfile["mode"],
+                            })
+                          }
+                        >
+                          <option value="flat">Flat rate</option>
+                          <option value="free">Free shipping</option>
+                          <option value="pickup">Local pickup</option>
+                          <option value="manual">Quote after review</option>
+                        </Select>
+                      </Field>
+                      <Field label="Shipping amount">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={centsToAmount(profile.amountCents)}
+                          onChange={(event) =>
+                            updateShippingProfile(profile.id, {
+                              amountCents: amountToCents(event.target.value),
+                            })
+                          }
+                          disabled={profile.mode !== "flat"}
+                        />
+                      </Field>
+                      <Field label="Free above amount">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={centsToAmount(profile.freeThresholdCents)}
+                          onChange={(event) =>
+                            updateShippingProfile(profile.id, {
+                              freeThresholdCents: amountToCents(event.target.value),
+                            })
+                          }
+                          disabled={profile.mode !== "flat"}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Promo codes</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Codes apply to the full cart before tax and shipping. Usage limits are
+                  counted against completed order records.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setS((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          storePromoCodes: [
+                            ...prev.storePromoCodes,
+                            newPromoCode(),
+                          ],
+                        }
+                      : prev,
+                  )
+                }
+              >
+                <Plus className="h-4 w-4" />
+                Add code
+              </Button>
+            </div>
+
+            {s.storePromoCodes.length === 0 ? (
+              <p className="rounded-lg bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))]">
+                No promo codes yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {s.storePromoCodes.map((promo) => (
+                  <div key={promo.id} className="rounded-lg border p-3">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={promo.active}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              active: event.target.checked,
+                            })
+                          }
+                        />
+                        Active
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setS((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  storePromoCodes: prev.storePromoCodes.filter(
+                                    (item) => item.id !== promo.id,
+                                  ),
+                                }
+                              : prev,
+                          )
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Code">
+                        <Input
+                          value={promo.code}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              code: normalizeCodeInput(event.target.value),
+                            })
+                          }
+                          placeholder="SUMMER10"
+                        />
+                      </Field>
+                      <Field label="Display label">
+                        <Input
+                          value={promo.label}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, { label: event.target.value })
+                          }
+                          placeholder="Summer promo"
+                        />
+                      </Field>
+                      <Field label="Discount type">
+                        <Select
+                          value={promo.discountType}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              discountType: event.target
+                                .value as StorePromoCode["discountType"],
+                            })
+                          }
+                        >
+                          <option value="percent">Percent off</option>
+                          <option value="fixed">Fixed amount off</option>
+                        </Select>
+                      </Field>
+                      {promo.discountType === "percent" ? (
+                        <Field label="Percent off">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={0.01}
+                            value={bpsToPercent(promo.percentBps)}
+                            onChange={(event) =>
+                              updatePromoCode(promo.id, {
+                                percentBps: percentToBps(event.target.value),
+                              })
+                            }
+                          />
+                        </Field>
+                      ) : (
+                        <Field label="Amount off">
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={centsToAmount(promo.amountCents)}
+                            onChange={(event) =>
+                              updatePromoCode(promo.id, {
+                                amountCents: amountToCents(event.target.value),
+                              })
+                            }
+                          />
+                        </Field>
+                      )}
+                      <Field label="Minimum subtotal">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={centsToAmount(promo.minimumSubtotalCents)}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              minimumSubtotalCents: amountToCents(event.target.value),
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field label="Usage limit">
+                        <Input
+                          type="number"
+                          min={1}
+                          value={promo.usageLimit ?? ""}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              usageLimit:
+                                event.target.value &&
+                                Number.isFinite(Number(event.target.value))
+                                  ? Math.max(
+                                      1,
+                                      Math.floor(Number(event.target.value)),
+                                    )
+                                  : null,
+                            })
+                          }
+                          placeholder="Unlimited"
+                        />
+                      </Field>
+                      <Field label="Expires on">
+                        <Input
+                          type="date"
+                          value={promo.expiresAt ?? ""}
+                          onChange={(event) =>
+                            updatePromoCode(promo.id, {
+                              expiresAt: event.target.value || null,
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </SettingsSection>

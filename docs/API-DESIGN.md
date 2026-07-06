@@ -397,7 +397,7 @@ Response `201` (raw token shown exactly once):
 | ------------ | -------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | GET          | `/products`                      | public | list active products                                                                                                            |
 | GET          | `/products/{id}`                 | public | product detail                                                                                                                  |
-| POST         | `/cart`                          | public | resolve browser-local cart lines, selected options, and current active product pricing                                          |
+| POST         | `/cart`                          | public | resolve browser-local cart lines, selected options, selected shipping profile, promo code, and current active product pricing   |
 | POST         | `/checkout`                      | public | creates a manual invoice request, or a Stripe Checkout session + pending order/invoice when hosted payments are ready           |
 | GET/POST     | `/orders/status`                 | public | load a customer-safe order status by signed token, or look one up by email plus order/invoice number                            |
 | POST         | `/invoices/{token}/checkout`     | public | creates a Stripe Checkout session for an issued public invoice token                                                            |
@@ -419,6 +419,12 @@ product options must resolve against the current active product definition, or c
 cart resolution and again during checkout; out-of-stock requests return
 `409 PRODUCT_OUT_OF_STOCK` with item-specific messages.
 
+`POST /cart` and `POST /checkout` also accept optional `shippingProfileId` and `promoCode`.
+The selected shipping profile and applied promo are resolved server-side, promo codes are
+validated again during checkout, and invalid/expired/used-up codes return
+`409 PROMO_CODE_INVALID`. Order rows snapshot `discount_cents`, `promo_code`,
+`shipping_profile_id`, and `shipping_profile_label`; the tax CSV includes those fields.
+
 `POST /checkout` returns a manual request confirmation when hosted payments are not ready.
 When hosted Stripe is ready, it returns the same order shape plus `checkoutUrl`, and the
 client redirects to Stripe Checkout. Confirmations include a signed `/orders/status` link.
@@ -434,7 +440,8 @@ tax breakdown for now.
 
 The admin Settings API also exposes the hosted-payment readiness fields
 (`store_online_payments_enabled`, `store_payment_provider`, `store_payment_mode`,
-`store_stripe_tax_enabled`, `store_stripe_shipping_tax_code`, `stripe_publishable_key`,
+`store_stripe_tax_enabled`, `store_stripe_shipping_tax_code`, `store_shipping_profiles`,
+`store_promo_codes`, `stripe_publishable_key`,
 `stripe_secret_key_enc` presence, `stripe_webhook_secret_enc` presence, and
 `stripe_statement_descriptor`) through sanitized camelCase DTO fields.
 Secret values are write-only: a non-empty value replaces the encrypted key, `null` clears it,

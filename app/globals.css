@@ -2310,6 +2310,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .tora-cart-checkout input,
+.tora-cart-checkout select,
 .tora-cart-checkout textarea {
   background: var(--shop-panel);
   border: 1px solid var(--shop-subtle);
@@ -2323,6 +2324,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .tora-cart-checkout input:focus,
+.tora-cart-checkout select:focus,
 .tora-cart-checkout textarea:focus {
   border-color: var(--shop-accent);
 }
@@ -2351,6 +2353,58 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .tora-cart-summary span {
   color: var(--shop-muted);
   font-size: 14px;
+}
+
+.tora-cart-select,
+.tora-cart-promo {
+  border-bottom: 1px solid var(--shop-subtle);
+  padding-bottom: 14px;
+}
+
+.tora-cart-summary .tora-cart-select,
+.tora-cart-summary .tora-cart-promo,
+.tora-cart-promo label,
+.tora-cart-promo span {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+}
+
+.tora-cart-summary .tora-cart-promo span {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.tora-cart-promo button {
+  background: transparent;
+  border: 1px solid var(--shop-accent);
+  color: var(--shop-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  padding: 0 14px;
+  text-transform: uppercase;
+}
+
+.tora-cart-promo button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tora-cart-promo__clear {
+  justify-self: start;
+  min-height: 36px;
+}
+
+.tora-cart-promo p {
+  color: var(--shop-muted);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tora-cart-promo p.is-error {
+  color: #9f1239;
 }
 
 .tora-cart-checkout button[type="submit"] {
