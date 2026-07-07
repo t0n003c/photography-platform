@@ -9946,6 +9946,260 @@ main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
   box-shadow: 0 18px 38px -18px rgb(99 102 241 / 0.8);
 }
 
+.tora-crew-section {
+  --tora-crew-bg: hsl(var(--background));
+  --tora-crew-text: hsl(var(--foreground));
+  --tora-crew-muted: hsl(var(--muted-foreground));
+  --tora-crew-accent: #d8c98d;
+  background: var(--tora-crew-bg);
+  color: var(--tora-crew-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow-x: clip;
+  padding: clamp(4.5rem, 7vw, 7.5rem) 0 clamp(4.5rem, 7vw, 7rem);
+}
+
+.dark .tora-crew-section {
+  --tora-crew-bg: #222424;
+  --tora-crew-text: #f5f1e9;
+  --tora-crew-muted: rgb(245 241 233 / 0.62);
+}
+
+.tora-crew-container {
+  margin: 0 auto;
+  width: min(100% - 30px, 1110px);
+}
+
+.tora-crew-heading {
+  margin: 0 auto clamp(4.5rem, 8vw, 6.75rem);
+  text-align: center;
+}
+
+.tora-crew-eyebrow {
+  color: var(--tora-crew-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.3;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.tora-crew-heading h2 {
+  color: var(--tora-crew-text);
+  font-size: clamp(1.625rem, 2.2vw, 1.8125rem);
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-crew-grid {
+  display: grid;
+  gap: 50px 30px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tora-crew-card {
+  margin: 0 auto;
+  max-width: 375px;
+  text-align: center;
+  width: 100%;
+}
+
+.tora-crew-image-wrap {
+  aspect-ratio: 1;
+  background: color-mix(in oklab, var(--tora-crew-bg) 82%, var(--tora-crew-text));
+  margin: 0 auto;
+  max-width: 375px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tora-crew-image-wrap picture,
+.tora-crew-image-wrap img {
+  height: 100%;
+  width: 100%;
+}
+
+.tora-crew-image-wrap img,
+.tora-crew-image-wrap > div {
+  filter: grayscale(1);
+  transform: scale(1.0001);
+  transition:
+    filter 350ms ease,
+    transform 350ms ease;
+}
+
+.tora-crew-card:hover .tora-crew-image-wrap img,
+.tora-crew-card:focus-within .tora-crew-image-wrap img,
+.tora-crew-card:hover .tora-crew-image-wrap > div,
+.tora-crew-card:focus-within .tora-crew-image-wrap > div {
+  filter: grayscale(0);
+}
+
+.tora-crew-socials {
+  bottom: 35px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  left: 35px;
+  position: absolute;
+  z-index: 2;
+}
+
+.tora-crew-socials a {
+  align-items: center;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  height: 15px;
+  justify-content: center;
+  line-height: 1;
+  opacity: 0;
+  text-decoration: none;
+  transform: translateY(4px);
+  transition:
+    color 350ms ease,
+    opacity 350ms ease,
+    transform 350ms ease,
+    visibility 350ms ease;
+  transition-delay: var(--tora-crew-social-delay, 50ms);
+  visibility: hidden;
+  width: 15px;
+}
+
+.tora-crew-card:hover .tora-crew-socials a,
+.tora-crew-card:focus-within .tora-crew-socials a {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.tora-crew-socials a:hover,
+.tora-crew-socials a:focus-visible {
+  color: var(--tora-crew-accent);
+}
+
+.tora-crew-copy {
+  margin-top: 20px;
+}
+
+.tora-crew-copy p {
+  color: var(--tora-crew-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 0 0 5px;
+}
+
+.tora-crew-copy h3 {
+  color: var(--tora-crew-text);
+  display: inline-block;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.35;
+  margin: 0;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.tora-crew-copy h3::before {
+  background: currentColor;
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  transition: width 450ms ease;
+  width: 0;
+}
+
+.tora-crew-card:hover .tora-crew-copy h3::before,
+.tora-crew-card:focus-within .tora-crew-copy h3::before {
+  width: 100%;
+}
+
+.tora-crew-hiring {
+  margin-top: clamp(5.5rem, 10vw, 6.875rem);
+  text-align: center;
+}
+
+.tora-crew-hiring-title {
+  color: var(--tora-crew-accent);
+  display: inline-block;
+  font-size: clamp(1.625rem, 2.2vw, 1.8125rem);
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: opacity 450ms ease;
+}
+
+.tora-crew-hiring-title:hover,
+.tora-crew-hiring-title:focus-visible {
+  opacity: 0.72;
+}
+
+.tora-crew-hiring-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: clamp(4.5rem, 8vw, 6.875rem);
+}
+
+.tora-crew-hiring-link {
+  color: inherit;
+  display: block;
+  margin: 20px auto;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  width: calc(100% / 3);
+}
+
+.tora-crew-hiring-link:nth-of-type(2)::before,
+.tora-crew-hiring-link:nth-of-type(3)::before {
+  background: color-mix(in oklab, var(--tora-crew-accent) 80%, white);
+  content: "";
+  height: 70px;
+  left: -2px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+}
+
+.tora-crew-hiring-link span {
+  color: var(--tora-crew-accent);
+  display: block;
+  font-size: clamp(1.375rem, 2vw, 1.625rem);
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  transition: color 450ms ease;
+}
+
+.tora-crew-hiring-link small {
+  color: var(--tora-crew-accent);
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.35;
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+
+.tora-crew-hiring-link:hover span,
+.tora-crew-hiring-link:focus-visible span {
+  color: var(--tora-crew-text);
+}
+
 @media (min-width: 768px) {
   .team-orbit-stage {
     height: var(--team-orbit-stage-desktop, 500px);
@@ -9964,6 +10218,70 @@ main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
       translate(-50%, -50%)
       rotate(var(--team-orbit-angle, 0deg))
       translateY(calc(var(--team-orbit-radius-desktop, 200px) * -1));
+  }
+}
+
+@media (max-width: 768px) {
+  .tora-crew-section {
+    padding: 3.5rem 0 3rem;
+  }
+
+  .tora-crew-heading {
+    margin-bottom: 2.375rem;
+  }
+
+  .tora-crew-grid {
+    gap: 35px;
+    grid-template-columns: 1fr;
+  }
+
+  .tora-crew-card {
+    max-width: 100%;
+  }
+
+  .tora-crew-image-wrap {
+    max-width: 100%;
+  }
+
+  .tora-crew-hiring {
+    margin-top: 3.125rem;
+  }
+
+  .tora-crew-hiring-links {
+    margin-top: 1.875rem;
+  }
+
+  .tora-crew-hiring-link {
+    width: 50%;
+  }
+
+  .tora-crew-hiring-link:nth-of-type(3)::before {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .tora-crew-heading h2,
+  .tora-crew-hiring-title {
+    letter-spacing: 1px;
+  }
+
+  .tora-crew-socials a {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+
+  .tora-crew-hiring-link {
+    width: 100%;
+  }
+
+  .tora-crew-hiring-link::before {
+    display: none;
+  }
+
+  .tora-crew-hiring-link small {
+    margin-top: 15px;
   }
 }
 
@@ -10057,7 +10375,14 @@ main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
   .team-orbit-profile-card,
   .team-orbit-card-avatar,
   .team-orbit-card-copy,
-  .team-orbit-icon-accent {
+  .team-orbit-icon-accent,
+  .tora-crew-image-wrap img,
+  .tora-crew-image-wrap > div,
+  .tora-crew-socials a,
+  .tora-crew-copy h3::before,
+  .tora-crew-hiring-title,
+  .tora-crew-hiring-link span {
     animation: none;
+    transition: none;
   }
 }

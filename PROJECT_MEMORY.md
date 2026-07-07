@@ -1476,6 +1476,15 @@ is gitignored):
   renderer: clearing logo text hides it, clearing either CTA label or CTA link hides the
   button, clearing either website label or website link hides the website item, and clearing
   an individual social URL hides that icon.
+  Toramochie/Reflector Our Crew follow-up: `/our-crew/` is represented as another Team block
+  layout, `toraCrew`, not a separate block. It reuses ordered team members and adds per-member
+  `facebookUrl` plus Team-level `toraCrewEyebrow`, hiring title/link, hiring visibility, and
+  editable hiring links. The renderer matches the source `team-members-wrap modern` and
+  `custom-links simple` structure: classic "MEET US / OUR TEAM" heading, 3-column desktop /
+  1-column mobile square portrait grid, grayscale portraits that turn color on hover/focus,
+  staggered vertical social icons at the lower-left of each portrait, role/name typography with
+  hover underline, and an optional "WE'RE HIRING" job-link strip with divider bars. Mobile shows
+  socials persistently for touch usability; reduced motion removes transitions.
   Follow-up: Creative team section now stores `creativeColumns` with a 3-column default and
   an editor option for 4 desktop columns. Mobile remains single-column stacked; desktop 4-column
   mode uses a wider grid and tighter gutters so the member cards stay balanced.

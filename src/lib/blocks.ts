@@ -417,16 +417,30 @@ const TeamMember = z.object({
     ),
   photoId: z.string().nullable().default(null),
   twitterUrl: z.string().default(""),
+  facebookUrl: z.string().default(""),
   linkedinUrl: z.string().default(""),
   instagramUrl: z.string().default(""),
   behanceUrl: z.string().default(""),
+});
+const TeamHiringLink = z.object({
+  id: z.string().min(1),
+  title: z.string().default("PRODUCER"),
+  subtitle: z.string().default("STRONG MAN"),
+  href: z.string().default("#"),
 });
 const TeamBlock = z.object({
   ...baseBlock,
   type: z.literal("team"),
   title: z.string().default(""),
   layout: z
-    .enum(["showcase", "memberCards", "marqueeCards", "creativeSection", "orbitCarousel"])
+    .enum([
+      "showcase",
+      "memberCards",
+      "marqueeCards",
+      "creativeSection",
+      "orbitCarousel",
+      "toraCrew",
+    ])
     .default("showcase"),
   cardPosition: z.enum(["alternate", "left", "right"]).default("alternate"),
   showCardArrow: z.boolean().default(true),
@@ -478,6 +492,17 @@ const TeamBlock = z.object({
   orbitShowIconAccents: z.boolean().default(true),
   orbitButtonLabel: z.string().default("Connect"),
   orbitButtonHref: z.string().default("#"),
+  toraCrewEyebrow: z.string().default("MEET US"),
+  toraCrewShowHiring: z.boolean().default(true),
+  toraCrewHiringTitle: z.string().default("WE'RE HIRING"),
+  toraCrewHiringHref: z.string().default("#"),
+  toraCrewHiringLinks: z
+    .array(TeamHiringLink)
+    .default([
+      { id: "producer", title: "PRODUCER", subtitle: "STRONG MAN", href: "#" },
+      { id: "stylist", title: "STYLIST", subtitle: "BEAUTY GIRL", href: "#" },
+      { id: "assistant", title: "ASSISTENT", subtitle: "FAST MAN", href: "#" },
+    ]),
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),

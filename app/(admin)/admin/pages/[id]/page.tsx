@@ -195,9 +195,25 @@ function makeTeamMember(index = 0) {
     description,
     photoId: null,
     twitterUrl: "",
+    facebookUrl: "",
     linkedinUrl: "",
     instagramUrl: "",
     behanceUrl: "",
+  };
+}
+
+function makeTeamHiringLink(index = 0) {
+  const examples = [
+    ["PRODUCER", "STRONG MAN"],
+    ["STYLIST", "BEAUTY GIRL"],
+    ["ASSISTENT", "FAST MAN"],
+  ] as const;
+  const [title, subtitle] = examples[index % examples.length];
+  return {
+    id: newBlockId(),
+    title,
+    subtitle,
+    href: "#",
   };
 }
 
@@ -538,6 +554,13 @@ function makeBlock(type: BlockType): Block {
       orbitShowIconAccents: true,
       orbitButtonLabel: "Connect",
       orbitButtonHref: "#",
+      toraCrewEyebrow: "MEET US",
+      toraCrewShowHiring: true,
+      toraCrewHiringTitle: "WE'RE HIRING",
+      toraCrewHiringHref: "#",
+      toraCrewHiringLinks: Array.from({ length: 3 }, (_, index) =>
+        makeTeamHiringLink(index),
+      ),
       grayscale: true,
       showSocials: true,
       members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
@@ -1733,6 +1756,7 @@ function LeafEditor({
       const isMarquee = teamLayout === "marqueeCards";
       const isCreative = teamLayout === "creativeSection";
       const isOrbit = teamLayout === "orbitCarousel";
+      const isToraCrew = teamLayout === "toraCrew";
       const isShowcase = teamLayout === "showcase";
       const updateMember = (
         index: number,
@@ -1741,6 +1765,17 @@ function LeafEditor({
         set({
           members: members.map((member, i) =>
             i === index ? { ...member, ...patch } : member,
+          ),
+        });
+      };
+      const hiringLinks = block.toraCrewHiringLinks ?? [];
+      const updateHiringLink = (
+        index: number,
+        patch: Partial<(typeof hiringLinks)[number]>,
+      ) => {
+        set({
+          toraCrewHiringLinks: hiringLinks.map((link, linkIndex) =>
+            linkIndex === index ? { ...link, ...patch } : link,
           ),
         });
       };
@@ -1768,6 +1803,7 @@ function LeafEditor({
                 <option value="marqueeCards">Marquee team cards</option>
                 <option value="creativeSection">Creative team section</option>
                 <option value="orbitCarousel">Orbit carousel</option>
+                <option value="toraCrew">Tora crew grid</option>
               </Select>
             </Field>
             {isEditorial ? (
@@ -1821,6 +1857,13 @@ function LeafEditor({
                   <option value="2">2 circles</option>
                   <option value="3">3 circles</option>
                 </Select>
+              </Field>
+            ) : isToraCrew ? (
+              <Field label="Top label">
+                <Input
+                  value={block.toraCrewEyebrow ?? ""}
+                  onChange={(e) => set({ toraCrewEyebrow: e.target.value })}
+                />
               </Field>
             ) : (
               <Field label="Portrait treatment">
@@ -1878,6 +1921,17 @@ function LeafEditor({
                   Auto rotate members
                 </label>
               </Field>
+            ) : isToraCrew ? (
+              <Field label="Portrait socials">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showSocials ?? true}
+                    onChange={(e) => set({ showSocials: e.target.checked })}
+                  />
+                  Show on portrait cards
+                </label>
+              </Field>
             ) : (
               <Field label="Social links">
                 <label className="flex h-9 items-center gap-2 text-sm">
@@ -1887,6 +1941,18 @@ function LeafEditor({
                     onChange={(e) => set({ showSocials: e.target.checked })}
                   />
                   Show on active member
+                </label>
+              </Field>
+            )}
+            {isToraCrew && (
+              <Field label="Hiring section">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.toraCrewShowHiring ?? true}
+                    onChange={(e) => set({ toraCrewShowHiring: e.target.checked })}
+                  />
+                  Show below crew grid
                 </label>
               </Field>
             )}
@@ -2093,6 +2159,133 @@ function LeafEditor({
               </div>
             </div>
           )}
+          {isToraCrew && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Hiring title">
+                  <Input
+                    value={block.toraCrewHiringTitle ?? ""}
+                    onChange={(e) => set({ toraCrewHiringTitle: e.target.value })}
+                    disabled={block.toraCrewShowHiring === false}
+                  />
+                </Field>
+                <Field label="Hiring title link">
+                  <Input
+                    value={block.toraCrewHiringHref ?? ""}
+                    onChange={(e) => set({ toraCrewHiringHref: e.target.value })}
+                    disabled={block.toraCrewShowHiring === false}
+                  />
+                </Field>
+              </div>
+              {block.toraCrewShowHiring !== false && (
+                <div className="space-y-2">
+                  {hiringLinks.map((link, index) => (
+                    <div
+                      key={link.id}
+                      className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_1fr_auto]"
+                    >
+                      <Field label="Job title">
+                        <Input
+                          value={link.title ?? ""}
+                          onChange={(e) =>
+                            updateHiringLink(index, { title: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Sub title">
+                        <Input
+                          value={link.subtitle ?? ""}
+                          onChange={(e) =>
+                            updateHiringLink(index, { subtitle: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="Link">
+                        <Input
+                          value={link.href ?? ""}
+                          onChange={(e) =>
+                            updateHiringLink(index, { href: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <div className="flex items-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === 0}
+                          onClick={() =>
+                            set({
+                              toraCrewHiringLinks: swapAt(
+                                hiringLinks,
+                                index,
+                                index - 1,
+                              ),
+                            })
+                          }
+                          aria-label="Move hiring link up"
+                          className="h-9 w-9"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === hiringLinks.length - 1}
+                          onClick={() =>
+                            set({
+                              toraCrewHiringLinks: swapAt(
+                                hiringLinks,
+                                index,
+                                index + 1,
+                              ),
+                            })
+                          }
+                          aria-label="Move hiring link down"
+                          className="h-9 w-9"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            set({
+                              toraCrewHiringLinks: hiringLinks.filter(
+                                (_, linkIndex) => linkIndex !== index,
+                              ),
+                            })
+                          }
+                          aria-label="Remove hiring link"
+                          className="h-9 w-9"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      set({
+                        toraCrewHiringLinks: [
+                          ...hiringLinks,
+                          makeTeamHiringLink(hiringLinks.length),
+                        ],
+                      })
+                    }
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add hiring link
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {isMarquee && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="grid gap-2 sm:grid-cols-2">
@@ -2249,6 +2442,14 @@ function LeafEditor({
                         value={member.twitterUrl ?? ""}
                         onChange={(e) =>
                           updateMember(index, { twitterUrl: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Facebook URL">
+                      <Input
+                        value={member.facebookUrl ?? ""}
+                        onChange={(e) =>
+                          updateMember(index, { facebookUrl: e.target.value })
                         }
                       />
                     </Field>

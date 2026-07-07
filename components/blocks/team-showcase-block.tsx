@@ -80,6 +80,7 @@ function memberIsEmpty(member: TeamMember) {
     member.description?.trim() ||
     member.photoId ||
     member.twitterUrl.trim() ||
+    member.facebookUrl.trim() ||
     member.linkedinUrl.trim() ||
     member.instagramUrl.trim() ||
     member.behanceUrl.trim()
@@ -135,6 +136,7 @@ function PlaceholderPortrait({
 function socialLinks(member: TeamMember) {
   return [
     { label: "X", url: member.twitterUrl },
+    { label: "fb", url: member.facebookUrl },
     { label: "in", url: member.linkedinUrl },
     { label: "ig", url: member.instagramUrl },
     { label: "be", url: member.behanceUrl },
@@ -161,10 +163,21 @@ function creativeMainLinks(block: TeamBlockData) {
 function creativeMemberLinks(member: TeamMember) {
   return [
     { label: "X / Twitter", icon: Twitter, url: member.twitterUrl },
+    { label: "Facebook", icon: Facebook, url: member.facebookUrl },
     { label: "LinkedIn", icon: Linkedin, url: member.linkedinUrl },
     { label: "Instagram", icon: Instagram, url: member.instagramUrl },
     { label: "Behance", text: "Be", url: member.behanceUrl },
   ].filter((link) => link.url.trim());
+}
+
+function toraCrewSocialLinks(member: TeamMember) {
+  return [
+    { label: "Facebook", icon: Facebook, url: member.facebookUrl },
+    { label: "X / Twitter", icon: Twitter, url: member.twitterUrl },
+    { label: "Instagram", icon: Instagram, url: member.instagramUrl },
+    { label: "LinkedIn", icon: Linkedin, url: member.linkedinUrl },
+    { label: "Behance", text: "Be", url: member.behanceUrl },
+  ].filter((link) => Boolean(link.url?.trim()));
 }
 
 function SocialLinks({ member, active }: { member: TeamMember; active: boolean }) {
@@ -1247,6 +1260,96 @@ function OrbitTeamCarousel({
   );
 }
 
+function ToraCrewTeam({
+  block,
+  members,
+  photoMap,
+}: {
+  block: TeamBlockData;
+  members: TeamMember[];
+  photoMap: Map<string, PhotoDTO>;
+}) {
+  const eyebrow = block.toraCrewEyebrow?.trim() || "MEET US";
+  const title = block.title?.trim() || "OUR TEAM";
+  const hiringTitle = block.toraCrewHiringTitle?.trim() || "WE'RE HIRING";
+  const hiringLinks = (block.toraCrewHiringLinks ?? [])
+    .filter((link) => link.title.trim() || link.subtitle.trim())
+    .slice(0, 6);
+
+  return (
+    <section className="team-showcase-block tora-crew-section">
+      <div className="tora-crew-container">
+        <div className="tora-crew-heading">
+          {eyebrow && <p className="tora-crew-eyebrow">{eyebrow}</p>}
+          {title && <h2>{title}</h2>}
+        </div>
+
+        <div className="tora-crew-grid">
+          {members.map((member, index) => {
+            const photo = member.photoId ? photoMap.get(member.photoId) : undefined;
+            const links = block.showSocials === false ? [] : toraCrewSocialLinks(member);
+            return (
+              <article className="tora-crew-card" key={member.id}>
+                <div className="tora-crew-image-wrap">
+                  {photo ? (
+                    <ResponsiveImage
+                      photo={photo}
+                      sizes="(max-width: 767px) calc(100vw - 30px), (max-width: 1199px) 31vw, 350px"
+                      priority={index < 3}
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <PlaceholderPortrait member={member} />
+                  )}
+                  {links.length > 0 && (
+                    <div className="tora-crew-socials">
+                      {links.map((link, linkIndex) => {
+                        const Icon = "icon" in link ? link.icon : null;
+                        return (
+                          <a
+                            key={link.label}
+                            {...linkAttrs(link.url ?? "#")}
+                            aria-label={`${member.name || "Team member"} ${link.label}`}
+                            style={{ "--tora-crew-social-delay": `${50 + linkIndex * 50}ms` } as CSSProperties}
+                          >
+                            {Icon ? <Icon size={15} strokeWidth={2} /> : <span>{link.text}</span>}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="tora-crew-copy">
+                  {member.role && <p>{member.role}</p>}
+                  <h3>{member.name || "TEAM MEMBER"}</h3>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {block.toraCrewShowHiring !== false && (
+          <div className="tora-crew-hiring">
+            <a className="tora-crew-hiring-title" {...linkAttrs(block.toraCrewHiringHref ?? "#")}>
+              {hiringTitle}
+            </a>
+            {hiringLinks.length > 0 && (
+              <div className="tora-crew-hiring-links">
+                {hiringLinks.map((link) => (
+                  <a key={link.id} {...linkAttrs(link.href)} className="tora-crew-hiring-link">
+                    <span>{link.title}</span>
+                    {link.subtitle && <small>{link.subtitle}</small>}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   const members = useMemo(
     () => (block.members ?? []).filter((member) => !memberIsEmpty(member)),
@@ -1306,6 +1409,16 @@ export function TeamShowcaseBlock({ block, photoMap }: TeamShowcaseBlockProps) {
   if ((block.layout ?? "showcase") === "orbitCarousel") {
     return (
       <OrbitTeamCarousel
+        block={block}
+        members={members}
+        photoMap={photoMap}
+      />
+    );
+  }
+
+  if ((block.layout ?? "showcase") === "toraCrew") {
+    return (
+      <ToraCrewTeam
         block={block}
         members={members}
         photoMap={photoMap}
