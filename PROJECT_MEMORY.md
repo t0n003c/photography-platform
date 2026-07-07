@@ -1621,6 +1621,11 @@ is gitignored):
   partial refunds, expired hosted-checkout link state, tax export rows, inventory filters, and
   packing checklist persistence. It only deletes/replaces `store-example-*` rows and preserves
   Stripe/payment provider readiness. Details live in [`docs/STORE-EXAMPLES.md`](docs/STORE-EXAMPLES.md).
+  Shop UI follow-up: Shop blocks now let the theme palette drive the default Tora product-grid
+  and coming-soon styles, while still honoring non-default custom background/text/accent colors.
+  The Store product modal's option-choice editor now uses labeled, wrapping rows so choice,
+  price adjustment, stock, low-stock, stock tracking, backorder, and remove controls do not get
+  clipped inside the modal on desktop or mobile widths.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

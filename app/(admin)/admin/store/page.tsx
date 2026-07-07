@@ -1523,98 +1523,109 @@ function ProductOptionsEditor({
                 {option.values.map((choice, choiceIndex) => (
                   <div
                     key={choice.id}
-                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_6.5rem_6.5rem_auto_auto_auto]"
+                    className="grid gap-3 rounded-md border bg-[hsl(var(--background))] p-3 md:grid-cols-2 2xl:grid-cols-[minmax(10rem,1.3fr)_minmax(7rem,0.75fr)_minmax(5.5rem,0.6fr)_minmax(5.5rem,0.6fr)_minmax(13rem,auto)] 2xl:items-end"
                   >
-                    <Input
-                      value={choice.label}
-                      onChange={(event) =>
-                        setChoice(optionIndex, choiceIndex, {
-                          ...choice,
-                          label: event.target.value,
-                        })
-                      }
-                      placeholder="11x14"
-                      aria-label="Choice label"
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={centsToInput(choice.priceDeltaCents)}
-                      onChange={(event) =>
-                        setChoice(optionIndex, choiceIndex, {
-                          ...choice,
-                          priceDeltaCents: adjustmentToCents(event.target.value),
-                        })
-                      }
-                      placeholder="0.00"
-                      aria-label="Price adjustment"
-                    />
-                    <Input
-                      type="number"
-                      value={String(choice.stockQuantity)}
-                      onChange={(event) =>
-                        setChoice(optionIndex, choiceIndex, {
-                          ...choice,
-                          stockQuantity: Math.round(Number(event.target.value) || 0),
-                        })
-                      }
-                      placeholder="Stock"
-                      aria-label="Choice stock quantity"
-                      disabled={!choice.inventoryTracked}
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      value={String(choice.lowStockThreshold)}
-                      onChange={(event) =>
-                        setChoice(optionIndex, choiceIndex, {
-                          ...choice,
-                          lowStockThreshold: Math.max(
-                            0,
-                            Math.round(Number(event.target.value) || 0),
-                          ),
-                        })
-                      }
-                      placeholder="Low"
-                      aria-label="Choice low stock threshold"
-                      disabled={!choice.inventoryTracked}
-                    />
-                    <label className="inline-flex items-center gap-2 rounded border px-2 py-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={choice.inventoryTracked}
+                    <Field label="Choice">
+                      <Input
+                        value={choice.label}
                         onChange={(event) =>
                           setChoice(optionIndex, choiceIndex, {
                             ...choice,
-                            inventoryTracked: event.target.checked,
+                            label: event.target.value,
                           })
                         }
+                        placeholder="11x14"
+                        aria-label="Choice label"
                       />
-                      Stock
-                    </label>
-                    <label className="inline-flex items-center gap-2 rounded border px-2 py-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={choice.allowBackorder}
+                    </Field>
+                    <Field label={`Adjustment (${currency || "USD"})`}>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={centsToInput(choice.priceDeltaCents)}
                         onChange={(event) =>
                           setChoice(optionIndex, choiceIndex, {
                             ...choice,
-                            allowBackorder: event.target.checked,
+                            priceDeltaCents: adjustmentToCents(event.target.value),
                           })
                         }
+                        placeholder="0.00"
+                        aria-label="Price adjustment"
+                      />
+                    </Field>
+                    <Field label="Stock">
+                      <Input
+                        type="number"
+                        value={String(choice.stockQuantity)}
+                        onChange={(event) =>
+                          setChoice(optionIndex, choiceIndex, {
+                            ...choice,
+                            stockQuantity: Math.round(Number(event.target.value) || 0),
+                          })
+                        }
+                        placeholder="Stock"
+                        aria-label="Choice stock quantity"
                         disabled={!choice.inventoryTracked}
                       />
-                      Backorder
-                    </label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeChoice(optionIndex, choiceIndex)}
-                      disabled={option.values.length <= 1}
-                    >
-                      Remove
-                    </Button>
+                    </Field>
+                    <Field label="Low stock">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={String(choice.lowStockThreshold)}
+                        onChange={(event) =>
+                          setChoice(optionIndex, choiceIndex, {
+                            ...choice,
+                            lowStockThreshold: Math.max(
+                              0,
+                              Math.round(Number(event.target.value) || 0),
+                            ),
+                          })
+                        }
+                        placeholder="Low"
+                        aria-label="Choice low stock threshold"
+                        disabled={!choice.inventoryTracked}
+                      />
+                    </Field>
+                    <div className="flex flex-wrap items-center gap-2 md:col-span-2 2xl:col-span-1 2xl:justify-end">
+                      <label className="inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={choice.inventoryTracked}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              inventoryTracked: event.target.checked,
+                            })
+                          }
+                        />
+                        Stock
+                      </label>
+                      <label className="inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={choice.allowBackorder}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              allowBackorder: event.target.checked,
+                            })
+                          }
+                          disabled={!choice.inventoryTracked}
+                        />
+                        Backorder
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => removeChoice(optionIndex, choiceIndex)}
+                        disabled={option.values.length <= 1}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 <Button

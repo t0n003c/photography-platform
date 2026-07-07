@@ -6,17 +6,32 @@ import { cn } from "@/src/lib/utils";
 
 type ShopBlockData = Extract<LeafBlock, { type: "shop" }>;
 
+const DEFAULT_COLORS = {
+  backgroundColor: "#252626",
+  textColor: "#f7f7f7",
+  accentColor: "#ddc59f",
+};
+
 function themeClass(theme: ShopBlockData["theme"]) {
   if (theme === "dark") return "is-dark";
   if (theme === "light") return "is-light";
   return "";
 }
 
+function customColor(value: string, defaultValue: string) {
+  const cleaned = value.trim();
+  if (!cleaned) return undefined;
+  return cleaned.toLowerCase() === defaultValue ? undefined : cleaned;
+}
+
 function styleVars(block: ShopBlockData): CSSProperties {
   return {
-    "--shop-bg": block.backgroundColor,
-    "--shop-text": block.textColor,
-    "--shop-accent": block.accentColor,
+    "--shop-bg": customColor(
+      block.backgroundColor,
+      DEFAULT_COLORS.backgroundColor,
+    ),
+    "--shop-text": customColor(block.textColor, DEFAULT_COLORS.textColor),
+    "--shop-accent": customColor(block.accentColor, DEFAULT_COLORS.accentColor),
   } as CSSProperties;
 }
 

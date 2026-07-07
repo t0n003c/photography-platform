@@ -1460,13 +1460,15 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
 .tora-shop-block,
 .tora-shop-coming-soon {
-  --shop-bg: #252626;
-  --shop-panel: #2f2f2f;
-  --shop-panel-soft: #353535;
-  --shop-text: #f7f7f7;
-  --shop-muted: rgb(247 247 247 / 0.68);
-  --shop-subtle: rgb(247 247 247 / 0.42);
-  --shop-accent: #ddc59f;
+  --shop-bg: #f6f0e6;
+  --shop-panel: #fffaf2;
+  --shop-panel-soft: #efe3d2;
+  --shop-text: #2c2925;
+  --shop-muted: rgb(44 41 37 / 0.68);
+  --shop-subtle: rgb(44 41 37 / 0.42);
+  --shop-accent: #8b6d35;
+  --shop-overlay: rgb(44 41 37 / 0.76);
+  color-scheme: light;
   background: var(--shop-bg);
   color: var(--shop-text);
   font-family: var(--font-josefin), system-ui, sans-serif;
@@ -1481,16 +1483,23 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   --shop-muted: rgb(44 41 37 / 0.68);
   --shop-subtle: rgb(44 41 37 / 0.42);
   --shop-accent: #8b6d35;
+  --shop-overlay: rgb(44 41 37 / 0.76);
+  color-scheme: light;
 }
 
 .dark .tora-shop-block:not(.is-light),
 .dark .tora-shop-coming-soon:not(.is-light),
 .tora-shop-block.is-dark,
 .tora-shop-coming-soon.is-dark {
+  --shop-bg: #252626;
   --shop-panel: #2f2f2f;
   --shop-panel-soft: #353535;
+  --shop-text: #f7f7f7;
   --shop-muted: rgb(247 247 247 / 0.68);
   --shop-subtle: rgb(247 247 247 / 0.42);
+  --shop-accent: #ddc59f;
+  --shop-overlay: rgb(0 0 0 / 0.72);
+  color-scheme: dark;
 }
 
 .tora-shop-block {
@@ -1716,7 +1725,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .tora-shop-card__stock {
-  background: rgb(0 0 0 / 0.72);
+  background: var(--shop-overlay);
   bottom: 0;
   color: var(--shop-accent);
   font-size: 11px;
