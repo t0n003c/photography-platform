@@ -1630,6 +1630,9 @@ is gitignored):
   desktop layout with a compact customer/order/payment summary first, side-by-side readiness and
   activity panels, an overflow-safe items table, and stacked/wrapping packing/status action areas
   so buttons no longer overlap nearby text below the packing checklist.
+  Store product editor follow-up: the Add/Edit product modal now uses the wider desktop modal
+  width, and option-choice rows are split into a roomy value-field grid plus a separate
+  stock/backorder/remove action row so prices, stock values, and labels do not get clipped.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

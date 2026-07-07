@@ -1478,7 +1478,7 @@ function ProductOptionsEditor({
         <div className="space-y-3">
           {value.map((option, optionIndex) => (
             <div key={option.id} className="space-y-3 rounded-md border p-3">
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
                 <Field label="Option name" htmlFor={`product-option-${option.id}`}>
                   <Input
                     id={`product-option-${option.id}`}
@@ -1489,7 +1489,7 @@ function ProductOptionsEditor({
                     placeholder="Size"
                   />
                 </Field>
-                <label className="inline-flex items-center gap-2 pb-2 text-sm">
+                <label className="inline-flex min-h-9 items-center gap-2 rounded border px-3 py-2 text-sm lg:border-0 lg:px-0 lg:pb-2">
                   <input
                     type="checkbox"
                     checked={option.required}
@@ -1506,6 +1506,7 @@ function ProductOptionsEditor({
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="justify-self-start lg:justify-self-auto"
                   onClick={() => removeOption(optionIndex)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -1517,72 +1518,76 @@ function ProductOptionsEditor({
                 {option.values.map((choice, choiceIndex) => (
                   <div
                     key={choice.id}
-                    className="grid gap-3 rounded-md border bg-[hsl(var(--background))] p-3 md:grid-cols-2 2xl:grid-cols-[minmax(10rem,1.3fr)_minmax(7rem,0.75fr)_minmax(5.5rem,0.6fr)_minmax(5.5rem,0.6fr)_minmax(13rem,auto)] 2xl:items-end"
+                    className="space-y-3 rounded-md border bg-[hsl(var(--background))] p-3"
                   >
-                    <Field label="Choice">
-                      <Input
-                        value={choice.label}
-                        onChange={(event) =>
-                          setChoice(optionIndex, choiceIndex, {
-                            ...choice,
-                            label: event.target.value,
-                          })
-                        }
-                        placeholder="11x14"
-                        aria-label="Choice label"
-                      />
-                    </Field>
-                    <Field label={`Adjustment (${currency || "USD"})`}>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={centsToInput(choice.priceDeltaCents)}
-                        onChange={(event) =>
-                          setChoice(optionIndex, choiceIndex, {
-                            ...choice,
-                            priceDeltaCents: adjustmentToCents(event.target.value),
-                          })
-                        }
-                        placeholder="0.00"
-                        aria-label="Price adjustment"
-                      />
-                    </Field>
-                    <Field label="Stock">
-                      <Input
-                        type="number"
-                        value={String(choice.stockQuantity)}
-                        onChange={(event) =>
-                          setChoice(optionIndex, choiceIndex, {
-                            ...choice,
-                            stockQuantity: Math.round(Number(event.target.value) || 0),
-                          })
-                        }
-                        placeholder="Stock"
-                        aria-label="Choice stock quantity"
-                        disabled={!choice.inventoryTracked}
-                      />
-                    </Field>
-                    <Field label="Low stock">
-                      <Input
-                        type="number"
-                        min="0"
-                        value={String(choice.lowStockThreshold)}
-                        onChange={(event) =>
-                          setChoice(optionIndex, choiceIndex, {
-                            ...choice,
-                            lowStockThreshold: Math.max(
-                              0,
-                              Math.round(Number(event.target.value) || 0),
-                            ),
-                          })
-                        }
-                        placeholder="Low"
-                        aria-label="Choice low stock threshold"
-                        disabled={!choice.inventoryTracked}
-                      />
-                    </Field>
-                    <div className="flex flex-wrap items-center gap-2 md:col-span-2 2xl:col-span-1 2xl:justify-end">
-                      <label className="inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(12rem,1.45fr)_minmax(8rem,0.85fr)_minmax(7rem,0.7fr)_minmax(7rem,0.7fr)]">
+                      <Field label="Choice">
+                        <Input
+                          value={choice.label}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              label: event.target.value,
+                            })
+                          }
+                          placeholder="11x14"
+                          aria-label="Choice label"
+                        />
+                      </Field>
+                      <Field label={`Adjustment (${currency || "USD"})`}>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={centsToInput(choice.priceDeltaCents)}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              priceDeltaCents: adjustmentToCents(event.target.value),
+                            })
+                          }
+                          placeholder="0.00"
+                          aria-label="Price adjustment"
+                        />
+                      </Field>
+                      <Field label="Stock">
+                        <Input
+                          type="number"
+                          value={String(choice.stockQuantity)}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              stockQuantity: Math.round(
+                                Number(event.target.value) || 0,
+                              ),
+                            })
+                          }
+                          placeholder="Stock"
+                          aria-label="Choice stock quantity"
+                          disabled={!choice.inventoryTracked}
+                        />
+                      </Field>
+                      <Field label="Low stock">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={String(choice.lowStockThreshold)}
+                          onChange={(event) =>
+                            setChoice(optionIndex, choiceIndex, {
+                              ...choice,
+                              lowStockThreshold: Math.max(
+                                0,
+                                Math.round(Number(event.target.value) || 0),
+                              ),
+                            })
+                          }
+                          placeholder="Low"
+                          aria-label="Choice low stock threshold"
+                          disabled={!choice.inventoryTracked}
+                        />
+                      </Field>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                      <label className="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
                         <input
                           type="checkbox"
                           checked={choice.inventoryTracked}
@@ -1595,7 +1600,7 @@ function ProductOptionsEditor({
                         />
                         Stock
                       </label>
-                      <label className="inline-flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
+                      <label className="inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded border px-2.5 py-2 text-xs">
                         <input
                           type="checkbox"
                           checked={choice.allowBackorder}
@@ -1613,7 +1618,6 @@ function ProductOptionsEditor({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="shrink-0"
                         onClick={() => removeChoice(optionIndex, choiceIndex)}
                         disabled={option.values.length <= 1}
                       >
@@ -1675,7 +1679,7 @@ function ProductModal({
   };
 
   return (
-    <Modal open onClose={onClose} title={title}>
+    <Modal open onClose={onClose} title={title} className="w-[min(96vw,72rem)]">
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Name" htmlFor="product-name">
