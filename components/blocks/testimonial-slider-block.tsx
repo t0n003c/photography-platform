@@ -587,6 +587,72 @@ function TestimonialRetroCarouselBlock({
   );
 }
 
+function TestimonialGoldUrbanBlock({
+  block,
+  items,
+  activeIndex,
+  count,
+  onMove,
+}: {
+  block: TestimonialsBlockData;
+  items: TestimonialItem[];
+  activeIndex: number;
+  count: number;
+  onMove: (direction: -1 | 1) => void;
+}) {
+  const item = items[activeIndex];
+  const title = (block.title ?? "").trim() || "TESTIMONIALS";
+  const quote = item ? withTerminalDot(cleanQuote(item.quote)) : "";
+  const name = item?.name ?? "";
+  const affiliation = item?.affiliation ?? "";
+
+  return (
+    <section className="testimonial-gold-urban-block">
+      <Container className="testimonial-gold-urban-container">
+        <h2>{title}</h2>
+        <div className="testimonial-gold-urban-stage">
+          <button
+            type="button"
+            className="testimonial-gold-urban-control is-prev"
+            onClick={() => onMove(-1)}
+            disabled={count < 2}
+          >
+            Prev.
+          </button>
+
+          <figure
+            key={item?.id ?? activeIndex}
+            className="testimonial-gold-urban-quote"
+            aria-live="polite"
+          >
+            <Quote className="testimonial-gold-urban-icon" aria-hidden="true" />
+            {quote && <blockquote>{quote}</blockquote>}
+            {(name || affiliation) && (
+              <figcaption>
+                {name}
+                {affiliation && (
+                  <span>
+                    {name ? ` / ${affiliation}` : affiliation}
+                  </span>
+                )}
+              </figcaption>
+            )}
+          </figure>
+
+          <button
+            type="button"
+            className="testimonial-gold-urban-control is-next"
+            onClick={() => onMove(1)}
+            disabled={count < 2}
+          >
+            Next.
+          </button>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
 export function TestimonialSliderBlock({
   block,
   photoMap,
@@ -657,6 +723,18 @@ export function TestimonialSliderBlock({
       <TestimonialGlassStackBlock
         block={block}
         photoMap={photoMap}
+        items={items}
+        activeIndex={safeActive}
+        count={count}
+        onMove={go}
+      />
+    );
+  }
+
+  if (block.layout === "tora-gold-urban") {
+    return (
+      <TestimonialGoldUrbanBlock
+        block={block}
         items={items}
         activeIndex={safeActive}
         count={count}

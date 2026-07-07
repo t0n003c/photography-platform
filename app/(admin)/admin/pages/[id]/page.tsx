@@ -546,6 +546,7 @@ function makeBlock(type: BlockType): Block {
       id,
       type,
       style: "standard",
+      eyebrow: "",
       heading: "Plans that Scale with You",
       description: "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
       currency: "$",
@@ -1489,6 +1490,7 @@ function LeafEditor({
                 <option value="portrait-grid">Portrait cards grid</option>
                 <option value="retro-carousel">Retro carousel</option>
                 <option value="glass-stack">Glass card stack</option>
+                <option value="tora-gold-urban">Tora gold urban</option>
               </Select>
             </Field>
             {testimonialLayout === "slider" ? (
@@ -1583,6 +1585,25 @@ function LeafEditor({
                     />
                   </Field>
                 )}
+                <Field label="Auto-roll">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.autoplay ?? false}
+                      onChange={(e) => set({ autoplay: e.target.checked })}
+                    />
+                    Advance slides
+                  </label>
+                </Field>
+              </>
+            ) : testimonialLayout === "tora-gold-urban" ? (
+              <>
+                <Field label="Section title">
+                  <Input
+                    value={block.title ?? ""}
+                    onChange={(e) => set({ title: e.target.value })}
+                  />
+                </Field>
                 <Field label="Auto-roll">
                   <label className="flex h-9 items-center gap-2 text-sm">
                     <input
@@ -2327,6 +2348,9 @@ function LeafEditor({
                 <option value="tora-simple">Tora simple banner</option>
                 <option value="tora-with-media">Tora with media</option>
                 <option value="tora-image-background">Tora image background</option>
+                <option value="tora-price-list-style-3">
+                  Tora price list style 3
+                </option>
                 <option value="tora-casting-services">Tora casting services</option>
               </Select>
             </Field>
@@ -2967,6 +2991,7 @@ function LeafEditor({
         });
       };
       const style = block.style ?? "modern";
+      const supportsHoverPhoto = style === "distortion";
       return (
         <div className="space-y-4">
           <SettingsGroup title="Layout">
@@ -2979,7 +3004,11 @@ function LeafEditor({
                     set({
                       style: next,
                       title:
-                        next === "category-cards"
+                        next === "tora-progress-slider"
+                          ? "FEATURED GALLERIES"
+                          : next === "tora-parallax-showcase"
+                            ? "PARALLAX SHOWCASE"
+                          : next === "category-cards"
                           ? "CATEGORY LIST"
                           : next === "distortion"
                             ? "DISTORTION STYLE"
@@ -2996,6 +3025,8 @@ function LeafEditor({
                   <option value="distortion">Distortion feature</option>
                   <option value="animated-masonry">Animated masonry</option>
                   <option value="mix-masonry">Mix masonry</option>
+                  <option value="tora-progress-slider">Tora progress slider</option>
+                  <option value="tora-parallax-showcase">Tora parallax showcase</option>
                 </Select>
               </Field>
               <Field label="Top label">
@@ -3124,7 +3155,7 @@ function LeafEditor({
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="grid gap-3 lg:grid-cols-2">
+                  <div className={supportsHoverPhoto ? "grid gap-3 lg:grid-cols-2" : "grid gap-3"}>
                     <Field label="Cover photo">
                       <PhotoPicker
                         photos={photos}
@@ -3133,14 +3164,16 @@ function LeafEditor({
                         containerClassName="max-h-52"
                       />
                     </Field>
-                    <Field label="Hover photo">
-                      <PhotoPicker
-                        photos={photos}
-                        value={item.hoverPhotoId ?? null}
-                        onChange={(photoId) => updateItem(index, { hoverPhotoId: photoId })}
-                        containerClassName="max-h-52"
-                      />
-                    </Field>
+                    {supportsHoverPhoto && (
+                      <Field label="Hover photo">
+                        <PhotoPicker
+                          photos={photos}
+                          value={item.hoverPhotoId ?? null}
+                          onChange={(photoId) => updateItem(index, { hoverPhotoId: photoId })}
+                          containerClassName="max-h-52"
+                        />
+                      </Field>
+                    )}
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Field label="Title">

@@ -2,6 +2,14 @@ import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { PortfolioDistortionImage } from "@/components/blocks/portfolio-distortion-image";
+import {
+  ToraProgressSlider,
+  type ToraProgressSliderItem,
+} from "@/components/blocks/tora-progress-slider";
+import {
+  ToraParallaxShowcase,
+  type ToraParallaxShowcaseItem,
+} from "@/components/blocks/tora-parallax-showcase";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
 import { cn } from "@/src/lib/utils";
@@ -248,6 +256,43 @@ function MixMasonry({
   );
 }
 
+function ProgressSlider({
+  items,
+  photos,
+}: {
+  items: PortfolioListItemData[];
+  photos: Map<string, PhotoDTO>;
+}) {
+  const slides: ToraProgressSliderItem[] = items.map((item, index) => ({
+    id: item.id,
+    title: item.title.trim() || `Gallery ${index + 1}`,
+    category: item.category.trim(),
+    linkHref: item.linkHref,
+    photo: item.photoId ? photos.get(item.photoId) : undefined,
+  }));
+
+  return <ToraProgressSlider items={slides} />;
+}
+
+function ParallaxShowcase({
+  items,
+  photos,
+}: {
+  items: PortfolioListItemData[];
+  photos: Map<string, PhotoDTO>;
+}) {
+  const showcaseItems: ToraParallaxShowcaseItem[] = items.map((item, index) => ({
+    id: item.id,
+    title: item.title.trim() || `Project ${index + 1}`,
+    description: item.description,
+    linkLabel: item.linkLabel,
+    linkHref: item.linkHref,
+    photo: item.photoId ? photos.get(item.photoId) : undefined,
+  }));
+
+  return <ToraParallaxShowcase items={showcaseItems} />;
+}
+
 export function PortfolioListBlock({
   block,
   photoMap,
@@ -257,12 +302,17 @@ export function PortfolioListBlock({
 }) {
   const items = block.items ?? [];
   const style = block.style ?? "modern";
+  const isParallaxShowcase = style === "tora-parallax-showcase";
   const vars: CSSVars = {
     "--portfolio-bg": block.showBackground === false ? "transparent" : block.backgroundColor,
     "--portfolio-text":
-      block.showBackground === false ? "hsl(var(--foreground))" : block.textColor,
+      block.showBackground === false && !isParallaxShowcase
+        ? "hsl(var(--foreground))"
+        : block.textColor,
     "--portfolio-accent":
-      block.showBackground === false ? "hsl(var(--primary))" : block.accentColor,
+      block.showBackground === false && !isParallaxShowcase
+        ? "hsl(var(--primary))"
+        : block.accentColor,
   };
 
   return (
@@ -275,7 +325,7 @@ export function PortfolioListBlock({
       style={vars}
     >
       <div className="portfolio-list-container">
-        <Header block={block} />
+        {!isParallaxShowcase && <Header block={block} />}
         {items.length === 0 ? (
           <div className="portfolio-list-empty">Portfolio list - add items</div>
         ) : style === "category-cards" ? (
@@ -286,6 +336,10 @@ export function PortfolioListBlock({
           <AnimatedMasonry items={items} photos={photoMap} />
         ) : style === "mix-masonry" ? (
           <MixMasonry items={items} photos={photoMap} />
+        ) : style === "tora-progress-slider" ? (
+          <ProgressSlider items={items} photos={photoMap} />
+        ) : style === "tora-parallax-showcase" ? (
+          <ParallaxShowcase items={items} photos={photoMap} />
         ) : (
           <ModernList items={items} photos={photoMap} />
         )}

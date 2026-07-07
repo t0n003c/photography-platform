@@ -1578,6 +1578,28 @@ is gitignored):
   differ. The ToraMochie page also contains contact-form price-list variants; those should be
   added to the Contact Form block as a separate follow-up if the owner wants that part of the
   reference too.
+  ToraMochie/Reflector Services page follow-up: the `/services/` reference was split across
+  existing Pages-tab blocks instead of creating a monolithic page section. The service-row Price
+  style was removed after review because it overlapped too much with `tora-casting-services`; do
+  not reintroduce a separate Services Price style unless the owner asks for a clearly distinct service
+  pricing layout. The retained "Featured galleries" portion is a Portfolio List style,
+  `tora-progress-slider`, using existing portfolio items with a horizontal image rail, dark overlay
+  text, scroll buttons, and progress line. It renders cloned edge slides and silently wraps scroll
+  position, so the rail can move left/right continuously and the first real slide has the last
+  slide visible to its left. The gold testimonial text carousel is a Testimonials layout,
+  `tora-gold-urban`, using existing quote items with centered Prev./Next. controls lifted into the
+  quote row on desktop. The contact/footer portions of the source page were intentionally not
+  duplicated because the app already has Contact Form and Footer blocks.
+  ToraMochie/Reflector Parallax Showcase follow-up: `/parallax-showcase/` is represented as a
+  Portfolio List style named `tora-parallax-showcase`, matching the source
+  `parallax-showcase-wrapper` shortcode rather than adding a new block. It uses the existing
+  portfolio item title/description/link/photo fields as full-height panels, hides the normal
+  Portfolio List heading for this style, alternates left/right desktop copy, centers copy on mobile,
+  preserves the warm cream title/button styling, and recreates the title mask reveal plus
+  Lenis-safe image parallax with a reduced-motion/static fallback. It intentionally uses our native
+  React scroll/rAF enhancement instead of the WordPress jQuery `parallax.js` mirror layer. The
+  Portfolio item editor now only shows "Hover photo" when the selected Portfolio List style is
+  Distortion feature, because other portfolio styles ignore `hoverPhotoId`.
   Pages Gallery block follow-up: the ToraMochie/Reflector Props page is represented as the
   `tora-props-catalog` Gallery block grid option. It matches the reference props inventory
   composition: full-width optional showroom band, Josefin Sans, 1110px inner width, 5/3/2
@@ -1633,6 +1655,21 @@ is gitignored):
   Store product editor follow-up: the Add/Edit product modal now uses the wider desktop modal
   width, and option-choice rows are split into a roomy value-field grid plus a separate
   stock/backorder/remove action row so prices, stock values, and labels do not get clipped.
+  ToraMochie/Reflector price-list style 3 follow-up: added a Price block style named
+  `tora-price-list-style-3` for the `/price-list-style-3/` reference page. The first three
+  pricing plans render as modern selectable service cards, the fourth renders as the full-width
+  simple image banner, and the fifth renders as the with-media service panel. The style keeps one
+  selected plan per section, shows a floating total only after package selection, and sends the
+  selected package summary through the existing public contact endpoint from the reference-style
+  contact form. The renderer uses the existing plan fields: name/info/features/prices/photo,
+  `mediaPhotoId`, and `mediaVideoUrl`. Light/dark palettes, mobile stacking, reduced-motion
+  transition suppression, and desktop/mobile Chrome smoke screenshots were verified with a
+  temporary published smoke page that was removed afterward.
+  Follow-up fix: auto-themed Style 3 pricing blocks now follow the root `.dark` class on first
+  paint via an `is-auto-theme` CSS guard, and the pricing theme hook watches root class changes
+  after mount. This fixes `/test-page` opening in a half-light state until the theme toggle was
+  clicked. Desktop and iPhone reload/toggle smoke verified initial dark, light toggle, and dark
+  toggle states with 0 console/page errors.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

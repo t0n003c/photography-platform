@@ -98,7 +98,15 @@ const PortfolioListBlock = z.object({
   ...baseBlock,
   type: z.literal("portfolioList"),
   style: z
-    .enum(["modern", "category-cards", "distortion", "animated-masonry", "mix-masonry"])
+    .enum([
+      "modern",
+      "category-cards",
+      "distortion",
+      "animated-masonry",
+      "mix-masonry",
+      "tora-progress-slider",
+      "tora-parallax-showcase",
+    ])
     .default("modern"),
   eyebrow: z.string().default("PORTFOLIO LIST"),
   title: z.string().default("MODERN"),
@@ -382,7 +390,9 @@ const TestimonialItem = z.object({
 const TestimonialsBlock = z.object({
   ...baseBlock,
   type: z.literal("testimonials"),
-  layout: z.enum(["slider", "portrait-grid", "retro-carousel", "glass-stack"]).default("slider"),
+  layout: z
+    .enum(["slider", "portrait-grid", "retro-carousel", "glass-stack", "tora-gold-urban"])
+    .default("slider"),
   label: z.string().default("Reviews"),
   title: z.string().default("See what all the talk is about!"),
   subtitle: z
@@ -506,9 +516,11 @@ const PricingBlock = z.object({
       "tora-simple",
       "tora-with-media",
       "tora-image-background",
+      "tora-price-list-style-3",
       "tora-casting-services",
     ])
     .default("standard"),
+  eyebrow: z.string().default(""),
   heading: z.string().default("Plans that Scale with You"),
   description: z
     .string()

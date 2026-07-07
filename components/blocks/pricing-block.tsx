@@ -2,9 +2,11 @@
 
 import {
   useEffect,
+  useId,
   useMemo,
   useState,
   type CSSProperties,
+  type FormEvent,
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
@@ -20,6 +22,7 @@ type PricingBlockData = Extract<LeafBlock, { type: "pricing" }>;
 type PricingPlan = PricingBlockData["plans"][number];
 type Frequency = "monthly" | "yearly";
 type PhotoMap = Map<string, PhotoDTO>;
+type PriceRequestStatus = "idle" | "sending" | "sent" | "error";
 type CSSPropertiesWithVars = CSSProperties & {
   [key: `--${string}`]: string | number | undefined;
 };
@@ -61,6 +64,11 @@ function displayPrice(plan: PricingPlan, frequency: Frequency, currency: string)
   );
 }
 
+function priceValue(plan: PricingPlan, frequency: Frequency) {
+  const value = frequency === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+  return Number.isFinite(value) ? value : 0;
+}
+
 function filteredPlans(plans: PricingPlan[]) {
   return plans.filter(
     (plan) =>
@@ -82,17 +90,29 @@ function usePricingDarkMode(theme: PricingBlockData["theme"]) {
   useEffect(() => {
     if (theme !== "auto") return;
     const sync = () => {
-      setFallbackSystemDark(
-        window.matchMedia("(prefers-color-scheme: dark)").matches,
-      );
+      if (document.documentElement.classList.contains("dark")) {
+        setFallbackSystemDark(true);
+        return;
+      }
+      if (document.documentElement.classList.contains("light")) {
+        setFallbackSystemDark(false);
+        return;
+      }
+      setFallbackSystemDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
     };
     sync();
 
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     media.addEventListener("change", sync);
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     return () => {
       media.removeEventListener("change", sync);
+      observer.disconnect();
     };
   }, [theme]);
 
@@ -565,6 +585,425 @@ function ToraPricingBlock({
           })}
         </div>
       </Container>
+    </section>
+  );
+}
+
+function ToraStyle3ContactForm({
+  selectedPlans,
+  total,
+  currency,
+  frequency,
+}: {
+  selectedPlans: PricingPlan[];
+  total: number;
+  currency: string;
+  frequency: Frequency;
+}) {
+  const formId = useId();
+  const [startedAt, setStartedAt] = useState(0);
+  const [agreed, setAgreed] = useState(false);
+  const [status, setStatus] = useState<PriceRequestStatus>("idle");
+
+  useEffect(() => {
+    setStartedAt(Date.now());
+  }, []);
+
+  const closePopup = () => setStatus("idle");
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("sending");
+
+    const form = new FormData(event.currentTarget);
+    const selectedLines =
+      selectedPlans.length > 0
+        ? selectedPlans.map(
+            (plan) =>
+              `- ${plan.name}: ${displayPrice(plan, frequency, currency)}`,
+          )
+        : ["- No package selected"];
+    const message = [
+      String(form.get("message") ?? "").trim(),
+      "",
+      "Selected price-list packages:",
+      ...selectedLines,
+      `Total: ${formatPrice(total, currency)}`,
+    ]
+      .join("\n")
+      .trim();
+
+    try {
+      const response = await fetch("/api/v1/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: String(form.get("name") ?? "").trim(),
+          email: String(form.get("email") ?? "").trim(),
+          subject:
+            selectedPlans.length > 0
+              ? `Pricing request: ${selectedPlans.map((plan) => plan.name).join(", ")}`
+              : "Pricing request",
+          message,
+          company: String(form.get("company") ?? ""),
+          _ts: startedAt,
+        }),
+      });
+
+      if (!response.ok) {
+        setStatus("error");
+        return;
+      }
+
+      event.currentTarget.reset();
+      setAgreed(false);
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="tora-pricelist-style3-contact">
+      <div className="top-wrap">
+        <h3 className="title">CONTACT US!</h3>
+      </div>
+      <form className="form" onSubmit={onSubmit}>
+        <div aria-hidden="true" className="absolute left-[-9999px]">
+          <label>
+            Company
+            <input name="company" tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
+        <div className="input-wrap">
+          <input name="name" type="text" placeholder="Name" autoComplete="name" required />
+        </div>
+        <div className="input-wrap">
+          <input name="email" type="email" placeholder="Email" autoComplete="email" required />
+        </div>
+        <div className="input-wrap textarea-wrap">
+          <textarea name="message" placeholder="Message" rows={5} required />
+        </div>
+        <div className="button-wrap">
+          <div className="term-wrap">
+            <label htmlFor={`${formId}-terms`}>
+              <input
+                id={`${formId}-terms`}
+                type="checkbox"
+                checked={agreed}
+                onChange={(event) => setAgreed(event.target.checked)}
+                required
+              />
+              <span aria-hidden="true" />
+              <span className="term-text">
+                I agree with the{" "}
+                <a href="#" onClick={(event) => event.preventDefault()}>
+                  Term
+                </a>
+              </span>
+            </label>
+          </div>
+          <button
+            className="a-btn-3"
+            type="submit"
+            disabled={!agreed || status === "sending"}
+          >
+            {status === "sending" ? "Sending..." : "Submit"}
+          </button>
+        </div>
+      </form>
+      {(status === "sent" || status === "error") && (
+        <div
+          className="reflector-send-popup active"
+          role="dialog"
+          aria-modal="true"
+          aria-live="polite"
+        >
+          <div className="content">
+            <button
+              type="button"
+              className="close"
+              onClick={closePopup}
+              aria-label="Close message"
+            >
+              <span className="line" />
+              <span className="line" />
+            </button>
+            <div className="popup-title">
+              {status === "sent" ? "Thank you!" : "Oooops!"}
+            </div>
+            <p className={status === "sent" ? "done" : "error"}>
+              {status === "sent"
+                ? "Your message is sent!"
+                : "Your message isn't sent!"}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToraPriceListStyle3Block({
+  block,
+  plans,
+  frequency,
+  dark,
+  photoMap,
+}: {
+  block: PricingBlockData;
+  plans: PricingPlan[];
+  frequency: Frequency;
+  dark: boolean;
+  photoMap?: PhotoMap;
+}) {
+  const [selectedByGroup, setSelectedByGroup] = useState<Record<string, string | null>>(
+    () => {
+      const highlighted = plans.filter((plan) => plan.highlighted);
+      return {
+        services: highlighted.find((plan) => plans.slice(0, 3).includes(plan))?.id ?? null,
+        feature: highlighted.find((plan) => plan === plans[3])?.id ?? null,
+        media: highlighted.find((plan) => plan === plans[4])?.id ?? null,
+      };
+    },
+  );
+
+  useEffect(() => {
+    const validPlanIds = new Set(plans.map((plan) => plan.id));
+    setSelectedByGroup((current) => {
+      let changed = false;
+      const next: Record<string, string | null> = {};
+      for (const [group, planId] of Object.entries(current)) {
+        if (planId && validPlanIds.has(planId)) {
+          next[group] = planId;
+          continue;
+        }
+        next[group] = null;
+        changed = changed || Boolean(planId);
+      }
+      return changed ? next : current;
+    });
+  }, [plans]);
+
+  const selectedIds = useMemo(
+    () =>
+      new Set(
+        Object.values(selectedByGroup).filter(
+          (planId): planId is string => Boolean(planId),
+        ),
+      ),
+    [selectedByGroup],
+  );
+  const selectedPlans = useMemo(
+    () => plans.filter((plan) => selectedIds.has(plan.id)),
+    [plans, selectedIds],
+  );
+  const total = selectedPlans.reduce(
+    (sum, plan) => sum + priceValue(plan, frequency),
+    0,
+  );
+
+  const togglePlan = (group: string, planId: string) => {
+    setSelectedByGroup((current) => ({
+      ...current,
+      [group]: current[group] === planId ? null : planId,
+    }));
+  };
+
+  const selectProps = (plan: PricingPlan, group: string) => ({
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-pressed": selectedIds.has(plan.id),
+    onClick: () => togglePlan(group, plan.id),
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      togglePlan(group, plan.id);
+    },
+  });
+
+  const title =
+    block.heading.trim() && block.heading.trim() !== DEFAULT_PRICING_TITLE
+      ? block.heading.trim()
+      : "PHOTOGRAPHY SERVICES";
+  const description =
+    block.description.trim() &&
+    block.description.trim() !== DEFAULT_PRICING_DESCRIPTION
+      ? block.description.trim()
+      : "";
+  const servicePlans = plans.slice(0, 3);
+  const simplePlan = plans[3];
+  const mediaPlan = plans[4];
+  const currency = block.currency || "$";
+  const autoTheme = (block.theme ?? "auto") === "auto";
+
+  return (
+    <section
+      className={cn(
+        "pricing-block tora-price-section tora-pricelist-style3",
+        autoTheme && "is-auto-theme",
+        dark && "is-dark",
+      )}
+    >
+      <Container className="tora-pricelist-style3-heading">
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
+      </Container>
+
+      {servicePlans.length > 0 && (
+        <Container className="max-w-[1174px]">
+          <div className="tora-pricelist tora-pricelist--modern tora-pricelist-style3-modern">
+            {servicePlans.map((plan, index) => {
+              const selected = selectedIds.has(plan.id);
+              const photo = planPhoto(photoMap, plan);
+              return (
+                <article
+                  key={plan.id}
+                  {...selectProps(plan, "services")}
+                  className={cn("pricing-wrap", selected && "active")}
+                >
+                  <div className="wrap">
+                    <div className="tora-price-image-wrap">
+                      <ToraImage
+                        photo={photo}
+                        sizes="(min-width: 992px) 33vw, 100vw"
+                        priority={index === 0}
+                      />
+                      <div className="wrap-top">
+                        <ToraPlanMeta plan={plan} overlay />
+                      </div>
+                    </div>
+                    <ToraFeatureList plan={plan} />
+                    <div className="price-wrap">
+                      <ToraPrice
+                        plan={plan}
+                        frequency={frequency}
+                        currency={currency}
+                      />
+                      <ToraSelectionDot selected={selected} />
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </Container>
+      )}
+
+      {simplePlan && (
+        <div className="tora-pricelist tora-pricelist--simple tora-pricelist-style3-simple">
+          <article
+            {...selectProps(simplePlan, "feature")}
+            className={cn(
+              "pricing-wrap",
+              selectedIds.has(simplePlan.id) && "active",
+            )}
+          >
+            <ToraImage
+              photo={planPhoto(photoMap, simplePlan)}
+              sizes="100vw"
+              priority={servicePlans.length === 0}
+              className="tora-price-bg-image"
+            />
+            <Container className="tora-price-container max-w-[1174px]">
+              <div className="tora-price-simple-grid">
+                <div>
+                  <h3 className="title">{simplePlan.name}</h3>
+                </div>
+                <div>
+                  <div className="price-wrap">
+                    <ToraSelectionDot selected={selectedIds.has(simplePlan.id)} />
+                    <ToraPrice
+                      plan={simplePlan}
+                      frequency={frequency}
+                      currency={currency}
+                    />
+                  </div>
+                  {simplePlan.info && <p className="text">{simplePlan.info}</p>}
+                  <p className="subtitle">INCLUDES:</p>
+                  <ToraFeatureList plan={simplePlan} />
+                </div>
+              </div>
+            </Container>
+          </article>
+        </div>
+      )}
+
+      {mediaPlan && (
+        <Container className="tora-pricelist-style3-media-wrap max-w-[1174px]">
+          <article
+            {...selectProps(mediaPlan, "media")}
+            className={cn(
+              "tora-pricelist tora-pricelist--with-media pricing-wrap tora-pricelist-style3-media",
+              selectedIds.has(mediaPlan.id) && "active",
+            )}
+          >
+            <div
+              className={cn(
+                "media-wrap",
+                mediaPlan.mediaVideoUrl.trim() && "enable-video",
+              )}
+            >
+              <ToraImage
+                photo={
+                  planPhoto(photoMap, mediaPlan, "mediaPhotoId") ??
+                  planPhoto(photoMap, mediaPlan)
+                }
+                sizes="(min-width: 992px) 60vw, 100vw"
+                priority={servicePlans.length === 0 && !simplePlan}
+              />
+              {mediaPlan.mediaVideoUrl.trim() ? (
+                <Link
+                  href={mediaPlan.mediaVideoUrl.trim()}
+                  onClick={(event) => event.stopPropagation()}
+                  className="video-btn"
+                >
+                  <Play className="h-8 w-8 fill-current" />
+                  <span className="sr-only">Play media</span>
+                </Link>
+              ) : (
+                <span className="video-btn" aria-hidden="true">
+                  <Play className="h-8 w-8 fill-current" />
+                </span>
+              )}
+            </div>
+            <div className="pricing-content">
+              <div className="price-wrap">
+                <ToraSelectionDot selected={selectedIds.has(mediaPlan.id)} />
+                <ToraPrice
+                  plan={mediaPlan}
+                  frequency={frequency}
+                  currency={currency}
+                />
+              </div>
+              <ToraPlanMeta plan={mediaPlan} />
+              <p className="tora-price-subtitle">INCLUDES:</p>
+              <ToraFeatureList plan={mediaPlan} />
+            </div>
+          </article>
+        </Container>
+      )}
+
+      <Container className="max-w-[1174px]">
+        <ToraStyle3ContactForm
+          selectedPlans={selectedPlans}
+          total={total}
+          currency={currency}
+          frequency={frequency}
+        />
+      </Container>
+
+      <div
+        className={cn(
+          "tora-pricelist-style3-total",
+          selectedPlans.length > 0 && "active",
+        )}
+        role="status"
+        aria-live="polite"
+      >
+        <span>Total:</span>
+        <span className="total-price">{formatPrice(total, currency)}</span>
+      </div>
     </section>
   );
 }
@@ -1193,6 +1632,18 @@ export function PricingBlock({
         dark={dark}
         title={title}
         description={description}
+      />
+    );
+  }
+
+  if ((block.style ?? "standard") === "tora-price-list-style-3") {
+    return (
+      <ToraPriceListStyle3Block
+        block={block}
+        plans={plans}
+        frequency={frequency}
+        dark={dark}
+        photoMap={photoMap}
       />
     );
   }
