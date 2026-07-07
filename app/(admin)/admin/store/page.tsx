@@ -554,9 +554,7 @@ function productInventorySnapshot(
   const rawAvailableQuantity = row.stockQuantity - reservedQuantity;
   const availableQuantity = Math.max(0, rawAvailableQuantity);
   const detail = `${row.stockQuantity} on hand · ${reservedQuantity} reserved · ${availableQuantity} available${
-    rawAvailableQuantity < 0
-      ? ` · ${Math.abs(rawAvailableQuantity)} over reserved`
-      : ""
+    rawAvailableQuantity < 0 ? ` · ${Math.abs(rawAvailableQuantity)} over reserved` : ""
   }`;
   if (rawAvailableQuantity <= 0) {
     return {
@@ -568,10 +566,7 @@ function productInventorySnapshot(
       tone: row.allowBackorder ? "amber" : "red",
     };
   }
-  if (
-    row.lowStockThreshold > 0 &&
-    availableQuantity <= row.lowStockThreshold
-  ) {
+  if (row.lowStockThreshold > 0 && availableQuantity <= row.lowStockThreshold) {
     return {
       reservedQuantity,
       availableQuantity,
@@ -736,8 +731,7 @@ function orderTriageBadges(row: OrderRow): Array<{
     badges.push({ key: "in-progress", label: "In progress", tone: "amber" });
   }
   if (
-    (row.fulfillmentStatus === "shipped" ||
-      row.fulfillmentStatus === "delivered") &&
+    (row.fulfillmentStatus === "shipped" || row.fulfillmentStatus === "delivered") &&
     !row.fulfillmentTrackingNumber &&
     !row.fulfillmentTrackingUrl
   ) {
@@ -818,15 +812,15 @@ function orderReadinessWarnings(row: OrderRow): OrderReadinessWarning[] {
     });
   }
   if (
-    (row.fulfillmentStatus === "shipped" ||
-      row.fulfillmentStatus === "delivered") &&
+    (row.fulfillmentStatus === "shipped" || row.fulfillmentStatus === "delivered") &&
     !row.fulfillmentTrackingNumber &&
     !row.fulfillmentTrackingUrl
   ) {
     warnings.push({
       key: "missing-tracking",
       label: "Tracking missing",
-      detail: "Add a tracking number, tracking URL, or handoff reference for shipment history.",
+      detail:
+        "Add a tracking number, tracking URL, or handoff reference for shipment history.",
       tone: "amber",
     });
   }
@@ -981,7 +975,9 @@ function auditEntryDetail(row: AuditLogRow) {
     metadataString(meta.trackingNumber)
       ? `Tracking ${metadataString(meta.trackingNumber)}`
       : null,
-    typeof meta.emailSent === "boolean" ? `Email ${meta.emailSent ? "sent" : "not sent"}` : null,
+    typeof meta.emailSent === "boolean"
+      ? `Email ${meta.emailSent ? "sent" : "not sent"}`
+      : null,
     typeof meta.sent === "boolean" ? `Email ${meta.sent ? "sent" : "not sent"}` : null,
     typeof meta.receiptSent === "boolean"
       ? `Receipt ${meta.receiptSent ? "sent" : "not sent"}`
@@ -1099,9 +1095,7 @@ function orderActivityEntries(order: OrderRow, auditRows: AuditLogRow[]) {
       source: "audit",
     });
   }
-  return entries.sort(
-    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
-  );
+  return entries.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 }
 
 function csvCell(value: string | number | null | undefined) {
@@ -1928,17 +1922,10 @@ function EmailPreviewModal({
   onClose: () => void;
 }) {
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={preview.label}
-      className="w-[min(94vw,58rem)]"
-    >
+    <Modal open onClose={onClose} title={preview.label} className="w-[min(94vw,58rem)]">
       <div className="space-y-4">
         <div className="grid gap-3 rounded-lg border bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[8rem_1fr]">
-          <span className="font-medium text-[hsl(var(--muted-foreground))]">
-            To
-          </span>
+          <span className="font-medium text-[hsl(var(--muted-foreground))]">To</span>
           <span className="break-words">{preview.to}</span>
           <span className="font-medium text-[hsl(var(--muted-foreground))]">
             Subject
@@ -2165,8 +2152,7 @@ function OrderDetailModal({
               invoice: {
                 dueAt: invoiceForm.dueAt || null,
                 notes: invoiceForm.notes.trim() || null,
-                paymentInstructions:
-                  invoiceForm.paymentInstructions.trim() || null,
+                paymentInstructions: invoiceForm.paymentInstructions.trim() || null,
               },
             }
           : kind === "receipt"
@@ -2211,8 +2197,7 @@ function OrderDetailModal({
                     fulfillmentTrackingUrl:
                       fulfillmentForm.fulfillmentTrackingUrl.trim() || null,
                     fulfillmentReadyAt: fulfillmentForm.fulfillmentReadyAt || null,
-                    fulfillmentShippedAt:
-                      fulfillmentForm.fulfillmentShippedAt || null,
+                    fulfillmentShippedAt: fulfillmentForm.fulfillmentShippedAt || null,
                     fulfillmentDeliveredAt:
                       fulfillmentForm.fulfillmentDeliveredAt || null,
                     fulfillmentNotes: fulfillmentForm.fulfillmentNotes.trim() || null,
@@ -2232,1387 +2217,1470 @@ function OrderDetailModal({
 
   return (
     <>
-      <Modal open onClose={onClose} title="Order request" className="w-[min(94vw,52rem)]">
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="font-mono text-xs text-[hsl(var(--muted-foreground))]">
-              {order.id}
-            </p>
-            <h3 className="mt-1 text-lg font-semibold">
-              {order.clientName || order.email || "Unknown customer"}
-            </h3>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Received {formatDate(order.createdAt)}
-            </p>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
-              {selectedOptionCount > 0
-                ? ` · ${selectedOptionCount} selected option${selectedOptionCount === 1 ? "" : "s"}`
-                : ""}
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Badge tone={orderTone(order.status)} className="capitalize">
-              {order.status}
-            </Badge>
-            <Badge
-              tone={fulfillmentTone(order.fulfillmentStatus)}
-              className="capitalize"
-            >
-              {fulfillmentLabel(order.fulfillmentStatus)}
-            </Badge>
-            {orderTriageBadges(order).map((badge) => (
-              <Badge key={badge.key} tone={badge.tone} className="capitalize">
-                {badge.label}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Email
-            </p>
-            <p>{order.email || "—"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Phone
-            </p>
-            <p>{order.clientPhone || "—"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Payment
-            </p>
-            <p>{order.paymentProvider || "manual"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Last updated
-            </p>
-            <p>{formatDate(order.updatedAt)}</p>
-          </div>
-          {order.clientNotes && (
-            <div className="sm:col-span-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                Notes
-              </p>
-              <p className="whitespace-pre-wrap">{order.clientNotes}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-lg border p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h4 className="font-medium">Readiness</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Quick checks before payment, packing, or shipment.
-              </p>
-            </div>
-            <Badge tone={readinessWarnings.length ? "amber" : "green"}>
-              {readinessWarnings.length
-                ? `${readinessWarnings.length} check${readinessWarnings.length === 1 ? "" : "s"}`
-                : "Ready"}
-            </Badge>
-          </div>
-          <div className="mt-3 space-y-2">
-            {readinessWarnings.length === 0 ? (
-              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">
-                No readiness warnings for this order.
-              </p>
-            ) : (
-              readinessWarnings.map((warning) => (
-                <div
-                  key={warning.key}
-                  className="flex gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
-                >
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{warning.label}</p>
-                      <Badge tone={warning.tone}>Check</Badge>
-                    </div>
-                    <p className="mt-1 text-[hsl(var(--muted-foreground))]">
-                      {warning.detail}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h4 className="font-medium">Activity timeline</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Order milestones plus admin audit entries for this request.
-              </p>
-            </div>
-            {auditLoading && (
-              <Badge tone="neutral" className="gap-1">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading audit
-              </Badge>
-            )}
-          </div>
-          <div className="mt-4 space-y-3">
-            {activity.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                No activity yet.
-              </p>
-            ) : (
-              activity.slice(0, 14).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="grid gap-2 rounded-md border bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[9rem_1fr]"
-                >
-                  <div className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {formatDate(entry.at)}
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{entry.title}</p>
-                      <Badge tone={entry.tone}>
-                        {entry.source === "audit" ? "Audit" : "Milestone"}
-                      </Badge>
-                    </div>
-                    {entry.detail && (
-                      <p className="break-words text-[hsl(var(--muted-foreground))]">
-                        {entry.detail}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
-            <thead className="bg-[hsl(var(--muted))] text-left text-[hsl(var(--muted-foreground))]">
-              <tr>
-                <th className="px-3 py-2 font-medium">Item</th>
-                <th className="px-3 py-2 text-right font-medium">Qty</th>
-                <th className="px-3 py-2 text-right font-medium">Unit</th>
-                <th className="px-3 py-2 text-right font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items.map((item) => (
-                <tr key={item.id} className="border-t">
-                  <td className="px-3 py-2">
-                    <div className="space-y-1">
-                      <p className="font-medium">{orderItemTitle(item)}</p>
-                      {item.options.length > 0 && (
-                        <div className="grid gap-1 text-xs text-[hsl(var(--muted-foreground))]">
-                          {item.options.map((option) => (
-                            <span key={`${item.id}-${option.optionId}`}>
-                              {optionLine(option, order.currency)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-right">{item.quantity}</td>
-                  <td className="px-3 py-2 text-right">
-                    {formatMoney(item.unitPriceCents, order.currency)}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {formatMoney(item.lineTotalCents, order.currency)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="space-y-3 rounded-lg border p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h4 className="flex items-center gap-2 font-medium">
-                <ClipboardCheck className="h-4 w-4" />
-                Packing checklist
-              </h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Saved checklist for packing, pickup, and shipment prep.
-              </p>
-            </div>
-            <Badge
-              tone={
-                order.items.length > 0 && packedItemCount === order.items.length
-                  ? "green"
-                  : packingChecklistDirty
-                    ? "amber"
-                    : "neutral"
-              }
-            >
-              {packedItemCount}/{order.items.length} packed
-            </Badge>
-          </div>
-          <div className="space-y-2">
-            {order.items.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                No items to pack.
-              </p>
-            ) : (
-              order.items.map((item) => (
-                <label
-                  key={`pack-${item.id}`}
-                  className="flex gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-1 h-4 w-4 shrink-0"
-                    checked={packingCheckedIds.has(item.id)}
-                    disabled={saving}
-                    onChange={(event) => {
-                      const checked = event.target.checked;
-                      setPackingCheckedIds((current) => {
-                        const next = new Set(current);
-                        if (checked) next.add(item.id);
-                        else next.delete(item.id);
-                        return next;
-                      });
-                    }}
-                  />
-                  <span className="min-w-0">
-                    <span className="block font-medium">
-                      {item.quantity} × {orderItemTitle(item)}
-                    </span>
-                    {item.options.length > 0 && (
-                      <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
-                        {item.options
-                          .map((option) => optionLine(option, order.currency))
-                          .join(" · ")}
-                      </span>
-                    )}
-                    {savedPackingByItemId.get(item.id)?.checkedAt && (
-                      <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
-                        Packed{" "}
-                        {formatDate(
-                          savedPackingByItemId.get(item.id)?.checkedAt ?? "",
-                        )}
-                      </span>
-                    )}
-                  </span>
-                </label>
-              ))
-            )}
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              {packingChecklistDirty
-                ? "Unsaved packing changes"
-                : "Packing checklist is saved"}
-            </p>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={saving || order.items.length === 0}
-                onClick={() =>
-                  window.open(
-                    `/admin/store/orders/${encodeURIComponent(
-                      order.id,
-                    )}/packing-slip`,
-                    "_blank",
-                    "noopener,noreferrer",
-                  )
-                }
-              >
-                <ExternalLink className="h-4 w-4" />
-                Packing slip
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={saving || order.items.length === 0}
-                onClick={() =>
-                  setPackingCheckedIds(new Set(order.items.map((item) => item.id)))
-                }
-              >
-                Mark all packed
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={saving || order.items.length === 0}
-                onClick={() => setPackingCheckedIds(new Set())}
-              >
-                Clear
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={saving || !packingChecklistDirty}
-                onClick={savePackingChecklist}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Save checklist
-              </Button>
-            </div>
-          </div>
-          <div className="grid gap-2 rounded-md border p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
-            <span>
-              Contact: {order.email || order.clientPhone || "No contact saved"}
-            </span>
-            <span>
-              Method: {order.shippingProfileLabel || order.fulfillmentCarrier || "Not set"}
-            </span>
-            <span>
-              Tracking:{" "}
-              {order.fulfillmentTrackingNumber ||
-                (order.fulfillmentTrackingUrl ? "Tracking URL saved" : "Not set")}
-            </span>
-          </div>
-          {order.fulfillmentNotes && (
-            <p className="whitespace-pre-wrap rounded-md bg-[hsl(var(--muted))] p-3 text-sm text-[hsl(var(--muted-foreground))]">
-              {order.fulfillmentNotes}
-            </p>
-          )}
-        </div>
-
-        <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <Field label="Order status" htmlFor="order-status">
-            <Select
-              id="order-status"
-              value={order.status}
-              disabled={saving}
-              onChange={(event) => onStatusChange(event.target.value as OrderStatus)}
-            >
-              <option value="draft">Draft</option>
-              <option value="pending">Pending</option>
-              <option value="invoiced">Invoiced</option>
-              <option value="paid">Paid</option>
-              <option value="fulfilled">Fulfilled</option>
-              <option value="cancelled">Cancelled</option>
-            </Select>
-          </Field>
-          <div className="flex flex-wrap gap-2">
-            {nextStatus && (
-              <Button
-                type="button"
-                variant="default"
-                disabled={saving}
-                onClick={() => onStatusChange(nextStatus)}
-              >
-                <PackageCheck className="h-4 w-4" />
-                Mark {nextStatus}
-              </Button>
-            )}
-            <Button type="button" variant="outline" onClick={() => onCopy(order)}>
-              <Copy className="h-4 w-4" />
-              Copy summary
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => previewEmail("invoice")}
-            >
-              {previewing === "invoice" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-              Preview email
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => onStatusLinkAction(order, "open")}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open status
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => onStatusLinkAction(order, "copy")}
-            >
-              <LinkIcon className="h-4 w-4" />
-              Copy status link
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-lg border p-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-medium">Invoice</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Save invoice details, then send a secure invoice link by email.
-              </p>
-            </div>
-            {order.invoice ? (
-              <Badge
-                tone={
-                  order.invoice.status === "paid"
-                    ? "green"
-                    : order.invoice.status === "void"
-                      ? "red"
-                      : "blue"
-                }
-              >
-                {order.invoice.number} · {order.invoice.status}
-              </Badge>
-            ) : (
-              <Badge tone="neutral">No invoice yet</Badge>
-            )}
-          </div>
-
-          {order.invoice && (
-            <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-5">
-              <span>Created {formatDate(order.invoice.createdAt)}</span>
-              <span>
-                Issued{" "}
-                {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
-              </span>
-              <span>
-                Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}
-              </span>
-              <span>
-                Paid {order.invoice.paidAt ? formatDate(order.invoice.paidAt) : "—"}
-              </span>
-              <span>
-                Receipt{" "}
-                {order.invoice.receiptSentAt
-                  ? formatDate(order.invoice.receiptSentAt)
-                  : "—"}
-              </span>
-            </div>
-          )}
-
-          {order.invoice?.onlinePaymentProvider && (
-            <div className="space-y-3 rounded-md border p-3">
+      <Modal
+        open
+        onClose={onClose}
+        title="Order request"
+        className="w-[min(96vw,72rem)]"
+      >
+        <div className="space-y-5">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+            <div className="rounded-lg border p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium">Hosted Stripe payment</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    Session and webhook state for this invoice.
+                <div className="min-w-0">
+                  <p className="break-all font-mono text-xs text-[hsl(var(--muted-foreground))]">
+                    {order.id}
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold">
+                    {order.clientName || order.email || "Unknown customer"}
+                  </h3>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    Received {formatDate(order.createdAt)} · Updated{" "}
+                    {formatDate(order.updatedAt)}
                   </p>
                 </div>
-                <Badge
-                  tone={onlinePaymentTone(order.invoice.onlinePaymentStatus)}
-                  className="capitalize"
-                >
-                  {onlinePaymentLabel(order.invoice.onlinePaymentStatus)}
+                <div className="flex flex-wrap justify-start gap-2 xl:justify-end">
+                  <Badge tone={orderTone(order.status)} className="capitalize">
+                    {order.status}
+                  </Badge>
+                  <Badge
+                    tone={fulfillmentTone(order.fulfillmentStatus)}
+                    className="capitalize"
+                  >
+                    {fulfillmentLabel(order.fulfillmentStatus)}
+                  </Badge>
+                  {orderTriageBadges(order).map((badge) => (
+                    <Badge key={badge.key} tone={badge.tone} className="capitalize">
+                      {badge.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-md bg-[hsl(var(--muted))] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Email
+                  </p>
+                  <p className="mt-1 break-words">{order.email || "—"}</p>
+                </div>
+                <div className="rounded-md bg-[hsl(var(--muted))] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Phone
+                  </p>
+                  <p className="mt-1">{order.clientPhone || "—"}</p>
+                </div>
+                <div className="rounded-md bg-[hsl(var(--muted))] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Items
+                  </p>
+                  <p className="mt-1">
+                    {itemCount} item{itemCount === 1 ? "" : "s"}
+                  </p>
+                  {selectedOptionCount > 0 && (
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                      {selectedOptionCount} selected option
+                      {selectedOptionCount === 1 ? "" : "s"}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-md bg-[hsl(var(--muted))] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Method
+                  </p>
+                  <p className="mt-1">
+                    {order.shippingProfileLabel ||
+                      order.fulfillmentCarrier ||
+                      "Not set"}
+                  </p>
+                </div>
+              </div>
+
+              {order.clientNotes && (
+                <div className="mt-3 rounded-md border p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Client notes
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{order.clientNotes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="rounded-lg border p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                  Total
+                </p>
+                <p className="mt-1 text-2xl font-semibold">
+                  {formatMoney(order.totalCents, order.currency)}
+                </p>
+                <div className="mt-3 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                  <span>
+                    Subtotal {formatMoney(order.subtotalCents, order.currency)}
+                  </span>
+                  {order.discountCents > 0 && (
+                    <span>
+                      Discount -{formatMoney(order.discountCents, order.currency)}
+                      {order.promoCode ? ` · ${order.promoCode}` : ""}
+                    </span>
+                  )}
+                  <span>Tax {formatMoney(order.taxCents, order.currency)}</span>
+                  <span>
+                    Shipping {formatMoney(order.shippingCents, order.currency)}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                  Payment
+                </p>
+                <p className="mt-1 text-sm">
+                  {order.paymentProvider || "Manual"}{" "}
+                  {order.paymentRef ? (
+                    <span className="text-[hsl(var(--muted-foreground))]">
+                      · {order.paymentRef}
+                    </span>
+                  ) : null}
+                </p>
+                <div className="mt-3 grid gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                  <span>
+                    Invoice: {order.invoice ? order.invoice.status : "not created"}
+                  </span>
+                  <span>
+                    Paid {formatMoney(paidAmountCents(order), order.currency)}
+                  </span>
+                  <span>Refunded {formatMoney(refundedCents, order.currency)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-medium">Readiness</h4>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    Quick checks before payment, packing, or shipment.
+                  </p>
+                </div>
+                <Badge tone={readinessWarnings.length ? "amber" : "green"}>
+                  {readinessWarnings.length
+                    ? `${readinessWarnings.length} check${readinessWarnings.length === 1 ? "" : "s"}`
+                    : "Ready"}
                 </Badge>
               </div>
-              <div className="grid gap-2 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-2">
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    Session
-                  </span>
-                  <p
-                    className="font-mono"
-                    title={order.invoice.onlinePaymentSessionId ?? ""}
-                  >
-                    {shortRef(order.invoice.onlinePaymentSessionId)}
+              <div className="mt-3 space-y-2">
+                {readinessWarnings.length === 0 ? (
+                  <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                    No readiness warnings for this order.
                   </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    Payment intent
-                  </span>
-                  <p
-                    className="font-mono"
-                    title={order.invoice.onlinePaymentIntentId ?? ""}
-                  >
-                    {shortRef(order.invoice.onlinePaymentIntentId)}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    Expires
-                  </span>
-                  <p>
-                    {order.invoice.onlinePaymentExpiresAt
-                      ? formatDate(order.invoice.onlinePaymentExpiresAt)
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    Tax mode
-                  </span>
-                  <p>{onlinePaymentTaxModeLabel(order.invoice.onlinePaymentTaxMode)}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-[hsl(var(--foreground))]">
-                    Checkout URL
-                  </span>
-                  <p className="truncate">
-                    {order.invoice.onlinePaymentUrl
-                      ? "Active link stored"
-                      : "No active link"}
-                  </p>
-                </div>
-              </div>
-              {order.invoice.onlinePaymentTaxMode === "stripe" && (
-                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-200">
-                  Stripe Tax will recalculate tax at checkout. The paid receipt total
-                  may differ from the saved invoice estimate.
-                </p>
-              )}
-              <div className="flex flex-wrap justify-end gap-2">
-                {order.invoice.onlinePaymentUrl && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={saving}
-                      onClick={() => onCheckoutLinkAction(order, "open")}
+                ) : (
+                  readinessWarnings.map((warning) => (
+                    <div
+                      key={warning.key}
+                      className="flex gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
                     >
-                      <ExternalLink className="h-4 w-4" />
-                      Open checkout
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={saving}
-                      onClick={() => onCheckoutLinkAction(order, "copy")}
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                      Copy checkout
-                    </Button>
-                  </>
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">{warning.label}</p>
+                          <Badge tone={warning.tone}>Check</Badge>
+                        </div>
+                        <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+                          {warning.detail}
+                        </p>
+                      </div>
+                    </div>
+                  ))
                 )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-medium">Activity timeline</h4>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    Order milestones plus admin audit entries for this request.
+                  </p>
+                </div>
+                {auditLoading && (
+                  <Badge tone="neutral" className="gap-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Loading audit
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-4 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                {activity.length === 0 ? (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    No activity yet.
+                  </p>
+                ) : (
+                  activity.slice(0, 14).map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="grid gap-2 rounded-md border bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[9rem_1fr]"
+                    >
+                      <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                        {formatDate(entry.at)}
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">{entry.title}</p>
+                          <Badge tone={entry.tone}>
+                            {entry.source === "audit" ? "Audit" : "Milestone"}
+                          </Badge>
+                        </div>
+                        {entry.detail && (
+                          <p className="break-words text-[hsl(var(--muted-foreground))]">
+                            {entry.detail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[42rem] text-sm">
+              <thead className="bg-[hsl(var(--muted))] text-left text-[hsl(var(--muted-foreground))]">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Item</th>
+                  <th className="px-3 py-2 text-right font-medium">Qty</th>
+                  <th className="px-3 py-2 text-right font-medium">Unit</th>
+                  <th className="px-3 py-2 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item) => (
+                  <tr key={item.id} className="border-t">
+                    <td className="px-3 py-2">
+                      <div className="space-y-1">
+                        <p className="font-medium">{orderItemTitle(item)}</p>
+                        {item.options.length > 0 && (
+                          <div className="grid gap-1 text-xs text-[hsl(var(--muted-foreground))]">
+                            {item.options.map((option) => (
+                              <span key={`${item.id}-${option.optionId}`}>
+                                {optionLine(option, order.currency)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-right">{item.quantity}</td>
+                    <td className="px-3 py-2 text-right">
+                      {formatMoney(item.unitPriceCents, order.currency)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatMoney(item.lineTotalCents, order.currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="flex items-center gap-2 font-medium">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Packing checklist
+                </h4>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Saved checklist for packing, pickup, and shipment prep.
+                </p>
+              </div>
+              <Badge
+                tone={
+                  order.items.length > 0 && packedItemCount === order.items.length
+                    ? "green"
+                    : packingChecklistDirty
+                      ? "amber"
+                      : "neutral"
+                }
+              >
+                {packedItemCount}/{order.items.length} packed
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {order.items.length === 0 ? (
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  No items to pack.
+                </p>
+              ) : (
+                order.items.map((item) => (
+                  <label
+                    key={`pack-${item.id}`}
+                    className="flex gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 shrink-0"
+                      checked={packingCheckedIds.has(item.id)}
+                      disabled={saving}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setPackingCheckedIds((current) => {
+                          const next = new Set(current);
+                          if (checked) next.add(item.id);
+                          else next.delete(item.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        {item.quantity} × {orderItemTitle(item)}
+                      </span>
+                      {item.options.length > 0 && (
+                        <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
+                          {item.options
+                            .map((option) => optionLine(option, order.currency))
+                            .join(" · ")}
+                        </span>
+                      )}
+                      {savedPackingByItemId.get(item.id)?.checkedAt && (
+                        <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
+                          Packed{" "}
+                          {formatDate(
+                            savedPackingByItemId.get(item.id)?.checkedAt ?? "",
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+            <div className="grid gap-3 rounded-md bg-[hsl(var(--muted))] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <p className="min-w-0 text-xs text-[hsl(var(--muted-foreground))]">
+                {packingChecklistDirty
+                  ? "Unsaved packing changes"
+                  : "Packing checklist is saved"}
+              </p>
+              <div className="flex min-w-0 flex-wrap gap-2 lg:justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={saving || !canRefreshCheckout}
-                  onClick={() => onRefreshCheckout(order)}
+                  disabled={saving || order.items.length === 0}
+                  onClick={() =>
+                    window.open(
+                      `/admin/store/orders/${encodeURIComponent(
+                        order.id,
+                      )}/packing-slip`,
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
                 >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  Refresh payment link
+                  <ExternalLink className="h-4 w-4" />
+                  Packing slip
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || order.items.length === 0}
+                  onClick={() =>
+                    setPackingCheckedIds(new Set(order.items.map((item) => item.id)))
+                  }
+                >
+                  Mark all packed
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || order.items.length === 0}
+                  onClick={() => setPackingCheckedIds(new Set())}
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={saving || !packingChecklistDirty}
+                  onClick={savePackingChecklist}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Save checklist
                 </Button>
               </div>
             </div>
-          )}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Due date" htmlFor="invoice-due-at">
-              <Input
-                id="invoice-due-at"
-                type="date"
-                value={invoiceForm.dueAt}
-                disabled={saving}
-                onChange={(event) =>
-                  setInvoiceForm((current) => ({
-                    ...current,
-                    dueAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field
-              label="Payment instructions"
-              htmlFor="invoice-payment-instructions"
-              hint="Shown on the invoice and sent in the email."
-            >
-              <Textarea
-                id="invoice-payment-instructions"
-                rows={3}
-                value={invoiceForm.paymentInstructions}
-                disabled={saving}
-                placeholder="Example: Pay by Zelle, check, or card after confirmation."
-                onChange={(event) =>
-                  setInvoiceForm((current) => ({
-                    ...current,
-                    paymentInstructions: event.target.value,
-                  }))
-                }
-              />
-            </Field>
+            <div className="grid gap-2 rounded-md border p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+              <span>
+                Contact: {order.email || order.clientPhone || "No contact saved"}
+              </span>
+              <span>
+                Method:{" "}
+                {order.shippingProfileLabel || order.fulfillmentCarrier || "Not set"}
+              </span>
+              <span>
+                Tracking:{" "}
+                {order.fulfillmentTrackingNumber ||
+                  (order.fulfillmentTrackingUrl ? "Tracking URL saved" : "Not set")}
+              </span>
+            </div>
+            {order.fulfillmentNotes && (
+              <p className="whitespace-pre-wrap rounded-md bg-[hsl(var(--muted))] p-3 text-sm text-[hsl(var(--muted-foreground))]">
+                {order.fulfillmentNotes}
+              </p>
+            )}
           </div>
 
-          <Field label="Invoice notes" htmlFor="invoice-notes">
-            <Textarea
-              id="invoice-notes"
-              rows={3}
-              value={invoiceForm.notes}
-              disabled={saving}
-              placeholder="Optional client-facing notes for this invoice."
-              onChange={(event) =>
-                setInvoiceForm((current) => ({
-                  ...current,
-                  notes: event.target.value,
-                }))
-              }
-            />
-          </Field>
-
-          {!order.email && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              Add a customer email before sending this invoice.
-            </p>
-          )}
-
-          <div className="flex flex-wrap justify-end gap-2">
-            {order.invoice && (
-              <>
+          <div className="space-y-3 rounded-lg border p-3">
+            <div>
+              <h4 className="font-medium">Order actions</h4>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Update the request, copy client-facing details, or open the status page.
+              </p>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] lg:items-end">
+              <Field label="Order status" htmlFor="order-status">
+                <Select
+                  id="order-status"
+                  value={order.status}
+                  disabled={saving}
+                  onChange={(event) =>
+                    onStatusChange(event.target.value as OrderStatus)
+                  }
+                >
+                  <option value="draft">Draft</option>
+                  <option value="pending">Pending</option>
+                  <option value="invoiced">Invoiced</option>
+                  <option value="paid">Paid</option>
+                  <option value="fulfilled">Fulfilled</option>
+                  <option value="cancelled">Cancelled</option>
+                </Select>
+              </Field>
+              <div className="flex min-w-0 flex-wrap gap-2 lg:justify-end">
+                {nextStatus && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    disabled={saving}
+                    onClick={() => onStatusChange(nextStatus)}
+                  >
+                    <PackageCheck className="h-4 w-4" />
+                    Mark {nextStatus}
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={() => onCopy(order)}>
+                  <Copy className="h-4 w-4" />
+                  Copy summary
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
                   disabled={saving}
-                  onClick={() => onInvoiceLinkAction(order, "open")}
+                  onClick={() => previewEmail("invoice")}
+                >
+                  {previewing === "invoice" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  Preview email
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => onStatusLinkAction(order, "open")}
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Open {invoicePaid ? "receipt" : "invoice"}
+                  Open status
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   disabled={saving}
-                  onClick={() => onInvoiceLinkAction(order, "copy")}
+                  onClick={() => onStatusLinkAction(order, "copy")}
                 >
                   <LinkIcon className="h-4 w-4" />
-                  Copy link
+                  Copy status link
                 </Button>
-              </>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => onInvoiceSubmit(invoiceForm, false)}
-            >
-              Save draft
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || !order.email || invoicePaid}
-              onClick={() => onInvoiceSubmit(invoiceForm, true)}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="h-4 w-4" />
-              )}
-              {invoicePaid ? "Invoice paid" : "Send invoice"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-lg border p-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-medium">Payment receipt</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Record a manual payment and optionally send a receipt email.
-              </p>
+              </div>
             </div>
-            {invoicePaid ? (
-              <Badge tone="green">
-                Paid{" "}
-                {formatMoney(
-                  order.invoice?.paidAmountCents ?? order.totalCents,
-                  order.currency,
-                )}
-              </Badge>
-            ) : (
-              <Badge tone="neutral">Awaiting payment</Badge>
-            )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Paid date" htmlFor="payment-paid-at">
-              <Input
-                id="payment-paid-at"
-                type="date"
-                value={paymentForm.paidAt}
-                disabled={saving}
-                onChange={(event) =>
-                  setPaymentForm((current) => ({
-                    ...current,
-                    paidAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Amount paid" htmlFor="payment-paid-amount">
-              <Input
-                id="payment-paid-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={paymentForm.paidAmount}
-                disabled={saving}
-                onChange={(event) =>
-                  setPaymentForm((current) => ({
-                    ...current,
-                    paidAmount: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Method" htmlFor="payment-method">
-              <Input
-                id="payment-method"
-                value={paymentForm.paymentMethod}
-                disabled={saving}
-                placeholder="Zelle, check, cash, card"
-                onChange={(event) =>
-                  setPaymentForm((current) => ({
-                    ...current,
-                    paymentMethod: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Reference" htmlFor="payment-reference">
-              <Input
-                id="payment-reference"
-                value={paymentForm.paymentReference}
-                disabled={saving}
-                placeholder="Check number or transaction ID"
-                onChange={(event) =>
-                  setPaymentForm((current) => ({
-                    ...current,
-                    paymentReference: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Payment note" htmlFor="payment-note">
-              <Textarea
-                id="payment-note"
-                rows={3}
-                value={paymentForm.paymentNote}
-                disabled={saving}
-                placeholder="Optional note shown on the receipt."
-                onChange={(event) =>
-                  setPaymentForm((current) => ({
-                    ...current,
-                    paymentNote: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          {!order.email && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              Add a customer email before sending a receipt.
-            </p>
-          )}
-
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving || inputToCents(paymentForm.paidAmount) <= 0}
-              onClick={() => previewEmail("receipt")}
-            >
-              {previewing === "receipt" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-              Preview receipt
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => onPaymentSubmit(paymentForm, false)}
-            >
-              <CreditCard className="h-4 w-4" />
-              {invoicePaid ? "Update payment" : "Record payment"}
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || !order.email}
-              onClick={() => onPaymentSubmit(paymentForm, true)}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ReceiptText className="h-4 w-4" />
-              )}
-              {invoicePaid ? "Send receipt" : "Record & send receipt"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-lg border p-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-medium">Refunds</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Record manual refunds and optionally send a refund receipt.
-              </p>
-            </div>
-            {refundedCents > 0 ? (
-              <Badge tone={remainingRefundCents > 0 ? "amber" : "green"}>
-                Refunded {formatMoney(refundedCents, order.currency)}
-              </Badge>
-            ) : (
-              <Badge tone="neutral">No refunds</Badge>
-            )}
-          </div>
-
-          {order.refunds.length > 0 && (
-            <div className="space-y-2">
-              {order.refunds.map((refund) => (
-                <div
-                  key={refund.id}
-                  className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start"
+          <div className="space-y-4 rounded-lg border p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="font-medium">Invoice</h4>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Save invoice details, then send a secure invoice link by email.
+                </p>
+              </div>
+              {order.invoice ? (
+                <Badge
+                  tone={
+                    order.invoice.status === "paid"
+                      ? "green"
+                      : order.invoice.status === "void"
+                        ? "red"
+                        : "blue"
+                  }
                 >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">
-                        {formatMoney(refund.amountCents, refund.currency)}
-                      </p>
-                      <Badge tone={refundTone(refund.status)} className="capitalize">
-                        {refundLabel(refund.status)}
-                      </Badge>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                        {refund.refundedAt
-                          ? formatDate(refund.refundedAt)
-                          : formatDate(refund.createdAt)}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
-                      {refund.method && <span>Method: {refund.method}</span>}
-                      {refund.reference && <span>Reference: {refund.reference}</span>}
-                      {refund.reason && <span>Reason: {refund.reason}</span>}
-                      {refund.receiptSentAt && (
-                        <span>Receipt sent {formatDate(refund.receiptSentAt)}</span>
-                      )}
-                    </div>
-                    {refund.providerError && (
-                      <p className="mt-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
-                        Provider error: {refund.providerError}
-                      </p>
-                    )}
-                    {refund.note && (
-                      <p className="mt-2 whitespace-pre-wrap text-xs text-[hsl(var(--muted-foreground))]">
-                        {refund.note}
-                      </p>
-                    )}
-                  </div>
-                  <p className="text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                    {refund.provider}
-                  </p>
-                </div>
-              ))}
+                  {order.invoice.number} · {order.invoice.status}
+                </Badge>
+              ) : (
+                <Badge tone="neutral">No invoice yet</Badge>
+              )}
             </div>
-          )}
 
-          <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-3">
-            <span>Paid {formatMoney(paidAmountCents(order), order.currency)}</span>
-            <span>Refunded {formatMoney(refundedCents, order.currency)}</span>
-            <span>
-              Refundable {formatMoney(remainingRefundCents, order.currency)}
-              {reservedRefundCents > refundedCents
-                ? ` (${formatMoney(
-                    reservedRefundCents - refundedCents,
-                    order.currency,
-                  )} pending)`
-                : ""}
-            </span>
-          </div>
-
-          {!invoicePaid && (
-            <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
-              Record payment before adding a refund.
-            </p>
-          )}
-
-          {invoicePaid &&
-            !stripeRefundAvailable &&
-            order.invoice?.onlinePaymentProvider === "stripe" && (
-              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                This Stripe invoice is missing a payment intent, so only a manual refund
-                record is available.
-              </p>
+            {order.invoice && (
+              <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-5">
+                <span>Created {formatDate(order.invoice.createdAt)}</span>
+                <span>
+                  Issued{" "}
+                  {order.invoice.issuedAt ? formatDate(order.invoice.issuedAt) : "—"}
+                </span>
+                <span>
+                  Sent {order.invoice.sentAt ? formatDate(order.invoice.sentAt) : "—"}
+                </span>
+                <span>
+                  Paid {order.invoice.paidAt ? formatDate(order.invoice.paidAt) : "—"}
+                </span>
+                <span>
+                  Receipt{" "}
+                  {order.invoice.receiptSentAt
+                    ? formatDate(order.invoice.receiptSentAt)
+                    : "—"}
+                </span>
+              </div>
             )}
 
-          <Field
-            label="Refund action"
-            htmlFor="refund-provider"
-            hint={
-              stripeRefundAvailable
-                ? "Stripe refunds move money through Stripe; manual records only document outside refunds."
-                : "Manual refund records document refunds handled outside this app."
-            }
-          >
-            <Select
-              id="refund-provider"
-              value={refundForm.provider}
-              disabled={saving || !invoicePaid}
-              onChange={(event) =>
-                setRefundForm((current) => ({
-                  ...current,
-                  provider: event.target.value as RefundProvider,
-                }))
-              }
-            >
-              {stripeRefundAvailable && (
-                <option value="stripe">Refund through Stripe</option>
-              )}
-              <option value="manual">Manual record only</option>
-            </Select>
-          </Field>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Refund date" htmlFor="refund-refunded-at">
-              <Input
-                id="refund-refunded-at"
-                type="date"
-                value={refundForm.refundedAt}
-                disabled={saving || !invoicePaid}
-                onChange={(event) =>
-                  setRefundForm((current) => ({
-                    ...current,
-                    refundedAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Amount" htmlFor="refund-amount">
-              <Input
-                id="refund-amount"
-                type="number"
-                min="0.01"
-                max={centsToInput(remainingRefundCents)}
-                step="0.01"
-                value={refundForm.amount}
-                disabled={saving || !invoicePaid || remainingRefundCents <= 0}
-                onChange={(event) =>
-                  setRefundForm((current) => ({
-                    ...current,
-                    amount: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Method" htmlFor="refund-method">
-              <Input
-                id="refund-method"
-                value={refundForm.provider === "stripe" ? "Stripe" : refundForm.method}
-                disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
-                placeholder="Zelle, check, cash, Stripe dashboard"
-                onChange={(event) =>
-                  setRefundForm((current) => ({
-                    ...current,
-                    method: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Reference" htmlFor="refund-reference">
-              <Input
-                id="refund-reference"
-                value={refundForm.reference}
-                disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
-                placeholder={
-                  refundForm.provider === "stripe"
-                    ? "Stripe refund ID is filled after creation"
-                    : "Refund ID, check number, transaction ID"
-                }
-                onChange={(event) =>
-                  setRefundForm((current) => ({
-                    ...current,
-                    reference: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Reason" htmlFor="refund-reason">
-              <Input
-                id="refund-reason"
-                value={refundForm.reason}
-                disabled={saving || !invoicePaid}
-                placeholder="Client change, damaged print, duplicate payment"
-                onChange={(event) =>
-                  setRefundForm((current) => ({
-                    ...current,
-                    reason: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <Field
-            label="Refund note"
-            htmlFor="refund-note"
-            hint="Shown on the customer receipt if you send or share the link."
-          >
-            <Textarea
-              id="refund-note"
-              rows={3}
-              value={refundForm.note}
-              disabled={saving || !invoicePaid}
-              placeholder="Optional customer-facing refund note."
-              onChange={(event) =>
-                setRefundForm((current) => ({
-                  ...current,
-                  note: event.target.value,
-                }))
-              }
-            />
-          </Field>
-
-          {!order.email && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              Add a customer email before sending a refund receipt.
-            </p>
-          )}
-
-          <div className="flex flex-wrap justify-between gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving || !invoicePaid || remainingRefundCents <= 0}
-              onClick={() =>
-                setRefundForm((current) => ({
-                  ...current,
-                  amount: centsToInput(remainingRefundCents),
-                }))
-              }
-            >
-              Fill remaining
-            </Button>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={saving || !canRecordRefund}
-                onClick={() => previewEmail("refund")}
-              >
-                {previewing === "refund" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Eye className="h-4 w-4" />
+            {order.invoice?.onlinePaymentProvider && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Hosted Stripe payment</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                      Session and webhook state for this invoice.
+                    </p>
+                  </div>
+                  <Badge
+                    tone={onlinePaymentTone(order.invoice.onlinePaymentStatus)}
+                    className="capitalize"
+                  >
+                    {onlinePaymentLabel(order.invoice.onlinePaymentStatus)}
+                  </Badge>
+                </div>
+                <div className="grid gap-2 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-2">
+                  <div>
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      Session
+                    </span>
+                    <p
+                      className="font-mono"
+                      title={order.invoice.onlinePaymentSessionId ?? ""}
+                    >
+                      {shortRef(order.invoice.onlinePaymentSessionId)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      Payment intent
+                    </span>
+                    <p
+                      className="font-mono"
+                      title={order.invoice.onlinePaymentIntentId ?? ""}
+                    >
+                      {shortRef(order.invoice.onlinePaymentIntentId)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      Expires
+                    </span>
+                    <p>
+                      {order.invoice.onlinePaymentExpiresAt
+                        ? formatDate(order.invoice.onlinePaymentExpiresAt)
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      Tax mode
+                    </span>
+                    <p>
+                      {onlinePaymentTaxModeLabel(order.invoice.onlinePaymentTaxMode)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-[hsl(var(--foreground))]">
+                      Checkout URL
+                    </span>
+                    <p className="truncate">
+                      {order.invoice.onlinePaymentUrl
+                        ? "Active link stored"
+                        : "No active link"}
+                    </p>
+                  </div>
+                </div>
+                {order.invoice.onlinePaymentTaxMode === "stripe" && (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-200">
+                    Stripe Tax will recalculate tax at checkout. The paid receipt total
+                    may differ from the saved invoice estimate.
+                  </p>
                 )}
-                Preview refund
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={saving || !canRecordRefund}
-                onClick={() => onRefundSubmit(refundForm, false)}
-              >
-                <CreditCard className="h-4 w-4" />
-                {refundForm.provider === "stripe"
-                  ? "Refund through Stripe"
-                  : "Record refund"}
-              </Button>
-              <Button
-                type="button"
-                disabled={saving || !canRecordRefund || !order.email}
-                onClick={() => onRefundSubmit(refundForm, true)}
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ReceiptText className="h-4 w-4" />
-                )}
-                {refundForm.provider === "stripe"
-                  ? "Refund & email receipt"
-                  : "Record & email refund"}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-lg border p-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h4 className="font-medium">Fulfillment</h4>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Track preparation, delivery, and shipping details for this order.
-              </p>
-            </div>
-            <Badge
-              tone={fulfillmentTone(order.fulfillmentStatus)}
-              className="capitalize"
-            >
-              {fulfillmentLabel(order.fulfillmentStatus)}
-            </Badge>
-          </div>
-
-          <div className="grid gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
-            <span>
-              Ready{" "}
-              {order.fulfillmentReadyAt ? formatDate(order.fulfillmentReadyAt) : "—"}
-            </span>
-            <span>
-              Shipped{" "}
-              {order.fulfillmentShippedAt
-                ? formatDate(order.fulfillmentShippedAt)
-                : "—"}
-            </span>
-            <span>
-              Delivered{" "}
-              {order.fulfillmentDeliveredAt
-                ? formatDate(order.fulfillmentDeliveredAt)
-                : "—"}
-            </span>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Fulfillment status" htmlFor="fulfillment-status">
-              <Select
-                id="fulfillment-status"
-                value={fulfillmentForm.fulfillmentStatus}
-                disabled={saving}
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentStatus: event.target.value as FulfillmentStatus,
-                  }))
-                }
-              >
-                {FULFILLMENT_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {fulfillmentLabel(status)}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Carrier" htmlFor="fulfillment-carrier">
-              <Input
-                id="fulfillment-carrier"
-                value={fulfillmentForm.fulfillmentCarrier}
-                disabled={saving}
-                placeholder="USPS, UPS, FedEx, local pickup"
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentCarrier: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Tracking number" htmlFor="fulfillment-tracking-number">
-              <Input
-                id="fulfillment-tracking-number"
-                value={fulfillmentForm.fulfillmentTrackingNumber}
-                disabled={saving}
-                placeholder="Tracking or handoff reference"
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentTrackingNumber: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Tracking URL" htmlFor="fulfillment-tracking-url">
-              <Input
-                id="fulfillment-tracking-url"
-                type="url"
-                value={fulfillmentForm.fulfillmentTrackingUrl}
-                disabled={saving}
-                placeholder="https://..."
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentTrackingUrl: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Ready date" htmlFor="fulfillment-ready-at">
-              <Input
-                id="fulfillment-ready-at"
-                type="date"
-                value={fulfillmentForm.fulfillmentReadyAt}
-                disabled={saving}
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentReadyAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Shipped date" htmlFor="fulfillment-shipped-at">
-              <Input
-                id="fulfillment-shipped-at"
-                type="date"
-                value={fulfillmentForm.fulfillmentShippedAt}
-                disabled={saving}
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentShippedAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Delivered date" htmlFor="fulfillment-delivered-at">
-              <Input
-                id="fulfillment-delivered-at"
-                type="date"
-                value={fulfillmentForm.fulfillmentDeliveredAt}
-                disabled={saving}
-                onChange={(event) =>
-                  setFulfillmentForm((current) => ({
-                    ...current,
-                    fulfillmentDeliveredAt: event.target.value,
-                  }))
-                }
-              />
-            </Field>
-          </div>
-
-          <Field
-            label="Internal fulfillment notes"
-            htmlFor="fulfillment-notes"
-            hint="Private notes for packing, pickup, or handoff. Not shown to the customer."
-          >
-            <Textarea
-              id="fulfillment-notes"
-              rows={3}
-              value={fulfillmentForm.fulfillmentNotes}
-              disabled={saving}
-              placeholder="Packing notes, pickup window, vendor order ID..."
-              onChange={(event) =>
-                setFulfillmentForm((current) => ({
-                  ...current,
-                  fulfillmentNotes: event.target.value,
-                }))
-              }
-            />
-          </Field>
-
-          {!order.email && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              Add a customer email before sending a fulfillment update.
-            </p>
-          )}
-          {order.email && !canEmailFulfillment(fulfillmentForm.fulfillmentStatus) && (
-            <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
-              Email updates are available for ready, shipped, and delivered statuses.
-            </p>
-          )}
-
-          <div className="flex flex-wrap justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
-              {(["ready", "shipped", "delivered"] as FulfillmentStatus[]).map(
-                (status) => (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {order.invoice.onlinePaymentUrl && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        onClick={() => onCheckoutLinkAction(order, "open")}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open checkout
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        onClick={() => onCheckoutLinkAction(order, "copy")}
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                        Copy checkout
+                      </Button>
+                    </>
+                  )}
                   <Button
-                    key={status}
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={saving}
-                    onClick={() => submitFulfillmentStatus(status, false)}
+                    disabled={saving || !canRefreshCheckout}
+                    onClick={() => onRefreshCheckout(order)}
                   >
-                    <PackageCheck className="h-4 w-4" />
-                    Mark {fulfillmentLabel(status)}
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Refresh payment link
                   </Button>
-                ),
-              )}
-            </div>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={
-                  saving ||
-                  !canEmailFulfillment(fulfillmentForm.fulfillmentStatus)
-                }
-                onClick={() => previewEmail("fulfillment")}
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Due date" htmlFor="invoice-due-at">
+                <Input
+                  id="invoice-due-at"
+                  type="date"
+                  value={invoiceForm.dueAt}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setInvoiceForm((current) => ({
+                      ...current,
+                      dueAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field
+                label="Payment instructions"
+                htmlFor="invoice-payment-instructions"
+                hint="Shown on the invoice and sent in the email."
               >
-                {previewing === "fulfillment" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-                Preview update
-              </Button>
+                <Textarea
+                  id="invoice-payment-instructions"
+                  rows={3}
+                  value={invoiceForm.paymentInstructions}
+                  disabled={saving}
+                  placeholder="Example: Pay by Zelle, check, or card after confirmation."
+                  onChange={(event) =>
+                    setInvoiceForm((current) => ({
+                      ...current,
+                      paymentInstructions: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field label="Invoice notes" htmlFor="invoice-notes">
+              <Textarea
+                id="invoice-notes"
+                rows={3}
+                value={invoiceForm.notes}
+                disabled={saving}
+                placeholder="Optional client-facing notes for this invoice."
+                onChange={(event) =>
+                  setInvoiceForm((current) => ({
+                    ...current,
+                    notes: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            {!order.email && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                Add a customer email before sending this invoice.
+              </p>
+            )}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              {order.invoice && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => onInvoiceLinkAction(order, "open")}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open {invoicePaid ? "receipt" : "invoice"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => onInvoiceLinkAction(order, "copy")}
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    Copy link
+                  </Button>
+                </>
+              )}
               <Button
                 type="button"
                 variant="outline"
                 disabled={saving}
-                onClick={() => onFulfillmentSubmit(fulfillmentForm, false)}
+                onClick={() => onInvoiceSubmit(invoiceForm, false)}
               >
-                <PackageCheck className="h-4 w-4" />
-                Save fulfillment
+                Save draft
               </Button>
               <Button
                 type="button"
-                disabled={saving || !fulfillmentCanEmail}
-                onClick={() => onFulfillmentSubmit(fulfillmentForm, true)}
+                disabled={saving || !order.email || invoicePaid}
+                onClick={() => onInvoiceSubmit(invoiceForm, true)}
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Mail className="h-4 w-4" />
                 )}
-                Save & email update
+                {invoicePaid ? "Invoice paid" : "Send invoice"}
               </Button>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {itemCount} item{itemCount === 1 ? "" : "s"}
-          </p>
-          <div className="text-right">
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Subtotal {formatMoney(order.subtotalCents, order.currency)}
-            </p>
-            {order.discountCents > 0 && (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Discount{order.promoCode ? ` (${order.promoCode})` : ""} -
-                {formatMoney(order.discountCents, order.currency)}
+          <div className="space-y-4 rounded-lg border p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="font-medium">Payment receipt</h4>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Record a manual payment and optionally send a receipt email.
+                </p>
+              </div>
+              {invoicePaid ? (
+                <Badge tone="green">
+                  Paid{" "}
+                  {formatMoney(
+                    order.invoice?.paidAmountCents ?? order.totalCents,
+                    order.currency,
+                  )}
+                </Badge>
+              ) : (
+                <Badge tone="neutral">Awaiting payment</Badge>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Paid date" htmlFor="payment-paid-at">
+                <Input
+                  id="payment-paid-at"
+                  type="date"
+                  value={paymentForm.paidAt}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setPaymentForm((current) => ({
+                      ...current,
+                      paidAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Amount paid" htmlFor="payment-paid-amount">
+                <Input
+                  id="payment-paid-amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={paymentForm.paidAmount}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setPaymentForm((current) => ({
+                      ...current,
+                      paidAmount: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Method" htmlFor="payment-method">
+                <Input
+                  id="payment-method"
+                  value={paymentForm.paymentMethod}
+                  disabled={saving}
+                  placeholder="Zelle, check, cash, card"
+                  onChange={(event) =>
+                    setPaymentForm((current) => ({
+                      ...current,
+                      paymentMethod: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Reference" htmlFor="payment-reference">
+                <Input
+                  id="payment-reference"
+                  value={paymentForm.paymentReference}
+                  disabled={saving}
+                  placeholder="Check number or transaction ID"
+                  onChange={(event) =>
+                    setPaymentForm((current) => ({
+                      ...current,
+                      paymentReference: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Payment note" htmlFor="payment-note">
+                <Textarea
+                  id="payment-note"
+                  rows={3}
+                  value={paymentForm.paymentNote}
+                  disabled={saving}
+                  placeholder="Optional note shown on the receipt."
+                  onChange={(event) =>
+                    setPaymentForm((current) => ({
+                      ...current,
+                      paymentNote: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            {!order.email && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                Add a customer email before sending a receipt.
               </p>
             )}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || inputToCents(paymentForm.paidAmount) <= 0}
+                onClick={() => previewEmail("receipt")}
+              >
+                {previewing === "receipt" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                Preview receipt
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving}
+                onClick={() => onPaymentSubmit(paymentForm, false)}
+              >
+                <CreditCard className="h-4 w-4" />
+                {invoicePaid ? "Update payment" : "Record payment"}
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !order.email}
+                onClick={() => onPaymentSubmit(paymentForm, true)}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ReceiptText className="h-4 w-4" />
+                )}
+                {invoicePaid ? "Send receipt" : "Record & send receipt"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-lg border p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="font-medium">Refunds</h4>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Record manual refunds and optionally send a refund receipt.
+                </p>
+              </div>
+              {refundedCents > 0 ? (
+                <Badge tone={remainingRefundCents > 0 ? "amber" : "green"}>
+                  Refunded {formatMoney(refundedCents, order.currency)}
+                </Badge>
+              ) : (
+                <Badge tone="neutral">No refunds</Badge>
+              )}
+            </div>
+
+            {order.refunds.length > 0 && (
+              <div className="space-y-2">
+                {order.refunds.map((refund) => (
+                  <div
+                    key={refund.id}
+                    className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">
+                          {formatMoney(refund.amountCents, refund.currency)}
+                        </p>
+                        <Badge tone={refundTone(refund.status)} className="capitalize">
+                          {refundLabel(refund.status)}
+                        </Badge>
+                        <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                          {refund.refundedAt
+                            ? formatDate(refund.refundedAt)
+                            : formatDate(refund.createdAt)}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
+                        {refund.method && <span>Method: {refund.method}</span>}
+                        {refund.reference && <span>Reference: {refund.reference}</span>}
+                        {refund.reason && <span>Reason: {refund.reason}</span>}
+                        {refund.receiptSentAt && (
+                          <span>Receipt sent {formatDate(refund.receiptSentAt)}</span>
+                        )}
+                      </div>
+                      {refund.providerError && (
+                        <p className="mt-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                          Provider error: {refund.providerError}
+                        </p>
+                      )}
+                      {refund.note && (
+                        <p className="mt-2 whitespace-pre-wrap text-xs text-[hsl(var(--muted-foreground))]">
+                          {refund.note}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                      {refund.provider}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="grid gap-2 rounded-md bg-[hsl(var(--muted))] p-3 text-sm sm:grid-cols-3">
+              <span>Paid {formatMoney(paidAmountCents(order), order.currency)}</span>
+              <span>Refunded {formatMoney(refundedCents, order.currency)}</span>
+              <span>
+                Refundable {formatMoney(remainingRefundCents, order.currency)}
+                {reservedRefundCents > refundedCents
+                  ? ` (${formatMoney(
+                      reservedRefundCents - refundedCents,
+                      order.currency,
+                    )} pending)`
+                  : ""}
+              </span>
+            </div>
+
+            {!invoicePaid && (
+              <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
+                Record payment before adding a refund.
+              </p>
+            )}
+
+            {invoicePaid &&
+              !stripeRefundAvailable &&
+              order.invoice?.onlinePaymentProvider === "stripe" && (
+                <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                  This Stripe invoice is missing a payment intent, so only a manual
+                  refund record is available.
+                </p>
+              )}
+
+            <Field
+              label="Refund action"
+              htmlFor="refund-provider"
+              hint={
+                stripeRefundAvailable
+                  ? "Stripe refunds move money through Stripe; manual records only document outside refunds."
+                  : "Manual refund records document refunds handled outside this app."
+              }
+            >
+              <Select
+                id="refund-provider"
+                value={refundForm.provider}
+                disabled={saving || !invoicePaid}
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    provider: event.target.value as RefundProvider,
+                  }))
+                }
+              >
+                {stripeRefundAvailable && (
+                  <option value="stripe">Refund through Stripe</option>
+                )}
+                <option value="manual">Manual record only</option>
+              </Select>
+            </Field>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Refund date" htmlFor="refund-refunded-at">
+                <Input
+                  id="refund-refunded-at"
+                  type="date"
+                  value={refundForm.refundedAt}
+                  disabled={saving || !invoicePaid}
+                  onChange={(event) =>
+                    setRefundForm((current) => ({
+                      ...current,
+                      refundedAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Amount" htmlFor="refund-amount">
+                <Input
+                  id="refund-amount"
+                  type="number"
+                  min="0.01"
+                  max={centsToInput(remainingRefundCents)}
+                  step="0.01"
+                  value={refundForm.amount}
+                  disabled={saving || !invoicePaid || remainingRefundCents <= 0}
+                  onChange={(event) =>
+                    setRefundForm((current) => ({
+                      ...current,
+                      amount: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Method" htmlFor="refund-method">
+                <Input
+                  id="refund-method"
+                  value={
+                    refundForm.provider === "stripe" ? "Stripe" : refundForm.method
+                  }
+                  disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
+                  placeholder="Zelle, check, cash, Stripe dashboard"
+                  onChange={(event) =>
+                    setRefundForm((current) => ({
+                      ...current,
+                      method: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Reference" htmlFor="refund-reference">
+                <Input
+                  id="refund-reference"
+                  value={refundForm.reference}
+                  disabled={saving || !invoicePaid || refundForm.provider === "stripe"}
+                  placeholder={
+                    refundForm.provider === "stripe"
+                      ? "Stripe refund ID is filled after creation"
+                      : "Refund ID, check number, transaction ID"
+                  }
+                  onChange={(event) =>
+                    setRefundForm((current) => ({
+                      ...current,
+                      reference: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Reason" htmlFor="refund-reason">
+                <Input
+                  id="refund-reason"
+                  value={refundForm.reason}
+                  disabled={saving || !invoicePaid}
+                  placeholder="Client change, damaged print, duplicate payment"
+                  onChange={(event) =>
+                    setRefundForm((current) => ({
+                      ...current,
+                      reason: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field
+              label="Refund note"
+              htmlFor="refund-note"
+              hint="Shown on the customer receipt if you send or share the link."
+            >
+              <Textarea
+                id="refund-note"
+                rows={3}
+                value={refundForm.note}
+                disabled={saving || !invoicePaid}
+                placeholder="Optional customer-facing refund note."
+                onChange={(event) =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    note: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            {!order.email && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                Add a customer email before sending a refund receipt.
+              </p>
+            )}
+
+            <div className="flex flex-wrap justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || !invoicePaid || remainingRefundCents <= 0}
+                onClick={() =>
+                  setRefundForm((current) => ({
+                    ...current,
+                    amount: centsToInput(remainingRefundCents),
+                  }))
+                }
+              >
+                Fill remaining
+              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving || !canRecordRefund}
+                  onClick={() => previewEmail("refund")}
+                >
+                  {previewing === "refund" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  Preview refund
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving || !canRecordRefund}
+                  onClick={() => onRefundSubmit(refundForm, false)}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {refundForm.provider === "stripe"
+                    ? "Refund through Stripe"
+                    : "Record refund"}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={saving || !canRecordRefund || !order.email}
+                  onClick={() => onRefundSubmit(refundForm, true)}
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ReceiptText className="h-4 w-4" />
+                  )}
+                  {refundForm.provider === "stripe"
+                    ? "Refund & email receipt"
+                    : "Record & email refund"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-lg border p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="font-medium">Fulfillment</h4>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Track preparation, delivery, and shipping details for this order.
+                </p>
+              </div>
+              <Badge
+                tone={fulfillmentTone(order.fulfillmentStatus)}
+                className="capitalize"
+              >
+                {fulfillmentLabel(order.fulfillmentStatus)}
+              </Badge>
+            </div>
+
+            <div className="grid gap-3 rounded-md bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+              <span>
+                Ready{" "}
+                {order.fulfillmentReadyAt ? formatDate(order.fulfillmentReadyAt) : "—"}
+              </span>
+              <span>
+                Shipped{" "}
+                {order.fulfillmentShippedAt
+                  ? formatDate(order.fulfillmentShippedAt)
+                  : "—"}
+              </span>
+              <span>
+                Delivered{" "}
+                {order.fulfillmentDeliveredAt
+                  ? formatDate(order.fulfillmentDeliveredAt)
+                  : "—"}
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Fulfillment status" htmlFor="fulfillment-status">
+                <Select
+                  id="fulfillment-status"
+                  value={fulfillmentForm.fulfillmentStatus}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentStatus: event.target.value as FulfillmentStatus,
+                    }))
+                  }
+                >
+                  {FULFILLMENT_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {fulfillmentLabel(status)}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Carrier" htmlFor="fulfillment-carrier">
+                <Input
+                  id="fulfillment-carrier"
+                  value={fulfillmentForm.fulfillmentCarrier}
+                  disabled={saving}
+                  placeholder="USPS, UPS, FedEx, local pickup"
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentCarrier: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Tracking number" htmlFor="fulfillment-tracking-number">
+                <Input
+                  id="fulfillment-tracking-number"
+                  value={fulfillmentForm.fulfillmentTrackingNumber}
+                  disabled={saving}
+                  placeholder="Tracking or handoff reference"
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentTrackingNumber: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Tracking URL" htmlFor="fulfillment-tracking-url">
+                <Input
+                  id="fulfillment-tracking-url"
+                  type="url"
+                  value={fulfillmentForm.fulfillmentTrackingUrl}
+                  disabled={saving}
+                  placeholder="https://..."
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentTrackingUrl: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Ready date" htmlFor="fulfillment-ready-at">
+                <Input
+                  id="fulfillment-ready-at"
+                  type="date"
+                  value={fulfillmentForm.fulfillmentReadyAt}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentReadyAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Shipped date" htmlFor="fulfillment-shipped-at">
+                <Input
+                  id="fulfillment-shipped-at"
+                  type="date"
+                  value={fulfillmentForm.fulfillmentShippedAt}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentShippedAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Delivered date" htmlFor="fulfillment-delivered-at">
+                <Input
+                  id="fulfillment-delivered-at"
+                  type="date"
+                  value={fulfillmentForm.fulfillmentDeliveredAt}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setFulfillmentForm((current) => ({
+                      ...current,
+                      fulfillmentDeliveredAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+
+            <Field
+              label="Internal fulfillment notes"
+              htmlFor="fulfillment-notes"
+              hint="Private notes for packing, pickup, or handoff. Not shown to the customer."
+            >
+              <Textarea
+                id="fulfillment-notes"
+                rows={3}
+                value={fulfillmentForm.fulfillmentNotes}
+                disabled={saving}
+                placeholder="Packing notes, pickup window, vendor order ID..."
+                onChange={(event) =>
+                  setFulfillmentForm((current) => ({
+                    ...current,
+                    fulfillmentNotes: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            {!order.email && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                Add a customer email before sending a fulfillment update.
+              </p>
+            )}
+            {order.email && !canEmailFulfillment(fulfillmentForm.fulfillmentStatus) && (
+              <p className="rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">
+                Email updates are available for ready, shipped, and delivered statuses.
+              </p>
+            )}
+
+            <div className="flex flex-wrap justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                {(["ready", "shipped", "delivered"] as FulfillmentStatus[]).map(
+                  (status) => (
+                    <Button
+                      key={status}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={saving}
+                      onClick={() => submitFulfillmentStatus(status, false)}
+                    >
+                      <PackageCheck className="h-4 w-4" />
+                      Mark {fulfillmentLabel(status)}
+                    </Button>
+                  ),
+                )}
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    saving || !canEmailFulfillment(fulfillmentForm.fulfillmentStatus)
+                  }
+                  onClick={() => previewEmail("fulfillment")}
+                >
+                  {previewing === "fulfillment" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  Preview update
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => onFulfillmentSubmit(fulfillmentForm, false)}
+                >
+                  <PackageCheck className="h-4 w-4" />
+                  Save fulfillment
+                </Button>
+                <Button
+                  type="button"
+                  disabled={saving || !fulfillmentCanEmail}
+                  onClick={() => onFulfillmentSubmit(fulfillmentForm, true)}
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4" />
+                  )}
+                  Save & email update
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Tax {formatMoney(order.taxCents, order.currency)}
+              {itemCount} item{itemCount === 1 ? "" : "s"}
             </p>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Shipping
-              {order.shippingProfileLabel ? ` (${order.shippingProfileLabel})` : ""}{" "}
-              {formatMoney(order.shippingCents, order.currency)}
-            </p>
-            <p className="text-lg font-semibold">
-              Total {formatMoney(order.totalCents, order.currency)}
-            </p>
+            <div className="text-right">
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Subtotal {formatMoney(order.subtotalCents, order.currency)}
+              </p>
+              {order.discountCents > 0 && (
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Discount{order.promoCode ? ` (${order.promoCode})` : ""} -
+                  {formatMoney(order.discountCents, order.currency)}
+                </p>
+              )}
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Tax {formatMoney(order.taxCents, order.currency)}
+              </p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Shipping
+                {order.shippingProfileLabel
+                  ? ` (${order.shippingProfileLabel})`
+                  : ""}{" "}
+                {formatMoney(order.shippingCents, order.currency)}
+              </p>
+              <p className="text-lg font-semibold">
+                Total {formatMoney(order.totalCents, order.currency)}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
       </Modal>
       {preview && (
         <EmailPreviewModal preview={preview} onClose={() => setPreview(null)} />
@@ -3637,16 +3705,13 @@ export default function StorePage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const [orderAuditRows, setOrderAuditRows] = useState<
-    Record<string, AuditLogRow[]>
-  >({});
-  const [loadingAuditOrderId, setLoadingAuditOrderId] = useState<string | null>(
-    null,
+  const [orderAuditRows, setOrderAuditRows] = useState<Record<string, AuditLogRow[]>>(
+    {},
   );
+  const [loadingAuditOrderId, setLoadingAuditOrderId] = useState<string | null>(null);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("open");
   const [orderQuery, setOrderQuery] = useState("");
-  const [productOpsFilter, setProductOpsFilter] =
-    useState<ProductOpsFilter>("all");
+  const [productOpsFilter, setProductOpsFilter] = useState<ProductOpsFilter>("all");
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category).filter(Boolean))],
@@ -3685,8 +3750,7 @@ export default function StorePage() {
       products.filter((product) =>
         productMatchesOpsFilter(
           product,
-          productInventory.get(product.id) ??
-            productInventorySnapshot(product, orders),
+          productInventory.get(product.id) ?? productInventorySnapshot(product, orders),
           productOpsFilter,
         ),
       ),
@@ -3704,8 +3768,7 @@ export default function StorePage() {
     const saved = Object.fromEntries(
       SAVED_ORDER_FILTERS.map((filter) => [
         filter.value,
-        orders.filter((order) => orderMatchesSavedFilter(order, filter.value))
-          .length,
+        orders.filter((order) => orderMatchesSavedFilter(order, filter.value)).length,
       ]),
     ) as Record<SavedOrderFilter, number>;
     return { counts, open, saved };
@@ -4237,8 +4300,8 @@ export default function StorePage() {
               <div>
                 <h2 className="font-medium">Product operations</h2>
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Stock reflects paid/fulfilled deductions; reserved demand is from draft,
-                  pending, and invoiced requests.
+                  Stock reflects paid/fulfilled deductions; reserved demand is from
+                  draft, pending, and invoiced requests.
                 </p>
               </div>
               <Badge tone="neutral">
@@ -4250,9 +4313,7 @@ export default function StorePage() {
                 <Button
                   key={item.value}
                   type="button"
-                  variant={
-                    productOpsFilter === item.value ? "default" : "outline"
-                  }
+                  variant={productOpsFilter === item.value ? "default" : "outline"}
                   size="sm"
                   title={item.description}
                   onClick={() => setProductOpsFilter(item.value)}
@@ -4311,9 +4372,7 @@ export default function StorePage() {
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <p className="truncate font-medium">
-                                  {product.name}
-                                </p>
+                                <p className="truncate font-medium">{product.name}</p>
                                 <p className="truncate text-xs text-[hsl(var(--muted-foreground))]">
                                   {product.sku} · /product/{product.slug}
                                 </p>
@@ -4341,7 +4400,10 @@ export default function StorePage() {
                             {sale !== null ? (
                               <div>
                                 <span className="mr-2 text-[hsl(var(--muted-foreground))] line-through">
-                                  {formatMoney(product.basePriceCents, product.currency)}
+                                  {formatMoney(
+                                    product.basePriceCents,
+                                    product.currency,
+                                  )}
                                 </span>
                                 <span className="font-medium">
                                   {formatMoney(sale, product.currency)}
@@ -4357,9 +4419,7 @@ export default function StorePage() {
                                 <Badge tone={product.isActive ? "green" : "neutral"}>
                                   {product.isActive ? "Active" : "Hidden"}
                                 </Badge>
-                                <Badge tone={inventory.tone}>
-                                  {inventory.label}
-                                </Badge>
+                                <Badge tone={inventory.tone}>{inventory.label}</Badge>
                                 {product.isFeatured && (
                                   <Badge tone="blue">Featured</Badge>
                                 )}
@@ -4505,9 +4565,7 @@ export default function StorePage() {
                         type="checkbox"
                         checked={
                           visibleOrders.length > 0 &&
-                          visibleOrders.every((order) =>
-                            selectedOrderIds.has(order.id),
-                          )
+                          visibleOrders.every((order) => selectedOrderIds.has(order.id))
                         }
                         onChange={(event) =>
                           setVisibleOrderSelection(event.target.checked)

@@ -1626,6 +1626,10 @@ is gitignored):
   The Store product modal's option-choice editor now uses labeled, wrapping rows so choice,
   price adjustment, stock, low-stock, stock tracking, backorder, and remove controls do not get
   clipped inside the modal on desktop or mobile widths.
+  Store order-request modal follow-up: the Store admin order detail modal now uses a wider
+  desktop layout with a compact customer/order/payment summary first, side-by-side readiness and
+  activity panels, an overflow-safe items table, and stacked/wrapping packing/status action areas
+  so buttons no longer overlap nearby text below the packing checklist.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
