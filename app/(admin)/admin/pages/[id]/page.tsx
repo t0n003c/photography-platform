@@ -3514,6 +3514,7 @@ function LeafEditor({
                   value={layout}
                   onChange={(e) => {
                     const next = e.target.value as typeof block.layout;
+                    const isToraAboutMe = next === "tora-about-me";
                     set({
                       layout: next,
                       sectionTitle:
@@ -3521,24 +3522,40 @@ function LeafEditor({
                           ? "MODERN"
                           : next === "classic"
                             ? "CLASSIC"
+                            : isToraAboutMe
+                              ? ""
                             : next === "tora-casting"
                               ? ""
                               : "SIMPLE",
+                      sectionEyebrow: isToraAboutMe ? "" : block.sectionEyebrow,
                       headline:
                         next === "modern"
                           ? "ABOUT ME"
                           : next === "classic"
                             ? "GET TO KNOW ME BETTER"
+                            : isToraAboutMe
+                              ? "ABOUT ME"
                             : next === "tora-casting"
                               ? "CASTING"
                               : "HI, I'M REFLECTOR",
                       eyebrow: next === "classic" ? "GET TO KNOW ME" : "",
+                      body: isToraAboutMe
+                        ? "We are fine-art, campaign & portrait film photographers from Oregon, with a special love for natural light, medium format film cameras & redheads with freckles. I am interested in the details about your wedding, your ceremony & reception venues, your vision, your dress, your colours and anything else you would like to share with me."
+                        : block.body,
                       ctaLabel:
                         next === "classic"
                           ? "CONTACT US"
+                          : isToraAboutMe
+                            ? ""
                           : next === "tora-casting"
                             ? ""
                             : "learn more",
+                      ctaHref: isToraAboutMe ? "" : block.ctaHref,
+                      facebookUrl: isToraAboutMe && !block.facebookUrl ? "#" : block.facebookUrl,
+                      twitterUrl: isToraAboutMe && !block.twitterUrl ? "#" : block.twitterUrl,
+                      instagramUrl: isToraAboutMe && !block.instagramUrl ? "#" : block.instagramUrl,
+                      showContactForm: isToraAboutMe ? true : block.showContactForm,
+                      submitLabel: isToraAboutMe ? "Send" : block.submitLabel,
                     });
                   }}
                 >
@@ -3546,9 +3563,10 @@ function LeafEditor({
                   <option value="modern">Modern</option>
                   <option value="classic">Classic</option>
                   <option value="tora-casting">Tora casting intro</option>
+                  <option value="tora-about-me">Tora about me</option>
                 </Select>
               </Field>
-              {layout !== "tora-casting" && (
+              {layout !== "tora-casting" && layout !== "tora-about-me" && (
                 <>
                   <Field label="Top label">
                     <Input
@@ -3569,7 +3587,7 @@ function LeafEditor({
 
           <SettingsGroup title="Text">
             <div className="grid gap-2 sm:grid-cols-2">
-              {layout !== "tora-casting" && (
+              {layout !== "tora-casting" && layout !== "tora-about-me" && (
                 <Field label="Small label">
                   <Input
                     value={block.eyebrow ?? ""}
@@ -3600,7 +3618,7 @@ function LeafEditor({
                 onChange={(e) => set({ body: e.target.value })}
               />
             </Field>
-            {layout !== "tora-casting" && (
+            {layout !== "tora-casting" && layout !== "tora-about-me" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <Field label="Button label">
                   <Input
@@ -3651,8 +3669,8 @@ function LeafEditor({
             </div>
           </SettingsGroup>
 
-          {layout === "modern" && (
-            <SettingsGroup title="Modern details">
+          {(layout === "modern" || layout === "tora-about-me") && (
+            <SettingsGroup title={layout === "tora-about-me" ? "About me details" : "Modern details"}>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Field label="Contact title">
                   <Input

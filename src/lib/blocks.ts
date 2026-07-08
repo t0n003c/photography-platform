@@ -126,7 +126,7 @@ const AboutLink = z.object({
 const AboutBlock = z.object({
   ...baseBlock,
   type: z.literal("about"),
-  layout: z.enum(["simple", "modern", "classic", "tora-casting"]).default("simple"),
+  layout: z.enum(["simple", "modern", "classic", "tora-casting", "tora-about-me"]).default("simple"),
   sectionEyebrow: z.string().default("ABOUT"),
   sectionTitle: z.string().default("SIMPLE"),
   eyebrow: z.string().default(""),

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Facebook, Instagram, Twitter } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { AboutContactForm } from "@/components/blocks/about-contact-form";
+import { ToraAboutMeFit } from "@/components/blocks/tora-about-me-fit";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
 import { cn } from "@/src/lib/utils";
@@ -244,6 +246,114 @@ function ModernAbout({
   );
 }
 
+function ToraAboutMe({
+  block,
+  primary,
+}: {
+  block: AboutBlockData;
+  primary?: PhotoDTO;
+}) {
+  const socialLinks = [
+    { label: "Facebook", icon: Facebook, href: block.facebookUrl },
+    { label: "X / Twitter", icon: Twitter, href: block.twitterUrl },
+    { label: "Instagram", icon: Instagram, href: block.instagramUrl },
+  ].filter((link) => link.href?.trim());
+  const pressLinks = block.pressLinks ?? [];
+  const awardLinks = block.awardLinks ?? [];
+  const phoneHref = (block.phoneNumber ?? "").replace(/[^\d+]/g, "");
+
+  return (
+    <ToraAboutMeFit>
+      <div className="content-wrap">
+        <h3 className="title">{block.headline || "ABOUT ME"}</h3>
+        <BodyText text={block.body ?? ""} />
+
+        <InfoBlock title={block.contactTitle ?? ""}>
+          <div className="text">
+            {block.address && <div className="address">{block.address}</div>}
+            {block.phoneNumber && (
+              <div className="phone">
+                {block.phoneLabel || "Ph:"}
+                <a href={`tel:${phoneHref}`}>{block.phoneNumber}</a>
+              </div>
+            )}
+          </div>
+          {socialLinks.length > 0 && (
+            <div className="socials">
+              {socialLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="info-socials"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={link.label}
+                  >
+                    <Icon aria-hidden="true" />
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </InfoBlock>
+
+        {pressLinks.length > 0 && (
+          <InfoBlock title={block.pressTitle ?? ""}>
+            <div className="custom-links">
+              {pressLinks.map((link) => (
+                <div key={link.id}>
+                  <a href={link.href || "#"} className="custom-link">
+                    {link.label}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </InfoBlock>
+        )}
+
+        {awardLinks.length > 0 && (
+          <InfoBlock title={block.awardsTitle ?? ""}>
+            <div className="custom-links">
+              {awardLinks.map((link) => (
+                <div key={link.id}>
+                  <a href={link.href || "#"} className="custom-link">
+                    {link.label}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </InfoBlock>
+        )}
+
+        {block.collaboratorsText && (
+          <InfoBlock title={block.collaboratorsTitle ?? ""}>
+            <div className="text">{block.collaboratorsText}</div>
+          </InfoBlock>
+        )}
+
+        {block.showContactForm !== false && (
+          <InfoBlock title={block.contactFormTitle ?? ""}>
+            <AboutContactForm submitLabel={block.submitLabel || "Send"} />
+          </InfoBlock>
+        )}
+      </div>
+
+      <div className="images-wrap">
+        <div className="img-wrap">
+          <PhotoFrame
+            photo={primary}
+            sizes="(min-width: 1024px) 36vw, 100vw"
+            className="tora-about-me-author-image"
+            priority
+          />
+        </div>
+      </div>
+    </ToraAboutMeFit>
+  );
+}
+
 function ClassicAbout({
   block,
   primary,
@@ -332,6 +442,7 @@ export function AboutBlock({
   const tertiary = block.tertiaryPhotoId ? photoMap.get(block.tertiaryPhotoId) : undefined;
   const layout = block.layout ?? "simple";
   const casting = layout === "tora-casting";
+  const toraAboutMe = layout === "tora-about-me";
 
   return (
     <section
@@ -339,6 +450,7 @@ export function AboutBlock({
         "about-reflector-block",
         layout === "classic" && "about-reflector-block-classic",
         casting && "about-reflector-block-casting",
+        toraAboutMe && "about-reflector-block-tora-about-me",
       )}
     >
       <div className="about-reflector-container">
@@ -349,6 +461,8 @@ export function AboutBlock({
             secondary={secondary}
             tertiary={tertiary}
           />
+        ) : toraAboutMe ? (
+          <ToraAboutMe block={block} primary={primary} />
         ) : (
           <>
             <SectionHeading block={block} />

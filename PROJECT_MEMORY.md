@@ -1557,6 +1557,11 @@ is gitignored):
   based on the reference `about.css` / `about.js`: Josefin Sans typography, Reflector
   a-btn-2/a-btn-6 CTA styles, Modern sticky portrait/contact detail composition, and Classic
   staggered three-image collage.
+  Follow-up: `/about-me/` is another Pages-tab `about` layout named `tora-about-me`. It reuses
+  the existing about fields (portrait, body, contact/socials, press, awards, collaborators, contact
+  form) and matches the live reference's 1110px two-column layout: left content column height synced
+  to the right portrait, internal desktop scrolling, 40px portrait offset, image-first centered
+  mobile stack, Josefin/Playfair-adjacent text rhythm, and light/dark Toramochie palettes.
   Pages Portfolio List follow-up: ToraMochie/Reflector Portfolio List is represented as a new
   Pages-tab `portfolioList` block. It stores manual portfolio items with title/category/description,
   link, cover photo, and optional hover photo. Public variants match the reference shortcode family:
