@@ -19,6 +19,16 @@ type PortfolioListBlockData = Extract<LeafBlock, { type: "portfolioList" }>;
 type PortfolioListItemData = PortfolioListBlockData["items"][number];
 type CSSVars = CSSProperties & { [key: `--${string}`]: string | number | undefined };
 
+const TORA_MODELS_DEFAULT_COLORS = {
+  background: "#252626",
+  text: "#f8f3df",
+  accent: "#d8c98d",
+} as const;
+
+function isSameHexColor(value: string | null | undefined, expected: string) {
+  return (value ?? expected).trim().toLowerCase() === expected;
+}
+
 function photoUrl(photo?: PhotoDTO) {
   if (!photo) return null;
   const webp = photo.variants
@@ -420,15 +430,30 @@ export function PortfolioListBlock({
   const items = block.items ?? [];
   const style = block.style ?? "modern";
   const isParallaxShowcase = style === "tora-parallax-showcase";
+  const usesToraModelsThemeDefaults =
+    style === "tora-models-masonry" &&
+    block.showBackground !== false &&
+    isSameHexColor(block.backgroundColor, TORA_MODELS_DEFAULT_COLORS.background) &&
+    isSameHexColor(block.textColor, TORA_MODELS_DEFAULT_COLORS.text) &&
+    isSameHexColor(block.accentColor, TORA_MODELS_DEFAULT_COLORS.accent);
   const vars: CSSVars = {
-    "--portfolio-bg": block.showBackground === false ? "transparent" : block.backgroundColor,
+    "--portfolio-bg":
+      block.showBackground === false
+        ? "transparent"
+        : usesToraModelsThemeDefaults
+          ? "var(--portfolio-models-theme-bg)"
+          : block.backgroundColor,
     "--portfolio-text":
       block.showBackground === false && !isParallaxShowcase
         ? "hsl(var(--foreground))"
+        : usesToraModelsThemeDefaults
+          ? "var(--portfolio-models-theme-text)"
         : block.textColor,
     "--portfolio-accent":
       block.showBackground === false && !isParallaxShowcase
         ? "hsl(var(--primary))"
+        : usesToraModelsThemeDefaults
+          ? "var(--portfolio-models-theme-accent)"
         : block.accentColor,
   };
 

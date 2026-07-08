@@ -3919,6 +3919,18 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   width: min(calc(100% - 12px), 1540px);
 }
 
+.portfolio-list-tora-models-masonry {
+  --portfolio-models-theme-bg: #f7f3e4;
+  --portfolio-models-theme-text: #181815;
+  --portfolio-models-theme-accent: #786b3b;
+}
+
+.dark .portfolio-list-tora-models-masonry {
+  --portfolio-models-theme-bg: #252626;
+  --portfolio-models-theme-text: #f8f3df;
+  --portfolio-models-theme-accent: #d8c98d;
+}
+
 .portfolio-list-tora-models-masonry .portfolio-list-heading {
   margin-bottom: clamp(3rem, 6vw, 5rem);
 }

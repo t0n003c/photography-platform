@@ -1622,8 +1622,9 @@ is gitignored):
   FLIP wrapper (`tora-models-masonry-motion.tsx`) animates card positions during viewport/layout
   changes over 820ms like the reference's Isotope/Justified Gallery reflow. It keeps the source-like
   responsive gutters, uppercase Josefin-style gold names, same-row title bars, 1s image zoom hover,
-  dark/default panel colors, theme-aware no-background image/title surfaces, mobile single column, and
-  reduced-motion-safe transitions.
+  theme-aware default panel colors (the original dark default hexes are treated as light/dark
+  theme tokens rather than forced dark colors), theme-aware no-background image/title surfaces,
+  mobile single column, and reduced-motion-safe transitions.
   Pages Gallery block follow-up: the ToraMochie/Reflector Props page is represented as the
   `tora-props-catalog` Gallery block grid option. It matches the reference props inventory
   composition: full-width optional showroom band, Josefin Sans, 1110px inner width, 5/3/2
