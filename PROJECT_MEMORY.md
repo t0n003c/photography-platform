@@ -1616,8 +1616,9 @@ is gitignored):
   `portfolio-wrap mix-masonry` rhythm: 3-item justified row, 4-item uneven masonry row, then
   another 3-item justified row, repeating for extras. The 4-item row renders as true two-column
   masonry stacks on desktop so shorter landscape photos do not leave large empty grid gaps, while
-  mobile uses CSS ordering to keep the natural item order. The app version uses a wider 1360px
-  desktop cap so the roster takes more screen real estate inside our app shell, and a small client
+  mobile uses CSS ordering to keep the natural item order. The app version uses a near full-bleed
+  1540px desktop cap with roughly 6px side padding at common laptop widths, plus tighter desktop
+  gutters, so the roster takes more screen real estate inside our app shell. A small client
   FLIP wrapper (`tora-models-masonry-motion.tsx`) animates card positions during viewport/layout
   changes like the reference's Isotope/Justified Gallery reflow. It keeps the source-like
   responsive gutters, uppercase Josefin-style gold names, same-row title bars, 1s image zoom hover,

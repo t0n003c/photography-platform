@@ -309,8 +309,8 @@ function ToraModelsMasonry({
           photo={photo}
           sizes={
             rowLength === 4
-              ? "(min-width: 1200px) 42vw, (min-width: 700px) 46vw, 100vw"
-              : "(min-width: 1200px) 42vw, (min-width: 700px) 42vw, 100vw"
+              ? "(min-width: 1200px) 48vw, (min-width: 700px) 46vw, 100vw"
+              : "(min-width: 1200px) 48vw, (min-width: 700px) 42vw, 100vw"
           }
         />
         <div className="portfolio-models-title">{item.title}</div>
