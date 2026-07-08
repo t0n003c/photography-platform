@@ -61,17 +61,18 @@ export function ToraAboutMeFit({ children }: { children: ReactNode }) {
       if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
       stopPageScroll();
 
-      if (!content.contains(event.target as Node)) {
-        event.preventDefault();
-        content.scrollTop += event.deltaY;
-        return;
-      }
+      const maxScroll = content.scrollHeight - content.clientHeight;
+      const delta =
+        event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? event.deltaY * 16
+          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+            ? event.deltaY * content.clientHeight
+            : event.deltaY;
+      const nextScroll = Math.max(0, Math.min(maxScroll, content.scrollTop + delta));
 
-      const atTop = content.scrollTop <= 0;
-      const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 1;
-      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
-        event.preventDefault();
-      }
+      event.preventDefault();
+      event.stopPropagation();
+      content.scrollTop = nextScroll;
     };
 
     const handleFocusOut = () => {
@@ -91,7 +92,7 @@ export function ToraAboutMeFit({ children }: { children: ReactNode }) {
     root.addEventListener("pointerleave", resumePageScroll);
     root.addEventListener("focusin", stopPageScroll);
     root.addEventListener("focusout", handleFocusOut);
-    root.addEventListener("wheel", containWheel, { passive: false });
+    root.addEventListener("wheel", containWheel, { capture: true, passive: false });
     desktopQuery.addEventListener("change", handleDesktopChange);
     window.addEventListener("resize", syncHeight);
     window.addEventListener("blur", resumePageScroll);
@@ -104,7 +105,7 @@ export function ToraAboutMeFit({ children }: { children: ReactNode }) {
       root.removeEventListener("pointerleave", resumePageScroll);
       root.removeEventListener("focusin", stopPageScroll);
       root.removeEventListener("focusout", handleFocusOut);
-      root.removeEventListener("wheel", containWheel);
+      root.removeEventListener("wheel", containWheel, true);
       desktopQuery.removeEventListener("change", handleDesktopChange);
       window.removeEventListener("resize", syncHeight);
       window.removeEventListener("blur", resumePageScroll);

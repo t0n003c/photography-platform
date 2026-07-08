@@ -1563,8 +1563,9 @@ is gitignored):
   to the right portrait, internal desktop scrolling, 40px portrait offset, image-first centered
   mobile stack, Josefin/Playfair-adjacent text rhythm, and light/dark Toramochie palettes. Desktop
   internal scrolling is intentionally contained: the wrapper pauses the global Lenis page scroller
-  while pointer/focus is inside the section, then resumes it on exit, so wheel input does not scroll
-  the page behind the About Me panel.
+  while pointer/focus is inside the section, manually maps vertical wheel input to the left content
+  column, clamps at the top/bottom, then resumes Lenis on exit. Wheel input outside the section must
+  never change the About Me panel's scroll position.
   Pages Portfolio List follow-up: ToraMochie/Reflector Portfolio List is represented as a new
   Pages-tab `portfolioList` block. It stores manual portfolio items with title/category/description,
   link, cover photo, and optional hover photo. Public variants match the reference shortcode family:
