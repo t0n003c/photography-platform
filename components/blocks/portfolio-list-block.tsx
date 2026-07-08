@@ -10,6 +10,7 @@ import {
   ToraParallaxShowcase,
   type ToraParallaxShowcaseItem,
 } from "@/components/blocks/tora-parallax-showcase";
+import { ToraModelsMasonryMotion } from "@/components/blocks/tora-models-masonry-motion";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
 import { cn } from "@/src/lib/utils";
@@ -309,7 +310,7 @@ function ToraModelsMasonry({
           sizes={
             rowLength === 4
               ? "(min-width: 1200px) 42vw, (min-width: 700px) 46vw, 100vw"
-              : "(min-width: 1200px) 34vw, (min-width: 700px) 32vw, 100vw"
+              : "(min-width: 1200px) 42vw, (min-width: 700px) 42vw, 100vw"
           }
         />
         <div className="portfolio-models-title">{item.title}</div>
@@ -318,7 +319,7 @@ function ToraModelsMasonry({
   };
 
   return (
-    <div className="portfolio-models-masonry" aria-label="Models portfolio list">
+    <ToraModelsMasonryMotion>
       {rows.map((row, rowIndex) => {
         const rowStartIndex = rows
           .slice(0, rowIndex)
@@ -368,7 +369,7 @@ function ToraModelsMasonry({
           </div>
         );
       })}
-    </div>
+    </ToraModelsMasonryMotion>
   );
 }
 

@@ -3916,7 +3916,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .portfolio-list-tora-models-masonry .portfolio-list-container {
-  width: min(calc(100% - 30px), 1270px);
+  width: min(calc(100% - 30px), 1360px);
 }
 
 .portfolio-list-tora-models-masonry .portfolio-list-heading {
@@ -3973,6 +3973,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   min-width: 0;
   position: relative;
   text-decoration: none;
+  transform: translate3d(0, 0, 0);
 }
 
 .portfolio-models-item:focus-visible {
