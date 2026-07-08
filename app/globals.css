@@ -1306,12 +1306,14 @@ html.js .pr-root.is-enhanced {
   --tora-about-me-content-height: min(82vh, 53rem);
   display: flex;
   gap: 0;
+  overscroll-behavior: contain;
   overflow: hidden;
   padding: 30px 0;
 }
 
 .about-section-tora-about-me .content-wrap {
   height: var(--tora-about-me-content-height);
+  overscroll-behavior: contain;
   overflow-y: auto;
   padding-right: 40px;
   scrollbar-color: var(--about-dark) var(--about-light-main);
