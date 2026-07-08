@@ -106,6 +106,7 @@ const PortfolioListBlock = z.object({
       "mix-masonry",
       "tora-progress-slider",
       "tora-parallax-showcase",
+      "tora-models-masonry",
     ])
     .default("modern"),
   eyebrow: z.string().default("PORTFOLIO LIST"),

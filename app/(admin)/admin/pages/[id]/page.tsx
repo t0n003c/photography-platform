@@ -3193,6 +3193,7 @@ function LeafEditor({
       };
       const style = block.style ?? "modern";
       const supportsHoverPhoto = style === "distortion";
+      const isToraModelsMasonry = style === "tora-models-masonry";
       return (
         <div className="space-y-4">
           <SettingsGroup title="Layout">
@@ -3209,6 +3210,8 @@ function LeafEditor({
                           ? "FEATURED GALLERIES"
                           : next === "tora-parallax-showcase"
                             ? "PARALLAX SHOWCASE"
+                          : next === "tora-models-masonry"
+                            ? "OUR MODELS"
                           : next === "category-cards"
                           ? "CATEGORY LIST"
                           : next === "distortion"
@@ -3217,7 +3220,15 @@ function LeafEditor({
                               ? "MASONRY STYLE"
                               : next === "mix-masonry"
                                 ? "MIX MASONRY"
-                                : "MODERN",
+                        : "MODERN",
+                      eyebrow: next === "tora-models-masonry" ? "CHECK OUT" : block.eyebrow,
+                      backgroundColor:
+                        next === "tora-models-masonry" ? "#252626" : block.backgroundColor,
+                      textColor:
+                        next === "tora-models-masonry" ? "#f8f3df" : block.textColor,
+                      accentColor:
+                        next === "tora-models-masonry" ? "#d8c98d" : block.accentColor,
+                      body: next === "tora-models-masonry" ? "" : block.body,
                     });
                   }}
                 >
@@ -3228,6 +3239,7 @@ function LeafEditor({
                   <option value="mix-masonry">Mix masonry</option>
                   <option value="tora-progress-slider">Tora progress slider</option>
                   <option value="tora-parallax-showcase">Tora parallax showcase</option>
+                  <option value="tora-models-masonry">Tora models masonry</option>
                 </Select>
               </Field>
               <Field label="Top label">
@@ -3275,13 +3287,15 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            <Field label="Intro text">
-              <Textarea
-                rows={2}
-                value={block.body ?? ""}
-                onChange={(e) => set({ body: e.target.value })}
-              />
-            </Field>
+            {!isToraModelsMasonry && (
+              <Field label="Intro text">
+                <Textarea
+                  rows={2}
+                  value={block.body ?? ""}
+                  onChange={(e) => set({ body: e.target.value })}
+                />
+              </Field>
+            )}
           </SettingsGroup>
 
           <SettingsGroup title="Portfolio items">
@@ -3383,27 +3397,33 @@ function LeafEditor({
                         onChange={(e) => updateItem(index, { title: e.target.value })}
                       />
                     </Field>
-                    <Field label="Category">
-                      <Input
-                        value={item.category ?? ""}
-                        onChange={(e) => updateItem(index, { category: e.target.value })}
-                      />
-                    </Field>
-                    <div className="sm:col-span-2">
-                      <Field label="Description">
-                        <Textarea
-                          rows={2}
-                          value={item.description ?? ""}
-                          onChange={(e) => updateItem(index, { description: e.target.value })}
+                    {!isToraModelsMasonry && (
+                      <Field label="Category">
+                        <Input
+                          value={item.category ?? ""}
+                          onChange={(e) => updateItem(index, { category: e.target.value })}
                         />
                       </Field>
-                    </div>
-                    <Field label="Link label">
-                      <Input
-                        value={item.linkLabel ?? ""}
-                        onChange={(e) => updateItem(index, { linkLabel: e.target.value })}
-                      />
-                    </Field>
+                    )}
+                    {!isToraModelsMasonry && (
+                      <div className="sm:col-span-2">
+                        <Field label="Description">
+                          <Textarea
+                            rows={2}
+                            value={item.description ?? ""}
+                            onChange={(e) => updateItem(index, { description: e.target.value })}
+                          />
+                        </Field>
+                      </div>
+                    )}
+                    {!isToraModelsMasonry && (
+                      <Field label="Link label">
+                        <Input
+                          value={item.linkLabel ?? ""}
+                          onChange={(e) => updateItem(index, { linkLabel: e.target.value })}
+                        />
+                      </Field>
+                    )}
                     <Field label="Link URL">
                       <Input
                         value={item.linkHref ?? ""}

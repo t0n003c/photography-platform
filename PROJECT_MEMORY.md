@@ -1609,6 +1609,15 @@ is gitignored):
   React scroll/rAF enhancement instead of the WordPress jQuery `parallax.js` mirror layer. The
   Portfolio item editor now only shows "Hover photo" when the selected Portfolio List style is
   Distortion feature, because other portfolio styles ignore `hoverPhotoId`.
+  Follow-up: `/models-photography-studio/` is represented as a Portfolio List style named
+  `tora-models-masonry`, not a new Team/model block. The page's top "MODELS" hero maps to the
+  existing Toramochie Simple Banner layout; the roster itself uses Portfolio List items with only
+  cover photo, title, and link URL visible in the editor. Public rendering follows the source
+  `portfolio-wrap mix-masonry` rhythm: 3-item justified row, 4-item uneven masonry row, then
+  another 3-item justified row, repeating for extras. It keeps the source-like 1270px content
+  width, 90/60/15px responsive gutters, uppercase Josefin-style gold names, same-row title bars,
+  1s image zoom hover, dark/default panel colors, no-background theme fallback, mobile single
+  column, and reduced-motion-safe transitions.
   Pages Gallery block follow-up: the ToraMochie/Reflector Props page is represented as the
   `tora-props-catalog` Gallery block grid option. It matches the reference props inventory
   composition: full-width optional showroom band, Josefin Sans, 1110px inner width, 5/3/2

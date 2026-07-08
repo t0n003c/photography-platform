@@ -256,6 +256,63 @@ function MixMasonry({
   );
 }
 
+function ToraModelsMasonry({
+  items,
+  photos,
+}: {
+  items: PortfolioListItemData[];
+  photos: Map<string, PhotoDTO>;
+}) {
+  const visibleItems = items.filter((item) => item.title.trim() || item.photoId);
+  const rows: PortfolioListItemData[][] = [];
+  const rowPattern = [3, 4, 3];
+  for (let index = 0; index < visibleItems.length;) {
+    const rowSize = rowPattern[rows.length % rowPattern.length] ?? 3;
+    rows.push(visibleItems.slice(index, index + rowSize));
+    index += rowSize;
+  }
+
+  return (
+    <div className="portfolio-models-masonry" aria-label="Models portfolio list">
+      {rows.map((row, rowIndex) => (
+        <div
+          className={cn(
+            "portfolio-models-row",
+            row.length === 4 ? "is-not-same" : "is-same",
+            `count-${row.length}`,
+            `row-${rowIndex % rowPattern.length}`,
+          )}
+          key={`${rowIndex}-${row.map((item) => item.id).join("-")}`}
+        >
+          {row.map((item, itemIndex) => {
+            const globalIndex = rows
+              .slice(0, rowIndex)
+              .reduce((count, currentRow) => count + currentRow.length, itemIndex);
+            const photo = item.photoId ? photos.get(item.photoId) : undefined;
+            return (
+              <PortfolioLink
+                key={item.id}
+                href={item.linkHref}
+                className={cn("portfolio-models-item", `model-${globalIndex % 10}`)}
+              >
+                <PortfolioImage
+                  photo={photo}
+                  sizes={
+                    row.length === 4
+                      ? "(min-width: 1200px) 42vw, (min-width: 700px) 46vw, 100vw"
+                      : "(min-width: 1200px) 34vw, (min-width: 700px) 32vw, 100vw"
+                  }
+                />
+                <div className="portfolio-models-title">{item.title}</div>
+              </PortfolioLink>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ProgressSlider({
   items,
   photos,
@@ -340,6 +397,8 @@ export function PortfolioListBlock({
           <ProgressSlider items={items} photos={photoMap} />
         ) : style === "tora-parallax-showcase" ? (
           <ParallaxShowcase items={items} photos={photoMap} />
+        ) : style === "tora-models-masonry" ? (
+          <ToraModelsMasonry items={items} photos={photoMap} />
         ) : (
           <ModernList items={items} photos={photoMap} />
         )}
