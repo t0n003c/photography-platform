@@ -46,11 +46,11 @@ export function ToraModelsMasonryMotion({ children }: { children: ReactNode }) {
         item.style.willChange = "transform";
 
         requestAnimationFrame(() => {
-          item.style.transition = "transform 560ms cubic-bezier(.22, 1, .36, 1)";
+          item.style.transition = "transform 820ms cubic-bezier(.22, 1, .36, 1)";
           item.style.transform = "translate3d(0, 0, 0)";
         });
 
-        window.setTimeout(() => cleanupItem(item), 620);
+        window.setTimeout(() => cleanupItem(item), 900);
       }
 
       lastRects = nextRects;

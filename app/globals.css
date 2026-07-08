@@ -3926,12 +3926,14 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .portfolio-models-masonry {
   --portfolio-models-gap: clamp(1.5rem, 3.2vw, 2.75rem);
   --portfolio-models-row-gap: clamp(1.75rem, 3vw, 2.5rem);
+  --portfolio-models-image-bg: color-mix(in oklab, var(--portfolio-bg) 82%, black);
   --portfolio-models-title-bg: color-mix(in oklab, var(--portfolio-bg) 88%, black);
   display: grid;
   gap: var(--portfolio-models-row-gap);
 }
 
 .portfolio-list-no-bg .portfolio-models-masonry {
+  --portfolio-models-image-bg: color-mix(in oklab, hsl(var(--muted)) 78%, hsl(var(--background)));
   --portfolio-models-title-bg: hsl(var(--background));
 }
 
@@ -3982,7 +3984,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .portfolio-models-item .portfolio-list-image {
-  background: color-mix(in oklab, var(--portfolio-bg) 82%, black);
+  background: var(--portfolio-models-image-bg);
 }
 
 .portfolio-models-item img {
