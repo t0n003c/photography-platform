@@ -36,23 +36,37 @@ function isExternalHref(href: string) {
 function PortfolioLink({
   href,
   className,
+  style,
   children,
 }: {
   href?: string | null;
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 }) {
   const cleanHref = (href ?? "").trim();
-  if (!cleanHref || cleanHref === "#") return <div className={className}>{children}</div>;
+  if (!cleanHref || cleanHref === "#") {
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
+  }
   if (isExternalHref(cleanHref)) {
     return (
-      <a href={cleanHref} className={className} target="_blank" rel="noreferrer noopener">
+      <a
+        href={cleanHref}
+        className={className}
+        style={style}
+        target="_blank"
+        rel="noreferrer noopener"
+      >
         {children}
       </a>
     );
   }
   return (
-    <Link href={cleanHref} className={className}>
+    <Link href={cleanHref} className={className} style={style}>
       {children}
     </Link>
   );
@@ -272,43 +286,88 @@ function ToraModelsMasonry({
     index += rowSize;
   }
 
+  const renderModelItem = (
+    item: PortfolioListItemData,
+    globalIndex: number,
+    rowLength: number,
+    rowItemIndex: number,
+  ) => {
+    const photo = item.photoId ? photos.get(item.photoId) : undefined;
+    return (
+      <PortfolioLink
+        key={item.id}
+        href={item.linkHref}
+        className={cn(
+          "portfolio-models-item",
+          `model-${globalIndex % 10}`,
+          `row-item-${rowItemIndex}`,
+        )}
+        style={{ order: globalIndex }}
+      >
+        <PortfolioImage
+          photo={photo}
+          sizes={
+            rowLength === 4
+              ? "(min-width: 1200px) 42vw, (min-width: 700px) 46vw, 100vw"
+              : "(min-width: 1200px) 34vw, (min-width: 700px) 32vw, 100vw"
+          }
+        />
+        <div className="portfolio-models-title">{item.title}</div>
+      </PortfolioLink>
+    );
+  };
+
   return (
     <div className="portfolio-models-masonry" aria-label="Models portfolio list">
-      {rows.map((row, rowIndex) => (
-        <div
-          className={cn(
-            "portfolio-models-row",
-            row.length === 4 ? "is-not-same" : "is-same",
-            `count-${row.length}`,
-            `row-${rowIndex % rowPattern.length}`,
-          )}
-          key={`${rowIndex}-${row.map((item) => item.id).join("-")}`}
-        >
-          {row.map((item, itemIndex) => {
-            const globalIndex = rows
-              .slice(0, rowIndex)
-              .reduce((count, currentRow) => count + currentRow.length, itemIndex);
-            const photo = item.photoId ? photos.get(item.photoId) : undefined;
-            return (
-              <PortfolioLink
-                key={item.id}
-                href={item.linkHref}
-                className={cn("portfolio-models-item", `model-${globalIndex % 10}`)}
-              >
-                <PortfolioImage
-                  photo={photo}
-                  sizes={
-                    row.length === 4
-                      ? "(min-width: 1200px) 42vw, (min-width: 700px) 46vw, 100vw"
-                      : "(min-width: 1200px) 34vw, (min-width: 700px) 32vw, 100vw"
-                  }
-                />
-                <div className="portfolio-models-title">{item.title}</div>
-              </PortfolioLink>
-            );
-          })}
-        </div>
-      ))}
+      {rows.map((row, rowIndex) => {
+        const rowStartIndex = rows
+          .slice(0, rowIndex)
+          .reduce((count, currentRow) => count + currentRow.length, 0);
+        const columnGroups =
+          row.length === 4
+            ? [
+                [
+                  { item: row[0], rowItemIndex: 0 },
+                  { item: row[2], rowItemIndex: 2 },
+                ],
+                [
+                  { item: row[1], rowItemIndex: 1 },
+                  { item: row[3], rowItemIndex: 3 },
+                ],
+              ]
+            : [];
+
+        return (
+          <div
+            className={cn(
+              "portfolio-models-row",
+              row.length === 4 ? "is-not-same" : "is-same",
+              `count-${row.length}`,
+              `row-${rowIndex % rowPattern.length}`,
+            )}
+            key={`${rowIndex}-${row.map((item) => item.id).join("-")}`}
+          >
+            {row.length === 4
+              ? columnGroups.map((column, columnIndex) => (
+                  <div className="portfolio-models-column" key={columnIndex}>
+                    {column.map(({ item, rowItemIndex }) =>
+                      item
+                        ? renderModelItem(
+                            item,
+                            rowStartIndex + rowItemIndex,
+                            row.length,
+                            rowItemIndex,
+                          )
+                        : null,
+                    )}
+                  </div>
+                ))
+              : row.map((item, itemIndex) =>
+                  renderModelItem(item, rowStartIndex + itemIndex, row.length, itemIndex),
+                )}
+          </div>
+        );
+      })}
     </div>
   );
 }

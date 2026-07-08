@@ -1614,7 +1614,9 @@ is gitignored):
   existing Toramochie Simple Banner layout; the roster itself uses Portfolio List items with only
   cover photo, title, and link URL visible in the editor. Public rendering follows the source
   `portfolio-wrap mix-masonry` rhythm: 3-item justified row, 4-item uneven masonry row, then
-  another 3-item justified row, repeating for extras. It keeps the source-like 1270px content
+  another 3-item justified row, repeating for extras. The 4-item row renders as true two-column
+  masonry stacks on desktop so shorter landscape photos do not leave large empty grid gaps, while
+  mobile uses CSS ordering to keep the natural item order. It keeps the source-like 1270px content
   width, 90/60/15px responsive gutters, uppercase Josefin-style gold names, same-row title bars,
   1s image zoom hover, dark/default panel colors, no-background theme fallback, mobile single
   column, and reduced-motion-safe transitions.
