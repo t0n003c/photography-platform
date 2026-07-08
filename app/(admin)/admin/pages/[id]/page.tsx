@@ -91,7 +91,7 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "portfolioList", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
-  "quote", "testimonials", "team", "pricing", "shop", "cta", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "testimonials", "team", "pricing", "shop", "cta", "customLink", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "locationMap", "scrollShowcase", "instagram", "columns",
 ];
 
@@ -354,6 +354,21 @@ function makeLocationMapConnection(startId = "", endId = "") {
   };
 }
 
+function makeCustomLinkItem(index = 0) {
+  const defaults = [
+    ["PORTRAITS", "BEST WORKS", "#"],
+    ["JOURNAL", "DAILY STORIES", "#"],
+    ["INVESTMENT", "CHECK PRICES", "#"],
+  ] as const;
+  const [title, subtitle, href] = defaults[index % defaults.length];
+  return {
+    id: newBlockId(),
+    title,
+    subtitle,
+    href,
+  };
+}
+
 const GALLERY_TORA_PROPS_DEFAULTS = {
   toraPropsShowBackground: true,
   toraPropsBackgroundColor: "#252626",
@@ -601,6 +616,18 @@ function makeBlock(type: BlockType): Block {
       accentColor: "#ddc59f",
     };
     case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
+    case "customLink": return {
+      id,
+      type,
+      layout: "link-row",
+      items: [makeCustomLinkItem(0), makeCustomLinkItem(1), makeCustomLinkItem(2)],
+      buttonLabel: "More stories",
+      buttonHref: "#",
+      showBackground: false,
+      backgroundColor: "#252626",
+      textColor: "#f8f3df",
+      accentColor: "#d8c98d",
+    };
     case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
     case "spacer": return {
       id,
@@ -1051,6 +1078,10 @@ function blockSummary(block: Block): string {
       return `${block.style} · ${block.source}${block.source === "category" && block.category ? ` · ${block.category}` : ""}`;
     case "cta":
       return block.headline || block.buttonLabel;
+    case "customLink":
+      return block.layout === "center-button"
+        ? block.buttonLabel || "Custom link"
+        : `${block.items.length} links`;
     case "contactForm":
       return `${block.style} · ${block.heading || "Contact"}`;
     case "columns":
@@ -3105,6 +3136,164 @@ function LeafEditor({
           </Field>
         </div>
       );
+    case "customLink": {
+      const items = block.items ?? [];
+      const updateItem = (
+        index: number,
+        patch: Partial<(typeof items)[number]>,
+      ) => {
+        set({
+          items: items.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
+      return (
+        <div className="space-y-4">
+          <SettingsGroup title="Layout">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Style">
+                <Select
+                  value={block.layout ?? "link-row"}
+                  onChange={(e) => set({ layout: e.target.value as typeof block.layout })}
+                >
+                  <option value="link-row">Link row</option>
+                  <option value="center-button">Centered button</option>
+                </Select>
+              </Field>
+              <Field label="Background">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.showBackground ?? false}
+                    onChange={(e) => set({ showBackground: e.target.checked })}
+                  />
+                  Show background color
+                </label>
+              </Field>
+              <Field label="Background color">
+                <Input
+                  type="color"
+                  value={block.backgroundColor ?? "#252626"}
+                  disabled={block.showBackground === false}
+                  onChange={(e) => set({ backgroundColor: e.target.value })}
+                />
+              </Field>
+              <Field label="Text color">
+                <Input
+                  type="color"
+                  value={block.textColor ?? "#f8f3df"}
+                  onChange={(e) => set({ textColor: e.target.value })}
+                />
+              </Field>
+              <Field label="Accent color">
+                <Input
+                  type="color"
+                  value={block.accentColor ?? "#d8c98d"}
+                  onChange={(e) => set({ accentColor: e.target.value })}
+                />
+              </Field>
+            </div>
+          </SettingsGroup>
+
+          {block.layout === "center-button" ? (
+            <SettingsGroup title="Button">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Button label">
+                  <Input
+                    value={block.buttonLabel ?? ""}
+                    onChange={(e) => set({ buttonLabel: e.target.value })}
+                  />
+                </Field>
+                <Field label="Button link">
+                  <Input
+                    value={block.buttonHref ?? ""}
+                    onChange={(e) => set({ buttonHref: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </SettingsGroup>
+          ) : (
+            <SettingsGroup title="Links">
+              <div className="mb-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set({ items: [...items, makeCustomLinkItem(items.length)] })}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add link
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {items.map((item, index) => (
+                  <div key={item.id} className="space-y-3 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 text-sm font-medium">
+                        {item.title || `Link ${index + 1}`}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === 0}
+                        onClick={() => set({ items: swapAt(items, index, index - 1) })}
+                        aria-label="Move link up"
+                        className="h-8 w-8"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === items.length - 1}
+                        onClick={() => set({ items: swapAt(items, index, index + 1) })}
+                        aria-label="Move link down"
+                        className="h-8 w-8"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => set({ items: items.filter((_, itemIndex) => itemIndex !== index) })}
+                        aria-label="Remove link"
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <Field label="Title">
+                        <Input
+                          value={item.title ?? ""}
+                          onChange={(e) => updateItem(index, { title: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Subtitle">
+                        <Input
+                          value={item.subtitle ?? ""}
+                          onChange={(e) => updateItem(index, { subtitle: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Link">
+                        <Input
+                          value={item.href ?? ""}
+                          onChange={(e) => updateItem(index, { href: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SettingsGroup>
+          )}
+        </div>
+      );
+    }
     case "contactForm":
       return (
         <div className="space-y-2">
@@ -3194,6 +3383,7 @@ function LeafEditor({
       const style = block.style ?? "modern";
       const supportsHoverPhoto = style === "distortion";
       const isToraModelsMasonry = style === "tora-models-masonry";
+      const isToraWeddingStories = style === "tora-wedding-stories";
       return (
         <div className="space-y-4">
           <SettingsGroup title="Layout">
@@ -3212,6 +3402,8 @@ function LeafEditor({
                             ? "PARALLAX SHOWCASE"
                           : next === "tora-models-masonry"
                             ? "OUR MODELS"
+                          : next === "tora-wedding-stories"
+                            ? ""
                           : next === "category-cards"
                           ? "CATEGORY LIST"
                           : next === "distortion"
@@ -3221,14 +3413,28 @@ function LeafEditor({
                               : next === "mix-masonry"
                                 ? "MIX MASONRY"
                         : "MODERN",
-                      eyebrow: next === "tora-models-masonry" ? "CHECK OUT" : block.eyebrow,
+                      eyebrow:
+                        next === "tora-models-masonry"
+                          ? "CHECK OUT"
+                          : next === "tora-wedding-stories"
+                            ? ""
+                            : block.eyebrow,
                       backgroundColor:
-                        next === "tora-models-masonry" ? "#252626" : block.backgroundColor,
+                        next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          ? "#252626"
+                          : block.backgroundColor,
                       textColor:
-                        next === "tora-models-masonry" ? "#f8f3df" : block.textColor,
+                        next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          ? "#f8f3df"
+                          : block.textColor,
                       accentColor:
-                        next === "tora-models-masonry" ? "#d8c98d" : block.accentColor,
-                      body: next === "tora-models-masonry" ? "" : block.body,
+                        next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          ? "#d8c98d"
+                          : block.accentColor,
+                      body:
+                        next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          ? ""
+                          : block.body,
                     });
                   }}
                 >
@@ -3240,6 +3446,7 @@ function LeafEditor({
                   <option value="tora-progress-slider">Tora progress slider</option>
                   <option value="tora-parallax-showcase">Tora parallax showcase</option>
                   <option value="tora-models-masonry">Tora models masonry</option>
+                  <option value="tora-wedding-stories">Tora wedding stories</option>
                 </Select>
               </Field>
               <Field label="Top label">
@@ -3287,7 +3494,7 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            {!isToraModelsMasonry && (
+            {!isToraModelsMasonry && !isToraWeddingStories && (
               <Field label="Intro text">
                 <Textarea
                   rows={2}
@@ -4912,6 +5119,8 @@ function LeafEditor({
       const isAgency = block.layout === "agency-viral-hero";
       const isToraMochie = block.layout?.startsWith("toramochie-") ?? false;
       const isToraWall = block.layout === "toramochie-full-wall";
+      const isToraWedding = block.layout === "toramochie-wedding-studio";
+      const isToraMultiPhoto = isToraWall || isToraWedding;
       const isSpecialHero = isPrisma || isAgency;
       const bannerPhotoIds = block.photoIds ?? [];
       const selectedBannerPhotos = bannerPhotoIds
@@ -4924,6 +5133,15 @@ function LeafEditor({
           if (!(block.typewriterWords ?? "").trim()) {
             patch.typewriterWords = TORA_MOCHIE_DEFAULT_TYPED_WORDS;
           }
+        } else if (layout === "toramochie-wedding-studio") {
+          patch.headline = block.headline.trim() || "Welcome to Reflector Wedding Photography!";
+          patch.subhead =
+            block.subhead.trim() ||
+            "We're a team, based in South of France, documenting elopements & weddings all across Europe and overseas! And we can't wait to hear from you!";
+          patch.ctaLabel = block.ctaLabel || "GET IN TOUCH";
+          patch.ctaHref = block.ctaHref || "#";
+          patch.overlay = "none";
+          patch.height = block.height === "short" ? "tall" : block.height;
         }
         set(patch);
       };
@@ -4936,10 +5154,10 @@ function LeafEditor({
       // Source / darken / layout trio (top-left in both source modes).
       const cfg = (
         <>
-          <Field label={isToraWall ? "Images source" : "Image source"}>
+          <Field label={isToraMultiPhoto ? "Images source" : "Image source"}>
             <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
               <option value="featured">Latest featured</option>
-              <option value="photo">{isToraWall ? "Selected photos" : "Specific photo"}</option>
+              <option value="photo">{isToraMultiPhoto ? "Selected photos" : "Specific photo"}</option>
             </Select>
           </Field>
           {isSpecialHero ? (
@@ -4985,6 +5203,7 @@ function LeafEditor({
                 <option value="toramochie-bottom-text">Bottom text</option>
                 <option value="toramochie-only-image">Only image</option>
                 <option value="toramochie-classic">Classic</option>
+                <option value="toramochie-wedding-studio">Wedding studio</option>
               </optgroup>
             </Select>
           </Field>
@@ -5157,8 +5376,8 @@ function LeafEditor({
               {focalField}
             </div>
             <div className="flex h-full flex-col gap-1.5">
-              <Label>{isToraWall ? "Photos" : "Photo"}</Label>
-              {isToraWall ? (
+              <Label>{isToraMultiPhoto ? "Photos" : "Photo"}</Label>
+              {isToraMultiPhoto ? (
                 <PhotoPicker
                   photos={photos}
                   selectedIds={bannerPhotoIds}
@@ -5175,7 +5394,7 @@ function LeafEditor({
               )}
             </div>
           </div>
-          {isToraWall && selectedBannerPhotos.length > 0 && (
+          {isToraMultiPhoto && selectedBannerPhotos.length > 0 && (
             <div className="space-y-2 rounded-lg border p-3">
               <p className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
                 Selected order

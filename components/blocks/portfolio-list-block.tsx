@@ -383,6 +383,51 @@ function ToraModelsMasonry({
   );
 }
 
+function ToraWeddingStories({
+  items,
+  photos,
+}: {
+  items: PortfolioListItemData[];
+  photos: Map<string, PhotoDTO>;
+}) {
+  const midpoint = Math.ceil(items.length / 2);
+  const columns = [items.slice(0, midpoint), items.slice(midpoint)];
+  const renderItem = (item: PortfolioListItemData, index: number) => {
+    const photo = item.photoId ? photos.get(item.photoId) : undefined;
+    const orientation =
+      photo && photo.width > photo.height * 1.1
+        ? "landscape"
+        : photo && photo.height > photo.width * 1.1
+          ? "portrait"
+          : index % 3 === 1
+            ? "landscape"
+            : "portrait";
+    return (
+      <PortfolioLink
+        key={item.id}
+        href={item.linkHref}
+        className={cn("tora-wedding-story", `is-${orientation}`)}
+      >
+        <PortfolioImage
+          photo={photo}
+          sizes="(max-width: 576px) calc(100vw - 30px), (max-width: 900px) calc(50vw - 35px), 530px"
+          className="tora-wedding-story__image"
+        />
+      </PortfolioLink>
+    );
+  };
+
+  return (
+    <div className="tora-wedding-stories">
+      {columns.map((column, columnIndex) => (
+        <div key={columnIndex} className="tora-wedding-stories__column">
+          {column.map((item, index) => renderItem(item, index))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ProgressSlider({
   items,
   photos,
@@ -484,6 +529,8 @@ export function PortfolioListBlock({
           <ParallaxShowcase items={items} photos={photoMap} />
         ) : style === "tora-models-masonry" ? (
           <ToraModelsMasonry items={items} photos={photoMap} />
+        ) : style === "tora-wedding-stories" ? (
+          <ToraWeddingStories items={items} photos={photoMap} />
         ) : (
           <ModernList items={items} photos={photoMap} />
         )}

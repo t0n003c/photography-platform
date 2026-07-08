@@ -107,6 +107,7 @@ const PortfolioListBlock = z.object({
       "tora-progress-slider",
       "tora-parallax-showcase",
       "tora-models-masonry",
+      "tora-wedding-stories",
     ])
     .default("modern"),
   eyebrow: z.string().default("PORTFOLIO LIST"),
@@ -328,6 +329,7 @@ export const BannerLayoutEnum = z.enum([
   "toramochie-bottom-text",
   "toramochie-only-image",
   "toramochie-classic",
+  "toramochie-wedding-studio",
 ]);
 const BannerBlock = z.object({
   ...baseBlock,
@@ -601,6 +603,24 @@ const CtaBlock = z.object({
   buttonHref: z.string().default("/contact"),
   buttonStyle: CtaButtonStyleEnum.default("pill"),
 });
+const CustomLinkItem = z.object({
+  id,
+  title: z.string().default("PORTRAITS"),
+  subtitle: z.string().default("BEST WORKS"),
+  href: z.string().default("#"),
+});
+const CustomLinkBlock = z.object({
+  ...baseBlock,
+  type: z.literal("customLink"),
+  layout: z.enum(["link-row", "center-button"]).default("link-row"),
+  items: z.array(CustomLinkItem).default([]),
+  buttonLabel: z.string().default("More stories"),
+  buttonHref: z.string().default("#"),
+  showBackground: z.boolean().default(false),
+  backgroundColor: z.string().default("#252626"),
+  textColor: z.string().default("#f8f3df"),
+  accentColor: z.string().default("#d8c98d"),
+});
 export const ContactFormStyleEnum = z.enum([
   "stacked",
   "split",
@@ -869,6 +889,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   PricingBlock,
   ShopBlock,
   CtaBlock,
+  CustomLinkBlock,
   ContactFormBlock,
   SpacerBlock,
   DividerBlock,
@@ -1003,6 +1024,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   pricing: "Price",
   shop: "Shop",
   cta: "Call to action",
+  customLink: "Custom link",
   contactForm: "Contact form",
   spacer: "Spacer",
   divider: "Divider",

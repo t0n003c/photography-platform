@@ -390,9 +390,294 @@ html.js .pr-root.is-enhanced {
   100% { opacity: 0; }
 }
 
+.tora-wedding-hero {
+  --tora-wedding-bg: #f8f6f5;
+  --tora-wedding-text: #1f1f1d;
+  --tora-wedding-muted: #6f6a63;
+  --tora-wedding-accent: #9a8351;
+  --tora-wedding-image-height: 606px;
+  align-items: center;
+  background: var(--tora-wedding-bg);
+  color: var(--tora-wedding-text);
+  display: flex;
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  min-height: 760px;
+  overflow: hidden;
+  padding: 70px 0;
+}
+
+.dark .tora-wedding-hero {
+  --tora-wedding-bg: #252626;
+  --tora-wedding-text: #f7f7f7;
+  --tora-wedding-muted: rgb(247 247 247 / 0.72);
+  --tora-wedding-accent: #edd8aa;
+}
+
+.tora-wedding-hero--short {
+  --tora-wedding-image-height: 520px;
+  min-height: 650px;
+}
+
+.tora-wedding-hero--full {
+  --tora-wedding-image-height: min(74vh, 720px);
+  min-height: 88svh;
+}
+
+.tora-wedding-hero__inner {
+  align-items: center;
+  display: grid;
+  gap: 30px;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.78fr);
+  margin: 0 auto;
+  width: min(100% - 30px, 1270px);
+}
+
+.tora-wedding-hero__copy {
+  max-width: 405px;
+}
+
+.tora-wedding-hero__eyebrow {
+  color: var(--tora-wedding-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  margin: 0 0 24px;
+  text-transform: uppercase;
+}
+
+.tora-wedding-hero__copy h1 {
+  color: var(--tora-wedding-text);
+  font-size: 45px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.tora-wedding-hero__text {
+  color: var(--tora-wedding-muted);
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.73;
+  margin: 35px 0 0;
+}
+
+.tora-wedding-hero__link {
+  color: var(--tora-wedding-accent);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 4.2px;
+  line-height: 1.2;
+  margin-top: 52px;
+  position: relative;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 350ms ease;
+}
+
+.tora-wedding-hero__link::after {
+  background: currentColor;
+  content: "";
+  height: 1px;
+  left: 100%;
+  margin-left: 18px;
+  position: absolute;
+  top: calc(50% - 1px);
+  transform: translateX(0);
+  transition: transform 400ms cubic-bezier(0.13, 0.68, 0.05, 0.83);
+  width: 33px;
+}
+
+.tora-wedding-hero__link:hover::after {
+  transform: translateX(-16px);
+}
+
+.tora-wedding-hero__media {
+  display: grid;
+  gap: 15px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tora-wedding-hero__image {
+  height: var(--tora-wedding-image-height);
+  overflow: hidden;
+  position: relative;
+}
+
+.tora-wedding-hero__image img {
+  object-fit: cover;
+}
+
+.custom-link-block {
+  --custom-link-bg: transparent;
+  --custom-link-text: hsl(var(--foreground));
+  --custom-link-muted: hsl(var(--muted-foreground));
+  --custom-link-accent: hsl(var(--primary));
+  background: var(--custom-link-bg);
+  color: var(--custom-link-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+.custom-link-row-block {
+  padding: clamp(2rem, 5vw, 4.375rem) 0;
+}
+
+.custom-link-button-block {
+  padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+  text-align: center;
+}
+
+.custom-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 auto;
+  width: min(100% - 30px, 1110px);
+}
+
+.custom-link-item {
+  margin: 20px auto;
+  position: relative;
+  text-align: center;
+  width: calc(100% / 3);
+}
+
+.custom-link-item:nth-of-type(2)::before,
+.custom-link-item:nth-of-type(3)::before {
+  background: color-mix(in oklab, var(--custom-link-muted) 28%, transparent);
+  content: "";
+  height: 70px;
+  left: -2px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+}
+
+.custom-link-card {
+  color: inherit;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.custom-link-title {
+  color: var(--custom-link-text);
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  transition: color 450ms ease;
+}
+
+.custom-link-card:hover .custom-link-title {
+  color: var(--custom-link-accent);
+}
+
+.custom-link-subtitle {
+  color: color-mix(in oklab, var(--custom-link-muted) 76%, transparent);
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  margin-top: 20px;
+  text-transform: uppercase;
+}
+
+.custom-link-button {
+  border: 1px solid var(--custom-link-accent);
+  color: var(--custom-link-text);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 4.2px;
+  line-height: 1.2;
+  min-width: 215px;
+  padding: 20px 42px 17px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 350ms ease,
+    color 350ms ease,
+    border-color 350ms ease;
+}
+
+.custom-link-button:hover {
+  background: var(--custom-link-accent);
+  color: #252626;
+}
+
 @media (max-width: 768px) {
   .tora-banner-link {
     letter-spacing: 3px;
+  }
+
+  .tora-wedding-hero {
+    min-height: auto;
+    padding: 5.5rem 0 5.25rem;
+  }
+
+  .tora-wedding-hero__inner {
+    display: block;
+    width: calc(100% - 30px);
+  }
+
+  .tora-wedding-hero__copy {
+    margin: 0 auto;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .tora-wedding-hero__copy h1 {
+    font-size: clamp(2.8rem, 10vw, 4.2rem);
+    letter-spacing: 1px;
+  }
+
+  .tora-wedding-hero__text {
+    font-size: clamp(1.1rem, 4.6vw, 1.85rem);
+    line-height: 1.7;
+    margin: 3.5rem auto 0;
+    max-width: 34rem;
+  }
+
+  .tora-wedding-hero__link {
+    margin-top: 4.25rem;
+  }
+
+  .tora-wedding-hero__media {
+    display: none;
+  }
+
+  .custom-link-item {
+    width: 50%;
+  }
+
+  .custom-link-item:nth-of-type(3)::before {
+    display: none;
+  }
+
+  .custom-link-title {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 576px) {
+  .custom-link-item {
+    width: 100%;
+  }
+
+  .custom-link-item:nth-of-type(2)::before,
+  .custom-link-item:nth-of-type(3)::before {
+    display: none;
+  }
+
+  .custom-link-subtitle {
+    margin-top: 15px;
   }
 }
 
@@ -4129,6 +4414,103 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   margin-bottom: clamp(3rem, 6vw, 5rem);
 }
 
+.portfolio-list-tora-wedding-stories {
+  --portfolio-wedding-bg: #f8f6f5;
+  --portfolio-wedding-text: #252626;
+  --portfolio-wedding-accent: #9a8351;
+  --portfolio-wedding-image-bg: color-mix(in oklab, var(--portfolio-wedding-bg) 88%, black);
+  background: var(--portfolio-wedding-bg);
+  color: var(--portfolio-wedding-text);
+  font-family: "Josefin Sans", "Montserrat", sans-serif;
+  padding: clamp(4.5rem, 8vw, 7.5rem) 0;
+}
+
+.dark .portfolio-list-tora-wedding-stories {
+  --portfolio-wedding-bg: #252626;
+  --portfolio-wedding-text: #f8f3df;
+  --portfolio-wedding-accent: #d8c98d;
+  --portfolio-wedding-image-bg: color-mix(in oklab, var(--portfolio-wedding-bg) 86%, white 8%);
+}
+
+.portfolio-list-tora-wedding-stories.portfolio-list-no-bg {
+  --portfolio-wedding-bg: transparent;
+  --portfolio-wedding-text: hsl(var(--foreground));
+  --portfolio-wedding-accent: var(--portfolio-accent);
+  background: transparent;
+}
+
+.portfolio-list-tora-wedding-stories .portfolio-list-container {
+  width: min(calc(100% - 30px), 1110px);
+}
+
+.tora-wedding-stories {
+  display: flex;
+  width: 100%;
+}
+
+.tora-wedding-stories__column {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+
+.tora-wedding-stories__column:first-child {
+  align-items: flex-end;
+  padding-right: 25px;
+}
+
+.tora-wedding-stories__column:last-child {
+  align-items: flex-start;
+  padding-left: 25px;
+  padding-top: clamp(1.75rem, 4vw, 3.25rem);
+}
+
+.tora-wedding-story {
+  color: inherit;
+  display: block;
+  margin-bottom: 50px;
+  max-width: 100%;
+  text-decoration: none;
+}
+
+.tora-wedding-story__image {
+  background: var(--portfolio-wedding-image-bg);
+  display: block;
+  max-height: 600px;
+  overflow: hidden;
+  transition: clip-path 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 100%;
+}
+
+.tora-wedding-story.is-portrait {
+  width: min(100%, 390px);
+}
+
+.tora-wedding-story.is-landscape {
+  width: min(100%, 530px);
+}
+
+.tora-wedding-story.is-portrait .tora-wedding-story__image {
+  aspect-ratio: 683 / 1024;
+}
+
+.tora-wedding-story.is-landscape .tora-wedding-story__image {
+  aspect-ratio: 16 / 9;
+}
+
+.tora-wedding-story__image img {
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.01);
+  transition: transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 100%;
+}
+
+.tora-wedding-story:hover .tora-wedding-story__image img,
+.tora-wedding-story:focus-visible .tora-wedding-story__image img {
+  transform: scale(0.97);
+}
+
 .portfolio-models-masonry {
   --portfolio-models-gap: clamp(1.5rem, 3.2vw, 2.75rem);
   --portfolio-models-row-gap: clamp(1.75rem, 3vw, 2.5rem);
@@ -4707,6 +5089,40 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
   .portfolio-list-tora-models-masonry .portfolio-list-container {
     width: calc(100% - 20px);
+  }
+
+  .portfolio-list-tora-wedding-stories {
+    padding: 3.75rem 0;
+  }
+
+  .portfolio-list-tora-wedding-stories .portfolio-list-container {
+    width: calc(100% - 30px);
+  }
+
+  .tora-wedding-stories {
+    display: block;
+  }
+
+  .tora-wedding-stories__column,
+  .tora-wedding-stories__column:first-child,
+  .tora-wedding-stories__column:last-child {
+    align-items: stretch;
+    padding: 0;
+    width: 100%;
+  }
+
+  .tora-wedding-story {
+    margin-bottom: 15px;
+    width: 100%;
+  }
+
+  .tora-wedding-story.is-portrait,
+  .tora-wedding-story.is-landscape {
+    width: 100%;
+  }
+
+  .tora-wedding-story.is-portrait .tora-wedding-story__image {
+    aspect-ratio: 4 / 5;
   }
 
   .portfolio-models-masonry {

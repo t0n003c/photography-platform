@@ -1704,6 +1704,17 @@ is gitignored):
   after mount. This fixes `/test-page` opening in a half-light state until the theme toggle was
   clicked. Desktop and iPhone reload/toggle smoke verified initial dark, light toggle, and dark
   toggle states with 0 console/page errors.
+  ToraMochie/Reflector wedding photography studio follow-up: the `/wedding-photography-studio/`
+  reference is implemented as modular Page blocks instead of one locked section. Banner block
+  layout `toramochie-wedding-studio` matches the reference hero: editorial copy/CTA on the left,
+  two tall wedding images on desktop, and text-first centered mobile behavior with images hidden.
+  Portfolio list style `tora-wedding-stories` matches the reference two-column story masonry with
+  reference-like image crop/scale hover and single-column mobile stacking. Added a reusable
+  `Custom link` block with `link-row` and `center-button` layouts so the reference bottom link
+  row and the "More stories" CTA can be separate blocks. The "Explore / Our Stories" label/title
+  should be composed with the existing Heading block when needed. Light/dark and responsive CSS
+  were verified by typecheck, lint, unit tests, production build, and a compiled-CSS Playwright
+  fixture because Docker/DB sockets were unhealthy during implementation.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

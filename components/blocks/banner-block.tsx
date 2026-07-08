@@ -672,6 +672,50 @@ function ToraMochieBanner({
     );
   }
 
+  if (layout === "toramochie-wedding-studio") {
+    const weddingPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
+    const primary = weddingPhotos[0] ?? photo;
+    const secondary = weddingPhotos[1] ?? weddingPhotos[0] ?? photo;
+    const headline = block.headline.trim() || "Welcome to Reflector Wedding Photography!";
+    const subhead = block.subhead.trim();
+    const showButton = Boolean(block.ctaLabel && block.ctaHref);
+
+    return (
+      <section className={cn("tora-wedding-hero", `tora-wedding-hero--${block.height}`)}>
+        <div className="tora-wedding-hero__inner">
+          <div className="tora-wedding-hero__copy">
+            {block.eyebrow.trim() && (
+              <p className="tora-wedding-hero__eyebrow">{block.eyebrow.trim()}</p>
+            )}
+            <h1>{headline}</h1>
+            {subhead && <p className="tora-wedding-hero__text">{subhead}</p>}
+            {showButton && (
+              <Link href={block.ctaHref!} className="tora-wedding-hero__link">
+                {block.ctaLabel}
+              </Link>
+            )}
+          </div>
+          <div className="tora-wedding-hero__media" aria-hidden={!primary && !secondary}>
+            <div className="tora-wedding-hero__image">
+              {primary ? (
+                <BannerImage photo={primary} block={block} className="absolute inset-0 h-full w-full" />
+              ) : (
+                <div className="h-full w-full bg-[hsl(var(--muted))]" />
+              )}
+            </div>
+            <div className="tora-wedding-hero__image">
+              {secondary ? (
+                <BannerImage photo={secondary} block={block} className="absolute inset-0 h-full w-full" />
+              ) : (
+                <div className="h-full w-full bg-[hsl(var(--muted))]" />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const height =
     layout === "toramochie-only-image" ? TORA_STRIP_HEIGHTS[block.height] : TORA_HEIGHTS[block.height];
   const variant =
@@ -859,11 +903,21 @@ export async function BannerBlock({
   let wallPhotos = photos;
   if (block.source === "featured" && !resolved) {
     try {
+      const featuredCount =
+        block.layout === "toramochie-full-wall"
+          ? 24
+          : block.layout === "toramochie-wedding-studio"
+            ? 2
+            : 1;
       const featured = await getFeaturedPhotos(
-        block.layout === "toramochie-full-wall" ? 24 : 1,
+        featuredCount,
       );
       resolved = featured[0];
-      if (block.layout === "toramochie-full-wall" && wallPhotos.length === 0) {
+      if (
+        (block.layout === "toramochie-full-wall" ||
+          block.layout === "toramochie-wedding-studio") &&
+        wallPhotos.length === 0
+      ) {
         wallPhotos = featured;
       }
     } catch {

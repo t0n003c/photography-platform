@@ -14,6 +14,7 @@ import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-b
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
 import { PricingBlock } from "@/components/blocks/pricing-block";
 import { ShopBlock } from "@/components/blocks/shop-block";
+import { CustomLinkBlock } from "@/components/blocks/custom-link-block";
 import {
   CategoryIndexBlock,
   LocationIndexBlock,
@@ -305,6 +306,8 @@ function LeafView({
           </Link>
         </div>
       );
+    case "customLink":
+      return <CustomLinkBlock block={block} />;
     case "contactForm": {
       if (block.style === "tora-contact") {
         const heading = block.heading?.trim() || "GET IN TOUCH";
@@ -713,6 +716,7 @@ const FULL_BLEED = new Set([
   "team",
   "pricing",
   "shop",
+  "customLink",
   "spacer",
   "divider",
   "categoryIndex",
