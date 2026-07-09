@@ -394,6 +394,14 @@ const GALLERY_TORA_PROPS_DEFAULTS = {
   toraPropsShowCaptions: true,
   toraPropsCaptionSource: "auto",
 } as const;
+const TORA_HEADING_DEFAULT_LABELS: Record<string, string> = {
+  "tora-classic": "HEADINGS",
+  "tora-urban": "KNOW ME BETTER",
+};
+
+function toraHeadingDefaultLabel(style: string | undefined) {
+  return TORA_HEADING_DEFAULT_LABELS[style ?? ""] ?? "";
+}
 
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
@@ -1512,9 +1520,17 @@ function LeafEditor({
         headingStyle === "tora-urban";
       const needsCta = headingStyle === "tora-creative" || headingStyle === "tora-simple";
       const updateHeadingStyle = (nextStyle: typeof block.headingStyle) => {
+        const nextHeadingStyle = nextStyle ?? "default";
+        const nextLabel = toraHeadingDefaultLabel(nextHeadingStyle);
+        const currentLabel = block.label?.trim() ?? "";
+        const previousDefaultLabel = toraHeadingDefaultLabel(headingStyle);
+        const shouldSeedLabel =
+          Boolean(nextLabel) &&
+          (!currentLabel || currentLabel === previousDefaultLabel);
         set({
           headingStyle: nextStyle,
-          ...((nextStyle ?? "default") !== "default" &&
+          ...(shouldSeedLabel ? { label: nextLabel } : {}),
+          ...(nextHeadingStyle !== "default" &&
           headingStyle === "default" &&
           (block.align ?? "left") === "left"
             ? { align: "center" as const }
@@ -1562,8 +1578,7 @@ function LeafEditor({
               {needsLabel && (
                 <Field label="Small label">
                   <Input
-                    value={block.label ?? ""}
-                    placeholder={headingStyle === "tora-urban" ? "KNOW ME BETTER" : "HEADINGS"}
+                    value={block.label?.trim() || toraHeadingDefaultLabel(headingStyle)}
                     onChange={(e) => set({ label: e.target.value })}
                   />
                 </Field>

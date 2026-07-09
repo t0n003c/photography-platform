@@ -170,6 +170,10 @@ const TORA_HEADING_STYLES = new Set<string>([
   "tora-simple",
   "tora-urban",
 ]);
+const TORA_HEADING_DEFAULT_LABELS: Partial<Record<ToraHeadingStyle, string>> = {
+  "tora-classic": "HEADINGS",
+  "tora-urban": "KNOW ME BETTER",
+};
 
 function isToraHeading(block: Block): block is ToraHeadingBlockData {
   return (
@@ -307,7 +311,7 @@ function ToraHeadingView({ block }: { block: HeadingBlockData }) {
   const variant = style.replace("tora-", "");
   const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
   const title = block.text.trim() || "Heading";
-  const label = block.label?.trim();
+  const label = block.label?.trim() || TORA_HEADING_DEFAULT_LABELS[style] || "";
   const body = block.body?.trim();
   const ctaLabel = block.ctaLabel?.trim();
   const markText = (block.markText?.trim() || "R").slice(0, 3);
