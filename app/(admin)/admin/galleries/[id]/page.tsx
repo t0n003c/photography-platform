@@ -45,6 +45,11 @@ type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
+const DEFAULT_SLIPHOVER_BACKGROUND = "#242625";
+const DEFAULT_SLIPHOVER_LABEL_BACKGROUND = "#111111";
+const DEFAULT_SLIPHOVER_LABEL_TEXT = "#f8f3df";
+
+type ToraSliphoverLabelSource = "auto" | "headline" | "alt" | "caption";
 
 interface Gallery {
   id: string;
@@ -969,6 +974,18 @@ function LayoutCard({
     DEFAULT_PALMER_BACKGROUND,
   );
   const [palmerTextColor, setPalmerTextColor] = useState(DEFAULT_PALMER_TEXT);
+  const [toraSliphoverUseBackground, setToraSliphoverUseBackground] =
+    useState(true);
+  const [toraSliphoverBackgroundColor, setToraSliphoverBackgroundColor] =
+    useState(DEFAULT_SLIPHOVER_BACKGROUND);
+  const [toraSliphoverLabelSource, setToraSliphoverLabelSource] =
+    useState<ToraSliphoverLabelSource>("auto");
+  const [
+    toraSliphoverLabelBackgroundColor,
+    setToraSliphoverLabelBackgroundColor,
+  ] = useState(DEFAULT_SLIPHOVER_LABEL_BACKGROUND);
+  const [toraSliphoverLabelTextColor, setToraSliphoverLabelTextColor] =
+    useState(DEFAULT_SLIPHOVER_LABEL_TEXT);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -999,6 +1016,7 @@ function LayoutCard({
           cfg.gridType === "infinite-canvas" ||
           cfg.gridType === "css-glitch" ||
           cfg.gridType === "palmer-draggable" ||
+          cfg.gridType === "tora-sliphover" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1179,6 +1197,28 @@ function LayoutCard({
         if (typeof c.palmerTextColor === "string") {
           setPalmerTextColor(c.palmerTextColor);
         }
+        if (typeof c.toraSliphoverUseBackground === "boolean") {
+          setToraSliphoverUseBackground(c.toraSliphoverUseBackground);
+        }
+        if (typeof c.toraSliphoverBackgroundColor === "string") {
+          setToraSliphoverBackgroundColor(c.toraSliphoverBackgroundColor);
+        }
+        if (
+          c.toraSliphoverLabelSource === "auto" ||
+          c.toraSliphoverLabelSource === "headline" ||
+          c.toraSliphoverLabelSource === "alt" ||
+          c.toraSliphoverLabelSource === "caption"
+        ) {
+          setToraSliphoverLabelSource(c.toraSliphoverLabelSource);
+        }
+        if (typeof c.toraSliphoverLabelBackgroundColor === "string") {
+          setToraSliphoverLabelBackgroundColor(
+            c.toraSliphoverLabelBackgroundColor,
+          );
+        }
+        if (typeof c.toraSliphoverLabelTextColor === "string") {
+          setToraSliphoverLabelTextColor(c.toraSliphoverLabelTextColor);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1232,6 +1272,11 @@ function LayoutCard({
         palmerUseCustomColors,
         palmerBackgroundColor,
         palmerTextColor,
+        toraSliphoverUseBackground,
+        toraSliphoverBackgroundColor,
+        toraSliphoverLabelSource,
+        toraSliphoverLabelBackgroundColor,
+        toraSliphoverLabelTextColor,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1281,6 +1326,7 @@ function LayoutCard({
                   <option value="infinite-canvas">Infinite canvas</option>
                   <option value="css-glitch">Glitch hover grid</option>
                   <option value="palmer-draggable">Palmer draggable grid</option>
+                  <option value="tora-sliphover">Tora sliphover masonry</option>
                   <option value="alternative-scroll">Alternative scroll</option>
                 </Select>
               </Field>
@@ -1294,6 +1340,7 @@ function LayoutCard({
                 gridType !== "infinite-canvas" &&
                 gridType !== "css-glitch" &&
                 gridType !== "palmer-draggable" &&
+                gridType !== "tora-sliphover" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1683,6 +1730,75 @@ function LayoutCard({
                   </div>
                 </div>
               )}
+              {gridType === "tora-sliphover" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <Field label="Hover label source">
+                    <Select
+                      value={toraSliphoverLabelSource}
+                      onChange={(e) =>
+                        setToraSliphoverLabelSource(
+                          e.target.value as ToraSliphoverLabelSource,
+                        )
+                      }
+                    >
+                      <option value="auto">Auto - headline, alt, then caption</option>
+                      <option value="headline">Headline</option>
+                      <option value="alt">Alt text</option>
+                      <option value="caption">Caption</option>
+                    </Select>
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Background color" htmlFor="sliphover-bg-color">
+                      <Input
+                        id="sliphover-bg-color"
+                        type="color"
+                        value={toraSliphoverBackgroundColor}
+                        onChange={(e) =>
+                          setToraSliphoverBackgroundColor(e.target.value)
+                        }
+                        disabled={!toraSliphoverUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field
+                      label="Label background"
+                      htmlFor="sliphover-label-bg-color"
+                    >
+                      <Input
+                        id="sliphover-label-bg-color"
+                        type="color"
+                        value={toraSliphoverLabelBackgroundColor}
+                        onChange={(e) =>
+                          setToraSliphoverLabelBackgroundColor(e.target.value)
+                        }
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Label text" htmlFor="sliphover-label-text-color">
+                      <Input
+                        id="sliphover-label-text-color"
+                        type="color"
+                        value={toraSliphoverLabelTextColor}
+                        onChange={(e) =>
+                          setToraSliphoverLabelTextColor(e.target.value)
+                        }
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={toraSliphoverUseBackground}
+                      onChange={(e) =>
+                        setToraSliphoverUseBackground(e.target.checked)
+                      }
+                    />
+                    Use background color
+                  </label>
+                </div>
+              )}
               {gridType === "palmer-draggable" && (
                 <div className="space-y-3 rounded-md border p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1812,6 +1928,11 @@ function LayoutCard({
                 palmerUseCustomColors,
                 palmerBackgroundColor,
                 palmerTextColor,
+                toraSliphoverUseBackground,
+                toraSliphoverBackgroundColor,
+                toraSliphoverLabelSource,
+                toraSliphoverLabelBackgroundColor,
+                toraSliphoverLabelTextColor,
               }}
               height={560}
             />

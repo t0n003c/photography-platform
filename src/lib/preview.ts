@@ -18,6 +18,7 @@ export interface PreviewConfig {
     | "infinite-canvas"
     | "css-glitch"
     | "palmer-draggable"
+    | "tora-sliphover"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -67,6 +68,11 @@ export interface PreviewConfig {
   palmerUseCustomColors?: boolean;
   palmerBackgroundColor?: string;
   palmerTextColor?: string;
+  toraSliphoverUseBackground?: boolean;
+  toraSliphoverBackgroundColor?: string;
+  toraSliphoverLabelSource?: "auto" | "headline" | "alt" | "caption";
+  toraSliphoverLabelBackgroundColor?: string;
+  toraSliphoverLabelTextColor?: string;
 }
 
 export const PREVIEW_PARAM = "__pc";

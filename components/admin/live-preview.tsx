@@ -17,6 +17,7 @@ export type PreviewGrid =
   | "infinite-canvas"
   | "css-glitch"
   | "palmer-draggable"
+  | "tora-sliphover"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type PreviewSpacing = "tight" | "normal" | "airy";
@@ -80,6 +81,11 @@ export interface PreviewDraft {
   palmerUseCustomColors?: boolean;
   palmerBackgroundColor?: string;
   palmerTextColor?: string;
+  toraSliphoverUseBackground?: boolean;
+  toraSliphoverBackgroundColor?: string;
+  toraSliphoverLabelSource?: "auto" | "headline" | "alt" | "caption";
+  toraSliphoverLabelBackgroundColor?: string;
+  toraSliphoverLabelTextColor?: string;
 }
 
 type PreviewDevice = "desktop" | "mobile";

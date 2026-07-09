@@ -447,6 +447,7 @@ export const pageConfig = pgTable(
         "infinite-canvas",
         "css-glitch",
         "palmer-draggable",
+        "tora-sliphover",
         "carousel-3d-scroll",
         "alternative-scroll",
       ],

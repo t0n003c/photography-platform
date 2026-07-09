@@ -1805,6 +1805,134 @@ html.js .pr-root.is-enhanced {
   }
 }
 
+/* ToraMochie / Reflector Gallery Sliphover reference. Mirrors the theme's
+   modern_gallery: full-width dark masonry, 10px gutters, and a cursor-following
+   uppercase title chip on pointer hover. */
+.tora-sliphover {
+  --tora-sliphover-bg: #242625;
+  --tora-sliphover-label-bg: #111111;
+  --tora-sliphover-label-text: #f8f3df;
+  position: relative;
+  min-height: 100svh;
+  overflow-x: clip;
+  background: var(--tora-sliphover-bg);
+  color: var(--tora-sliphover-label-text);
+  padding: clamp(28px, 4vw, 48px) 15px clamp(80px, 12vw, 180px);
+}
+
+.tora-sliphover--plain {
+  background: transparent;
+}
+
+.tora-sliphover__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.tora-sliphover__column {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tora-sliphover__fallback {
+  column-count: 5;
+  column-gap: 10px;
+  width: 100%;
+}
+
+.tora-sliphover__item {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--tora-sliphover-bg) 90%, #000);
+  line-height: 1;
+  outline: none;
+}
+
+.tora-sliphover__fallback .tora-sliphover__item {
+  margin-bottom: 10px;
+  break-inside: avoid;
+}
+
+.tora-sliphover__item:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--tora-sliphover-bg),
+    0 0 0 4px var(--tora-sliphover-label-text);
+}
+
+.tora-sliphover__image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tora-sliphover__popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  display: inline-block;
+  max-width: min(280px, calc(100vw - 30px));
+  padding: 5px 15px 2px;
+  background: var(--tora-sliphover-label-bg);
+  color: var(--tora-sliphover-label-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: translate3d(
+    var(--tora-sliphover-x, 0),
+    var(--tora-sliphover-y, 0),
+    0
+  );
+}
+
+.tora-sliphover__popup.is-visible {
+  opacity: 1;
+}
+
+@media (max-width: 1024px) {
+  .tora-sliphover__fallback {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 600px) {
+  .tora-sliphover {
+    padding: 0 15px 64px;
+  }
+
+  .tora-sliphover__fallback {
+    column-count: 2;
+  }
+
+  .tora-sliphover__popup {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tora-sliphover__fallback {
+    column-count: 1;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .tora-sliphover__popup {
+    display: none;
+  }
+}
+
 /* ToraMochie / Reflector About Elements reference. The source uses Josefin Sans,
    29px uppercase headings with 3.77px tracking, and minimal JS for the Modern
    portrait; here the portrait uses CSS sticky as the progressive equivalent. */

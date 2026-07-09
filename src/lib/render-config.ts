@@ -15,6 +15,7 @@ export type GridType =
   | "infinite-canvas"
   | "css-glitch"
   | "palmer-draggable"
+  | "tora-sliphover"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -110,6 +111,16 @@ export interface PalmerDraggableConfig {
   textColor: string;
 }
 
+export type ToraSliphoverLabelSource = "auto" | "headline" | "alt" | "caption";
+
+export interface ToraSliphoverConfig {
+  useBackground: boolean;
+  backgroundColor: string;
+  labelSource: ToraSliphoverLabelSource;
+  labelBackgroundColor: string;
+  labelTextColor: string;
+}
+
 export interface RenderConfig {
   gridType: GridType;
   spacing: string;
@@ -124,6 +135,7 @@ export interface RenderConfig {
   depthGallery: DepthGalleryConfig;
   infiniteCanvas: InfiniteCanvasConfig;
   palmerDraggable: PalmerDraggableConfig;
+  toraSliphover: ToraSliphoverConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -198,6 +210,13 @@ function palmerItemSize(value: unknown): PalmerItemSize {
   return "medium";
 }
 
+function toraSliphoverLabelSource(value: unknown): ToraSliphoverLabelSource {
+  if (value === "headline" || value === "alt" || value === "caption" || value === "auto") {
+    return value;
+  }
+  return "auto";
+}
+
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
 
@@ -259,6 +278,11 @@ export async function resolveRenderConfig(
     palmerUseCustomColors?: boolean;
     palmerBackgroundColor?: string;
     palmerTextColor?: string;
+    toraSliphoverUseBackground?: boolean;
+    toraSliphoverBackgroundColor?: string;
+    toraSliphoverLabelSource?: ToraSliphoverLabelSource;
+    toraSliphoverLabelBackgroundColor?: string;
+    toraSliphoverLabelTextColor?: string;
   };
   const palmerUsesCustomColors =
     cfgJson.palmerUseCustomColors ??
@@ -328,6 +352,13 @@ export async function resolveRenderConfig(
       useCustomColors: palmerUsesCustomColors,
       backgroundColor: cfgJson.palmerBackgroundColor ?? DEFAULT_PALMER_BACKGROUND,
       textColor: cfgJson.palmerTextColor ?? DEFAULT_PALMER_TEXT,
+    },
+    toraSliphover: {
+      useBackground: cfgJson.toraSliphoverUseBackground ?? true,
+      backgroundColor: cfgJson.toraSliphoverBackgroundColor ?? "#242625",
+      labelSource: toraSliphoverLabelSource(cfgJson.toraSliphoverLabelSource),
+      labelBackgroundColor: cfgJson.toraSliphoverLabelBackgroundColor ?? "#111111",
+      labelTextColor: cfgJson.toraSliphoverLabelTextColor ?? "#f8f3df",
     },
   };
 
@@ -460,6 +491,24 @@ export async function resolveRenderConfig(
       backgroundColor:
         draft.palmerBackgroundColor ?? config.palmerDraggable.backgroundColor,
       textColor: draft.palmerTextColor ?? config.palmerDraggable.textColor,
+    },
+    toraSliphover: {
+      useBackground:
+        draft.toraSliphoverUseBackground ??
+        config.toraSliphover.useBackground,
+      backgroundColor:
+        draft.toraSliphoverBackgroundColor ??
+        config.toraSliphover.backgroundColor,
+      labelSource:
+        draft.toraSliphoverLabelSource !== undefined
+          ? toraSliphoverLabelSource(draft.toraSliphoverLabelSource)
+          : config.toraSliphover.labelSource,
+      labelBackgroundColor:
+        draft.toraSliphoverLabelBackgroundColor ??
+        config.toraSliphover.labelBackgroundColor,
+      labelTextColor:
+        draft.toraSliphoverLabelTextColor ??
+        config.toraSliphover.labelTextColor,
     },
   };
 }

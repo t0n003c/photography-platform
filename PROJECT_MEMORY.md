@@ -1737,6 +1737,13 @@ is gitignored):
   Playfair-adjacent typography, reference-like title sizes, urban divider spacing, CTA line
   buttons, responsive mobile sizing, and light/dark palette support. A local published smoke page
   at `/headings` exercises all variants.
+  ToraMochie Gallery Sliphover follow-up: `/gallery-sliphover/` is represented as a Gallery-tab
+  grid type named `tora-sliphover` (not a Pages Gallery block option). It mirrors the Reflector
+  `modern_gallery` source: full-width dark masonry, 10px gutters, 5/3/2/1 responsive columns,
+  original image ratios, lightbox click-through, and a desktop-only cursor-following uppercase
+  label chip sourced from headline/alt/caption. Gallery layout settings include background
+  enable/color plus hover label source, label background, and label text colors; preview drafts
+  carry these through `__pc`.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

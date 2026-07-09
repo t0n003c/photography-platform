@@ -20,6 +20,7 @@ export interface GridProps {
 }
 
 export type ToraPropsCaptionSource = "auto" | "headline" | "alt" | "caption";
+export type ToraSliphoverLabelSource = ToraPropsCaptionSource;
 
 export interface ToraPropsCatalogGridProps {
   photos: PhotoDTO[];
@@ -31,8 +32,21 @@ export interface ToraPropsCatalogGridProps {
   captionSource?: ToraPropsCaptionSource;
 }
 
+export interface ToraSliphoverGridProps {
+  photos: PhotoDTO[];
+  onOpen: (index: number) => void;
+  useBackground?: boolean;
+  backgroundColor?: string;
+  labelSource?: ToraSliphoverLabelSource;
+  labelBackgroundColor?: string;
+  labelTextColor?: string;
+}
+
 const TORA_PROPS_DEFAULT_BACKGROUND = "#252626";
 const TORA_PROPS_DEFAULT_CAPTION = "#edd8aa";
+const TORA_SLIPHOVER_DEFAULT_BACKGROUND = "#242625";
+const TORA_SLIPHOVER_DEFAULT_LABEL_BG = "#111111";
+const TORA_SLIPHOVER_DEFAULT_LABEL_TEXT = "#f8f3df";
 
 function ratio(photo: PhotoDTO): number {
   if (!photo.height) return 1;
@@ -62,6 +76,44 @@ function propsCaption(
     cleanText(photo.caption) ??
     `Photo ${index + 1}`
   );
+}
+
+function photoHref(photo: PhotoDTO): string {
+  return (
+    photo.variants.find((variant) => variant.sizeBucket === "large")?.url ??
+    photo.variants[0]?.url ??
+    "#"
+  );
+}
+
+function sliphoverLabel(
+  photo: PhotoDTO,
+  index: number,
+  source: ToraSliphoverLabelSource,
+): string {
+  return propsCaption(photo, index, source);
+}
+
+function sliphoverColumnCount(width: number) {
+  if (width <= 480) return 1;
+  if (width <= 600) return 2;
+  if (width <= 1024) return 3;
+  return 5;
+}
+
+function distributeSliphoverColumns(photos: PhotoDTO[], columnCount: number) {
+  const columns = Array.from({ length: columnCount }, () => ({
+    height: 0,
+    items: [] as { photo: PhotoDTO; index: number }[],
+  }));
+  photos.forEach((photo, index) => {
+    const shortest = columns.reduce((best, column, columnIndex) =>
+      column.height < columns[best].height ? columnIndex : best,
+    0);
+    columns[shortest].items.push({ photo, index });
+    columns[shortest].height += 1 / Math.max(0.2, ratio(photo)) + 0.04;
+  });
+  return columns;
 }
 
 function isDefaultColor(value: string | undefined, defaultValue: string): boolean {
@@ -175,6 +227,143 @@ export function ToraPropsCatalogGrid({
           })}
         </div>
       </div>
+    </section>
+  );
+}
+
+/** ToraMochie Gallery Sliphover reference: tight full-width masonry with a
+ * cursor-following uppercase title badge on desktop hover. */
+export function ToraSliphoverGrid({
+  photos,
+  onOpen,
+  useBackground = true,
+  backgroundColor = TORA_SLIPHOVER_DEFAULT_BACKGROUND,
+  labelSource = "auto",
+  labelBackgroundColor = TORA_SLIPHOVER_DEFAULT_LABEL_BG,
+  labelTextColor = TORA_SLIPHOVER_DEFAULT_LABEL_TEXT,
+}: ToraSliphoverGridProps) {
+  const rootRef = React.useRef<HTMLElement>(null);
+  const popupRef = React.useRef<HTMLSpanElement>(null);
+  const hoverLabelRef = React.useRef("");
+  const [mounted, setMounted] = React.useState(false);
+  const [columnCount, setColumnCount] = React.useState(5);
+  const [hoverLabel, setHoverLabel] = React.useState("");
+  const columns = React.useMemo(
+    () => distributeSliphoverColumns(photos, columnCount),
+    [photos, columnCount],
+  );
+  const hasCustomBackground = !isDefaultColor(
+    backgroundColor,
+    TORA_SLIPHOVER_DEFAULT_BACKGROUND,
+  );
+  const hasCustomLabelBackground = !isDefaultColor(
+    labelBackgroundColor,
+    TORA_SLIPHOVER_DEFAULT_LABEL_BG,
+  );
+  const hasCustomLabelText = !isDefaultColor(
+    labelTextColor,
+    TORA_SLIPHOVER_DEFAULT_LABEL_TEXT,
+  );
+  const style = {
+    ...(hasCustomBackground ? { "--tora-sliphover-bg": backgroundColor } : {}),
+    ...(hasCustomLabelBackground
+      ? { "--tora-sliphover-label-bg": labelBackgroundColor }
+      : {}),
+    ...(hasCustomLabelText
+      ? { "--tora-sliphover-label-text": labelTextColor }
+      : {}),
+  } as React.CSSProperties;
+
+  React.useEffect(() => {
+    setMounted(true);
+    const root = rootRef.current;
+    if (!root) return;
+    const update = () => {
+      setColumnCount(sliphoverColumnCount(root.clientWidth || window.innerWidth));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+
+  const showPopup = (
+    event: React.PointerEvent<HTMLElement>,
+    label: string,
+  ) => {
+    if (event.pointerType !== "mouse") return;
+    const root = rootRef.current;
+    const popup = popupRef.current;
+    if (!root || !popup) return;
+    const rect = root.getBoundingClientRect();
+    popup.style.setProperty("--tora-sliphover-x", `${event.clientX - rect.left + 15}px`);
+    popup.style.setProperty("--tora-sliphover-y", `${event.clientY - rect.top}px`);
+    if (hoverLabelRef.current !== label) {
+      hoverLabelRef.current = label;
+      setHoverLabel(label);
+    }
+  };
+
+  const hidePopup = () => {
+    hoverLabelRef.current = "";
+    setHoverLabel("");
+  };
+
+  const item = (photo: PhotoDTO, index: number) => {
+    const label = sliphoverLabel(photo, index, labelSource);
+    const href = photoHref(photo);
+    return (
+      <a
+        key={photo.id}
+        href={href}
+        aria-label={`View ${label}`}
+        className="tora-sliphover__item"
+        onClick={(event) => {
+          event.preventDefault();
+          onOpen(index);
+        }}
+        onPointerMove={(event) => showPopup(event, label)}
+        onPointerLeave={hidePopup}
+      >
+        <ResponsiveImage
+          photo={photo}
+          sizes="(min-width:1280px) 20vw, (min-width:768px) 33vw, (min-width:600px) 50vw, 100vw"
+          className="tora-sliphover__image"
+        />
+      </a>
+    );
+  };
+
+  return (
+    <section
+      ref={rootRef}
+      className={cn(
+        "tora-sliphover",
+        !useBackground && "tora-sliphover--plain",
+        hasCustomBackground && "tora-sliphover--custom-bg",
+      )}
+      style={style}
+    >
+      {!mounted ? (
+        <div className="tora-sliphover__fallback">
+          {photos.map((photo, index) => item(photo, index))}
+        </div>
+      ) : (
+        <div className="tora-sliphover__inner">
+          {columns.map((column, columnIndex) => (
+            <div className="tora-sliphover__column" key={columnIndex}>
+              {column.items.map(({ photo, index }) => item(photo, index))}
+            </div>
+          ))}
+        </div>
+      )}
+      <span
+        ref={popupRef}
+        className={cn("tora-sliphover__popup", hoverLabel && "is-visible")}
+        aria-hidden="true"
+      >
+        {hoverLabel}
+      </span>
     </section>
   );
 }

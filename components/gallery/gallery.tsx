@@ -10,8 +10,10 @@ import {
   MasonryGrid,
   MosaicGrid,
   ToraPropsCatalogGrid,
+  ToraSliphoverGrid,
   UniformGrid,
   type ToraPropsCaptionSource,
+  type ToraSliphoverLabelSource,
 } from "./grids";
 import { Carousel3D } from "./carousel-3d";
 import { ParallaxRing } from "./parallax-ring";
@@ -46,6 +48,7 @@ interface GalleryLayout {
     | "infinite-canvas"
     | "css-glitch"
     | "palmer-draggable"
+    | "tora-sliphover"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -118,6 +121,14 @@ interface GalleryLayout {
     useCustomColors?: boolean;
     backgroundColor?: string;
     textColor?: string;
+  };
+  /** ToraMochie Gallery Sliphover only: full-width masonry and hover label. */
+  toraSliphover?: {
+    useBackground?: boolean;
+    backgroundColor?: string;
+    labelSource?: ToraSliphoverLabelSource;
+    labelBackgroundColor?: string;
+    labelTextColor?: string;
   };
   /** ToraMochie Props catalog only: static inventory grid colors/captions. */
   toraProps?: {
@@ -443,6 +454,29 @@ export function Gallery({
           backgroundColor={layout.palmerDraggable?.backgroundColor}
           textColor={layout.palmerDraggable?.textColor}
           onOpen={openAt}
+        />
+        <Lightbox
+          photos={photos}
+          index={activeIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActiveIndex}
+        />
+      </div>
+    );
+  }
+
+  if (layout.gridType === "tora-sliphover") {
+    return (
+      <div>
+        <ToraSliphoverGrid
+          photos={photos}
+          onOpen={openAt}
+          useBackground={layout.toraSliphover?.useBackground}
+          backgroundColor={layout.toraSliphover?.backgroundColor}
+          labelSource={layout.toraSliphover?.labelSource}
+          labelBackgroundColor={layout.toraSliphover?.labelBackgroundColor}
+          labelTextColor={layout.toraSliphover?.labelTextColor}
         />
         <Lightbox
           photos={photos}

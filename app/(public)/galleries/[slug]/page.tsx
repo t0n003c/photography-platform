@@ -50,7 +50,8 @@ export default async function GalleryPage({
     layout.gridType === "depth-gallery" ||
     layout.gridType === "infinite-canvas" ||
     layout.gridType === "css-glitch" ||
-    layout.gridType === "palmer-draggable";
+    layout.gridType === "palmer-draggable" ||
+    layout.gridType === "tora-sliphover";
 
   return (
     <Container
