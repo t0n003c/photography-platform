@@ -1725,6 +1725,9 @@ is gitignored):
   (`minimalSliderAutoplay`, `minimalSliderAutoplayMs`) and mobile swipe support. Autoplay pauses
   on hover/focus/drag, respects reduced motion, and the mobile viewport uses `touch-action: pan-y`
   so vertical scrolling still wins unless the gesture is clearly horizontal.
+  Follow-up: the slide transition now keeps a temporary outgoing slide and direction state so
+  autoplay/next moves left and previous moves right with a true horizontal sliding animation
+  instead of a fade-only swap.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

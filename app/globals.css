@@ -574,12 +574,34 @@ html.js .pr-root.is-enhanced {
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  transition: opacity 600ms ease;
+  transform: translateX(var(--tora-minimal-enter-x, 100%));
+  transition:
+    transform 720ms cubic-bezier(0.77, 0, 0.18, 1),
+    opacity 720ms ease;
+  z-index: 0;
+}
+
+.tora-minimal-slider__viewport.is-forward {
+  --tora-minimal-enter-x: 100%;
+  --tora-minimal-exit-x: -100%;
+}
+
+.tora-minimal-slider__viewport.is-backward {
+  --tora-minimal-enter-x: -100%;
+  --tora-minimal-exit-x: 100%;
 }
 
 .tora-minimal-slider__slide.is-active {
   opacity: 1;
   pointer-events: auto;
+  transform: translateX(0);
+  z-index: 2;
+}
+
+.tora-minimal-slider__slide.is-leaving {
+  opacity: 1;
+  transform: translateX(var(--tora-minimal-exit-x, -100%));
+  z-index: 1;
 }
 
 .tora-minimal-slider__slide img {

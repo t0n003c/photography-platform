@@ -108,22 +108,42 @@ export function ToraMinimalSlider({
     [items],
   );
   const [active, setActive] = useState(0);
+  const [leavingIndex, setLeavingIndex] = useState<number | null>(null);
+  const [transitionDirection, setTransitionDirection] = useState<-1 | 1>(1);
   const [paused, setPaused] = useState(false);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const transitionTimer = useRef<number | null>(null);
   const reducedMotion = useReducedMotion();
   const max = slides.length;
   const hasMultiple = max > 1;
 
   useEffect(() => {
-    setActive((current) => (current >= max ? 0 : current));
-  }, [max]);
+    if (active < max) return;
+    setLeavingIndex(null);
+    setActive(0);
+  }, [active, max]);
+
+  useEffect(
+    () => () => {
+      if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    },
+    [],
+  );
 
   const go = useCallback(
     (direction: -1 | 1) => {
       if (!hasMultiple) return;
-      setActive((current) => (current + direction + max) % max);
+      const next = (active + direction + max) % max;
+      if (next === active) return;
+      if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+      setTransitionDirection(direction);
+      setLeavingIndex(active);
+      setActive(next);
+      transitionTimer.current = window.setTimeout(() => {
+        setLeavingIndex(null);
+      }, 760);
     },
-    [hasMultiple, max],
+    [active, hasMultiple, max],
   );
 
   useEffect(() => {
@@ -192,7 +212,10 @@ export function ToraMinimalSlider({
     >
       <div className="tora-minimal-slider__stage" aria-roledescription="carousel">
         <div
-          className="tora-minimal-slider__viewport"
+          className={cn(
+            "tora-minimal-slider__viewport",
+            transitionDirection === 1 ? "is-forward" : "is-backward",
+          )}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerCancel={(event) => {
@@ -204,10 +227,15 @@ export function ToraMinimalSlider({
         >
           {slides.map((slide, index) => {
             const isActive = index === active;
+            const isLeaving = index === leavingIndex;
             return (
               <article
                 key={slide.id}
-                className={cn("tora-minimal-slider__slide", isActive && "is-active")}
+                className={cn(
+                  "tora-minimal-slider__slide",
+                  isActive && "is-active",
+                  isLeaving && "is-leaving",
+                )}
                 aria-hidden={!isActive}
               >
                 {slide.photo ? (
