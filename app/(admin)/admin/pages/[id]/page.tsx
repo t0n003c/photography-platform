@@ -398,7 +398,22 @@ const GALLERY_TORA_PROPS_DEFAULTS = {
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
-    case "heading": return { id, type, text: "Heading", level: 2, align: "left", font: "sans", spacing: "normal" };
+    case "heading": return {
+      id,
+      type,
+      text: "Heading",
+      level: 2,
+      align: "left",
+      font: "sans",
+      spacing: "normal",
+      headingStyle: "default",
+      label: "",
+      body: "",
+      linkHref: "",
+      ctaLabel: "GET IN TOUCH",
+      ctaHref: "#",
+      markText: "R",
+    };
     case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
     case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
     case "image": return { id, type, photoId: null, width: "normal", rounded: true };
@@ -1487,21 +1502,123 @@ function LeafEditor({
 }) {
   const set = (patch: Partial<LeafBlock>) => onChange({ ...block, ...patch } as LeafBlock);
   switch (block.type) {
-    case "heading":
+    case "heading": {
+      const headingStyle = block.headingStyle ?? "default";
+      const isToraHeading = headingStyle !== "default";
+      const needsLabel = headingStyle === "tora-classic" || headingStyle === "tora-urban";
+      const needsBody =
+        headingStyle === "tora-creative" ||
+        headingStyle === "tora-simple" ||
+        headingStyle === "tora-urban";
+      const needsCta = headingStyle === "tora-creative" || headingStyle === "tora-simple";
+      const updateHeadingStyle = (nextStyle: typeof block.headingStyle) => {
+        set({
+          headingStyle: nextStyle,
+          ...((nextStyle ?? "default") !== "default" &&
+          headingStyle === "default" &&
+          (block.align ?? "left") === "left"
+            ? { align: "center" as const }
+            : {}),
+        });
+      };
+
       return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Text"><Input value={block.text} onChange={(e) => set({ text: e.target.value })} /></Field>
-          <Field label="Level">
-            <Select value={String(block.level)} onChange={(e) => set({ level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 })}>
-              <option value="1">H1</option><option value="2">H2</option><option value="3">H3</option>
-              <option value="4">H4</option><option value="5">H5</option><option value="6">H6</option>
-            </Select>
-          </Field>
-          <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
-          <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
-          <AlignField value={block.align} onChange={(align) => set({ align })} />
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Text">
+              <Input value={block.text} onChange={(e) => set({ text: e.target.value })} />
+            </Field>
+            <Field label="Style">
+              <Select
+                value={headingStyle}
+                onChange={(e) =>
+                  updateHeadingStyle(e.target.value as typeof block.headingStyle)
+                }
+              >
+                <option value="default">Default</option>
+                <option value="tora-modern">Tora modern</option>
+                <option value="tora-modern-link">Tora modern link</option>
+                <option value="tora-classic">Tora classic label</option>
+                <option value="tora-creative">Tora creative</option>
+                <option value="tora-simple">Tora simple</option>
+                <option value="tora-urban">Tora urban</option>
+              </Select>
+            </Field>
+            <Field label="Level">
+              <Select value={String(block.level)} onChange={(e) => set({ level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 })}>
+                <option value="1">H1</option><option value="2">H2</option><option value="3">H3</option>
+                <option value="4">H4</option><option value="5">H5</option><option value="6">H6</option>
+              </Select>
+            </Field>
+            <AlignField value={block.align} onChange={(align) => set({ align })} />
+            {!isToraHeading && (
+              <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+            )}
+            <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
+          </div>
+
+          {isToraHeading && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {needsLabel && (
+                <Field label="Small label">
+                  <Input
+                    value={block.label ?? ""}
+                    placeholder={headingStyle === "tora-urban" ? "KNOW ME BETTER" : "HEADINGS"}
+                    onChange={(e) => set({ label: e.target.value })}
+                  />
+                </Field>
+              )}
+              {headingStyle === "tora-modern-link" && (
+                <Field label="Title link">
+                  <Input
+                    value={block.linkHref ?? ""}
+                    placeholder="/contact"
+                    onChange={(e) => set({ linkHref: e.target.value })}
+                  />
+                </Field>
+              )}
+              {headingStyle === "tora-creative" && (
+                <Field label="Monogram text">
+                  <Input
+                    value={block.markText ?? "R"}
+                    maxLength={3}
+                    onChange={(e) => set({ markText: e.target.value })}
+                  />
+                </Field>
+              )}
+              {needsBody && (
+                <div className="sm:col-span-2">
+                  <Field label="Body text">
+                    <Textarea
+                      rows={4}
+                      value={block.body ?? ""}
+                      onChange={(e) => set({ body: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              )}
+              {needsCta && (
+                <>
+                  <Field label="Button label">
+                    <Input
+                      value={block.ctaLabel ?? ""}
+                      onChange={(e) => set({ ctaLabel: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Button link">
+                    <Input
+                      value={block.ctaHref ?? ""}
+                      placeholder="#"
+                      onChange={(e) => set({ ctaHref: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
+            </div>
+          )}
         </div>
       );
+    }
     case "subheading":
       return (
         <div className="grid gap-2 sm:grid-cols-2">

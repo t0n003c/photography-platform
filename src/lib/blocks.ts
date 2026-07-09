@@ -30,6 +30,15 @@ export const FontEnum = z.enum([
   "montserrat",
   "grotesk",
 ]);
+export const HeadingStyleEnum = z.enum([
+  "default",
+  "tora-modern",
+  "tora-modern-link",
+  "tora-classic",
+  "tora-creative",
+  "tora-simple",
+  "tora-urban",
+]);
 
 const id = z.string().min(1);
 const baseBlock = {
@@ -57,6 +66,13 @@ const HeadingBlock = z.object({
   // Vertical space around the block (overrides the default block rhythm) — lets
   // a heading sit tight against a following subheading.
   spacing: SpacingEnum.default("normal"),
+  headingStyle: HeadingStyleEnum.default("default").optional(),
+  label: z.string().default("").optional(),
+  body: z.string().default("").optional(),
+  linkHref: z.string().default("").optional(),
+  ctaLabel: z.string().default("GET IN TOUCH").optional(),
+  ctaHref: z.string().default("#").optional(),
+  markText: z.string().default("R").optional(),
 });
 const SubheadingBlock = z.object({
   ...baseBlock,

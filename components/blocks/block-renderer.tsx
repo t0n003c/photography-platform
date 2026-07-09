@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/container";
@@ -153,6 +153,59 @@ const DIVIDER_ALIGN: Record<string, string> = {
 };
 
 type PhotoMap = Map<string, PhotoDTO>;
+type HeadingBlockData = Extract<LeafBlock, { type: "heading" }>;
+type ToraHeadingStyle = Exclude<
+  NonNullable<HeadingBlockData["headingStyle"]>,
+  "default"
+>;
+type ToraHeadingBlockData = HeadingBlockData & {
+  headingStyle: ToraHeadingStyle;
+};
+
+const TORA_HEADING_STYLES = new Set<string>([
+  "tora-modern",
+  "tora-modern-link",
+  "tora-classic",
+  "tora-creative",
+  "tora-simple",
+  "tora-urban",
+]);
+
+function isToraHeading(block: Block): block is ToraHeadingBlockData {
+  return (
+    block.type === "heading" &&
+    TORA_HEADING_STYLES.has(block.headingStyle ?? "default")
+  );
+}
+
+function isExternalHref(href: string) {
+  return /^(https?:)?\/\//.test(href) || href.startsWith("mailto:") || href.startsWith("tel:");
+}
+
+function OptionalLink({
+  href,
+  className,
+  children,
+}: {
+  href?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const cleanHref = href?.trim();
+  if (!cleanHref) return <span className={className}>{children}</span>;
+  if (isExternalHref(cleanHref)) {
+    return (
+      <a href={cleanHref} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={cleanHref} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 function clampPx(value: number | undefined, fallback: number, max: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
@@ -249,6 +302,59 @@ function Paragraphs({ text, className }: { text: string; className?: string }) {
   );
 }
 
+function ToraHeadingView({ block }: { block: HeadingBlockData }) {
+  const style = (block.headingStyle ?? "tora-modern") as ToraHeadingStyle;
+  const variant = style.replace("tora-", "");
+  const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  const title = block.text.trim() || "Heading";
+  const label = block.label?.trim();
+  const body = block.body?.trim();
+  const ctaLabel = block.ctaLabel?.trim();
+  const markText = (block.markText?.trim() || "R").slice(0, 3);
+
+  return (
+    <section
+      className={cn(
+        "tora-heading",
+        `tora-heading--${variant}`,
+        `tora-heading--align-${block.align ?? "center"}`,
+      )}
+    >
+      {style === "tora-creative" && (
+        <div className="tora-heading__mark" aria-hidden="true">
+          <span className="tora-heading__mark-ring">REFLECTOR STUDIO</span>
+          <span className="tora-heading__mark-letter">{markText}</span>
+        </div>
+      )}
+      {(style === "tora-classic" || style === "tora-urban") && label && (
+        <p className="tora-heading__label">{label}</p>
+      )}
+      {style === "tora-modern-link" ? (
+        <OptionalLink href={block.linkHref} className="tora-heading__title">
+          {title}
+        </OptionalLink>
+      ) : (
+        <Tag className="tora-heading__title">{title}</Tag>
+      )}
+      {(style === "tora-creative" ||
+        style === "tora-simple" ||
+        style === "tora-urban") &&
+        body && (
+          <div className="tora-heading__body">
+            <Paragraphs text={body} />
+          </div>
+        )}
+      {(style === "tora-creative" || style === "tora-simple") && ctaLabel && (
+        <div className="tora-heading__button">
+          <OptionalLink href={block.ctaHref || "#"} className="tora-heading__cta">
+            {ctaLabel}
+          </OptionalLink>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function LeafView({
   block,
   photoMap,
@@ -260,6 +366,9 @@ function LeafView({
 }) {
   switch (block.type) {
     case "heading": {
+      if (isToraHeading(block)) {
+        return <ToraHeadingView block={block} />;
+      }
       const cls = `font-semibold tracking-tight ${FONT[block.font] ?? "font-sans"} ${ALIGN[block.align]} ${HEADING_SIZE[block.level] ?? "text-2xl"}`;
       const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
       return <Tag className={cls}>{block.text}</Tag>;
@@ -778,6 +887,15 @@ function BlockView({ block, photoMap, preview }: { block: Block; photoMap: Photo
 
   if (isFullBleed(block)) {
     return <LeafView block={block} photoMap={photoMap} preview={preview} />;
+  }
+  if (isToraHeading(block)) {
+    return (
+      <Container className={blockPy(block)}>
+        <div className="mx-auto max-w-6xl">
+          <LeafView block={block} photoMap={photoMap} preview={preview} />
+        </div>
+      </Container>
+    );
   }
   if (block.type === "contactForm") {
     return (

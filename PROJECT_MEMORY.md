@@ -1729,6 +1729,14 @@ is gitignored):
   Follow-up: the slide transition now keeps a temporary outgoing slide and direction state so
   autoplay/next moves left and previous moves right with a true horizontal sliding animation
   instead of a fade-only swap.
+  ToraMochie headings follow-up: the `/headings/` reference is represented inside the existing
+  Pages Heading block rather than a new block type. Heading styles now include Default plus
+  Tora modern, modern link, classic label, creative, simple, and urban variants with conditional
+  editor fields for small label, linked title, monogram mark, body text, and CTA. Existing default
+  headings keep the old renderer; Tora variants use isolated `.tora-heading` CSS with Josefin /
+  Playfair-adjacent typography, reference-like title sizes, urban divider spacing, CTA line
+  buttons, responsive mobile sizing, and light/dark palette support. A local published smoke page
+  at `/headings` exercises all variants.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with
