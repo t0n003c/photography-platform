@@ -205,8 +205,6 @@ export function ToraMinimalSlider({
   return (
     <section
       className={cn("tora-minimal-slider", `tora-minimal-slider--${height}`)}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >

@@ -1723,8 +1723,9 @@ is gitignored):
   page at `/minimal-slider` uses four existing Lost Valley photos for visual testing.
   Follow-up: Minimal Slider now has banner-specific autoplay controls
   (`minimalSliderAutoplay`, `minimalSliderAutoplayMs`) and mobile swipe support. Autoplay pauses
-  on hover/focus/drag, respects reduced motion, and the mobile viewport uses `touch-action: pan-y`
-  so vertical scrolling still wins unless the gesture is clearly horizontal.
+  on focus/drag, keeps running during desktop hover/mouse movement, respects reduced motion, and
+  the mobile viewport uses `touch-action: pan-y` so vertical scrolling still wins unless the
+  gesture is clearly horizontal.
   Follow-up: the slide transition now keeps a temporary outgoing slide and direction state so
   autoplay/next moves left and previous moves right with a true horizontal sliding animation
   instead of a fade-only swap.
