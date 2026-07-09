@@ -1721,6 +1721,10 @@ is gitignored):
   subtitle, uppercase Josefin headline, bordered CTA, per-slide photo/subtitle/headline/button
   fields in the Pages editor, and reduced-motion transition suppression. A local published smoke
   page at `/minimal-slider` uses four existing Lost Valley photos for visual testing.
+  Follow-up: Minimal Slider now has banner-specific autoplay controls
+  (`minimalSliderAutoplay`, `minimalSliderAutoplayMs`) and mobile swipe support. Autoplay pauses
+  on hover/focus/drag, respects reduced motion, and the mobile viewport uses `touch-action: pan-y`
+  so vertical scrolling still wins unless the gesture is clearly horizontal.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

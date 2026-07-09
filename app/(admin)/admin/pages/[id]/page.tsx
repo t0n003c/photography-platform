@@ -514,7 +514,7 @@ function makeBlock(type: BlockType): Block {
       accentColor: "#8b5e34",
     };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS };
-    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
+    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -5186,6 +5186,8 @@ function LeafEditor({
               : Array.from({ length: 4 }, (_, index) =>
                   makeBannerSlide(index, bannerPhotoIds[index] ?? null),
                 );
+          patch.minimalSliderAutoplay ??= false;
+          patch.minimalSliderAutoplayMs ??= 4500;
         }
         set(patch);
       };
@@ -5408,6 +5410,33 @@ function LeafEditor({
                   <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
                     <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
                   </Select>
+                </Field>
+                <Field label="Autoplay">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.minimalSliderAutoplay ?? false}
+                      onChange={(e) => set({ minimalSliderAutoplay: e.target.checked })}
+                    />
+                    Auto advance slides
+                  </label>
+                </Field>
+                <Field label="Autoplay speed">
+                  <Input
+                    type="number"
+                    min={1200}
+                    max={12000}
+                    step={100}
+                    value={block.minimalSliderAutoplayMs ?? 4500}
+                    onChange={(e) =>
+                      set({
+                        minimalSliderAutoplayMs: Math.max(
+                          1200,
+                          Math.min(12000, pxInput(e.target.value)),
+                        ),
+                      })
+                    }
+                  />
                 </Field>
               </div>
             </SettingsGroup>

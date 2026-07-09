@@ -350,6 +350,8 @@ const BannerBlock = z.object({
   photoIds: z.array(z.string()).default([]),
   // Optional per-slide content used by ToraMochie minimal slider.
   slides: z.array(BannerSlide).default([]),
+  minimalSliderAutoplay: z.boolean().default(false),
+  minimalSliderAutoplayMs: z.number().int().min(1200).max(12000).default(4500),
   eyebrow: z.string().default(""),
   typewriterWords: z.string().default(""),
   headline: z.string().default(""),

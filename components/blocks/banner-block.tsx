@@ -690,7 +690,14 @@ function ToraMochieBanner({
         photo,
     }));
 
-    return <ToraMinimalSlider items={sliderItems} height={block.height} />;
+    return (
+      <ToraMinimalSlider
+        items={sliderItems}
+        height={block.height}
+        autoplay={block.minimalSliderAutoplay ?? false}
+        autoplayMs={block.minimalSliderAutoplayMs ?? 4500}
+      />
+    );
   }
 
   if (layout === "toramochie-full-wall") {

@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+  type ReactNode,
+  type TouchEvent,
+} from "react";
 import Link from "next/link";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import type { PhotoDTO } from "@/src/db/queries/photos";
@@ -13,6 +22,20 @@ export interface ToraMinimalSliderItem {
   buttonLabel: string;
   buttonHref: string;
   photo?: PhotoDTO;
+}
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return reduced;
 }
 
 function isExternalHref(href: string) {
@@ -61,9 +84,13 @@ function SliderLink({
 export function ToraMinimalSlider({
   items,
   height,
+  autoplay = false,
+  autoplayMs = 4500,
 }: {
   items: ToraMinimalSliderItem[];
   height: "short" | "tall" | "full";
+  autoplay?: boolean;
+  autoplayMs?: number;
 }) {
   const slides = useMemo(
     () =>
@@ -81,7 +108,11 @@ export function ToraMinimalSlider({
     [items],
   );
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const reducedMotion = useReducedMotion();
   const max = slides.length;
+  const hasMultiple = max > 1;
 
   useEffect(() => {
     setActive((current) => (current >= max ? 0 : current));
@@ -89,15 +120,88 @@ export function ToraMinimalSlider({
 
   const go = useCallback(
     (direction: -1 | 1) => {
+      if (!hasMultiple) return;
       setActive((current) => (current + direction + max) % max);
     },
-    [max],
+    [hasMultiple, max],
   );
 
+  useEffect(() => {
+    if (!autoplay || paused || reducedMotion || !hasMultiple) return;
+    const delay = Math.max(1200, Math.min(12000, autoplayMs));
+    const timer = window.setInterval(() => go(1), delay);
+    return () => window.clearInterval(timer);
+  }, [autoplay, autoplayMs, go, hasMultiple, paused, reducedMotion]);
+
+  const finishSwipe = useCallback(
+    (clientX: number, clientY: number) => {
+      const start = pointerStart.current;
+      pointerStart.current = null;
+      setPaused(false);
+      if (!start) return;
+      const deltaX = clientX - start.x;
+      const deltaY = clientY - start.y;
+      if (Math.abs(deltaX) < 44 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return;
+      if (deltaX < 0) go(1);
+      else go(-1);
+    },
+    [go],
+  );
+
+  const cancelSwipe = () => {
+    pointerStart.current = null;
+    setPaused(false);
+  };
+
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") return;
+    if (!hasMultiple) return;
+    pointerStart.current = { x: event.clientX, y: event.clientY };
+    setPaused(true);
+  };
+
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") return;
+    finishSwipe(event.clientX, event.clientY);
+  };
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (!hasMultiple) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    pointerStart.current = { x: touch.clientX, y: touch.clientY };
+    setPaused(true);
+  };
+
+  const onTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      cancelSwipe();
+      return;
+    }
+    finishSwipe(touch.clientX, touch.clientY);
+  };
+
   return (
-    <section className={cn("tora-minimal-slider", `tora-minimal-slider--${height}`)}>
+    <section
+      className={cn("tora-minimal-slider", `tora-minimal-slider--${height}`)}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="tora-minimal-slider__stage" aria-roledescription="carousel">
-        <div className="tora-minimal-slider__viewport">
+        <div
+          className="tora-minimal-slider__viewport"
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={(event) => {
+            if (event.pointerType !== "touch") cancelSwipe();
+          }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={cancelSwipe}
+        >
           {slides.map((slide, index) => {
             const isActive = index === active;
             return (

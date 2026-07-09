@@ -23,6 +23,8 @@ const BANNER_PRISMA_DEFAULTS = {
   agencyVideoUrl: "",
   agencyAccentText: "",
   slides: [],
+  minimalSliderAutoplay: false,
+  minimalSliderAutoplayMs: 4500,
 };
 
 const GALLERY_TORA_PROPS_DEFAULTS = {
