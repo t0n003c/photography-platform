@@ -1715,6 +1715,12 @@ is gitignored):
   should be composed with the existing Heading block when needed. Light/dark and responsive CSS
   were verified by typecheck, lint, unit tests, production build, and a compiled-CSS Playwright
   fixture because Docker/DB sockets were unhealthy during implementation.
+  ToraMochie minimal slider follow-up: added Banner block layout
+  `toramochie-minimal-slider` for the `/minimal-slider/` reference page. It renders a full-height
+  framed fading image slider with desktop side arrows, mobile arrows hidden, Playfair italic
+  subtitle, uppercase Josefin headline, bordered CTA, per-slide photo/subtitle/headline/button
+  fields in the Pages editor, and reduced-motion transition suppression. A local published smoke
+  page at `/minimal-slider` uses four existing Lost Valley photos for visual testing.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

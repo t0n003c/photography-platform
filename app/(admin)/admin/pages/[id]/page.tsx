@@ -369,6 +369,24 @@ function makeCustomLinkItem(index = 0) {
   };
 }
 
+function makeBannerSlide(index = 0, photoId: string | null = null) {
+  const defaults = [
+    ["for couples", "Another way"],
+    ["for models", "Human feel"],
+    ["for travels", "Ocean song"],
+    ["for pleasure", "Golden place"],
+  ] as const;
+  const [subtitle, headline] = defaults[index % defaults.length];
+  return {
+    id: newBlockId(),
+    photoId,
+    subtitle,
+    headline,
+    buttonLabel: "Read More",
+    buttonHref: "#",
+  };
+}
+
 const GALLERY_TORA_PROPS_DEFAULTS = {
   toraPropsShowBackground: true,
   toraPropsBackgroundColor: "#252626",
@@ -496,7 +514,7 @@ function makeBlock(type: BlockType): Block {
       accentColor: "#8b5e34",
     };
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS };
-    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
+    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -1067,6 +1085,9 @@ function blockSummary(block: Block): string {
     case "gallery":
       return `${block.source} · ${block.gridType}`;
     case "banner":
+      if (block.layout === "toramochie-minimal-slider") {
+        return `Tora minimal slider · ${(block.slides ?? []).length} slides`;
+      }
       return block.headline || block.source;
     case "testimonials":
       return `${block.items.length} reviews`;
@@ -5120,12 +5141,24 @@ function LeafEditor({
       const isToraMochie = block.layout?.startsWith("toramochie-") ?? false;
       const isToraWall = block.layout === "toramochie-full-wall";
       const isToraWedding = block.layout === "toramochie-wedding-studio";
+      const isToraMinimal = block.layout === "toramochie-minimal-slider";
       const isToraMultiPhoto = isToraWall || isToraWedding;
       const isSpecialHero = isPrisma || isAgency;
       const bannerPhotoIds = block.photoIds ?? [];
+      const bannerSlides = block.slides ?? [];
       const selectedBannerPhotos = bannerPhotoIds
         .map((photoId) => photos.find((photo) => photo.id === photoId))
         .filter((photo): photo is PhotoOption => Boolean(photo));
+      const updateBannerSlide = (
+        index: number,
+        patch: Partial<(typeof bannerSlides)[number]>,
+      ) => {
+        set({
+          slides: bannerSlides.map((slide, slideIndex) =>
+            slideIndex === index ? { ...slide, ...patch } : slide,
+          ),
+        });
+      };
       const updateBannerLayout = (layout: typeof block.layout) => {
         const patch: Partial<LeafBlock> = { layout };
         if (layout === "toramochie-full-wall") {
@@ -5142,6 +5175,17 @@ function LeafEditor({
           patch.ctaHref = block.ctaHref || "#";
           patch.overlay = "none";
           patch.height = block.height === "short" ? "tall" : block.height;
+        } else if (layout === "toramochie-minimal-slider") {
+          patch.height = "full";
+          patch.overlay = "none";
+          patch.effect = "none";
+          patch.source = "photo";
+          patch.slides =
+            bannerSlides.length > 0
+              ? bannerSlides
+              : Array.from({ length: 4 }, (_, index) =>
+                  makeBannerSlide(index, bannerPhotoIds[index] ?? null),
+                );
         }
         set(patch);
       };
@@ -5151,6 +5195,39 @@ function LeafEditor({
             ? bannerPhotoIds.filter((id) => id !== photoId)
             : [...bannerPhotoIds, photoId],
         });
+      const layoutField = (
+        <Field label="Layout">
+          <Select
+            value={block.layout ?? "bottom-left"}
+            onChange={(e) => updateBannerLayout(e.target.value as typeof block.layout)}
+          >
+            <optgroup label="Standard">
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-right">Bottom right</option>
+              <option value="center">Centered</option>
+              <option value="split-left">Split · image left</option>
+              <option value="split-right">Split · image right</option>
+              <option value="split-top">Split · image top</option>
+              <option value="split-bottom">Split · image bottom</option>
+            </optgroup>
+            <optgroup label="Hero references">
+              <option value="prisma-hero">Prisma hero</option>
+              <option value="agency-viral-hero">Agency viral hero</option>
+            </optgroup>
+            <optgroup label="ToraMochie image banner">
+              <option value="toramochie-modern">Modern</option>
+              <option value="toramochie-creative">Creative</option>
+              <option value="toramochie-simple">Simple</option>
+              <option value="toramochie-full-wall">Full wall</option>
+              <option value="toramochie-bottom-text">Bottom text</option>
+              <option value="toramochie-only-image">Only image</option>
+              <option value="toramochie-classic">Classic</option>
+              <option value="toramochie-wedding-studio">Wedding studio</option>
+              <option value="toramochie-minimal-slider">Minimal slider</option>
+            </optgroup>
+          </Select>
+        </Field>
+      );
       // Source / darken / layout trio (top-left in both source modes).
       const cfg = (
         <>
@@ -5168,7 +5245,7 @@ function LeafEditor({
                 <option value="dark">Strong darken</option>
               </Select>
             </Field>
-          ) : !isSpecialHero && (
+          ) : !isSpecialHero && !isToraMinimal && (
             <Field label="Darken image">
               <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
                 <option value="auto">Auto (only behind text)</option>
@@ -5177,36 +5254,7 @@ function LeafEditor({
               </Select>
             </Field>
           )}
-          <Field label="Layout">
-            <Select
-              value={block.layout ?? "bottom-left"}
-              onChange={(e) => updateBannerLayout(e.target.value as typeof block.layout)}
-            >
-              <optgroup label="Standard">
-                <option value="bottom-left">Bottom left</option>
-                <option value="bottom-right">Bottom right</option>
-                <option value="center">Centered</option>
-                <option value="split-left">Split · image left</option>
-                <option value="split-right">Split · image right</option>
-                <option value="split-top">Split · image top</option>
-                <option value="split-bottom">Split · image bottom</option>
-              </optgroup>
-              <optgroup label="Hero references">
-                <option value="prisma-hero">Prisma hero</option>
-                <option value="agency-viral-hero">Agency viral hero</option>
-              </optgroup>
-              <optgroup label="ToraMochie image banner">
-                <option value="toramochie-modern">Modern</option>
-                <option value="toramochie-creative">Creative</option>
-                <option value="toramochie-simple">Simple</option>
-                <option value="toramochie-full-wall">Full wall</option>
-                <option value="toramochie-bottom-text">Bottom text</option>
-                <option value="toramochie-only-image">Only image</option>
-                <option value="toramochie-classic">Classic</option>
-                <option value="toramochie-wedding-studio">Wedding studio</option>
-              </optgroup>
-            </Select>
-          </Field>
+          {layoutField}
         </>
       );
       const focalField = (
@@ -5350,6 +5398,144 @@ function LeafEditor({
           )}
         </>
       );
+      if (isToraMinimal) {
+        return (
+          <div className="space-y-4">
+            <SettingsGroup title="Minimal slider">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {layoutField}
+                <Field label="Height">
+                  <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
+                    <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+                  </Select>
+                </Field>
+              </div>
+            </SettingsGroup>
+
+            <SettingsGroup title="Slides">
+              <div className="mb-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    set({
+                      slides: [
+                        ...bannerSlides,
+                        makeBannerSlide(bannerSlides.length),
+                      ],
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4" />
+                  Add slide
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {bannerSlides.length === 0 && (
+                  <p className="rounded-md border border-dashed px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">
+                    Add slides to set per-photo titles and buttons.
+                  </p>
+                )}
+                {bannerSlides.map((slide, index) => {
+                  const photo = photos.find((item) => item.id === slide.photoId);
+                  return (
+                    <div key={slide.id} className="space-y-3 rounded-lg border p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 text-sm font-medium">
+                          Slide {index + 1}
+                          {slide.headline ? ` · ${slide.headline}` : ""}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === 0}
+                          onClick={() => set({ slides: swapAt(bannerSlides, index, index - 1) })}
+                          aria-label="Move slide up"
+                          className="h-8 w-8"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === bannerSlides.length - 1}
+                          onClick={() => set({ slides: swapAt(bannerSlides, index, index + 1) })}
+                          aria-label="Move slide down"
+                          className="h-8 w-8"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            set({
+                              slides: bannerSlides.filter((_, slideIndex) => slideIndex !== index),
+                            })
+                          }
+                          aria-label="Remove slide"
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3 lg:grid-cols-[13rem_1fr]">
+                        <Field label="Photo">
+                          <PhotoPicker
+                            photos={photos}
+                            value={slide.photoId ?? null}
+                            onChange={(photoId) => updateBannerSlide(index, { photoId })}
+                            containerClassName="max-h-52"
+                          />
+                        </Field>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Field label="Subtitle">
+                            <Input
+                              value={slide.subtitle ?? ""}
+                              onChange={(e) => updateBannerSlide(index, { subtitle: e.target.value })}
+                              placeholder="for couples"
+                            />
+                          </Field>
+                          <Field label="Headline">
+                            <Input
+                              value={slide.headline ?? ""}
+                              onChange={(e) => updateBannerSlide(index, { headline: e.target.value })}
+                              placeholder="Another way"
+                            />
+                          </Field>
+                          <Field label="Button label">
+                            <Input
+                              value={slide.buttonLabel ?? ""}
+                              onChange={(e) => updateBannerSlide(index, { buttonLabel: e.target.value })}
+                              placeholder="Read More"
+                            />
+                          </Field>
+                          <Field label="Button link">
+                            <Input
+                              value={slide.buttonHref ?? ""}
+                              onChange={(e) => updateBannerSlide(index, { buttonHref: e.target.value })}
+                              placeholder="#"
+                            />
+                          </Field>
+                        </div>
+                      </div>
+                      {photo && (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          Selected: {photo.label}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </SettingsGroup>
+          </div>
+        );
+      }
       // Featured: no photo picker, so put the (tall) Image position beside the
       // source/darken/layout trio, then flow zoom + text below.
       if (block.source === "featured") {

@@ -330,7 +330,16 @@ export const BannerLayoutEnum = z.enum([
   "toramochie-only-image",
   "toramochie-classic",
   "toramochie-wedding-studio",
+  "toramochie-minimal-slider",
 ]);
+const BannerSlide = z.object({
+  id,
+  photoId: z.string().nullable().default(null),
+  subtitle: z.string().default("for couples"),
+  headline: z.string().default("Another way"),
+  buttonLabel: z.string().default("Read More"),
+  buttonHref: z.string().default("#"),
+});
 const BannerBlock = z.object({
   ...baseBlock,
   type: z.literal("banner"),
@@ -339,6 +348,8 @@ const BannerBlock = z.object({
   photoId: z.string().nullable().default(null),
   // Optional multi-photo set used by collage-style banner layouts.
   photoIds: z.array(z.string()).default([]),
+  // Optional per-slide content used by ToraMochie minimal slider.
+  slides: z.array(BannerSlide).default([]),
   eyebrow: z.string().default(""),
   typewriterWords: z.string().default(""),
   headline: z.string().default(""),
@@ -966,6 +977,9 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     if (b.type === "banner") {
       if (b.photoId) ids.push(b.photoId);
       ids.push(...(b.photoIds ?? []));
+      for (const slide of b.slides ?? []) {
+        if (slide.photoId) ids.push(slide.photoId);
+      }
     }
     if (b.type === "testimonials") {
       for (const item of b.items) {

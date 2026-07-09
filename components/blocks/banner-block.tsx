@@ -10,6 +10,10 @@ import {
   ToraMochieTypedHeadline,
   ToraMochieWallGrid,
 } from "@/components/blocks/toramochie-wall-grid";
+import {
+  ToraMinimalSlider,
+  type ToraMinimalSliderItem,
+} from "@/components/blocks/tora-minimal-slider";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -654,6 +658,41 @@ function ToraMochieBanner({
 }) {
   const layout = block.layout;
 
+  if (layout === "toramochie-minimal-slider") {
+    const photoById = new Map(photos.map((item) => [item.id, item]));
+    const fallbackPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
+    const defaultCopy = [
+      ["for couples", "Another way"],
+      ["for models", "Human feel"],
+      ["for travels", "Ocean song"],
+      ["for pleasure", "Golden place"],
+    ] as const;
+    const sourceSlides =
+      (block.slides ?? []).length > 0
+        ? block.slides
+        : fallbackPhotos.map((item, index) => ({
+            id: `${item.id}-${index}`,
+            photoId: item.id,
+            subtitle: defaultCopy[index % defaultCopy.length][0],
+            headline: defaultCopy[index % defaultCopy.length][1],
+            buttonLabel: block.ctaLabel || "Read More",
+            buttonHref: block.ctaHref || "#",
+          }));
+    const sliderItems: ToraMinimalSliderItem[] = sourceSlides.map((slide, index) => ({
+      id: slide.id,
+      subtitle: slide.subtitle || defaultCopy[index % defaultCopy.length][0],
+      headline: slide.headline || defaultCopy[index % defaultCopy.length][1],
+      buttonLabel: slide.buttonLabel || block.ctaLabel || "Read More",
+      buttonHref: slide.buttonHref || block.ctaHref || "#",
+      photo:
+        (slide.photoId ? photoById.get(slide.photoId) : undefined) ??
+        fallbackPhotos[index % Math.max(fallbackPhotos.length, 1)] ??
+        photo,
+    }));
+
+    return <ToraMinimalSlider items={sliderItems} height={block.height} />;
+  }
+
   if (layout === "toramochie-full-wall") {
     const wallPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
     return (
@@ -908,6 +947,8 @@ export async function BannerBlock({
           ? 24
           : block.layout === "toramochie-wedding-studio"
             ? 2
+            : block.layout === "toramochie-minimal-slider"
+              ? 4
             : 1;
       const featured = await getFeaturedPhotos(
         featuredCount,
@@ -915,7 +956,8 @@ export async function BannerBlock({
       resolved = featured[0];
       if (
         (block.layout === "toramochie-full-wall" ||
-          block.layout === "toramochie-wedding-studio") &&
+          block.layout === "toramochie-wedding-studio" ||
+          block.layout === "toramochie-minimal-slider") &&
         wallPhotos.length === 0
       ) {
         wallPhotos = featured;

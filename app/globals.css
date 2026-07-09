@@ -429,7 +429,7 @@ html.js .pr-root.is-enhanced {
   gap: 30px;
   grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.78fr);
   margin: 0 auto;
-  width: min(100% - 30px, 1270px);
+  width: min(100% - 24px, 1520px);
 }
 
 .tora-wedding-hero__copy {
@@ -507,6 +507,205 @@ html.js .pr-root.is-enhanced {
 
 .tora-wedding-hero__image img {
   object-fit: cover;
+}
+
+.tora-minimal-slider {
+  --tora-minimal-bg: #f8f6f5;
+  --tora-minimal-frame-bg: #252626;
+  --tora-minimal-text: #f7f7f7;
+  --tora-minimal-accent: #9a8351;
+  --tora-minimal-arrow: #252626;
+  background: var(--tora-minimal-bg);
+  color: var(--tora-minimal-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  min-height: 86svh;
+  overflow: hidden;
+}
+
+.dark .tora-minimal-slider {
+  --tora-minimal-bg: #252626;
+  --tora-minimal-accent: #edd8aa;
+  --tora-minimal-arrow: #edd8aa;
+}
+
+.tora-minimal-slider--short {
+  min-height: 68svh;
+}
+
+.tora-minimal-slider--full {
+  min-height: calc(100svh - 4rem);
+}
+
+.tora-minimal-slider__stage {
+  box-sizing: border-box;
+  min-height: inherit;
+  padding: 5rem clamp(5rem, 8.75vw, 13rem);
+  position: relative;
+}
+
+.tora-minimal-slider__viewport {
+  background: var(--tora-minimal-frame-bg);
+  height: calc(86svh - 10rem);
+  min-height: 34rem;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.tora-minimal-slider--short .tora-minimal-slider__viewport {
+  height: calc(68svh - 10rem);
+  min-height: 28rem;
+}
+
+.tora-minimal-slider--full .tora-minimal-slider__viewport {
+  height: calc(100svh - 14rem);
+  min-height: 38rem;
+}
+
+.tora-minimal-slider__slide {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 600ms ease;
+}
+
+.tora-minimal-slider__slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tora-minimal-slider__slide img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-minimal-slider__shade {
+  background: rgb(0 0 0 / 0.2);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tora-minimal-slider__caption {
+  bottom: 0;
+  color: var(--tora-minimal-text);
+  left: 0;
+  padding: 50px;
+  position: absolute;
+  width: min(100%, 60rem);
+}
+
+.tora-minimal-slider__subtitle {
+  color: var(--tora-minimal-text);
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 30px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tora-minimal-slider__title {
+  color: var(--tora-minimal-text);
+  font-size: 70px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  line-height: 1.3;
+  margin: 20px 0 17px;
+  text-transform: uppercase;
+}
+
+.tora-minimal-slider__button {
+  border: 1px solid color-mix(in oklab, var(--tora-minimal-text) 72%, transparent);
+  color: var(--tora-minimal-accent);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 4.2px;
+  line-height: 1.2;
+  min-width: 180px;
+  padding: 17px 34px 15px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 350ms ease,
+    border-color 350ms ease,
+    color 350ms ease;
+}
+
+.tora-minimal-slider__button:hover {
+  background: color-mix(in oklab, var(--tora-minimal-text) 12%, transparent);
+  border-color: var(--tora-minimal-text);
+}
+
+.tora-minimal-slider__arrow {
+  color: transparent;
+  height: 3rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition:
+    opacity 350ms ease,
+    transform 350ms ease;
+  width: 3rem;
+  z-index: 5;
+}
+
+.tora-minimal-slider__arrow::before {
+  border-color: var(--tora-minimal-arrow);
+  border-style: solid;
+  content: "";
+  display: block;
+  height: 14px;
+  opacity: 0.42;
+  position: absolute;
+  top: calc(50% - 7px);
+  transition: opacity 350ms ease;
+  width: 14px;
+}
+
+.tora-minimal-slider__arrow.is-prev {
+  left: clamp(1rem, 3.5vw, 4.75rem);
+}
+
+.tora-minimal-slider__arrow.is-prev::before {
+  border-width: 0 0 1px 1px;
+  left: calc(50% - 4px);
+  transform: rotate(45deg);
+}
+
+.tora-minimal-slider__arrow.is-next {
+  right: clamp(1rem, 3.5vw, 4.75rem);
+}
+
+.tora-minimal-slider__arrow.is-next::before {
+  border-width: 1px 1px 0 0;
+  right: calc(50% - 4px);
+  transform: rotate(45deg);
+}
+
+.tora-minimal-slider__arrow:hover::before,
+.tora-minimal-slider__arrow:focus-visible::before {
+  opacity: 0.9;
+}
+
+.tora-minimal-slider__arrow.is-prev:hover {
+  transform: translate(-7px, -50%);
+}
+
+.tora-minimal-slider__arrow.is-next:hover {
+  transform: translate(7px, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-minimal-slider__slide,
+  .tora-minimal-slider__arrow,
+  .tora-minimal-slider__arrow::before {
+    transition: none;
+  }
 }
 
 .custom-link-block {
@@ -649,6 +848,44 @@ html.js .pr-root.is-enhanced {
   }
 
   .tora-wedding-hero__media {
+    display: none;
+  }
+
+  .tora-minimal-slider {
+    min-height: calc(100svh - 4rem);
+  }
+
+  .tora-minimal-slider__stage {
+    padding: 5rem 1rem 1rem;
+  }
+
+  .tora-minimal-slider__viewport,
+  .tora-minimal-slider--short .tora-minimal-slider__viewport,
+  .tora-minimal-slider--full .tora-minimal-slider__viewport {
+    height: calc(100svh - 10rem);
+    min-height: 36rem;
+  }
+
+  .tora-minimal-slider__caption {
+    padding: 20px;
+  }
+
+  .tora-minimal-slider__subtitle {
+    font-size: 22px;
+  }
+
+  .tora-minimal-slider__title {
+    font-size: 30px;
+    margin: 15px 0 20px;
+  }
+
+  .tora-minimal-slider__button {
+    letter-spacing: 3px;
+    min-width: min(100%, 17.5rem);
+    padding-inline: 32px;
+  }
+
+  .tora-minimal-slider__arrow {
     display: none;
   }
 

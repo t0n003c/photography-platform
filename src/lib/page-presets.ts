@@ -22,6 +22,7 @@ const BANNER_PRISMA_DEFAULTS = {
   prismaShowAsterisk: true,
   agencyVideoUrl: "",
   agencyAccentText: "",
+  slides: [],
 };
 
 const GALLERY_TORA_PROPS_DEFAULTS = {

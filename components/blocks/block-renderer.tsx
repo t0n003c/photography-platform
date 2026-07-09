@@ -594,7 +594,14 @@ function LeafView({
         <BannerBlock
           block={block}
           photo={block.photoId ? photoMap.get(block.photoId) : undefined}
-          photos={(block.photoIds ?? [])
+          photos={Array.from(
+            new Set([
+              ...(block.photoIds ?? []),
+              ...((block.slides ?? [])
+                .map((slide) => slide.photoId)
+                .filter((photoId): photoId is string => Boolean(photoId))),
+            ]),
+          )
             .map((photoId) => photoMap.get(photoId))
             .filter((photo): photo is PhotoDTO => Boolean(photo))}
         />
