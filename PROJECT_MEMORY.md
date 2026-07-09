@@ -1748,7 +1748,7 @@ is gitignored):
   (`#f3eadb`) while `.dark` restores the original dark surface (`#242625`). The renderer
   normalizes the old saved dark default as a legacy default so existing galleries are not stuck
   dark in light mode, but truly custom background colors still render as chosen. Desktop/mobile
-  column changes now use a short FLIP-style card movement animation, and reduced motion disables
+  column changes now use a 900ms FLIP-style card movement animation, and reduced motion disables
   that responsive reflow animation.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
