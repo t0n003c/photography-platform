@@ -45,11 +45,23 @@ type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
-const DEFAULT_SLIPHOVER_BACKGROUND = "#242625";
+const DEFAULT_SLIPHOVER_BACKGROUND = "#f3eadb";
+const LEGACY_SLIPHOVER_DARK_BACKGROUND = "#242625";
 const DEFAULT_SLIPHOVER_LABEL_BACKGROUND = "#111111";
 const DEFAULT_SLIPHOVER_LABEL_TEXT = "#f8f3df";
 
 type ToraSliphoverLabelSource = "auto" | "headline" | "alt" | "caption";
+
+function normalizeSliphoverBackground(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === DEFAULT_SLIPHOVER_BACKGROUND ||
+    normalized === LEGACY_SLIPHOVER_DARK_BACKGROUND
+  ) {
+    return DEFAULT_SLIPHOVER_BACKGROUND;
+  }
+  return value;
+}
 
 interface Gallery {
   id: string;
@@ -1201,7 +1213,9 @@ function LayoutCard({
           setToraSliphoverUseBackground(c.toraSliphoverUseBackground);
         }
         if (typeof c.toraSliphoverBackgroundColor === "string") {
-          setToraSliphoverBackgroundColor(c.toraSliphoverBackgroundColor);
+          setToraSliphoverBackgroundColor(
+            normalizeSliphoverBackground(c.toraSliphoverBackgroundColor),
+          );
         }
         if (
           c.toraSliphoverLabelSource === "auto" ||

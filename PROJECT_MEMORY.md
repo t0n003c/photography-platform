@@ -1744,6 +1744,12 @@ is gitignored):
   label chip sourced from headline/alt/caption. Gallery layout settings include background
   enable/color plus hover label source, label background, and label text colors; preview drafts
   carry these through `__pc`.
+  Follow-up: sliphover light mode now defaults to the warm reference-light surface
+  (`#f3eadb`) while `.dark` restores the original dark surface (`#242625`). The renderer
+  normalizes the old saved dark default as a legacy default so existing galleries are not stuck
+  dark in light mode, but truly custom background colors still render as chosen. Desktop/mobile
+  column changes now use a short FLIP-style card movement animation, and reduced motion disables
+  that responsive reflow animation.
   Previous focused Chrome smoke measured Rise mid-motion opacity at
   ~0.27-0.99 and
   Rise complete at the new range; Zoomed first and second category grids both at ~1795x1062 with

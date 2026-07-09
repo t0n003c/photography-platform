@@ -219,12 +219,26 @@ function toraSliphoverLabelSource(value: unknown): ToraSliphoverLabelSource {
 
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
+const DEFAULT_SLIPHOVER_BACKGROUND = "#f3eadb";
+const LEGACY_SLIPHOVER_DARK_BACKGROUND = "#242625";
 
 function isDefaultPalmerColor(value: unknown, defaultValue: string) {
   return (
     typeof value !== "string" ||
     value.trim().toLowerCase() === defaultValue.toLowerCase()
   );
+}
+
+function sliphoverBackgroundColor(value: unknown): string {
+  if (typeof value !== "string") return DEFAULT_SLIPHOVER_BACKGROUND;
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === DEFAULT_SLIPHOVER_BACKGROUND ||
+    normalized === LEGACY_SLIPHOVER_DARK_BACKGROUND
+  ) {
+    return DEFAULT_SLIPHOVER_BACKGROUND;
+  }
+  return value;
 }
 
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
@@ -355,7 +369,9 @@ export async function resolveRenderConfig(
     },
     toraSliphover: {
       useBackground: cfgJson.toraSliphoverUseBackground ?? true,
-      backgroundColor: cfgJson.toraSliphoverBackgroundColor ?? "#242625",
+      backgroundColor: sliphoverBackgroundColor(
+        cfgJson.toraSliphoverBackgroundColor,
+      ),
       labelSource: toraSliphoverLabelSource(cfgJson.toraSliphoverLabelSource),
       labelBackgroundColor: cfgJson.toraSliphoverLabelBackgroundColor ?? "#111111",
       labelTextColor: cfgJson.toraSliphoverLabelTextColor ?? "#f8f3df",
@@ -497,8 +513,9 @@ export async function resolveRenderConfig(
         draft.toraSliphoverUseBackground ??
         config.toraSliphover.useBackground,
       backgroundColor:
-        draft.toraSliphoverBackgroundColor ??
-        config.toraSliphover.backgroundColor,
+        draft.toraSliphoverBackgroundColor !== undefined
+          ? sliphoverBackgroundColor(draft.toraSliphoverBackgroundColor)
+          : config.toraSliphover.backgroundColor,
       labelSource:
         draft.toraSliphoverLabelSource !== undefined
           ? toraSliphoverLabelSource(draft.toraSliphoverLabelSource)

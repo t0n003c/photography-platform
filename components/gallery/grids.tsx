@@ -44,7 +44,8 @@ export interface ToraSliphoverGridProps {
 
 const TORA_PROPS_DEFAULT_BACKGROUND = "#252626";
 const TORA_PROPS_DEFAULT_CAPTION = "#edd8aa";
-const TORA_SLIPHOVER_DEFAULT_BACKGROUND = "#242625";
+const TORA_SLIPHOVER_DEFAULT_BACKGROUND = "#f3eadb";
+const TORA_SLIPHOVER_LEGACY_DARK_BACKGROUND = "#242625";
 const TORA_SLIPHOVER_DEFAULT_LABEL_BG = "#111111";
 const TORA_SLIPHOVER_DEFAULT_LABEL_TEXT = "#f8f3df";
 
@@ -245,6 +246,10 @@ export function ToraSliphoverGrid({
   const rootRef = React.useRef<HTMLElement>(null);
   const popupRef = React.useRef<HTMLSpanElement>(null);
   const hoverLabelRef = React.useRef("");
+  const itemRefs = React.useRef(new Map<string, HTMLAnchorElement>());
+  const previousRectsRef = React.useRef(new Map<string, DOMRect>());
+  const pendingFlipRef = React.useRef(false);
+  const didMeasureRef = React.useRef(false);
   const [mounted, setMounted] = React.useState(false);
   const [columnCount, setColumnCount] = React.useState(5);
   const [hoverLabel, setHoverLabel] = React.useState("");
@@ -255,7 +260,7 @@ export function ToraSliphoverGrid({
   const hasCustomBackground = !isDefaultColor(
     backgroundColor,
     TORA_SLIPHOVER_DEFAULT_BACKGROUND,
-  );
+  ) && !isDefaultColor(backgroundColor, TORA_SLIPHOVER_LEGACY_DARK_BACKGROUND);
   const hasCustomLabelBackground = !isDefaultColor(
     labelBackgroundColor,
     TORA_SLIPHOVER_DEFAULT_LABEL_BG,
@@ -274,18 +279,85 @@ export function ToraSliphoverGrid({
       : {}),
   } as React.CSSProperties;
 
+  const captureItemRects = React.useCallback(() => {
+    const rects = new Map<string, DOMRect>();
+    itemRefs.current.forEach((element, id) => {
+      rects.set(id, element.getBoundingClientRect());
+    });
+    return rects;
+  }, []);
+
   React.useEffect(() => {
     setMounted(true);
     const root = rootRef.current;
     if (!root) return;
     const update = () => {
-      setColumnCount(sliphoverColumnCount(root.clientWidth || window.innerWidth));
+      const nextColumnCount = sliphoverColumnCount(
+        root.clientWidth || window.innerWidth,
+      );
+      setColumnCount((currentColumnCount) => {
+        if (currentColumnCount === nextColumnCount) return currentColumnCount;
+        const prefersReducedMotion = window.matchMedia?.(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        if (didMeasureRef.current && !prefersReducedMotion) {
+          previousRectsRef.current = captureItemRects();
+          pendingFlipRef.current = true;
+          hoverLabelRef.current = "";
+          setHoverLabel("");
+        }
+        return nextColumnCount;
+      });
+      didMeasureRef.current = true;
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(root);
     return () => observer.disconnect();
-  }, []);
+  }, [captureItemRects]);
+
+  React.useLayoutEffect(() => {
+    if (!pendingFlipRef.current) return;
+    pendingFlipRef.current = false;
+    const previousRects = previousRectsRef.current;
+    previousRectsRef.current = new Map();
+    if (previousRects.size === 0) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    itemRefs.current.forEach((element, id) => {
+      const before = previousRects.get(id);
+      if (!before) return;
+      const after = element.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      const scaleX = before.width / Math.max(after.width, 1);
+      const scaleY = before.height / Math.max(after.height, 1);
+      const moved =
+        Math.abs(dx) > 0.5 ||
+        Math.abs(dy) > 0.5 ||
+        Math.abs(scaleX - 1) > 0.01 ||
+        Math.abs(scaleY - 1) > 0.01;
+      if (!moved) return;
+
+      element.getAnimations().forEach((animation) => animation.cancel());
+      element.animate(
+        [
+          {
+            transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`,
+            transformOrigin: "top left",
+          },
+          {
+            transform: "translate(0, 0) scale(1, 1)",
+            transformOrigin: "top left",
+          },
+        ],
+        {
+          duration: 680,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    });
+  }, [columns]);
 
   const showPopup = (
     event: React.PointerEvent<HTMLElement>,
@@ -296,8 +368,14 @@ export function ToraSliphoverGrid({
     const popup = popupRef.current;
     if (!root || !popup) return;
     const rect = root.getBoundingClientRect();
-    popup.style.setProperty("--tora-sliphover-x", `${event.clientX - rect.left + 15}px`);
-    popup.style.setProperty("--tora-sliphover-y", `${event.clientY - rect.top}px`);
+    popup.style.setProperty(
+      "--tora-sliphover-x",
+      `${event.clientX - rect.left + 15}px`,
+    );
+    popup.style.setProperty(
+      "--tora-sliphover-y",
+      `${event.clientY - rect.top}px`,
+    );
     if (hoverLabelRef.current !== label) {
       hoverLabelRef.current = label;
       setHoverLabel(label);
@@ -315,6 +393,10 @@ export function ToraSliphoverGrid({
     return (
       <a
         key={photo.id}
+        ref={(element) => {
+          if (element) itemRefs.current.set(photo.id, element);
+          else itemRefs.current.delete(photo.id);
+        }}
         href={href}
         aria-label={`View ${label}`}
         className="tora-sliphover__item"
