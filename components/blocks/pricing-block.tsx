@@ -479,7 +479,13 @@ function ToraPricingSliderBlock({
       </div>
       <div className="tora-pricing-slider__overlay" aria-hidden="true" />
       <div className="tora-pricing-slider__inner">
-        <header className="tora-pricing-slider__heading">
+        <header
+          className={cn(
+            "tora-pricing-slider__heading",
+            `is-heading-${block.pricingSliderHeadingSize ?? "reference"}`,
+            `is-label-${block.pricingSliderEyebrowSize ?? "reference"}`,
+          )}
+        >
           <p>{eyebrow}</p>
           <h2>{title}</h2>
         </header>

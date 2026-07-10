@@ -9632,9 +9632,43 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 .tora-pricing-slider__heading {
+  --tora-pricing-slider-eyebrow-font-size: 13px;
+  --tora-pricing-slider-eyebrow-letter-spacing: 2.7px;
+  --tora-pricing-slider-heading-font-size: clamp(2.4rem, 4.5vw, 4.5rem);
+  --tora-pricing-slider-heading-letter-spacing: 5px;
   margin-bottom: 72px;
   text-align: center;
   text-transform: uppercase;
+}
+
+.tora-pricing-slider__heading.is-label-small {
+  --tora-pricing-slider-eyebrow-font-size: 11px;
+  --tora-pricing-slider-eyebrow-letter-spacing: 2.1px;
+}
+
+.tora-pricing-slider__heading.is-label-large {
+  --tora-pricing-slider-eyebrow-font-size: 15px;
+  --tora-pricing-slider-eyebrow-letter-spacing: 3.2px;
+}
+
+.tora-pricing-slider__heading.is-label-oversized {
+  --tora-pricing-slider-eyebrow-font-size: 17px;
+  --tora-pricing-slider-eyebrow-letter-spacing: 3.7px;
+}
+
+.tora-pricing-slider__heading.is-heading-small {
+  --tora-pricing-slider-heading-font-size: clamp(2rem, 3.5vw, 3.4rem);
+  --tora-pricing-slider-heading-letter-spacing: 4px;
+}
+
+.tora-pricing-slider__heading.is-heading-large {
+  --tora-pricing-slider-heading-font-size: clamp(2.9rem, 5.3vw, 5.5rem);
+  --tora-pricing-slider-heading-letter-spacing: 5.7px;
+}
+
+.tora-pricing-slider__heading.is-heading-oversized {
+  --tora-pricing-slider-heading-font-size: clamp(3.35rem, 6.3vw, 6.7rem);
+  --tora-pricing-slider-heading-letter-spacing: 6.4px;
 }
 
 .tora-pricing-slider__heading p,
@@ -9648,16 +9682,16 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
 .tora-pricing-slider__heading p {
   color: rgb(255 255 255 / 0.88);
-  font-size: 13px;
-  letter-spacing: 2.7px;
+  font-size: var(--tora-pricing-slider-eyebrow-font-size);
+  letter-spacing: var(--tora-pricing-slider-eyebrow-letter-spacing);
   line-height: 1.4;
 }
 
 .tora-pricing-slider__heading h2 {
   margin-top: 10px;
   color: #fff;
-  font-size: clamp(2.4rem, 4.5vw, 4.5rem);
-  letter-spacing: 5px;
+  font-size: var(--tora-pricing-slider-heading-font-size);
+  letter-spacing: var(--tora-pricing-slider-heading-letter-spacing);
   line-height: 0.96;
 }
 
@@ -9852,17 +9886,41 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   }
 
   .tora-pricing-slider__heading {
+    --tora-pricing-slider-eyebrow-font-size: 12px;
+    --tora-pricing-slider-eyebrow-letter-spacing: 2px;
+    --tora-pricing-slider-heading-font-size: clamp(2rem, 10.5vw, 2.8rem);
+    --tora-pricing-slider-heading-letter-spacing: 3px;
     margin-bottom: 28px;
   }
 
-  .tora-pricing-slider__heading p {
-    font-size: 12px;
-    letter-spacing: 2px;
+  .tora-pricing-slider__heading.is-label-small {
+    --tora-pricing-slider-eyebrow-font-size: 10px;
+    --tora-pricing-slider-eyebrow-letter-spacing: 1.8px;
   }
 
-  .tora-pricing-slider__heading h2 {
-    font-size: clamp(2rem, 10.5vw, 2.8rem);
-    letter-spacing: 3px;
+  .tora-pricing-slider__heading.is-label-large {
+    --tora-pricing-slider-eyebrow-font-size: 13px;
+    --tora-pricing-slider-eyebrow-letter-spacing: 2.5px;
+  }
+
+  .tora-pricing-slider__heading.is-label-oversized {
+    --tora-pricing-slider-eyebrow-font-size: 14px;
+    --tora-pricing-slider-eyebrow-letter-spacing: 2.9px;
+  }
+
+  .tora-pricing-slider__heading.is-heading-small {
+    --tora-pricing-slider-heading-font-size: clamp(1.65rem, 8vw, 2.15rem);
+    --tora-pricing-slider-heading-letter-spacing: 2.1px;
+  }
+
+  .tora-pricing-slider__heading.is-heading-large {
+    --tora-pricing-slider-heading-font-size: clamp(2.2rem, 11.5vw, 3rem);
+    --tora-pricing-slider-heading-letter-spacing: 3.4px;
+  }
+
+  .tora-pricing-slider__heading.is-heading-oversized {
+    --tora-pricing-slider-heading-font-size: clamp(2.35rem, 12.5vw, 3.2rem);
+    --tora-pricing-slider-heading-letter-spacing: 3.7px;
   }
 
   .tora-pricing-slider__slide {

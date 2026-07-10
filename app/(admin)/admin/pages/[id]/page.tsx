@@ -748,6 +748,8 @@ function makeBlock(type: BlockType): Block {
       showHighlightEffect: true,
       pricingSliderBackgroundPhotoId: null,
       pricingSliderOverlayOpacity: 0.5,
+      pricingSliderHeadingSize: "reference",
+      pricingSliderEyebrowSize: "reference",
       pricingSliderAutoplay: true,
       pricingSliderAutoplayMs: 5000,
       pricingSliderTransitionMs: 1500,
@@ -3186,6 +3188,8 @@ function LeafEditor({
           patch.pricingSliderAutoplayMs ??= 5000;
           patch.pricingSliderTransitionMs ??= 1500;
           patch.pricingSliderOverlayOpacity ??= 0.5;
+          patch.pricingSliderHeadingSize ??= "reference";
+          patch.pricingSliderEyebrowSize ??= "reference";
         }
         set(patch);
       };
@@ -3309,6 +3313,40 @@ function LeafEditor({
                       >
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
+                      </Select>
+                    </Field>
+                    <Field label="Heading size">
+                      <Select
+                        value={block.pricingSliderHeadingSize ?? "reference"}
+                        onChange={(e) =>
+                          set({
+                            pricingSliderHeadingSize:
+                              e.target
+                                .value as typeof block.pricingSliderHeadingSize,
+                          })
+                        }
+                      >
+                        <option value="small">Small</option>
+                        <option value="reference">Reference</option>
+                        <option value="large">Large</option>
+                        <option value="oversized">Oversized</option>
+                      </Select>
+                    </Field>
+                    <Field label="Small label size">
+                      <Select
+                        value={block.pricingSliderEyebrowSize ?? "reference"}
+                        onChange={(e) =>
+                          set({
+                            pricingSliderEyebrowSize:
+                              e.target
+                                .value as typeof block.pricingSliderEyebrowSize,
+                          })
+                        }
+                      >
+                        <option value="small">Small</option>
+                        <option value="reference">Reference</option>
+                        <option value="large">Large</option>
+                        <option value="oversized">Oversized</option>
                       </Select>
                     </Field>
                     <Field label="Autoplay">

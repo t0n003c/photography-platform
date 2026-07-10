@@ -667,6 +667,12 @@ const PricingBlock = z.object({
   showHighlightEffect: z.boolean().default(true),
   pricingSliderBackgroundPhotoId: z.string().nullable().default(null),
   pricingSliderOverlayOpacity: z.number().min(0).max(0.85).default(0.5),
+  pricingSliderHeadingSize: z
+    .enum(["small", "reference", "large", "oversized"])
+    .default("reference"),
+  pricingSliderEyebrowSize: z
+    .enum(["small", "reference", "large", "oversized"])
+    .default("reference"),
   pricingSliderAutoplay: z.boolean().default(true),
   pricingSliderAutoplayMs: z.number().int().min(1200).max(12000).default(5000),
   pricingSliderTransitionMs: z.number().int().min(300).max(3000).default(1500),
