@@ -14,6 +14,7 @@ import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider-b
 import { TeamShowcaseBlock } from "@/components/blocks/team-showcase-block";
 import { PricingBlock } from "@/components/blocks/pricing-block";
 import { ShopBlock } from "@/components/blocks/shop-block";
+import { ToraInfoBlock } from "@/components/blocks/tora-info-block";
 import { CustomLinkBlock } from "@/components/blocks/custom-link-block";
 import {
   CategoryIndexBlock,
@@ -400,6 +401,8 @@ function LeafView({
           )}
         </blockquote>
       );
+    case "infoBlock":
+      return <ToraInfoBlock block={block} photoMap={photoMap} />;
     case "cta":
       return (
         <div className="rounded-2xl border p-8 text-center sm:p-12">
@@ -879,6 +882,7 @@ function LeafView({
 // rest are wrapped in a centered container with vertical rhythm.
 const FULL_BLEED = new Set([
   "banner",
+  "infoBlock",
   "imageComparison",
   "about",
   "portfolioList",

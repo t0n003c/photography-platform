@@ -91,9 +91,31 @@ const newBlockId = () =>
 // Leaf block types offered in the "add" menu (columns handled separately).
 const LEAF_TYPES: BlockType[] = [
   "heading", "subheading", "richtext", "image", "portfolioList", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
-  "quote", "testimonials", "team", "pricing", "shop", "cta", "customLink", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
+  "quote", "infoBlock", "testimonials", "team", "pricing", "shop", "cta", "customLink", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
   "locationMap", "scrollShowcase", "instagram", "columns",
 ];
+
+function makeInfoBlockTab(index = 0) {
+  const titles = ["COMMERCIAL", "PERSONAL", "EDITORIAL", "DESIGN"] as const;
+  return {
+    id: newBlockId(),
+    title: titles[index % titles.length],
+    text:
+      "Floral Design is a full-service wedding and special event planning company with takes care of your floral, design and logistics needs.\n\nOur office is located in San Francisco, CA. Our goal, besides ensuring a flawless and magical event for you, is to make your planning.",
+    photoId: null,
+    accentPhotoId: null,
+  };
+}
+
+function makeInfoBlockAccordionItem(index = 0) {
+  const titles = ["DESCRIPTION", "ADDITIONAL INFO", "REVIEWS"] as const;
+  return {
+    id: newBlockId(),
+    title: titles[index % titles.length],
+    text:
+      "Alienum phaedrum torquatos nec eu, vis detraxit periculis ex, nihil eros expetendis in mei.",
+  };
+}
 
 function makeTestimonialItem() {
   return {
@@ -574,6 +596,27 @@ function makeBlock(type: BlockType): Block {
     case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS };
     case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, fullWidthSliderAccentColor: "#f7f7f7", fullWidthSliderDimImages: true, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
+    case "infoBlock": return {
+      id,
+      type,
+      style: "creative",
+      eyebrow: "INTERESTED TO",
+      title: "COLLABORATION",
+      text:
+        "Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto.",
+      quote:
+        "Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called.",
+      photoId: null,
+      secondaryPhotoId: null,
+      buttonLabel: "LET'S CONNECT",
+      buttonHref: "#",
+      tabs: [makeInfoBlockTab(0), makeInfoBlockTab(1), makeInfoBlockTab(2), makeInfoBlockTab(3)],
+      accordionItems: [
+        makeInfoBlockAccordionItem(0),
+        makeInfoBlockAccordionItem(1),
+        makeInfoBlockAccordionItem(2),
+      ],
+    };
     case "testimonials": return {
       id,
       type,
@@ -1140,6 +1183,8 @@ function blockSummary(block: Block): string {
     case "richtext":
     case "quote":
       return block.text.slice(0, 40);
+    case "infoBlock":
+      return `${block.style} · ${block.title || block.eyebrow || "Info block"}`;
     case "featureCarousel":
       return `${block.photoIds.length} photos`;
     case "imageComparison": {
@@ -1719,6 +1764,196 @@ function LeafEditor({
           <Field label="Attribution"><Input value={block.cite ?? ""} onChange={(e) => set({ cite: e.target.value })} /></Field>
         </div>
       );
+    case "infoBlock": {
+      const tabs = block.tabs ?? [];
+      const accordionItems = block.accordionItems ?? [];
+      const needsPhoto = block.style === "creative" || block.style === "infoList";
+      const usesButton = block.style === "creative" || block.style === "classic" || block.style === "simple";
+      const usesTitle =
+        block.style === "creative" ||
+        block.style === "infoList" ||
+        block.style === "classic" ||
+        block.style === "textStyle" ||
+        block.style === "modern";
+      const usesEyebrow =
+        block.style === "creative" ||
+        block.style === "tabs" ||
+        block.style === "textStyle" ||
+        block.style === "simple" ||
+        block.style === "modern";
+      const usesText =
+        block.style !== "quote" &&
+        block.style !== "accordion";
+      const usesQuote = block.style === "quote" || block.style === "modern";
+      const updateTab = (index: number, patch: Partial<(typeof tabs)[number]>) => {
+        set({ tabs: tabs.map((item, i) => (i === index ? { ...item, ...patch } : item)) });
+      };
+      const updateAccordionItem = (
+        index: number,
+        patch: Partial<(typeof accordionItems)[number]>,
+      ) => {
+        set({
+          accordionItems: accordionItems.map((item, i) =>
+            i === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
+      const updateInfoStyle = (style: typeof block.style) => {
+        const patch: Partial<typeof block> = { style };
+        if (style === "tabs" && tabs.length === 0) {
+          patch.tabs = [
+            makeInfoBlockTab(0),
+            makeInfoBlockTab(1),
+            makeInfoBlockTab(2),
+            makeInfoBlockTab(3),
+          ];
+          if (!block.eyebrow.trim()) patch.eyebrow = "WHAT I LOVE TO SHOOT";
+        }
+        if (style === "accordion" && accordionItems.length === 0) {
+          patch.accordionItems = [
+            makeInfoBlockAccordionItem(0),
+            makeInfoBlockAccordionItem(1),
+            makeInfoBlockAccordionItem(2),
+          ];
+        }
+        if (style === "quote" && !block.quote.trim()) {
+          patch.quote =
+            "Orure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
+        }
+        if (style === "simple" && !block.eyebrow.trim()) {
+          patch.eyebrow = "ABOUT ME";
+        }
+        if (style === "modern" && !block.eyebrow.trim()) {
+          patch.eyebrow = "PHOTOGRAPHER / TRAVELLER";
+        }
+        set(patch);
+      };
+
+      return (
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Style">
+              <Select value={block.style} onChange={(e) => updateInfoStyle(e.target.value as typeof block.style)}>
+                <option value="creative">Creative</option>
+                <option value="simpleText">Simple text</option>
+                <option value="quote">Quote</option>
+                <option value="infoList">Info list</option>
+                <option value="classic">Classic</option>
+                <option value="tabs">Tabs style</option>
+                <option value="textStyle">Text style</option>
+                <option value="accordion">Accordion</option>
+                <option value="simple">Simple</option>
+                <option value="modern">Modern</option>
+              </Select>
+            </Field>
+            {usesEyebrow && (
+              <Field label={block.style === "tabs" ? "Intro heading" : "Small label"}>
+                <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
+              </Field>
+            )}
+            {usesTitle && (
+              <Field label="Title">
+                <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+              </Field>
+            )}
+            {usesQuote && (
+              <Field label="Quote">
+                <Textarea rows={3} value={block.quote} onChange={(e) => set({ quote: e.target.value })} />
+              </Field>
+            )}
+          </div>
+
+          {usesText && (
+            <Field label="Text">
+              <Textarea rows={4} value={block.text} onChange={(e) => set({ text: e.target.value })} />
+            </Field>
+          )}
+
+          {needsPhoto && (
+            <Field label="Image">
+              <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
+            </Field>
+          )}
+
+          {block.style === "modern" && (
+            <Field label="Signature image">
+              <PhotoPicker photos={photos} value={block.secondaryPhotoId ?? null} onChange={(pid) => set({ secondaryPhotoId: pid })} />
+            </Field>
+          )}
+
+          {usesButton && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Button label">
+                <Input value={block.buttonLabel} onChange={(e) => set({ buttonLabel: e.target.value })} />
+              </Field>
+              <Field label="Button link">
+                <Input value={block.buttonHref} onChange={(e) => set({ buttonHref: e.target.value })} />
+              </Field>
+            </div>
+          )}
+
+          {block.style === "tabs" && (
+            <div className="space-y-2">
+              {tabs.map((item, index) => (
+                <div key={item.id} className="space-y-2 rounded border p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Tab {index + 1}</span>
+                    <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => set({ tabs: swapAt(tabs, index, index - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Move down" disabled={index === tabs.length - 1} onClick={() => set({ tabs: swapAt(tabs, index, index + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Remove" onClick={() => set({ tabs: tabs.filter((_, i) => i !== index) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label="Title">
+                      <Input value={item.title} onChange={(e) => updateTab(index, { title: e.target.value })} />
+                    </Field>
+                    <Field label="Text">
+                      <Textarea rows={3} value={item.text} onChange={(e) => updateTab(index, { text: e.target.value })} />
+                    </Field>
+                  </div>
+                  <Field label="Main image">
+                    <PhotoPicker photos={photos} value={item.photoId ?? null} onChange={(pid) => updateTab(index, { photoId: pid })} containerClassName="max-h-44" />
+                  </Field>
+                  <Field label="Accent image">
+                    <PhotoPicker photos={photos} value={item.accentPhotoId ?? null} onChange={(pid) => updateTab(index, { accentPhotoId: pid })} containerClassName="max-h-44" />
+                  </Field>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={() => set({ tabs: [...tabs, makeInfoBlockTab(tabs.length)] })}>
+                <Plus className="h-4 w-4" /> Tab
+              </Button>
+            </div>
+          )}
+
+          {block.style === "accordion" && (
+            <div className="space-y-2">
+              {accordionItems.map((item, index) => (
+                <div key={item.id} className="space-y-2 rounded border p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Row {index + 1}</span>
+                    <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
+                      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => set({ accordionItems: swapAt(accordionItems, index, index - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Move down" disabled={index === accordionItems.length - 1} onClick={() => set({ accordionItems: swapAt(accordionItems, index, index + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label="Remove" onClick={() => set({ accordionItems: accordionItems.filter((_, i) => i !== index) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  </div>
+                  <Field label="Title">
+                    <Input value={item.title} onChange={(e) => updateAccordionItem(index, { title: e.target.value })} />
+                  </Field>
+                  <Field label="Text">
+                    <Textarea rows={3} value={item.text} onChange={(e) => updateAccordionItem(index, { text: e.target.value })} />
+                  </Field>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={() => set({ accordionItems: [...accordionItems, makeInfoBlockAccordionItem(accordionItems.length)] })}>
+                <Plus className="h-4 w-4" /> Row
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
     case "testimonials": {
       const items = block.items ?? [];
       const testimonialLayout = block.layout ?? "slider";

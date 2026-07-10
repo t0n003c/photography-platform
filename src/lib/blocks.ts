@@ -428,6 +428,45 @@ const QuoteBlock = z.object({
   text: z.string().default(""),
   cite: z.string().optional(),
 });
+export const InfoBlockStyleEnum = z.enum([
+  "creative",
+  "simpleText",
+  "quote",
+  "infoList",
+  "classic",
+  "tabs",
+  "textStyle",
+  "accordion",
+  "simple",
+  "modern",
+]);
+const InfoBlockTabItem = z.object({
+  id,
+  title: z.string().default("COMMERCIAL"),
+  text: z.string().default("Describe this service, specialty, or content group."),
+  photoId: z.string().nullable().default(null),
+  accentPhotoId: z.string().nullable().default(null),
+});
+const InfoBlockAccordionItem = z.object({
+  id,
+  title: z.string().default("DESCRIPTION"),
+  text: z.string().default("Add supporting details for this row."),
+});
+const InfoBlock = z.object({
+  ...baseBlock,
+  type: z.literal("infoBlock"),
+  style: InfoBlockStyleEnum.default("creative"),
+  eyebrow: z.string().default("INTERESTED TO"),
+  title: z.string().default("COLLABORATION"),
+  text: z.string().default("Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto."),
+  quote: z.string().default("Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called."),
+  photoId: z.string().nullable().default(null),
+  secondaryPhotoId: z.string().nullable().default(null),
+  buttonLabel: z.string().default("LET'S CONNECT"),
+  buttonHref: z.string().default("#"),
+  tabs: z.array(InfoBlockTabItem).default([]),
+  accordionItems: z.array(InfoBlockAccordionItem).default([]),
+});
 const TestimonialItem = z.object({
   id: z.string().min(1),
   name: z.string().default("Client name"),
@@ -931,6 +970,7 @@ export const LeafBlock = z.discriminatedUnion("type", [
   GalleryBlock,
   BannerBlock,
   QuoteBlock,
+  InfoBlock,
   TestimonialsBlock,
   TeamBlock,
   PricingBlock,
@@ -1017,6 +1057,14 @@ export function collectPhotoIds(blocks: Block[]): string[] {
         if (slide.photoId) ids.push(slide.photoId);
       }
     }
+    if (b.type === "infoBlock") {
+      if (b.photoId) ids.push(b.photoId);
+      if (b.secondaryPhotoId) ids.push(b.secondaryPhotoId);
+      for (const item of b.tabs ?? []) {
+        if (item.photoId) ids.push(item.photoId);
+        if (item.accentPhotoId) ids.push(item.accentPhotoId);
+      }
+    }
     if (b.type === "testimonials") {
       for (const item of b.items) {
         if (item.photoId) ids.push(item.photoId);
@@ -1069,6 +1117,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   gallery: "Gallery",
   banner: "Banner",
   quote: "Quote",
+  infoBlock: "Info block",
   testimonials: "Testimonials",
   team: "Team",
   pricing: "Price",

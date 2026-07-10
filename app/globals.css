@@ -6380,6 +6380,798 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   }
 }
 
+/* ToraMochie info-block reference variants. */
+.tora-info-block {
+  --tora-info-bg: #ffffff;
+  --tora-info-title: #4c4c4c;
+  --tora-info-copy: #8d8d8d;
+  --tora-info-accent: #9a8351;
+  --tora-info-band: #f8f6f5;
+  --tora-info-rule: #ded8d4;
+  --tora-info-panel: #252626;
+  --tora-info-panel-copy: #f7f7f7;
+  background: var(--tora-info-bg);
+  color: var(--tora-info-title);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+}
+
+.dark .tora-info-block {
+  --tora-info-bg: #252626;
+  --tora-info-title: #f7f7f7;
+  --tora-info-copy: rgb(247 247 247 / 0.74);
+  --tora-info-accent: #edd8aa;
+  --tora-info-band: #2d2b2b;
+  --tora-info-rule: rgb(247 247 247 / 0.22);
+  --tora-info-panel: #1f2020;
+  --tora-info-panel-copy: #f7f7f7;
+}
+
+.tora-info-image-placeholder {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--tora-info-band) 85%, #000 15%),
+      color-mix(in srgb, var(--tora-info-accent) 24%, var(--tora-info-band))
+    );
+  height: 100%;
+  min-height: inherit;
+  width: 100%;
+}
+
+.tora-info-button {
+  border: 1px solid var(--tora-info-accent);
+  color: var(--tora-info-accent);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 3px;
+  line-height: 1.2;
+  margin-top: 40px;
+  padding: 13px 28px 11px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 350ms ease,
+    border-color 350ms ease,
+    color 350ms ease,
+    opacity 350ms ease;
+}
+
+.tora-info-button:hover,
+.tora-info-button:focus-visible {
+  background: var(--tora-info-accent);
+  color: var(--tora-info-bg);
+}
+
+.tora-info-button--light {
+  border-color: rgb(247 247 247 / 0.78);
+  color: #ffffff;
+}
+
+.tora-info-button--light:hover,
+.tora-info-button--light:focus-visible {
+  background: #ffffff;
+  color: var(--tora-info-panel);
+}
+
+.tora-info-block--creative {
+  padding: 90px 0;
+}
+
+.tora-info-creative {
+  display: flex;
+  margin: 0 auto;
+  max-width: 1170px;
+  min-height: 650px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-creative__image {
+  display: block;
+  flex: 0 0 60%;
+  min-height: 650px;
+}
+
+.tora-info-creative__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-info-creative__panel {
+  align-items: flex-start;
+  background: var(--tora-info-panel);
+  color: var(--tora-info-panel-copy);
+  display: flex;
+  flex: 1 1 40%;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 50px;
+}
+
+.tora-info-creative__eyebrow,
+.tora-info-simple__eyebrow,
+.tora-info-modern__eyebrow,
+.tora-info-tabs__subtitle,
+.tora-info-text-style__heading p {
+  color: var(--tora-info-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.tora-info-creative__title,
+.tora-info-list__title,
+.tora-info-classic__title,
+.tora-info-modern__title,
+.tora-info-text-style__heading h2 {
+  color: inherit;
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-info-creative__text,
+.tora-info-classic__text,
+.tora-info-modern__text,
+.tora-info-tabs__intro-text,
+.tora-info-tabs__body,
+.tora-info-text-style__text {
+  color: var(--tora-info-copy);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+}
+
+.tora-info-creative__text {
+  color: rgb(247 247 247 / 0.78);
+  margin-top: 35px;
+}
+
+.tora-info-creative__text p,
+.tora-info-classic__text p,
+.tora-info-modern__text p,
+.tora-info-tabs__intro-text p,
+.tora-info-tabs__body p,
+.tora-info-text-style__text p,
+.tora-info-simple-text p,
+.tora-info-list__text p,
+.tora-info-simple__text p,
+.tora-info-accordion__body p {
+  margin: 0;
+}
+
+.tora-info-creative__text p + p,
+.tora-info-classic__text p + p,
+.tora-info-modern__text p + p,
+.tora-info-tabs__intro-text p + p,
+.tora-info-tabs__body p + p,
+.tora-info-text-style__text p + p,
+.tora-info-simple-text p + p,
+.tora-info-list__text p + p,
+.tora-info-simple__text p + p,
+.tora-info-accordion__body p + p {
+  margin-top: 1em;
+}
+
+.tora-info-block--simple-text {
+  padding: 88px 0 78px;
+}
+
+.tora-info-simple-text {
+  color: var(--tora-info-copy);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 0 auto;
+  max-width: 1100px;
+  text-align: center;
+  width: calc(100% - 30px);
+}
+
+.tora-info-block--quote {
+  background: var(--tora-info-band);
+  padding: 78px 0 82px;
+}
+
+.tora-info-quote {
+  margin: 0 auto;
+  max-width: 940px;
+  text-align: center;
+  width: calc(100% - 30px);
+}
+
+.tora-info-quote__icon {
+  color: var(--tora-info-accent);
+  height: 50px;
+  margin: 0 auto 24px;
+  width: 50px;
+}
+
+.tora-info-quote__text {
+  color: var(--tora-info-title);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.tora-info-block--info-list {
+  align-items: center;
+  display: flex;
+  min-height: 550px;
+  overflow: hidden;
+  padding: 150px 50px;
+  position: relative;
+}
+
+.tora-info-list__image {
+  display: block;
+  inset: 0;
+  position: absolute;
+}
+
+.tora-info-list__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-info-list__shade {
+  background: rgb(0 0 0 / 0.4);
+  inset: 0;
+  position: absolute;
+}
+
+.tora-info-list__content {
+  color: #ffffff;
+  margin: 0 auto;
+  max-width: 1170px;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.tora-info-list__title {
+  color: var(--tora-info-accent);
+  max-width: 520px;
+}
+
+.tora-info-list__text {
+  color: rgb(255 255 255 / 0.9);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 2;
+  margin-top: 32px;
+  max-width: 610px;
+}
+
+.tora-info-block--classic {
+  padding: 94px 0 98px;
+}
+
+.tora-info-classic {
+  margin: 0 auto;
+  max-width: 700px;
+  text-align: center;
+  width: calc(100% - 30px);
+}
+
+.tora-info-classic__title {
+  color: var(--tora-info-accent);
+  margin-bottom: 35px;
+}
+
+.tora-info-block--tabs {
+  padding: 88px 0;
+}
+
+.tora-info-tabs {
+  align-items: center;
+  display: grid;
+  gap: 50px;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  margin: 0 auto;
+  max-width: 1200px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-tabs__intro {
+  background: var(--tora-info-band);
+  padding: 40px;
+}
+
+.tora-info-tabs__subtitle {
+  margin-bottom: 28px;
+}
+
+.tora-info-tabs__intro-text {
+  margin-top: 0;
+}
+
+.tora-info-tabs__nav {
+  display: flex;
+  flex-direction: column;
+  margin-top: 80px;
+}
+
+.tora-info-tabs__tab {
+  align-items: center;
+  border-bottom: 1px solid var(--tora-info-rule);
+  color: var(--tora-info-title);
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  justify-content: space-between;
+  letter-spacing: 2.2px;
+  line-height: 1.35;
+  padding: 16px 0 15px;
+  text-align: left;
+  text-transform: uppercase;
+  transition:
+    border-color 350ms ease,
+    color 350ms ease,
+    opacity 350ms ease;
+  width: 100%;
+}
+
+.tora-info-tabs__tab::after {
+  color: var(--tora-info-copy);
+  content: "+";
+  font-size: 18px;
+  font-weight: 300;
+  transition:
+    color 350ms ease,
+    transform 350ms ease;
+}
+
+.tora-info-tabs__tab.is-active,
+.tora-info-tabs__tab:hover,
+.tora-info-tabs__tab:focus-visible {
+  border-color: var(--tora-info-accent);
+  color: var(--tora-info-accent);
+}
+
+.tora-info-tabs__tab.is-active::after {
+  color: var(--tora-info-accent);
+  content: "-";
+}
+
+.tora-info-tabs__showcase {
+  align-items: center;
+  display: grid;
+  gap: 50px;
+  grid-template-columns: minmax(0, 57fr) minmax(0, 43fr);
+}
+
+.tora-info-tabs__image {
+  height: 445px;
+  position: relative;
+}
+
+.tora-info-tabs__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-info-tabs__accent {
+  bottom: -34px;
+  box-shadow: 0 18px 45px rgb(0 0 0 / 0.22);
+  height: 130px;
+  position: absolute;
+  right: -28px;
+  width: 130px;
+}
+
+.tora-info-tabs__panel {
+  min-width: 0;
+}
+
+.tora-info-tabs__heading {
+  color: var(--tora-info-accent);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.4;
+  margin: 0 0 25px;
+  text-transform: uppercase;
+}
+
+.tora-info-block--text-style {
+  padding: 88px 0;
+}
+
+.tora-info-text-style {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: minmax(260px, 43fr) minmax(0, 57fr);
+  margin: 0 auto;
+  max-width: 1200px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-text-style__heading p {
+  margin-bottom: 18px;
+}
+
+.tora-info-text-style__heading h2 {
+  color: var(--tora-info-accent);
+}
+
+.tora-info-text-style__text {
+  column-gap: 40px;
+  columns: 2;
+}
+
+.tora-info-block--accordion {
+  padding: 84px 0 90px;
+}
+
+.tora-info-accordion {
+  margin: 0 auto;
+  max-width: 1100px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-accordion__item {
+  border-bottom: 1px solid var(--tora-info-rule);
+}
+
+.tora-info-accordion__button {
+  align-items: center;
+  color: var(--tora-info-title);
+  display: flex;
+  font-size: 17px;
+  font-weight: 700;
+  justify-content: space-between;
+  letter-spacing: 2.2px;
+  line-height: 1.35;
+  padding: 19px 0 17px;
+  text-align: left;
+  text-transform: uppercase;
+  transition: color 350ms ease;
+  width: 100%;
+}
+
+.tora-info-accordion__button:hover,
+.tora-info-accordion__button:focus-visible,
+.tora-info-accordion__item.is-open .tora-info-accordion__button {
+  color: var(--tora-info-accent);
+}
+
+.tora-info-accordion__mark {
+  height: 13px;
+  position: relative;
+  width: 13px;
+}
+
+.tora-info-accordion__mark::before,
+.tora-info-accordion__mark::after {
+  background: currentColor;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tora-info-accordion__mark::before {
+  height: 1px;
+  width: 13px;
+}
+
+.tora-info-accordion__mark::after {
+  height: 13px;
+  left: 6px;
+  transition: transform 300ms ease;
+  width: 1px;
+}
+
+.tora-info-accordion__item.is-open .tora-info-accordion__mark::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.tora-info-accordion__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease;
+}
+
+.tora-info-accordion__item.is-open .tora-info-accordion__panel {
+  grid-template-rows: 1fr;
+}
+
+.tora-info-accordion__body {
+  color: var(--tora-info-copy);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.73;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tora-info-accordion__body p {
+  padding: 0 0 20px;
+}
+
+.tora-info-block--simple {
+  padding: 90px 0 94px;
+}
+
+.tora-info-simple {
+  margin: 0 auto;
+  max-width: 700px;
+  text-align: center;
+  width: calc(100% - 30px);
+}
+
+.tora-info-simple__eyebrow {
+  color: var(--tora-info-copy);
+  font-size: 15px;
+  letter-spacing: 3px;
+  margin-bottom: 28px;
+}
+
+.tora-info-simple__text {
+  color: var(--tora-info-title);
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1.47;
+}
+
+.tora-info-block--modern {
+  padding: 90px 0 100px;
+}
+
+.tora-info-modern {
+  margin: 0 auto;
+  max-width: 700px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-modern__eyebrow {
+  margin-bottom: 12px;
+}
+
+.tora-info-modern__title {
+  border-bottom: 1px solid var(--tora-info-rule);
+  color: var(--tora-info-title);
+  padding-bottom: 32px;
+}
+
+.tora-info-modern__quote {
+  color: var(--tora-info-title);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.3;
+  margin: 35px 0 0;
+}
+
+.tora-info-modern__text {
+  margin-top: 28px;
+}
+
+.tora-info-modern__signature {
+  display: block;
+  height: 74px;
+  margin-top: 32px;
+  width: 187px;
+}
+
+.tora-info-modern__signature img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  width: 100%;
+}
+
+@media (max-width: 1199px) {
+  .tora-info-tabs,
+  .tora-info-text-style {
+    max-width: 960px;
+  }
+
+  .tora-info-tabs {
+    gap: 40px;
+  }
+
+  .tora-info-tabs__showcase {
+    gap: 38px;
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-info-block--creative,
+  .tora-info-block--simple-text,
+  .tora-info-block--quote,
+  .tora-info-block--classic,
+  .tora-info-block--tabs,
+  .tora-info-block--text-style,
+  .tora-info-block--accordion,
+  .tora-info-block--simple,
+  .tora-info-block--modern {
+    padding: 60px 0;
+  }
+
+  .tora-info-creative {
+    display: block;
+    min-height: 480px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tora-info-creative__image {
+    inset: 0;
+    min-height: 100%;
+    position: absolute;
+  }
+
+  .tora-info-creative__panel {
+    background: rgb(37 38 38 / 0.7);
+    min-height: 480px;
+    padding: 40px 15px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tora-info-block--info-list {
+    min-height: 0;
+    padding: 70px 20px 60px;
+  }
+
+  .tora-info-tabs,
+  .tora-info-tabs__showcase,
+  .tora-info-text-style {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .tora-info-tabs {
+    gap: 30px;
+  }
+
+  .tora-info-tabs__intro {
+    padding: 45px 30px 35px;
+  }
+
+  .tora-info-tabs__nav {
+    margin-top: 34px;
+  }
+
+  .tora-info-tabs__showcase {
+    gap: 22px;
+  }
+
+  .tora-info-tabs__image {
+    height: 320px;
+  }
+
+  .tora-info-tabs__accent {
+    bottom: 15px;
+    height: 104px;
+    right: 15px;
+    width: 104px;
+  }
+
+  .tora-info-text-style {
+    gap: 25px;
+  }
+
+  .tora-info-text-style__text {
+    columns: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-info-creative,
+  .tora-info-simple-text,
+  .tora-info-classic,
+  .tora-info-tabs,
+  .tora-info-text-style,
+  .tora-info-accordion,
+  .tora-info-simple,
+  .tora-info-modern {
+    width: calc(100% - 30px);
+  }
+
+  .tora-info-creative {
+    min-height: 0;
+  }
+
+  .tora-info-creative__panel {
+    min-height: 430px;
+  }
+
+  .tora-info-creative__title,
+  .tora-info-list__title,
+  .tora-info-classic__title,
+  .tora-info-modern__title,
+  .tora-info-text-style__heading h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-info-creative__text,
+  .tora-info-classic__text,
+  .tora-info-modern__text,
+  .tora-info-tabs__intro-text,
+  .tora-info-tabs__body,
+  .tora-info-text-style__text,
+  .tora-info-simple-text,
+  .tora-info-list__text,
+  .tora-info-accordion__body {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .tora-info-simple-text {
+    text-align: left;
+  }
+
+  .tora-info-quote__text,
+  .tora-info-modern__quote {
+    font-size: 21px;
+    line-height: 1.5;
+  }
+
+  .tora-info-block--info-list {
+    padding: 50px 20px 40px;
+  }
+
+  .tora-info-list__text {
+    line-height: 1.7;
+  }
+
+  .tora-info-tabs__intro {
+    padding: 38px 20px 30px;
+  }
+
+  .tora-info-tabs__image {
+    height: 250px;
+  }
+
+  .tora-info-tabs__accent {
+    height: 88px;
+    width: 88px;
+  }
+
+  .tora-info-tabs__heading,
+  .tora-info-accordion__button {
+    font-size: 15px;
+    letter-spacing: 1.6px;
+  }
+
+  .tora-info-simple__text {
+    font-size: 22px;
+    line-height: 1.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-info-button,
+  .tora-info-tabs__tab,
+  .tora-info-tabs__tab::after,
+  .tora-info-accordion__button,
+  .tora-info-accordion__mark::after,
+  .tora-info-accordion__panel {
+    transition: none;
+  }
+}
+
 /* ToraMochie clients reference logo wall. */
 .tora-client-wall {
   --tora-client-wall-bg: #ffffff;

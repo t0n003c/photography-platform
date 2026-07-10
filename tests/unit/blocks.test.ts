@@ -120,6 +120,94 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["logo-a", "logo-b", "logo-c"]);
   });
 
+  it("keeps Tora info blocks with tabs, accordion rows, and photo refs", () => {
+    const blocks = parseBlocks([
+      {
+        id: "info",
+        type: "infoBlock",
+        style: "tabs",
+        eyebrow: "WHAT I LOVE TO SHOOT",
+        title: "COLLABORATION",
+        text: "Intro copy.",
+        quote: "Quote copy.",
+        photoId: "lead-photo",
+        secondaryPhotoId: "signature-photo",
+        buttonLabel: "LET'S CONNECT",
+        buttonHref: "/contact",
+        tabs: [
+          {
+            id: "tab-a",
+            title: "COMMERCIAL",
+            text: "Commercial copy.",
+            photoId: "tab-photo-a",
+            accentPhotoId: "tab-accent-a",
+          },
+          {
+            id: "tab-b",
+            title: "PERSONAL",
+            text: "Personal copy.",
+            photoId: "tab-photo-b",
+            accentPhotoId: null,
+          },
+        ],
+        accordionItems: [
+          {
+            id: "row-a",
+            title: "DESCRIPTION",
+            text: "Accordion copy.",
+          },
+        ],
+      },
+      {
+        id: "info-defaults",
+        type: "infoBlock",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({
+      id: "info",
+      type: "infoBlock",
+      style: "tabs",
+      eyebrow: "WHAT I LOVE TO SHOOT",
+      buttonHref: "/contact",
+      tabs: [
+        {
+          id: "tab-a",
+          title: "COMMERCIAL",
+          photoId: "tab-photo-a",
+          accentPhotoId: "tab-accent-a",
+        },
+        {
+          id: "tab-b",
+          title: "PERSONAL",
+          photoId: "tab-photo-b",
+          accentPhotoId: null,
+        },
+      ],
+      accordionItems: [
+        {
+          id: "row-a",
+          title: "DESCRIPTION",
+        },
+      ],
+    });
+    expect(blocks[1]).toMatchObject({
+      id: "info-defaults",
+      type: "infoBlock",
+      style: "creative",
+      tabs: [],
+      accordionItems: [],
+    });
+    expect(collectPhotoIds(blocks)).toEqual([
+      "lead-photo",
+      "signature-photo",
+      "tab-photo-a",
+      "tab-accent-a",
+      "tab-photo-b",
+    ]);
+  });
+
   it("keeps location map blocks with selected locations", () => {
     const blocks = parseBlocks([
       {
