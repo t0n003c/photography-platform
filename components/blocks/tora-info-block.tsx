@@ -123,6 +123,7 @@ export function ToraInfoBlock({
   const quote = block.quote.trim();
   const primaryPhoto = photoById(photoMap, block.photoId);
   const secondaryPhoto = photoById(photoMap, block.secondaryPhotoId);
+  const dimPhoto = block.dimPhoto ?? true;
 
   if (block.style === "creative") {
     return (
@@ -139,6 +140,50 @@ export function ToraInfoBlock({
             {title && <h2 className="tora-info-creative__title">{title}</h2>}
             {text && (
               <div className="tora-info-creative__text">
+                <Paragraphs text={text} />
+              </div>
+            )}
+            <ToraInfoButton
+              href={block.buttonHref}
+              label={block.buttonLabel}
+              className="tora-info-button--light"
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (block.style === "creativeReference") {
+    return (
+      <section
+        className={cn(
+          "tora-info-block tora-info-block--creative-reference",
+          !dimPhoto && "tora-info-block--no-photo-dim",
+        )}
+      >
+        <div className="tora-info-creative-reference">
+          <div className="tora-info-creative-reference__image-wrap">
+            <ToraInfoPhoto
+              photo={primaryPhoto}
+              className="tora-info-creative-reference__image"
+              sizes="(max-width: 991px) 100vw, 60vw"
+              priority
+            />
+            {dimPhoto && (
+              <div
+                className="tora-info-creative-reference__shade"
+                aria-hidden="true"
+              />
+            )}
+          </div>
+          <div className="tora-info-creative-reference__text-wrap">
+            {eyebrow && (
+              <p className="tora-info-creative-reference__eyebrow">{eyebrow}</p>
+            )}
+            {title && <h2 className="tora-info-creative-reference__title">{title}</h2>}
+            {text && (
+              <div className="tora-info-creative-reference__text">
                 <Paragraphs text={text} />
               </div>
             )}
@@ -174,24 +219,64 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "infoList") {
+  if (block.style === "infoList" || block.style === "infoListReference") {
+    const isReference = block.style === "infoListReference";
     return (
       <section
         className={cn(
-          "tora-info-block tora-info-block--info-list",
+          "tora-info-block",
+          isReference
+            ? "tora-info-block--info-list-reference"
+            : "tora-info-block--info-list",
           !primaryPhoto && "tora-info-block--no-photo",
+          !dimPhoto && "tora-info-block--no-photo-dim",
         )}
       >
         <ToraInfoPhoto
           photo={primaryPhoto}
-          className="tora-info-list__image"
+          className={
+            isReference
+              ? "tora-info-list-reference__image"
+              : "tora-info-list__image"
+          }
           sizes="100vw"
         />
-        <div className="tora-info-list__shade" aria-hidden="true" />
-        <div className="tora-info-list__content">
-          {title && <h2 className="tora-info-list__title">{title}</h2>}
+        {dimPhoto && (
+          <div
+            className={
+              isReference
+                ? "tora-info-list-reference__shade"
+                : "tora-info-list__shade"
+            }
+            aria-hidden="true"
+          />
+        )}
+        <div
+          className={
+            isReference
+              ? "tora-info-list-reference__content"
+              : "tora-info-list__content"
+          }
+        >
+          {title && (
+            <h2
+              className={
+                isReference
+                  ? "tora-info-list-reference__title"
+                  : "tora-info-list__title"
+              }
+            >
+              {title}
+            </h2>
+          )}
           {text && (
-            <div className="tora-info-list__text">
+            <div
+              className={
+                isReference
+                  ? "tora-info-list-reference__text"
+                  : "tora-info-list__text"
+              }
+            >
               <Paragraphs text={text} />
             </div>
           )}

@@ -430,9 +430,11 @@ const QuoteBlock = z.object({
 });
 export const InfoBlockStyleEnum = z.enum([
   "creative",
+  "creativeReference",
   "simpleText",
   "quote",
   "infoList",
+  "infoListReference",
   "classic",
   "tabs",
   "textStyle",
@@ -462,6 +464,7 @@ const InfoBlock = z.object({
   quote: z.string().default("Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called."),
   photoId: z.string().nullable().default(null),
   secondaryPhotoId: z.string().nullable().default(null),
+  dimPhoto: z.boolean().default(true),
   buttonLabel: z.string().default("LET'S CONNECT"),
   buttonHref: z.string().default("#"),
   tabs: z.array(InfoBlockTabItem).default([]),

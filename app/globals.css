@@ -6536,6 +6536,95 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   margin-top: 35px;
 }
 
+.tora-info-block--creative-reference {
+  padding: 90px 0;
+}
+
+.tora-info-creative-reference {
+  display: flex;
+  margin: 0 auto;
+  max-width: 1170px;
+  min-height: 650px;
+  width: calc(100% - 30px);
+}
+
+.tora-info-creative-reference__image-wrap {
+  flex: 0 0 60%;
+  min-height: 650px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tora-info-creative-reference__image {
+  display: block;
+  height: 100%;
+  min-height: inherit;
+  width: 100%;
+}
+
+.tora-info-creative-reference__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-info-creative-reference__shade {
+  background: rgb(0 0 0 / 0.14);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tora-info-block--no-photo-dim .tora-info-creative-reference__shade,
+.tora-info-block--no-photo-dim .tora-info-list-reference__shade {
+  display: none;
+}
+
+.tora-info-creative-reference__text-wrap {
+  align-items: center;
+  background: var(--tora-info-panel);
+  color: var(--tora-info-panel-copy);
+  display: flex;
+  flex: 1 1 40%;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 50px;
+  text-align: center;
+}
+
+.tora-info-creative-reference__eyebrow {
+  color: var(--tora-info-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.5;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-info-creative-reference__title {
+  color: inherit;
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 20px 0 0;
+  text-transform: uppercase;
+}
+
+.tora-info-creative-reference__text {
+  color: rgb(247 247 247 / 0.82);
+  font-size: 21px;
+  font-weight: 300;
+  line-height: 1.75;
+  margin: 50px 0;
+}
+
+.tora-info-creative-reference .tora-info-button {
+  margin-top: 0;
+}
+
 .tora-info-creative__text p,
 .tora-info-classic__text p,
 .tora-info-modern__text p,
@@ -6545,7 +6634,9 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .tora-info-simple-text p,
 .tora-info-list__text p,
 .tora-info-simple__text p,
-.tora-info-accordion__body p {
+.tora-info-accordion__body p,
+.tora-info-creative-reference__text p,
+.tora-info-list-reference__text p {
   margin: 0;
 }
 
@@ -6558,7 +6649,9 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 .tora-info-simple-text p + p,
 .tora-info-list__text p + p,
 .tora-info-simple__text p + p,
-.tora-info-accordion__body p + p {
+.tora-info-accordion__body p + p,
+.tora-info-creative-reference__text p + p,
+.tora-info-list-reference__text p + p {
   margin-top: 1em;
 }
 
@@ -6654,6 +6747,63 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   line-height: 2;
   margin-top: 32px;
   max-width: 610px;
+}
+
+.tora-info-block--info-list-reference {
+  align-items: center;
+  background-color: var(--tora-info-panel);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 550px;
+  overflow: hidden;
+  padding: 150px 50px;
+  position: relative;
+  text-align: center;
+}
+
+.tora-info-list-reference__image {
+  display: block;
+  inset: 0;
+  position: absolute;
+}
+
+.tora-info-list-reference__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-info-list-reference__shade {
+  background: rgb(0 0 0 / 0.4);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tora-info-list-reference__content {
+  max-width: 770px;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.tora-info-list-reference__title {
+  color: var(--tora-info-accent);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0 0 40px;
+  text-transform: uppercase;
+}
+
+.tora-info-list-reference__text {
+  color: var(--tora-info-panel-copy);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 2;
 }
 
 .tora-info-block--classic {
@@ -6980,6 +7130,19 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 @media (max-width: 1199px) {
+  .tora-info-creative-reference__text-wrap {
+    padding: 70px 40px;
+  }
+
+  .tora-info-creative-reference__text {
+    margin-bottom: 35px;
+    margin-top: 35px;
+  }
+
+  .tora-info-block--info-list-reference {
+    min-height: 400px;
+  }
+
   .tora-info-tabs,
   .tora-info-text-style {
     max-width: 960px;
@@ -6996,6 +7159,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
 @media (max-width: 991px) {
   .tora-info-block--creative,
+  .tora-info-block--creative-reference,
   .tora-info-block--simple-text,
   .tora-info-block--quote,
   .tora-info-block--classic,
@@ -7028,9 +7192,51 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
     z-index: 1;
   }
 
+  .tora-info-creative-reference {
+    display: block;
+    min-height: 480px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tora-info-creative-reference__image-wrap {
+    inset: 0;
+    min-height: 100%;
+    position: absolute;
+  }
+
+  .tora-info-creative-reference__shade {
+    background: rgb(0 0 0 / 0.18);
+  }
+
+  .tora-info-creative-reference__text-wrap {
+    background: rgb(0 0 0 / 0.7);
+    min-height: 480px;
+    padding: 70px 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tora-info-block--no-photo-dim .tora-info-creative-reference__text-wrap {
+    background: var(--tora-info-panel);
+  }
+
+  .tora-info-creative-reference__text {
+    font-size: 19px;
+    line-height: 1.6;
+  }
+
+  .tora-info-creative-reference__title {
+    letter-spacing: 2px;
+  }
+
   .tora-info-block--info-list {
     min-height: 0;
     padding: 70px 20px 60px;
+  }
+
+  .tora-info-block--info-list-reference {
+    padding: 100px 50px;
   }
 
   .tora-info-tabs,
@@ -7078,6 +7284,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
 @media (max-width: 767px) {
   .tora-info-creative,
+  .tora-info-creative-reference,
   .tora-info-simple-text,
   .tora-info-classic,
   .tora-info-tabs,
@@ -7096,8 +7303,15 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
     min-height: 430px;
   }
 
+  .tora-info-creative-reference__text-wrap {
+    min-height: 430px;
+    padding: 40px 15px;
+  }
+
   .tora-info-creative__title,
+  .tora-info-creative-reference__title,
   .tora-info-list__title,
+  .tora-info-list-reference__title,
   .tora-info-classic__title,
   .tora-info-modern__title,
   .tora-info-text-style__heading h2 {
@@ -7106,6 +7320,7 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   }
 
   .tora-info-creative__text,
+  .tora-info-creative-reference__text,
   .tora-info-classic__text,
   .tora-info-modern__text,
   .tora-info-tabs__intro-text,
@@ -7113,9 +7328,16 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   .tora-info-text-style__text,
   .tora-info-simple-text,
   .tora-info-list__text,
+  .tora-info-list-reference__text,
   .tora-info-accordion__body {
     font-size: 16px;
     line-height: 1.6;
+  }
+
+  .tora-info-creative-reference__text {
+    font-size: 18px;
+    margin-bottom: 25px;
+    margin-top: 20px;
   }
 
   .tora-info-simple-text {
@@ -7132,8 +7354,22 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
     padding: 50px 20px 40px;
   }
 
+  .tora-info-block--info-list-reference {
+    min-height: auto;
+    padding: 50px 20px 40px;
+  }
+
+  .tora-info-list-reference__title {
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+  }
+
   .tora-info-list__text {
     line-height: 1.7;
+  }
+
+  .tora-info-list-reference__text {
+    line-height: 2;
   }
 
   .tora-info-tabs__intro {

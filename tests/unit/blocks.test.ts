@@ -132,6 +132,7 @@ describe("page builder blocks", () => {
         quote: "Quote copy.",
         photoId: "lead-photo",
         secondaryPhotoId: "signature-photo",
+        dimPhoto: false,
         buttonLabel: "LET'S CONNECT",
         buttonHref: "/contact",
         tabs: [
@@ -162,14 +163,22 @@ describe("page builder blocks", () => {
         id: "info-defaults",
         type: "infoBlock",
       },
+      {
+        id: "info-reference",
+        type: "infoBlock",
+        style: "infoListReference",
+        photoId: "reference-photo",
+        dimPhoto: false,
+      },
     ]);
 
-    expect(blocks).toHaveLength(2);
+    expect(blocks).toHaveLength(3);
     expect(blocks[0]).toMatchObject({
       id: "info",
       type: "infoBlock",
       style: "tabs",
       eyebrow: "WHAT I LOVE TO SHOOT",
+      dimPhoto: false,
       buttonHref: "/contact",
       tabs: [
         {
@@ -198,6 +207,14 @@ describe("page builder blocks", () => {
       style: "creative",
       tabs: [],
       accordionItems: [],
+      dimPhoto: true,
+    });
+    expect(blocks[2]).toMatchObject({
+      id: "info-reference",
+      type: "infoBlock",
+      style: "infoListReference",
+      photoId: "reference-photo",
+      dimPhoto: false,
     });
     expect(collectPhotoIds(blocks)).toEqual([
       "lead-photo",
@@ -205,6 +222,7 @@ describe("page builder blocks", () => {
       "tab-photo-a",
       "tab-accent-a",
       "tab-photo-b",
+      "reference-photo",
     ]);
   });
 

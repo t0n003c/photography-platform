@@ -608,6 +608,7 @@ function makeBlock(type: BlockType): Block {
         "Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called.",
       photoId: null,
       secondaryPhotoId: null,
+      dimPhoto: true,
       buttonLabel: "LET'S CONNECT",
       buttonHref: "#",
       tabs: [makeInfoBlockTab(0), makeInfoBlockTab(1), makeInfoBlockTab(2), makeInfoBlockTab(3)],
@@ -1767,16 +1768,27 @@ function LeafEditor({
     case "infoBlock": {
       const tabs = block.tabs ?? [];
       const accordionItems = block.accordionItems ?? [];
-      const needsPhoto = block.style === "creative" || block.style === "infoList";
-      const usesButton = block.style === "creative" || block.style === "classic" || block.style === "simple";
+      const needsPhoto =
+        block.style === "creative" ||
+        block.style === "creativeReference" ||
+        block.style === "infoList" ||
+        block.style === "infoListReference";
+      const usesButton =
+        block.style === "creative" ||
+        block.style === "creativeReference" ||
+        block.style === "classic" ||
+        block.style === "simple";
       const usesTitle =
         block.style === "creative" ||
+        block.style === "creativeReference" ||
         block.style === "infoList" ||
+        block.style === "infoListReference" ||
         block.style === "classic" ||
         block.style === "textStyle" ||
         block.style === "modern";
       const usesEyebrow =
         block.style === "creative" ||
+        block.style === "creativeReference" ||
         block.style === "tabs" ||
         block.style === "textStyle" ||
         block.style === "simple" ||
@@ -1826,6 +1838,12 @@ function LeafEditor({
         if (style === "modern" && !block.eyebrow.trim()) {
           patch.eyebrow = "PHOTOGRAPHER / TRAVELLER";
         }
+        if (style === "creativeReference") {
+          patch.dimPhoto = false;
+        }
+        if (style === "infoListReference") {
+          patch.dimPhoto = true;
+        }
         set(patch);
       };
 
@@ -1835,9 +1853,11 @@ function LeafEditor({
             <Field label="Style">
               <Select value={block.style} onChange={(e) => updateInfoStyle(e.target.value as typeof block.style)}>
                 <option value="creative">Creative</option>
+                <option value="creativeReference">Creative reference</option>
                 <option value="simpleText">Simple text</option>
                 <option value="quote">Quote</option>
                 <option value="infoList">Info list</option>
+                <option value="infoListReference">Info list reference</option>
                 <option value="classic">Classic</option>
                 <option value="tabs">Tabs style</option>
                 <option value="textStyle">Text style</option>
@@ -1870,9 +1890,21 @@ function LeafEditor({
           )}
 
           {needsPhoto && (
-            <Field label="Image">
-              <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
-            </Field>
+            <>
+              <Field label="Image">
+                <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
+              </Field>
+              <Field label="Photo dimming">
+                <label className="flex h-9 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={block.dimPhoto ?? true}
+                    onChange={(e) => set({ dimPhoto: e.target.checked })}
+                  />
+                  Dim photo overlay
+                </label>
+              </Field>
+            </>
           )}
 
           {block.style === "modern" && (
