@@ -192,6 +192,83 @@ html.js .pr-root.is-enhanced {
   transform: translateX(0);
 }
 
+.tora-only-image {
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  height: 450px;
+}
+
+.tora-only-image__copy {
+  color: #ffffff;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.tora-only-image__eyebrow {
+  color: rgb(255 255 255 / 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.tora-only-image__title {
+  color: #ffffff;
+  font-size: 60px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1300px) {
+  .tora-only-image {
+    height: 350px;
+  }
+
+  .tora-only-image__title {
+    font-size: 50px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tora-only-image {
+    height: 300px;
+  }
+
+  .tora-only-image__title {
+    font-size: 45px;
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-only-image {
+    height: 250px;
+  }
+
+  .tora-only-image__title {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tora-only-image {
+    height: 230px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tora-only-image {
+    height: 200px;
+  }
+
+  .tora-only-image__title {
+    font-size: 30px;
+  }
+}
+
 /* ToraMochie / Reflector Headings reference. These variants map the
    `/headings/` page into the existing Heading block without changing the
    default heading renderer. */
@@ -6300,6 +6377,176 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 
   .tora-parallax-showcase__media {
     transform: none;
+  }
+}
+
+/* ToraMochie clients reference logo wall. */
+.tora-client-wall {
+  --tora-client-wall-bg: #ffffff;
+  --tora-client-wall-title: #4c4c4c;
+  --tora-client-wall-copy: #8d8d8d;
+  background: var(--tora-client-wall-bg);
+  color: var(--tora-client-wall-title);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  padding: 105px 0 60px;
+}
+
+.dark .tora-client-wall {
+  --tora-client-wall-bg: #252626;
+  --tora-client-wall-title: #f7f7f7;
+  --tora-client-wall-copy: rgb(247 247 247 / 0.74);
+}
+
+.tora-client-wall__inner {
+  margin: 0 auto;
+  max-width: 1140px;
+  width: calc(100% - 30px);
+}
+
+.tora-client-wall__header {
+  text-align: center;
+}
+
+.tora-client-wall__eyebrow {
+  color: var(--tora-client-wall-copy);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.tora-client-wall__title {
+  color: var(--tora-client-wall-title);
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tora-client-wall__intro {
+  color: var(--tora-client-wall-copy);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 60px auto 0;
+  max-width: 1100px;
+  text-align: center;
+}
+
+.tora-client-wall__intro--standalone {
+  margin-top: 0;
+}
+
+.tora-client-wall__intro p {
+  margin: 0;
+}
+
+.tora-client-wall__intro p + p {
+  margin-top: 1em;
+}
+
+.tora-client-wall__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 45px;
+}
+
+.tora-client-wall__item {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 233px;
+  padding: 25px 0;
+}
+
+.tora-client-wall__logo-media {
+  aspect-ratio: 1;
+  display: block;
+  width: min(183px, calc(100% - 20px));
+}
+
+.tora-client-wall__logo-image {
+  display: block;
+  filter: grayscale(1);
+  height: 100%;
+  object-fit: contain;
+  transition: filter 450ms ease;
+  width: 100%;
+}
+
+.tora-client-wall--color .tora-client-wall__logo-image,
+.tora-client-wall__item:hover .tora-client-wall__logo-image {
+  filter: grayscale(0);
+}
+
+@media (max-width: 1199px) {
+  .tora-client-wall {
+    padding-top: 90px;
+  }
+
+  .tora-client-wall__grid {
+    margin-top: 40px;
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-client-wall {
+    padding-bottom: 40px;
+    padding-top: 70px;
+  }
+
+  .tora-client-wall__title {
+    letter-spacing: 2px;
+  }
+
+  .tora-client-wall__intro {
+    margin-top: 40px;
+  }
+
+  .tora-client-wall__grid {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-client-wall {
+    padding-bottom: 35px;
+    padding-top: 45px;
+  }
+
+  .tora-client-wall__title {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-client-wall__intro {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-top: 20px;
+  }
+
+  .tora-client-wall__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0;
+  }
+
+  .tora-client-wall__item {
+    min-height: 145px;
+    padding: 5px 0;
+  }
+
+  .tora-client-wall__logo-media {
+    width: min(135px, calc(100% - 10px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-client-wall__logo-image {
+    transition: none;
   }
 }
 

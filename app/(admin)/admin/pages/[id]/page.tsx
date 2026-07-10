@@ -429,6 +429,10 @@ const TORA_HEADING_DEFAULT_LABELS: Record<string, string> = {
   "tora-classic": "HEADINGS",
   "tora-urban": "KNOW ME BETTER",
 };
+const TORA_CLIENT_WALL_DEFAULT_TITLE = "OUR HAPPY CLIENTS";
+const TORA_CLIENT_WALL_DEFAULT_EYEBROW = "BEST CASES";
+const TORA_CLIENT_WALL_DEFAULT_INTRO =
+  "A selection of brands and creative partners we have been proud to photograph.";
 
 function toraHeadingDefaultLabel(style: string | undefined) {
   return TORA_HEADING_DEFAULT_LABELS[style ?? ""] ?? "";
@@ -770,7 +774,18 @@ function makeBlock(type: BlockType): Block {
     };
     case "instagram": return { id, type, title: "From the field", count: 6 };
     case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
-    case "logos": return { id, type, title: "As featured in", style: "row", grayscale: true, size: "md", spacing: "normal", photoIds: [] };
+    case "logos": return {
+      id,
+      type,
+      title: "As featured in",
+      eyebrow: TORA_CLIENT_WALL_DEFAULT_EYEBROW,
+      intro: "",
+      style: "row",
+      grayscale: true,
+      size: "md",
+      spacing: "normal",
+      photoIds: [],
+    };
     case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"], justify: "fill" };
     default: return makeDividerBlock(id);
   }
@@ -5459,6 +5474,7 @@ function LeafEditor({
       const isToraMochie = block.layout?.startsWith("toramochie-") ?? false;
       const isToraWall = block.layout === "toramochie-full-wall";
       const isToraWedding = block.layout === "toramochie-wedding-studio";
+      const isToraOnlyImage = block.layout === "toramochie-only-image";
       const isToraMinimal = block.layout === "toramochie-minimal-slider";
       const isToraFullWidthSlider = block.layout === "toramochie-full-width-slider";
       const isToraSlider = isToraMinimal || isToraFullWidthSlider;
@@ -5486,6 +5502,15 @@ function LeafEditor({
           if (!(block.typewriterWords ?? "").trim()) {
             patch.typewriterWords = TORA_MOCHIE_DEFAULT_TYPED_WORDS;
           }
+        } else if (layout === "toramochie-only-image") {
+          if (!block.headline.trim() || block.headline === "Image banner") {
+            patch.headline = "CLIENTS";
+          }
+          patch.eyebrow = "";
+          patch.subhead = "";
+          patch.ctaLabel = "";
+          patch.overlay = block.overlay === "none" ? "none" : "auto";
+          patch.effect = "none";
         } else if (layout === "toramochie-wedding-studio") {
           patch.headline = block.headline.trim() || "Welcome to Reflector Wedding Photography!";
           patch.subhead =
@@ -5620,14 +5645,27 @@ function LeafEditor({
       );
       const rest = (
         <>
-          <Field label="Small label">
-            <Input
-              value={block.eyebrow ?? ""}
-              onChange={(e) => set({ eyebrow: e.target.value })}
-              placeholder={isToraMochie ? "Image banner" : ""}
-            />
-          </Field>
+          {!isToraOnlyImage && (
+            <Field label="Small label">
+              <Input
+                value={block.eyebrow ?? ""}
+                onChange={(e) => set({ eyebrow: e.target.value })}
+                placeholder={isToraMochie ? "Image banner" : ""}
+              />
+            </Field>
+          )}
+          {isToraOnlyImage && (
+            <Field label="Small label (optional)">
+              <Input
+                value={block.eyebrow ?? ""}
+                onChange={(e) => set({ eyebrow: e.target.value })}
+              />
+            </Field>
+          )}
           <Field label={isAgency ? "Headline line 1" : "Headline"}><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
+          {!isToraOnlyImage && (
+            <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
+          )}
           {isToraWall && (
             <Field label="Typed words">
               <Input
@@ -5646,8 +5684,7 @@ function LeafEditor({
               />
             </Field>
           )}
-          <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
-          {!isSpecialHero && (
+          {!isSpecialHero && !isToraOnlyImage && (
             <>
               <Field label="Headline font">
                 <Select value={block.headlineFont ?? "sans"} onChange={(e) => set({ headlineFont: e.target.value as typeof block.headlineFont })}>
@@ -5671,20 +5708,26 @@ function LeafEditor({
               </Field>
             </>
           )}
-          <Field label="Button label"><Input value={block.ctaLabel ?? ""} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
-          <Field label="Button link"><Input value={block.ctaHref ?? ""} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
-          {!isSpecialHero && (
+          {!isToraOnlyImage && (
+            <>
+              <Field label="Button label"><Input value={block.ctaLabel ?? ""} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
+              <Field label="Button link"><Input value={block.ctaHref ?? ""} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
+            </>
+          )}
+          {!isSpecialHero && !isToraOnlyImage && (
             <Field label="Button style">
               <Select value={block.buttonStyle ?? "solid"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
                 <option value="solid">Solid</option><option value="pill">Pill</option><option value="outline">Outline</option><option value="link">Text link</option>
               </Select>
             </Field>
           )}
-          <Field label="Height">
-            <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
-              <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
-            </Select>
-          </Field>
+          {!isToraOnlyImage && (
+            <Field label="Height">
+              <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
+                <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+              </Select>
+            </Field>
+          )}
           {isPrisma ? (
             <>
               <div className="sm:col-span-2">
@@ -7545,28 +7588,61 @@ function LeafEditor({
           </div>
         </div>
       );
-    case "logos":
+    case "logos": {
+      const isToraClientWall = block.style === "tora-client-wall";
+      const updateLogoStyle = (style: typeof block.style) => {
+        const patch: Partial<LeafBlock> = { style };
+        if (style === "tora-client-wall") {
+          if (!block.title?.trim() || block.title === "As featured in") {
+            patch.title = TORA_CLIENT_WALL_DEFAULT_TITLE;
+          }
+          if (!(block.eyebrow ?? "").trim()) {
+            patch.eyebrow = TORA_CLIENT_WALL_DEFAULT_EYEBROW;
+          }
+          if (!(block.intro ?? "").trim()) {
+            patch.intro = TORA_CLIENT_WALL_DEFAULT_INTRO;
+          }
+          patch.size = "md";
+          patch.spacing = "normal";
+        }
+        set(patch);
+      };
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Title (optional)"><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label={isToraClientWall ? "Heading" : "Title (optional)"}><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
             <Field label="Style">
-              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+              <Select value={block.style} onChange={(e) => updateLogoStyle(e.target.value as typeof block.style)}>
                 <option value="row">Row</option>
                 <option value="grid">Grid</option>
                 <option value="marquee">Marquee (scrolling)</option>
+                <option value="tora-client-wall">Tora client wall</option>
               </Select>
             </Field>
-            <Field label="Size">
-              <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
-                <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
-              </Select>
-            </Field>
-            <Field label="Spacing">
-              <Select value={block.spacing ?? "normal"} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
-                <option value="tighter">Tighter</option><option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
-              </Select>
-            </Field>
+            {isToraClientWall && (
+              <>
+                <Field label="Small label"><Input value={block.eyebrow ?? ""} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
+                <div className="sm:col-span-2">
+                  <Field label="Intro text">
+                    <Textarea rows={3} value={block.intro ?? ""} onChange={(e) => set({ intro: e.target.value })} />
+                  </Field>
+                </div>
+              </>
+            )}
+            {!isToraClientWall && (
+              <>
+                <Field label="Size">
+                  <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
+                    <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+                  </Select>
+                </Field>
+                <Field label="Spacing">
+                  <Select value={block.spacing ?? "normal"} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
+                    <option value="tighter">Tighter</option><option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+                  </Select>
+                </Field>
+              </>
+            )}
             <Field label="Color">
               <Select value={block.grayscale ? "mono" : "color"} onChange={(e) => set({ grayscale: e.target.value === "mono" })}>
                 <option value="mono">Grayscale (color on hover)</option>
@@ -7583,6 +7659,7 @@ function LeafEditor({
           </Field>
         </div>
       );
+    }
     case "divider":
       return (
         <div className="space-y-3">

@@ -79,6 +79,47 @@ describe("page builder blocks", () => {
     });
   });
 
+  it("keeps Tora client wall logo blocks", () => {
+    const blocks = parseBlocks([
+      {
+        id: "logos",
+        type: "logos",
+        title: "OUR HAPPY CLIENTS",
+        eyebrow: "BEST CASES",
+        intro: "A short client wall introduction.",
+        style: "tora-client-wall",
+        grayscale: false,
+        photoIds: ["logo-a", "logo-b"],
+      },
+      {
+        id: "logos-defaults",
+        type: "logos",
+        style: "tora-client-wall",
+        photoIds: ["logo-c"],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({
+      id: "logos",
+      type: "logos",
+      title: "OUR HAPPY CLIENTS",
+      eyebrow: "BEST CASES",
+      intro: "A short client wall introduction.",
+      style: "tora-client-wall",
+      grayscale: false,
+    });
+    expect(blocks[1]).toMatchObject({
+      id: "logos-defaults",
+      type: "logos",
+      eyebrow: "BEST CASES",
+      intro: "",
+      style: "tora-client-wall",
+      grayscale: true,
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["logo-a", "logo-b", "logo-c"]);
+  });
+
   it("keeps location map blocks with selected locations", () => {
     const blocks = parseBlocks([
       {

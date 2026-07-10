@@ -42,11 +42,6 @@ const TORA_HEIGHTS: Record<BannerData["height"], string> = {
   tall: "h-[72vh]",
   full: "h-[88vh]",
 };
-const TORA_STRIP_HEIGHTS: Record<BannerData["height"], string> = {
-  short: "h-[30vh]",
-  tall: "h-[40vh]",
-  full: "h-[54vh]",
-};
 const TORA_WALL_HEIGHTS: Record<BannerData["height"], string> = {
   short: "py-8",
   tall: "py-10 md:py-12",
@@ -493,16 +488,22 @@ function isToraMochieLayout(layout: BannerData["layout"]) {
 function ToraOverlay({ block, subtle = false }: { block: BannerData; subtle?: boolean }) {
   const mode = block.overlay ?? "auto";
   if (mode === "none") return null;
+  if (subtle) {
+    return (
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          mode === "dark" ? "bg-black/55" : "bg-black/40",
+        )}
+      />
+    );
+  }
   return (
     <>
       <div
         className={cn(
           "pointer-events-none absolute inset-0",
-          mode === "dark"
-            ? "bg-black/55"
-            : subtle
-              ? "bg-black/20"
-              : "bg-black/38",
+          mode === "dark" ? "bg-black/55" : "bg-black/38",
         )}
       />
       <div
@@ -586,7 +587,8 @@ function ToraCopy({
   block: BannerData;
   variant: "modern" | "creative" | "simple" | "wall" | "bottom" | "strip" | "classic";
 }) {
-  const eyebrow = block.eyebrow.trim() || "Image banner";
+  const explicitEyebrow = block.eyebrow.trim();
+  const eyebrow = explicitEyebrow || "Image banner";
   const headline =
     block.headline.trim() || (variant === "wall" ? TORA_MOCHIE_DEFAULT_HEADLINE : "Image banner");
   const subhead = block.subhead.trim();
@@ -661,11 +663,11 @@ function ToraCopy({
 
   if (variant === "strip") {
     return (
-      <div className="px-5 text-center text-white">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-white/70">
-          {eyebrow}
-        </p>
-        <h1 className="font-sans text-2xl font-black uppercase tracking-[0.16em] sm:text-4xl md:text-5xl">
+      <div className="tora-only-image__copy">
+        {explicitEyebrow && (
+          <p className="tora-only-image__eyebrow">{explicitEyebrow}</p>
+        )}
+        <h1 className="tora-only-image__title">
           {headline}
         </h1>
       </div>
@@ -822,7 +824,7 @@ function ToraMochieBanner({
   }
 
   const height =
-    layout === "toramochie-only-image" ? TORA_STRIP_HEIGHTS[block.height] : TORA_HEIGHTS[block.height];
+    layout === "toramochie-only-image" ? "tora-only-image" : TORA_HEIGHTS[block.height];
   const variant =
     layout === "toramochie-creative"
       ? "creative"

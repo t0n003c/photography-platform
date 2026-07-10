@@ -589,6 +589,59 @@ function LeafView({
           </Container>
         );
       }
+      if (block.style === "tora-client-wall") {
+        const eyebrow = (block.eyebrow ?? "").trim();
+        const title = block.title?.trim();
+        const intro = (block.intro ?? "").trim();
+        const headingId = title ? `${block.id}-client-wall-title` : undefined;
+        return (
+          <section
+            className={cn(
+              "tora-client-wall",
+              !block.grayscale && "tora-client-wall--color",
+            )}
+            aria-labelledby={headingId}
+          >
+            <div className="tora-client-wall__inner">
+              {(eyebrow || title || intro) && (
+                <header className="tora-client-wall__header">
+                  {eyebrow && (
+                    <p className="tora-client-wall__eyebrow">{eyebrow}</p>
+                  )}
+                  {title && (
+                    <h2 id={headingId} className="tora-client-wall__title">
+                      {title}
+                    </h2>
+                  )}
+                  {intro && (
+                    <div
+                      className={cn(
+                        "tora-client-wall__intro",
+                        !eyebrow && !title && "tora-client-wall__intro--standalone",
+                      )}
+                    >
+                      <Paragraphs text={intro} />
+                    </div>
+                  )}
+                </header>
+              )}
+              <div className="tora-client-wall__grid">
+                {logos.map((p, i) => (
+                  <div key={p.id ?? i} className="tora-client-wall__item">
+                    <ResponsiveImage
+                      photo={p}
+                      sizes="(max-width: 767px) 135px, 183px"
+                      className="tora-client-wall__logo-media"
+                      imgClassName="tora-client-wall__logo-image"
+                      showPlaceholderBackdrop={false}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
       const imgCls = `${LOGO_H[block.size] ?? "h-12"} w-auto object-contain ${
         block.grayscale
           ? "opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0"

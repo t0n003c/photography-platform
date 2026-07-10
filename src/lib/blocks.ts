@@ -901,12 +901,14 @@ const FaqBlock = z.object({
   align: AlignEnum.default("left"),
   items: z.array(FaqItem).default([]),
 });
-export const LogoStyleEnum = z.enum(["row", "grid", "marquee"]);
+export const LogoStyleEnum = z.enum(["row", "grid", "marquee", "tora-client-wall"]);
 export const LogoSpacingEnum = z.enum(["tighter", "tight", "normal", "airy"]);
 const LogoBlock = z.object({
   ...baseBlock,
   type: z.literal("logos"),
   title: z.string().optional(),
+  eyebrow: z.string().default("BEST CASES"),
+  intro: z.string().default(""),
   // row = centered strip; grid = bordered cells; marquee = scrolling row.
   style: LogoStyleEnum.default("row"),
   grayscale: z.boolean().default(true),
