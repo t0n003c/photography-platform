@@ -9562,6 +9562,319 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   letter-spacing: 1px;
 }
 
+.tora-pricing-slider {
+  --tora-pricing-slider-card-bg: rgb(255 255 255 / 0.94);
+  --tora-pricing-slider-card-text: #1f1e1d;
+  --tora-pricing-slider-muted: rgb(31 30 29 / 0.6);
+  --tora-pricing-slider-accent: #9b7845;
+  --tora-pricing-slider-button-text: #1f1e1d;
+  --tora-pricing-slider-dot: rgb(255 255 255 / 0.9);
+  --tora-pricing-slider-dot-active: rgb(188 188 188 / 0.9);
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  color: #fff;
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  padding: clamp(88px, 12vh, 142px) 0 clamp(80px, 11vh, 130px);
+}
+
+.tora-pricing-slider.is-dark {
+  --tora-pricing-slider-card-bg: #292626;
+  --tora-pricing-slider-card-text: #fff;
+  --tora-pricing-slider-muted: rgb(255 255 255 / 0.68);
+  --tora-pricing-slider-accent: #ddc59f;
+  --tora-pricing-slider-button-text: #fff;
+}
+
+.tora-pricing-slider__background,
+.tora-pricing-slider__background picture,
+.tora-pricing-slider__background img,
+.tora-pricing-slider__fallback-bg,
+.tora-pricing-slider__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.tora-pricing-slider__background {
+  z-index: 0;
+  background: #1a1717;
+}
+
+.tora-pricing-slider__background picture,
+.tora-pricing-slider__background img,
+.tora-pricing-slider__fallback-bg {
+  width: 100%;
+  height: 100%;
+}
+
+.tora-pricing-slider__background img {
+  display: block;
+  object-fit: cover;
+}
+
+.tora-pricing-slider__fallback-bg {
+  background:
+    linear-gradient(105deg, rgb(25 20 21 / 0.88), rgb(47 42 39 / 0.52)),
+    radial-gradient(circle at 78% 24%, rgb(184 156 111 / 0.24), transparent 30%),
+    linear-gradient(145deg, #161313, #3b3831 52%, #171414);
+}
+
+.tora-pricing-slider__overlay {
+  z-index: 1;
+  background: rgb(0 0 0 / var(--tora-pricing-slider-overlay, 0.5));
+}
+
+.tora-pricing-slider__inner {
+  position: relative;
+  z-index: 2;
+  width: min(1110px, calc(100% - 30px));
+  margin: 0 auto;
+}
+
+.tora-pricing-slider__heading {
+  margin-bottom: 72px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.tora-pricing-slider__heading p,
+.tora-pricing-slider__heading h2,
+.tora-pricing-slider__card h3,
+.tora-pricing-slider__button {
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tora-pricing-slider__heading p {
+  color: rgb(255 255 255 / 0.88);
+  font-size: 13px;
+  letter-spacing: 2.7px;
+  line-height: 1.4;
+}
+
+.tora-pricing-slider__heading h2 {
+  margin-top: 10px;
+  color: #fff;
+  font-size: clamp(2.4rem, 4.5vw, 4.5rem);
+  letter-spacing: 5px;
+  line-height: 0.96;
+}
+
+.tora-pricing-slider__viewport {
+  overflow: hidden;
+  padding: 35px 0;
+  margin: -35px 0 0;
+}
+
+.tora-pricing-slider__track {
+  display: flex;
+  gap: 30px;
+  align-items: stretch;
+  transition-property: transform;
+  transition-timing-function: ease;
+  will-change: transform;
+}
+
+.tora-pricing-slider__slide {
+  flex: 0 0 calc((100% - 90px) / 4);
+  min-width: 0;
+  height: auto;
+}
+
+.tora-pricing-slider__card {
+  display: flex;
+  min-height: 416px;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  background: var(--tora-pricing-slider-card-bg);
+  color: var(--tora-pricing-slider-card-text);
+  padding: 43px 27px 45px;
+  text-align: center;
+  transition:
+    transform 600ms ease,
+    background-color 360ms ease,
+    color 360ms ease;
+}
+
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__card {
+  background: var(--tora-pricing-slider-accent);
+  color: #fff;
+}
+
+.tora-pricing-slider__card h3 {
+  font-size: 17px;
+  letter-spacing: 2px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tora-pricing-slider__cost {
+  margin: 8px 0 25px;
+  color: var(--tora-pricing-slider-accent);
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-size: 35px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.2;
+}
+
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__cost {
+  color: #fff;
+}
+
+.tora-pricing-slider__card ul {
+  width: 100%;
+  margin: 0 0 30px;
+  padding: 0;
+  list-style: none;
+}
+
+.tora-pricing-slider__card li {
+  color: var(--tora-pricing-slider-muted);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 20px;
+  padding: 8px 0;
+}
+
+.tora-pricing-slider__card li.is-excluded {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__card li {
+  color: rgb(255 255 255 / 0.86);
+}
+
+.tora-pricing-slider__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 138px;
+  margin-top: auto;
+  border: 1px solid currentColor;
+  color: var(--tora-pricing-slider-button-text);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  line-height: 1.2;
+  padding: 13px 19px 11px;
+  text-decoration: none;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease;
+}
+
+.tora-pricing-slider__button:hover,
+.tora-pricing-slider__button:focus-visible {
+  background: var(--tora-pricing-slider-accent);
+  border-color: var(--tora-pricing-slider-accent);
+  color: #fff;
+  outline: none;
+}
+
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__button {
+  color: #fff;
+}
+
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__button:hover,
+.tora-pricing-slider__slide.is-highlighted .tora-pricing-slider__button:focus-visible {
+  background: #fff;
+  border-color: #fff;
+  color: var(--tora-pricing-slider-accent);
+}
+
+.tora-pricing-slider__pagination {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.tora-pricing-slider__pagination button {
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgb(188 188 188 / 0.9);
+  border-radius: 50%;
+  background: var(--tora-pricing-slider-dot);
+  opacity: 1;
+  padding: 0;
+}
+
+.tora-pricing-slider__pagination button.is-active {
+  background: var(--tora-pricing-slider-dot-active);
+}
+
+@media (min-width: 992px) {
+  .tora-pricing-slider__card:hover,
+  .tora-pricing-slider__card:focus-within {
+    transform: translateY(-30px);
+  }
+}
+
+@media (max-width: 1199px) {
+  .tora-pricing-slider__slide {
+    flex-basis: calc((100% - 60px) / 3);
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-pricing-slider {
+    padding-top: clamp(72px, 10vh, 104px);
+  }
+
+  .tora-pricing-slider__heading {
+    margin-bottom: 48px;
+  }
+
+  .tora-pricing-slider__slide {
+    flex-basis: calc((100% - 30px) / 2);
+  }
+
+  .tora-pricing-slider__card {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-pricing-slider {
+    min-height: auto;
+    padding: 58px 0 70px;
+  }
+
+  .tora-pricing-slider__inner {
+    width: calc(100% - 30px);
+  }
+
+  .tora-pricing-slider__heading {
+    margin-bottom: 28px;
+  }
+
+  .tora-pricing-slider__heading p {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .tora-pricing-slider__heading h2 {
+    font-size: clamp(2rem, 10.5vw, 2.8rem);
+    letter-spacing: 3px;
+  }
+
+  .tora-pricing-slider__slide {
+    flex-basis: 100%;
+  }
+
+  .tora-pricing-slider__card {
+    min-height: 430px;
+    padding: 43px 24px 42px;
+  }
+}
+
 @media (max-width: 991px) {
   .tora-pricelist-style3 {
     padding-top: 62px;
@@ -10261,8 +10574,17 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   .tora-pricelist-style3-contact textarea,
   .tora-pricelist-style3-contact .a-btn-3,
   .tora-pricelist-style3-total,
+  .tora-pricing-slider__track,
+  .tora-pricing-slider__card,
+  .tora-pricing-slider__button,
+  .tora-pricing-slider__pagination button,
   .reflector-send-popup {
     transition: none;
+  }
+
+  .tora-pricing-slider__card:hover,
+  .tora-pricing-slider__card:focus-within {
+    transform: none;
   }
 
   .pricing-frequency-thumb {

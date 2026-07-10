@@ -746,6 +746,11 @@ function makeBlock(type: BlockType): Block {
       showBillingToggle: true,
       theme: "auto",
       showHighlightEffect: true,
+      pricingSliderBackgroundPhotoId: null,
+      pricingSliderOverlayOpacity: 0.5,
+      pricingSliderAutoplay: true,
+      pricingSliderAutoplayMs: 5000,
+      pricingSliderTransitionMs: 1500,
       castingImageRatio: "reference",
       plans: [makePricingPlan(0), makePricingPlan(1), makePricingPlan(2)],
     };
@@ -3164,6 +3169,26 @@ function LeafEditor({
         updatePlan(index, { [key]: Number.isFinite(next) ? next : 0 });
       };
       const isCastingServices = block.style === "tora-casting-services";
+      const isPricingSlider = block.style === "tora-pricing-slider";
+      const updatePricingStyle = (style: typeof block.style) => {
+        const patch: Partial<typeof block> = { style };
+        if (style === "tora-pricing-slider") {
+          if (!block.eyebrow.trim()) patch.eyebrow = "CHOOSE OWN";
+          if (
+            !block.heading.trim() ||
+            block.heading.trim() === "Plans that Scale with You"
+          ) {
+            patch.heading = "PRICING TABLE";
+          }
+          patch.theme = block.theme === "auto" ? "dark" : block.theme;
+          patch.showBillingToggle = false;
+          patch.pricingSliderAutoplay ??= true;
+          patch.pricingSliderAutoplayMs ??= 5000;
+          patch.pricingSliderTransitionMs ??= 1500;
+          patch.pricingSliderOverlayOpacity ??= 0.5;
+        }
+        set(patch);
+      };
 
       return (
         <div className="space-y-4">
@@ -3172,7 +3197,7 @@ function LeafEditor({
               <Select
                 value={block.style ?? "standard"}
                 onChange={(e) =>
-                  set({ style: e.target.value as typeof block.style })
+                  updatePricingStyle(e.target.value as typeof block.style)
                 }
               >
                 <option value="standard">Standard cards</option>
@@ -3183,6 +3208,7 @@ function LeafEditor({
                 <option value="tora-simple">Tora simple banner</option>
                 <option value="tora-with-media">Tora with media</option>
                 <option value="tora-image-background">Tora image background</option>
+                <option value="tora-pricing-slider">Tora pricing slider</option>
                 <option value="tora-price-list-style-3">
                   Tora price list style 3
                 </option>
@@ -3195,6 +3221,14 @@ function LeafEditor({
                 onChange={(e) => set({ heading: e.target.value })}
               />
             </Field>
+            {isPricingSlider && (
+              <Field label="Small label">
+                <Input
+                  value={block.eyebrow ?? ""}
+                  onChange={(e) => set({ eyebrow: e.target.value })}
+                />
+              </Field>
+            )}
             {!isCastingServices && (
               <Field label="Currency">
                 <Input
@@ -3232,6 +3266,101 @@ function LeafEditor({
                 </Select>
               </Field>
             )}
+            {isPricingSlider && (
+              <div className="sm:col-span-2 lg:col-span-4">
+                <div className="grid gap-3 rounded-lg border p-3 lg:grid-cols-2">
+                  <Field label="Background image">
+                    <PhotoPicker
+                      photos={photos}
+                      value={block.pricingSliderBackgroundPhotoId ?? null}
+                      onChange={(pricingSliderBackgroundPhotoId) =>
+                        set({ pricingSliderBackgroundPhotoId })
+                      }
+                      containerClassName="max-h-56"
+                    />
+                  </Field>
+                  <div className="grid content-start gap-2 sm:grid-cols-2">
+                    <Field label="Overlay opacity">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={0.85}
+                        step={0.05}
+                        value={block.pricingSliderOverlayOpacity ?? 0.5}
+                        onChange={(e) =>
+                          set({
+                            pricingSliderOverlayOpacity: Math.max(
+                              0,
+                              Math.min(0.85, Number(e.target.value) || 0),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Default period">
+                      <Select
+                        value={block.defaultFrequency ?? "monthly"}
+                        onChange={(e) =>
+                          set({
+                            defaultFrequency: e.target
+                              .value as typeof block.defaultFrequency,
+                          })
+                        }
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </Select>
+                    </Field>
+                    <Field label="Autoplay">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.pricingSliderAutoplay ?? true}
+                          onChange={(e) =>
+                            set({ pricingSliderAutoplay: e.target.checked })
+                          }
+                        />
+                        Auto-advance
+                      </label>
+                    </Field>
+                    <Field label="Autoplay delay">
+                      <Input
+                        type="number"
+                        min={1200}
+                        max={12000}
+                        step={100}
+                        value={block.pricingSliderAutoplayMs ?? 5000}
+                        onChange={(e) =>
+                          set({
+                            pricingSliderAutoplayMs: Math.max(
+                              1200,
+                              Math.min(12000, pxInput(e.target.value)),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Transition speed">
+                      <Input
+                        type="number"
+                        min={300}
+                        max={3000}
+                        step={100}
+                        value={block.pricingSliderTransitionMs ?? 1500}
+                        onChange={(e) =>
+                          set({
+                            pricingSliderTransitionMs: Math.max(
+                              300,
+                              Math.min(3000, pxInput(e.target.value)),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="sm:col-span-2 lg:col-span-4">
               <Field label="Description">
                 <Textarea
@@ -3241,7 +3370,7 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            {!isCastingServices && (
+            {!isCastingServices && !isPricingSlider && (
               <>
                 <Field label="Billing toggle">
                   <label className="flex h-9 items-center gap-2 text-sm">

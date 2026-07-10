@@ -648,6 +648,7 @@ const PricingBlock = z.object({
       "tora-simple",
       "tora-with-media",
       "tora-image-background",
+      "tora-pricing-slider",
       "tora-price-list-style-3",
       "tora-casting-services",
     ])
@@ -664,6 +665,11 @@ const PricingBlock = z.object({
   showBillingToggle: z.boolean().default(true),
   theme: z.enum(["auto", "dark", "light"]).default("auto"),
   showHighlightEffect: z.boolean().default(true),
+  pricingSliderBackgroundPhotoId: z.string().nullable().default(null),
+  pricingSliderOverlayOpacity: z.number().min(0).max(0.85).default(0.5),
+  pricingSliderAutoplay: z.boolean().default(true),
+  pricingSliderAutoplayMs: z.number().int().min(1200).max(12000).default(5000),
+  pricingSliderTransitionMs: z.number().int().min(300).max(3000).default(1500),
   castingImageRatio: z
     .enum(["reference", "wide", "landscape", "square", "portrait"])
     .default("reference"),
@@ -1097,6 +1103,7 @@ export function collectPhotoIds(blocks: Block[]): string[] {
       }
     }
     if (b.type === "pricing") {
+      if (b.pricingSliderBackgroundPhotoId) ids.push(b.pricingSliderBackgroundPhotoId);
       for (const plan of b.plans) {
         if (plan.photoId) ids.push(plan.photoId);
         if (plan.mediaPhotoId) ids.push(plan.mediaPhotoId);

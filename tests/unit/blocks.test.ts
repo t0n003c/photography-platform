@@ -807,6 +807,54 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual([]);
   });
 
+  it("keeps Tora pricing slider options and collects its background image", () => {
+    const blocks = parseBlocks([
+      {
+        id: "price-slider",
+        type: "pricing",
+        style: "tora-pricing-slider",
+        eyebrow: "CHOOSE OWN",
+        heading: "PRICING TABLE",
+        theme: "dark",
+        pricingSliderBackgroundPhotoId: "photo-pricing-bg",
+        pricingSliderOverlayOpacity: 0.45,
+        pricingSliderAutoplay: false,
+        pricingSliderAutoplayMs: 4200,
+        pricingSliderTransitionMs: 1500,
+        plans: [
+          {
+            id: "business",
+            name: "Business",
+            photoId: "photo-plan",
+            highlighted: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "price-slider",
+      type: "pricing",
+      style: "tora-pricing-slider",
+      eyebrow: "CHOOSE OWN",
+      heading: "PRICING TABLE",
+      theme: "dark",
+      pricingSliderBackgroundPhotoId: "photo-pricing-bg",
+      pricingSliderOverlayOpacity: 0.45,
+      pricingSliderAutoplay: false,
+      pricingSliderAutoplayMs: 4200,
+      pricingSliderTransitionMs: 1500,
+      plans: [
+        {
+          id: "business",
+          name: "Business",
+          highlighted: true,
+        },
+      ],
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-pricing-bg", "photo-plan"]);
+  });
+
   it("keeps team blocks and collects member portraits", () => {
     const blocks = parseBlocks([
       {

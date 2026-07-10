@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -62,6 +64,11 @@ function displayPrice(plan: PricingPlan, frequency: Frequency, currency: string)
     frequency === "yearly" ? plan.yearlyPrice : plan.monthlyPrice,
     currency,
   );
+}
+
+function clampNumber(value: number | undefined, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value as number));
 }
 
 function priceValue(plan: PricingPlan, frequency: Frequency) {
@@ -126,6 +133,20 @@ function usePricingDarkMode(theme: PricingBlockData["theme"]) {
   if (activeTheme === "dark") return true;
   if (activeTheme === "light") return false;
   return fallbackSystemDark;
+}
+
+function useReducedMotionPreference() {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReducedMotion(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  return reducedMotion;
 }
 
 function isToraPricingStyle(
@@ -295,6 +316,257 @@ function ToraPlanMeta({
       <h3 className={overlay ? "title" : "tora-price-title"}>{plan.name}</h3>
       {info && <p className={overlay ? "subtitle" : "tora-price-subtitle"}>{info}</p>}
     </>
+  );
+}
+
+function ToraPricingSliderBlock({
+  block,
+  plans,
+  frequency,
+  dark,
+  photoMap,
+}: {
+  block: PricingBlockData;
+  plans: PricingPlan[];
+  frequency: Frequency;
+  dark: boolean;
+  photoMap?: PhotoMap;
+}) {
+  const reducedMotion = useReducedMotionPreference();
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const transitionMs = clampNumber(
+    block.pricingSliderTransitionMs,
+    300,
+    3000,
+    1500,
+  );
+  const autoplayMs = clampNumber(
+    block.pricingSliderAutoplayMs,
+    1200,
+    12000,
+    5000,
+  );
+  const overlayOpacity = clampNumber(
+    block.pricingSliderOverlayOpacity,
+    0,
+    0.85,
+    0.5,
+  );
+  const backgroundPhoto = block.pricingSliderBackgroundPhotoId
+    ? photoMap?.get(block.pricingSliderBackgroundPhotoId)
+    : undefined;
+  const eyebrow = block.eyebrow.trim() || "CHOOSE OWN";
+  const title =
+    block.heading.trim() && block.heading.trim() !== DEFAULT_PRICING_TITLE
+      ? block.heading.trim()
+      : "PRICING TABLE";
+  const cloneCount = plans.length > 1 ? Math.min(4, plans.length) : 0;
+  const renderedPlans = useMemo(
+    () => (cloneCount > 0 ? [...plans, ...plans.slice(0, cloneCount)] : plans),
+    [cloneCount, plans],
+  );
+  const visibleIndex = plans.length > 0 ? activeIndex % plans.length : 0;
+
+  const syncOffset = useCallback((index: number) => {
+    const track = trackRef.current;
+    const slide = track?.children[index] as HTMLElement | undefined;
+    if (!track || !slide) {
+      setOffset(0);
+      return;
+    }
+    setOffset(slide.offsetLeft);
+  }, []);
+
+  useEffect(() => {
+    setTransitionEnabled(false);
+    setActiveIndex(0);
+    setOffset(0);
+    const frame = window.requestAnimationFrame(() => {
+      syncOffset(0);
+      setTransitionEnabled(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [plans.length, syncOffset]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => syncOffset(activeIndex));
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeIndex, syncOffset]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    const sync = () => syncOffset(activeIndex);
+    window.addEventListener("resize", sync);
+    const observer =
+      typeof ResizeObserver !== "undefined" && track
+        ? new ResizeObserver(sync)
+        : null;
+    if (track) observer?.observe(track);
+    return () => {
+      window.removeEventListener("resize", sync);
+      observer?.disconnect();
+    };
+  }, [activeIndex, syncOffset]);
+
+  useEffect(() => {
+    if (plans.length <= 1 || activeIndex < plans.length) return;
+    const timer = window.setTimeout(
+      () => {
+        setTransitionEnabled(false);
+        setActiveIndex(0);
+        setOffset(0);
+        window.requestAnimationFrame(() => setTransitionEnabled(true));
+      },
+      reducedMotion ? 0 : transitionMs,
+    );
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, plans.length, reducedMotion, transitionMs]);
+
+  useEffect(() => {
+    if (
+      block.pricingSliderAutoplay === false ||
+      paused ||
+      reducedMotion ||
+      plans.length <= 1
+    ) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setTransitionEnabled(true);
+      setActiveIndex((current) => current + 1);
+    }, autoplayMs);
+    return () => window.clearInterval(timer);
+  }, [
+    autoplayMs,
+    block.pricingSliderAutoplay,
+    paused,
+    plans.length,
+    reducedMotion,
+  ]);
+
+  return (
+    <section
+      className={cn(
+        "pricing-block tora-pricing-slider",
+        dark && "is-dark",
+      )}
+      style={
+        {
+          "--tora-pricing-slider-overlay": overlayOpacity,
+          "--tora-pricing-slider-speed": reducedMotion ? "0ms" : `${transitionMs}ms`,
+        } as CSSPropertiesWithVars
+      }
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div className="tora-pricing-slider__background" aria-hidden="true">
+        {backgroundPhoto ? (
+          <ResponsiveImage
+            photo={backgroundPhoto}
+            sizes="100vw"
+            priority
+            className="h-full w-full"
+          />
+        ) : (
+          <div className="tora-pricing-slider__fallback-bg" />
+        )}
+      </div>
+      <div className="tora-pricing-slider__overlay" aria-hidden="true" />
+      <div className="tora-pricing-slider__inner">
+        <header className="tora-pricing-slider__heading">
+          <p>{eyebrow}</p>
+          <h2>{title}</h2>
+        </header>
+
+        <div
+          className="tora-pricing-slider__viewport"
+          aria-roledescription="carousel"
+          aria-label={title}
+        >
+          <div
+            ref={trackRef}
+            className="tora-pricing-slider__track"
+            style={
+              {
+                transform: `translate3d(${-offset}px, 0, 0)`,
+                transitionDuration:
+                  transitionEnabled && !reducedMotion
+                    ? "var(--tora-pricing-slider-speed)"
+                    : "0ms",
+              } as CSSProperties
+            }
+          >
+            {renderedPlans.map((plan, renderedIndex) => {
+              const isClone = renderedIndex >= plans.length;
+              const features = plan.features.filter((feature) => feature.text.trim());
+              const highlighted = plan.highlighted && !isClone;
+              const ctaHref = plan.ctaHref.trim() || "#";
+              const ctaLabel = plan.ctaLabel.trim() || "FREE TRIAL";
+              return (
+                <article
+                  key={`${plan.id}-${renderedIndex}`}
+                  className={cn(
+                    "tora-pricing-slider__slide",
+                    highlighted && "is-highlighted",
+                  )}
+                  aria-hidden={isClone || undefined}
+                >
+                  <div className="tora-pricing-slider__card">
+                    <h3>{plan.name}</h3>
+                    <div className="tora-pricing-slider__cost">
+                      {displayPrice(plan, frequency, block.currency || "$")}
+                    </div>
+                    {features.length > 0 && (
+                      <ul>
+                        {features.map((feature) => (
+                          <li
+                            key={feature.id}
+                            className={cn(feature.included === false && "is-excluded")}
+                          >
+                            {feature.text}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <Link
+                      href={ctaHref}
+                      className="tora-pricing-slider__button"
+                      tabIndex={isClone ? -1 : 0}
+                    >
+                      {ctaLabel}
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
+        {plans.length > 1 && (
+          <div className="tora-pricing-slider__pagination" aria-label="Pricing slides">
+            {plans.map((plan, index) => (
+              <button
+                key={plan.id}
+                type="button"
+                className={cn(index === visibleIndex && "is-active")}
+                aria-label={`Show ${plan.name}`}
+                aria-current={index === visibleIndex}
+                onClick={() => {
+                  setTransitionEnabled(true);
+                  setActiveIndex(index);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1653,6 +1925,18 @@ export function PricingBlock({
       <ToraCastingServicesBlock
         block={block}
         plans={plans}
+        dark={dark}
+        photoMap={photoMap}
+      />
+    );
+  }
+
+  if ((block.style ?? "standard") === "tora-pricing-slider") {
+    return (
+      <ToraPricingSliderBlock
+        block={block}
+        plans={plans}
+        frequency={frequency}
         dark={dark}
         photoMap={photoMap}
       />
