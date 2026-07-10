@@ -3326,10 +3326,10 @@ function LeafEditor({
                           })
                         }
                       >
-                        <option value="small">Small</option>
-                        <option value="reference">Reference</option>
-                        <option value="large">Large</option>
-                        <option value="oversized">Oversized</option>
+                        <option value="small">Extra small</option>
+                        <option value="reference">Small</option>
+                        <option value="large">Medium</option>
+                        <option value="oversized">Large</option>
                       </Select>
                     </Field>
                     <Field label="Small label size">
