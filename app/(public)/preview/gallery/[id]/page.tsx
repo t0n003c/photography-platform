@@ -53,7 +53,8 @@ export default async function GalleryPreview({
     layout.gridType === "infinite-canvas" ||
     layout.gridType === "css-glitch" ||
     layout.gridType === "palmer-draggable" ||
-    layout.gridType === "tora-sliphover";
+    layout.gridType === "tora-sliphover" ||
+    layout.gridType === "tora-justified-showcase";
 
   return (
     <Container

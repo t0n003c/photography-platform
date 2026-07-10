@@ -1047,10 +1047,163 @@ html.js .pr-root.is-enhanced {
   transform: translate(7px, -50%);
 }
 
+.tora-full-width-slider {
+  --tora-full-bg: #252626;
+  --tora-full-accent: #f7f7f7;
+  --tora-full-overlay: rgb(0 0 0 / 0.54);
+  background: var(--tora-full-bg);
+  color: var(--tora-full-accent);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  min-height: 86svh;
+  overflow: hidden;
+  position: relative;
+}
+
+.dark .tora-full-width-slider {
+  --tora-full-overlay: rgb(0 0 0 / 0.58);
+}
+
+.tora-full-width-slider--short {
+  min-height: 68svh;
+}
+
+.tora-full-width-slider--full {
+  min-height: calc(100svh - 4rem);
+}
+
+.tora-full-width-slider__stage {
+  min-height: inherit;
+  position: relative;
+}
+
+.tora-full-width-slider__slide {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 1500ms ease;
+  z-index: 0;
+}
+
+.tora-full-width-slider__slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.tora-full-width-slider__slide.is-leaving {
+  opacity: 1;
+  z-index: 1;
+}
+
+.tora-full-width-slider__slide img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-full-width-slider__shade {
+  background: var(--tora-full-overlay);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tora-full-width-slider__content {
+  left: 100px;
+  opacity: 0;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translateX(-50%) translateZ(0) rotate(270deg);
+  transition: opacity 350ms ease;
+  width: 100%;
+  z-index: 4;
+}
+
+.tora-full-width-slider__slide.is-active .tora-full-width-slider__content {
+  opacity: 1;
+  transition-delay: 900ms;
+}
+
+.tora-full-width-slider__title {
+  color: var(--tora-full-accent);
+  display: inline-block;
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.25;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    color 350ms ease,
+    opacity 350ms ease;
+}
+
+.tora-full-width-slider__title:hover,
+.tora-full-width-slider__title:focus-visible {
+  color: var(--tora-full-accent);
+  opacity: 0.7;
+}
+
+.tora-full-width-slider__pagination {
+  bottom: 17px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-right: 80px;
+  position: absolute;
+  right: 0;
+  text-align: right;
+  z-index: 7;
+}
+
+.tora-full-width-slider__dot {
+  background: var(--tora-full-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  height: 10px;
+  opacity: 0.5;
+  transition: opacity 350ms ease;
+  width: 10px;
+}
+
+.tora-full-width-slider__dot:hover,
+.tora-full-width-slider__dot:focus-visible,
+.tora-full-width-slider__dot.is-active {
+  opacity: 1;
+}
+
+@media (max-width: 1300px) {
+  .tora-full-width-slider__title {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tora-full-width-slider__content {
+    left: 30px;
+  }
+
+  .tora-full-width-slider__pagination {
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 991px) {
+  .tora-full-width-slider__title {
+    font-size: 21px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tora-minimal-slider__slide,
   .tora-minimal-slider__arrow,
-  .tora-minimal-slider__arrow::before {
+  .tora-minimal-slider__arrow::before,
+  .tora-full-width-slider__slide,
+  .tora-full-width-slider__content,
+  .tora-full-width-slider__title,
+  .tora-full-width-slider__dot {
     transition: none;
   }
 }
@@ -1234,6 +1387,34 @@ html.js .pr-root.is-enhanced {
 
   .tora-minimal-slider__arrow {
     display: none;
+  }
+
+  .tora-full-width-slider {
+    min-height: calc(100svh - 4rem);
+  }
+
+  .tora-full-width-slider__content {
+    bottom: 55px;
+    box-sizing: border-box;
+    left: 50%;
+    padding-inline: 20px;
+    top: auto;
+    transform: translate(-50%, 0);
+    width: 100%;
+  }
+
+  .tora-full-width-slider__title {
+    font-size: 21px;
+    letter-spacing: 1px;
+  }
+
+  .tora-full-width-slider__pagination {
+    bottom: 23px;
+    justify-content: center;
+    left: 0;
+    padding: 0;
+    right: 0;
+    text-align: center;
   }
 
   .custom-link-item {
@@ -1802,6 +1983,182 @@ html.js .pr-root.is-enhanced {
 
   .tora-props-catalog__grid {
     row-gap: 22px;
+  }
+}
+
+/* ToraMochie / Reflector Justified Gallery reference. The source promotes a
+   selected image above a justified thumbnail grid, with 80vh lead media, a
+   centered uppercase title, 25px/15px gutters, and 350ms hover clipping. */
+.tora-justified-showcase {
+  --tora-justified-bg: #f3eadb;
+  --tora-justified-title: #181512;
+  --tora-justified-accent: #8b6d35;
+  --tora-justified-gutter: 25px;
+  background: var(--tora-justified-bg);
+  color: var(--tora-justified-title);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow-x: clip;
+  transition:
+    background-color 350ms ease,
+    color 350ms ease;
+}
+
+.dark .tora-justified-showcase {
+  --tora-justified-bg: #252626;
+  --tora-justified-title: #f7f7f7;
+  --tora-justified-accent: #edd8aa;
+}
+
+.tora-justified-showcase--custom-bg {
+  background: var(--tora-justified-bg);
+}
+
+.tora-justified-showcase--plain {
+  background: transparent;
+  color: hsl(var(--foreground));
+}
+
+.tora-justified-showcase__inner {
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 30px 15px 64px;
+  width: 100%;
+}
+
+.tora-justified-showcase__lead {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: zoom-in;
+  display: block;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.tora-justified-showcase__lead:focus-visible,
+.tora-justified-showcase__thumb:focus-visible {
+  outline: 2px solid var(--tora-justified-accent);
+  outline-offset: 4px;
+}
+
+.tora-justified-showcase__lead-picture {
+  display: block;
+  width: 100%;
+}
+
+.tora-justified-showcase__lead-image {
+  display: block;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 80vh;
+  max-width: 100%;
+  object-fit: contain;
+  width: auto;
+}
+
+.tora-justified-showcase__title {
+  color: var(--tora-justified-title);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.5;
+  margin: 30px auto 20px;
+  max-width: 900px;
+  text-align: center;
+  text-transform: uppercase;
+  transition: color 350ms ease;
+}
+
+.tora-justified-showcase.is-lead-hovered .tora-justified-showcase__title,
+body.tora-justified-page-dim .tora-justified-showcase__title {
+  color: var(--tora-justified-accent);
+}
+
+.tora-justified-showcase__gallery {
+  box-sizing: border-box;
+  margin-left: -30px;
+  margin-top: -20px;
+  padding: var(--tora-justified-gutter);
+  width: calc(100% + 60px);
+}
+
+.tora-justified-showcase__row {
+  display: flex;
+  gap: var(--tora-justified-gutter);
+  margin-bottom: var(--tora-justified-gutter);
+}
+
+.tora-justified-showcase__row:last-child {
+  margin-bottom: 0;
+}
+
+.tora-justified-showcase__thumb {
+  appearance: none;
+  background: color-mix(in srgb, var(--tora-justified-bg) 90%, #000);
+  border: 0;
+  clip-path: inset(0);
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  transition:
+    clip-path 350ms ease,
+    opacity 350ms ease;
+}
+
+.tora-justified-showcase--hover-inset .tora-justified-showcase__thumb:hover {
+  clip-path: inset(5% 5% 5% 5%);
+  opacity: 0.8;
+}
+
+.tora-justified-showcase__thumb.is-active {
+  opacity: 0.82;
+}
+
+body.tora-justified-page-dim header,
+body.tora-justified-page-dim footer,
+body.tora-justified-page-dim .tora-justified-showcase__gallery {
+  opacity: 0.05;
+  transition: opacity 1000ms ease;
+}
+
+@media (max-width: 767px) {
+  .tora-justified-showcase {
+    --tora-justified-gutter: 15px;
+  }
+
+  .tora-justified-showcase__inner {
+    padding: 0 15px 48px;
+  }
+
+  .tora-justified-showcase__title {
+    font-size: 17px;
+    letter-spacing: 1px;
+    line-height: 1.5;
+    margin: 25px auto 20px;
+  }
+
+  .tora-justified-showcase__gallery {
+    margin-left: calc(0px - var(--tora-justified-gutter));
+    margin-top: calc(0px - var(--tora-justified-gutter));
+    width: calc(100% + var(--tora-justified-gutter) + var(--tora-justified-gutter));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-justified-showcase,
+  .tora-justified-showcase__title,
+  .tora-justified-showcase__thumb,
+  body.tora-justified-page-dim header,
+  body.tora-justified-page-dim footer,
+  body.tora-justified-page-dim .tora-justified-showcase__gallery {
+    transition: none;
   }
 }
 

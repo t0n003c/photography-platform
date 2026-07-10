@@ -19,6 +19,7 @@ export interface PreviewConfig {
     | "css-glitch"
     | "palmer-draggable"
     | "tora-sliphover"
+    | "tora-justified-showcase"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: string;
@@ -73,6 +74,17 @@ export interface PreviewConfig {
   toraSliphoverLabelSource?: "auto" | "headline" | "alt" | "caption";
   toraSliphoverLabelBackgroundColor?: string;
   toraSliphoverLabelTextColor?: string;
+  toraJustifiedUseBackground?: boolean;
+  toraJustifiedBackgroundColor?: string;
+  toraJustifiedTitleColor?: string;
+  toraJustifiedAccentColor?: string;
+  toraJustifiedTitleSource?: "auto" | "headline" | "alt" | "caption";
+  toraJustifiedRowHeightFactor?: number;
+  toraJustifiedDesktopGutter?: number;
+  toraJustifiedMobileGutter?: number;
+  toraJustifiedHoverInset?: boolean;
+  toraJustifiedDimOnLeadHover?: boolean;
+  toraJustifiedScrollOnSelect?: boolean;
 }
 
 export const PREVIEW_PARAM = "__pc";

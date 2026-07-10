@@ -112,7 +112,11 @@ export default async function HomePage({
           <div className="mt-6">
             <Gallery
               photos={rest}
-              layout={{ gridType: config.gridType, spacing: config.spacing }}
+              layout={{
+                gridType: config.gridType,
+                spacing: config.spacing,
+                toraJustified: config.toraJustified,
+              }}
             />
           </div>
           <JsonLd

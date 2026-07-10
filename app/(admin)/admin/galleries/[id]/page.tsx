@@ -49,8 +49,12 @@ const DEFAULT_SLIPHOVER_BACKGROUND = "#f3eadb";
 const LEGACY_SLIPHOVER_DARK_BACKGROUND = "#242625";
 const DEFAULT_SLIPHOVER_LABEL_BACKGROUND = "#111111";
 const DEFAULT_SLIPHOVER_LABEL_TEXT = "#f8f3df";
+const DEFAULT_TORA_JUSTIFIED_BACKGROUND = "#252626";
+const DEFAULT_TORA_JUSTIFIED_TITLE = "#f7f7f7";
+const DEFAULT_TORA_JUSTIFIED_ACCENT = "#edd8aa";
 
-type ToraSliphoverLabelSource = "auto" | "headline" | "alt" | "caption";
+type ToraTextSource = "auto" | "headline" | "alt" | "caption";
+type ToraSliphoverLabelSource = ToraTextSource;
 
 function normalizeSliphoverBackground(value: string) {
   const normalized = value.trim().toLowerCase();
@@ -998,6 +1002,27 @@ function LayoutCard({
   ] = useState(DEFAULT_SLIPHOVER_LABEL_BACKGROUND);
   const [toraSliphoverLabelTextColor, setToraSliphoverLabelTextColor] =
     useState(DEFAULT_SLIPHOVER_LABEL_TEXT);
+  const [toraJustifiedUseBackground, setToraJustifiedUseBackground] =
+    useState(true);
+  const [toraJustifiedBackgroundColor, setToraJustifiedBackgroundColor] =
+    useState(DEFAULT_TORA_JUSTIFIED_BACKGROUND);
+  const [toraJustifiedTitleColor, setToraJustifiedTitleColor] =
+    useState(DEFAULT_TORA_JUSTIFIED_TITLE);
+  const [toraJustifiedAccentColor, setToraJustifiedAccentColor] =
+    useState(DEFAULT_TORA_JUSTIFIED_ACCENT);
+  const [toraJustifiedTitleSource, setToraJustifiedTitleSource] =
+    useState<ToraTextSource>("auto");
+  const [toraJustifiedRowHeightFactor, setToraJustifiedRowHeightFactor] =
+    useState(7);
+  const [toraJustifiedDesktopGutter, setToraJustifiedDesktopGutter] =
+    useState(25);
+  const [toraJustifiedMobileGutter, setToraJustifiedMobileGutter] =
+    useState(15);
+  const [toraJustifiedHoverInset, setToraJustifiedHoverInset] = useState(true);
+  const [toraJustifiedDimOnLeadHover, setToraJustifiedDimOnLeadHover] =
+    useState(true);
+  const [toraJustifiedScrollOnSelect, setToraJustifiedScrollOnSelect] =
+    useState(true);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -1029,6 +1054,7 @@ function LayoutCard({
           cfg.gridType === "css-glitch" ||
           cfg.gridType === "palmer-draggable" ||
           cfg.gridType === "tora-sliphover" ||
+          cfg.gridType === "tora-justified-showcase" ||
           cfg.gridType === "alternative-scroll"
         )
           setGridType(cfg.gridType);
@@ -1233,6 +1259,50 @@ function LayoutCard({
         if (typeof c.toraSliphoverLabelTextColor === "string") {
           setToraSliphoverLabelTextColor(c.toraSliphoverLabelTextColor);
         }
+        if (typeof c.toraJustifiedUseBackground === "boolean") {
+          setToraJustifiedUseBackground(c.toraJustifiedUseBackground);
+        }
+        if (typeof c.toraJustifiedBackgroundColor === "string") {
+          setToraJustifiedBackgroundColor(c.toraJustifiedBackgroundColor);
+        }
+        if (typeof c.toraJustifiedTitleColor === "string") {
+          setToraJustifiedTitleColor(c.toraJustifiedTitleColor);
+        }
+        if (typeof c.toraJustifiedAccentColor === "string") {
+          setToraJustifiedAccentColor(c.toraJustifiedAccentColor);
+        }
+        if (
+          c.toraJustifiedTitleSource === "auto" ||
+          c.toraJustifiedTitleSource === "headline" ||
+          c.toraJustifiedTitleSource === "alt" ||
+          c.toraJustifiedTitleSource === "caption"
+        ) {
+          setToraJustifiedTitleSource(c.toraJustifiedTitleSource);
+        }
+        if (typeof c.toraJustifiedRowHeightFactor === "number") {
+          setToraJustifiedRowHeightFactor(
+            Math.min(10, Math.max(5, c.toraJustifiedRowHeightFactor)),
+          );
+        }
+        if (typeof c.toraJustifiedDesktopGutter === "number") {
+          setToraJustifiedDesktopGutter(
+            Math.min(60, Math.max(0, c.toraJustifiedDesktopGutter)),
+          );
+        }
+        if (typeof c.toraJustifiedMobileGutter === "number") {
+          setToraJustifiedMobileGutter(
+            Math.min(40, Math.max(0, c.toraJustifiedMobileGutter)),
+          );
+        }
+        if (typeof c.toraJustifiedHoverInset === "boolean") {
+          setToraJustifiedHoverInset(c.toraJustifiedHoverInset);
+        }
+        if (typeof c.toraJustifiedDimOnLeadHover === "boolean") {
+          setToraJustifiedDimOnLeadHover(c.toraJustifiedDimOnLeadHover);
+        }
+        if (typeof c.toraJustifiedScrollOnSelect === "boolean") {
+          setToraJustifiedScrollOnSelect(c.toraJustifiedScrollOnSelect);
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1291,6 +1361,17 @@ function LayoutCard({
         toraSliphoverLabelSource,
         toraSliphoverLabelBackgroundColor,
         toraSliphoverLabelTextColor,
+        toraJustifiedUseBackground,
+        toraJustifiedBackgroundColor,
+        toraJustifiedTitleColor,
+        toraJustifiedAccentColor,
+        toraJustifiedTitleSource,
+        toraJustifiedRowHeightFactor,
+        toraJustifiedDesktopGutter,
+        toraJustifiedMobileGutter,
+        toraJustifiedHoverInset,
+        toraJustifiedDimOnLeadHover,
+        toraJustifiedScrollOnSelect,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -1330,6 +1411,7 @@ function LayoutCard({
                 <Select value={gridType} onChange={(e) => setGridType(e.target.value as PreviewGrid)}>
                   <option value="masonry">Masonry</option>
                   <option value="justified">Justified</option>
+                  <option value="tora-justified-showcase">Tora justified showcase</option>
                   <option value="uniform">Uniform</option>
                   <option value="horizontal-lenis">Horizontal Scroll (Lenis)</option>
                   <option value="parallax-ring">Parallax 3D ring</option>
@@ -1355,6 +1437,7 @@ function LayoutCard({
                 gridType !== "css-glitch" &&
                 gridType !== "palmer-draggable" &&
                 gridType !== "tora-sliphover" &&
+                gridType !== "tora-justified-showcase" &&
                 gridType !== "alternative-scroll" && (
                 <Field label="Spacing">
                   <Select value={spacing} onChange={(e) => setSpacing(e.target.value as PreviewSpacing)}>
@@ -1813,6 +1896,149 @@ function LayoutCard({
                   </label>
                 </div>
               )}
+              {gridType === "tora-justified-showcase" && (
+                <div className="space-y-3 rounded-md border p-3">
+                  <Field label="Title source">
+                    <Select
+                      value={toraJustifiedTitleSource}
+                      onChange={(e) =>
+                        setToraJustifiedTitleSource(e.target.value as ToraTextSource)
+                      }
+                    >
+                      <option value="auto">Auto - headline, alt, then caption</option>
+                      <option value="headline">Headline</option>
+                      <option value="alt">Alt text</option>
+                      <option value="caption">Caption</option>
+                    </Select>
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Background color" htmlFor="tora-justified-bg-color">
+                      <Input
+                        id="tora-justified-bg-color"
+                        type="color"
+                        value={toraJustifiedBackgroundColor}
+                        onChange={(e) =>
+                          setToraJustifiedBackgroundColor(e.target.value)
+                        }
+                        disabled={!toraJustifiedUseBackground}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Title color" htmlFor="tora-justified-title-color">
+                      <Input
+                        id="tora-justified-title-color"
+                        type="color"
+                        value={toraJustifiedTitleColor}
+                        onChange={(e) => setToraJustifiedTitleColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                    <Field label="Accent color" htmlFor="tora-justified-accent-color">
+                      <Input
+                        id="tora-justified-accent-color"
+                        type="color"
+                        value={toraJustifiedAccentColor}
+                        onChange={(e) => setToraJustifiedAccentColor(e.target.value)}
+                        className="h-10 p-1"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Row height">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min={5}
+                        max={10}
+                        step={0.25}
+                        value={toraJustifiedRowHeightFactor}
+                        onChange={(e) =>
+                          setToraJustifiedRowHeightFactor(
+                            Math.min(10, Math.max(5, Number(e.target.value) || 7)),
+                          )
+                        }
+                        className="w-full accent-[hsl(var(--primary))]"
+                      />
+                      <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                        /{toraJustifiedRowHeightFactor.toFixed(2)}
+                      </span>
+                    </div>
+                  </Field>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Desktop gutter" htmlFor="tora-justified-desktop-gutter">
+                      <Input
+                        id="tora-justified-desktop-gutter"
+                        type="number"
+                        min={0}
+                        max={60}
+                        value={toraJustifiedDesktopGutter}
+                        onChange={(e) =>
+                          setToraJustifiedDesktopGutter(
+                            Math.min(60, Math.max(0, Number(e.target.value) || 0)),
+                          )
+                        }
+                      />
+                    </Field>
+                    <Field label="Mobile gutter" htmlFor="tora-justified-mobile-gutter">
+                      <Input
+                        id="tora-justified-mobile-gutter"
+                        type="number"
+                        min={0}
+                        max={40}
+                        value={toraJustifiedMobileGutter}
+                        onChange={(e) =>
+                          setToraJustifiedMobileGutter(
+                            Math.min(40, Math.max(0, Number(e.target.value) || 0)),
+                          )
+                        }
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={toraJustifiedUseBackground}
+                        onChange={(e) =>
+                          setToraJustifiedUseBackground(e.target.checked)
+                        }
+                      />
+                      Use background color
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={toraJustifiedHoverInset}
+                        onChange={(e) => setToraJustifiedHoverInset(e.target.checked)}
+                      />
+                      Clip thumbnails on hover
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={toraJustifiedDimOnLeadHover}
+                        onChange={(e) =>
+                          setToraJustifiedDimOnLeadHover(e.target.checked)
+                        }
+                      />
+                      Dim page on lead hover
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={toraJustifiedScrollOnSelect}
+                        onChange={(e) =>
+                          setToraJustifiedScrollOnSelect(e.target.checked)
+                        }
+                      />
+                      Scroll to lead on select
+                    </label>
+                  </div>
+                </div>
+              )}
               {gridType === "palmer-draggable" && (
                 <div className="space-y-3 rounded-md border p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1947,6 +2173,17 @@ function LayoutCard({
                 toraSliphoverLabelSource,
                 toraSliphoverLabelBackgroundColor,
                 toraSliphoverLabelTextColor,
+                toraJustifiedUseBackground,
+                toraJustifiedBackgroundColor,
+                toraJustifiedTitleColor,
+                toraJustifiedAccentColor,
+                toraJustifiedTitleSource,
+                toraJustifiedRowHeightFactor,
+                toraJustifiedDesktopGutter,
+                toraJustifiedMobileGutter,
+                toraJustifiedHoverInset,
+                toraJustifiedDimOnLeadHover,
+                toraJustifiedScrollOnSelect,
               }}
               height={560}
             />

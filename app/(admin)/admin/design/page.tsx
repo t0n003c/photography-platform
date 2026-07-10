@@ -55,7 +55,13 @@ type Scope =
 // intentionally omitted here.
 const SCOPES: Scope[] = ["home", "category", "location", "about", "global"];
 
-type GridType = "masonry" | "justified" | "uniform" | "carousel-3d-scroll" | "alternative-scroll";
+type GridType =
+  | "masonry"
+  | "justified"
+  | "uniform"
+  | "tora-justified-showcase"
+  | "carousel-3d-scroll"
+  | "alternative-scroll";
 type Spacing = "tight" | "normal" | "airy";
 type Theme = "light" | "dark" | "auto";
 
@@ -176,6 +182,75 @@ function ConfigEditor({
     config.hero?.enabled ?? false,
   );
   const [headline, setHeadline] = useState<string>(config.hero?.headline ?? "");
+  const cfg = config.config ?? {};
+  const [toraJustifiedUseBackground, setToraJustifiedUseBackground] =
+    useState<boolean>(
+      typeof cfg.toraJustifiedUseBackground === "boolean"
+        ? cfg.toraJustifiedUseBackground
+        : true,
+    );
+  const [toraJustifiedBackgroundColor, setToraJustifiedBackgroundColor] =
+    useState<string>(
+      typeof cfg.toraJustifiedBackgroundColor === "string"
+        ? cfg.toraJustifiedBackgroundColor
+        : "#252626",
+    );
+  const [toraJustifiedTitleColor, setToraJustifiedTitleColor] =
+    useState<string>(
+      typeof cfg.toraJustifiedTitleColor === "string"
+        ? cfg.toraJustifiedTitleColor
+        : "#f7f7f7",
+    );
+  const [toraJustifiedAccentColor, setToraJustifiedAccentColor] =
+    useState<string>(
+      typeof cfg.toraJustifiedAccentColor === "string"
+        ? cfg.toraJustifiedAccentColor
+        : "#edd8aa",
+    );
+  const [toraJustifiedTitleSource, setToraJustifiedTitleSource] =
+    useState<"auto" | "headline" | "alt" | "caption">(
+      cfg.toraJustifiedTitleSource === "headline" ||
+        cfg.toraJustifiedTitleSource === "alt" ||
+        cfg.toraJustifiedTitleSource === "caption"
+        ? cfg.toraJustifiedTitleSource
+        : "auto",
+    );
+  const [toraJustifiedRowHeightFactor, setToraJustifiedRowHeightFactor] =
+    useState<number>(
+      typeof cfg.toraJustifiedRowHeightFactor === "number"
+        ? Math.min(10, Math.max(5, cfg.toraJustifiedRowHeightFactor))
+        : 7,
+    );
+  const [toraJustifiedDesktopGutter, setToraJustifiedDesktopGutter] =
+    useState<number>(
+      typeof cfg.toraJustifiedDesktopGutter === "number"
+        ? Math.min(60, Math.max(0, cfg.toraJustifiedDesktopGutter))
+        : 25,
+    );
+  const [toraJustifiedMobileGutter, setToraJustifiedMobileGutter] =
+    useState<number>(
+      typeof cfg.toraJustifiedMobileGutter === "number"
+        ? Math.min(40, Math.max(0, cfg.toraJustifiedMobileGutter))
+        : 15,
+    );
+  const [toraJustifiedHoverInset, setToraJustifiedHoverInset] =
+    useState<boolean>(
+      typeof cfg.toraJustifiedHoverInset === "boolean"
+        ? cfg.toraJustifiedHoverInset
+        : true,
+    );
+  const [toraJustifiedDimOnLeadHover, setToraJustifiedDimOnLeadHover] =
+    useState<boolean>(
+      typeof cfg.toraJustifiedDimOnLeadHover === "boolean"
+        ? cfg.toraJustifiedDimOnLeadHover
+        : true,
+    );
+  const [toraJustifiedScrollOnSelect, setToraJustifiedScrollOnSelect] =
+    useState<boolean>(
+      typeof cfg.toraJustifiedScrollOnSelect === "boolean"
+        ? cfg.toraJustifiedScrollOnSelect
+        : true,
+    );
   const [saving, setSaving] = useState(false);
   const [settingDefault, setSettingDefault] = useState(false);
 
@@ -185,8 +260,37 @@ function ConfigEditor({
       spacing,
       theme,
       hero: { ...(config.hero ?? {}), enabled: heroEnabled, headline },
+      toraJustifiedUseBackground,
+      toraJustifiedBackgroundColor,
+      toraJustifiedTitleColor,
+      toraJustifiedAccentColor,
+      toraJustifiedTitleSource,
+      toraJustifiedRowHeightFactor,
+      toraJustifiedDesktopGutter,
+      toraJustifiedMobileGutter,
+      toraJustifiedHoverInset,
+      toraJustifiedDimOnLeadHover,
+      toraJustifiedScrollOnSelect,
     }),
-    [gridType, spacing, theme, heroEnabled, headline, config.hero],
+    [
+      gridType,
+      spacing,
+      theme,
+      heroEnabled,
+      headline,
+      config.hero,
+      toraJustifiedUseBackground,
+      toraJustifiedBackgroundColor,
+      toraJustifiedTitleColor,
+      toraJustifiedAccentColor,
+      toraJustifiedTitleSource,
+      toraJustifiedRowHeightFactor,
+      toraJustifiedDesktopGutter,
+      toraJustifiedMobileGutter,
+      toraJustifiedHoverInset,
+      toraJustifiedDimOnLeadHover,
+      toraJustifiedScrollOnSelect,
+    ],
   );
 
   const save = async () => {
@@ -197,9 +301,23 @@ function ConfigEditor({
         enabled: heroEnabled,
         headline,
       };
+      const configPayload = {
+        ...(config.config ?? {}),
+        toraJustifiedUseBackground,
+        toraJustifiedBackgroundColor,
+        toraJustifiedTitleColor,
+        toraJustifiedAccentColor,
+        toraJustifiedTitleSource,
+        toraJustifiedRowHeightFactor,
+        toraJustifiedDesktopGutter,
+        toraJustifiedMobileGutter,
+        toraJustifiedHoverInset,
+        toraJustifiedDimOnLeadHover,
+        toraJustifiedScrollOnSelect,
+      };
       const res = await api.patch<{ data: PageConfig }>(
         `/api/v1/admin/page-configs/${config.id}`,
-        { gridType, spacing, theme, hero },
+        { gridType, spacing, theme, hero, config: configPayload },
       );
       onUpdated(res.data);
       toast("Saved", "success");
@@ -235,6 +353,7 @@ function ConfigEditor({
           >
             <option value="masonry">Masonry</option>
             <option value="justified">Justified</option>
+            <option value="tora-justified-showcase">Tora justified showcase</option>
             <option value="uniform">Uniform</option>
             {(config.scope === "category" || config.scope === "location") && (
               <option value="carousel-3d-scroll">3D carousel (on scroll)</option>
@@ -242,8 +361,9 @@ function ConfigEditor({
             <option value="alternative-scroll">Alternative scroll</option>
           </Select>
         </Field>
-        {/* The Alternative Scroll layout manages its own spacing. */}
-        {gridType !== "alternative-scroll" && (
+        {/* Standalone reference layouts manage their own spacing. */}
+        {gridType !== "alternative-scroll" &&
+          gridType !== "tora-justified-showcase" && (
           <Field label="Spacing">
             <Select
               value={spacing}
@@ -266,6 +386,134 @@ function ConfigEditor({
           </Select>
         </Field>
       </div>
+
+      {gridType === "tora-justified-showcase" && (
+        <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3">
+          <Field label="Title source">
+            <Select
+              value={toraJustifiedTitleSource}
+              onChange={(e) =>
+                setToraJustifiedTitleSource(
+                  e.target.value as "auto" | "headline" | "alt" | "caption",
+                )
+              }
+            >
+              <option value="auto">Auto</option>
+              <option value="headline">Headline</option>
+              <option value="alt">Alt text</option>
+              <option value="caption">Caption</option>
+            </Select>
+          </Field>
+          <Field label="Title color">
+            <Input
+              type="color"
+              value={toraJustifiedTitleColor}
+              onChange={(e) => setToraJustifiedTitleColor(e.target.value)}
+            />
+          </Field>
+          <Field label="Accent color">
+            <Input
+              type="color"
+              value={toraJustifiedAccentColor}
+              onChange={(e) => setToraJustifiedAccentColor(e.target.value)}
+            />
+          </Field>
+          <Field label="Background">
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={toraJustifiedUseBackground}
+                onChange={(e) => setToraJustifiedUseBackground(e.target.checked)}
+              />
+              Show gallery band
+            </label>
+          </Field>
+          <Field label="Background color">
+            <Input
+              type="color"
+              value={toraJustifiedBackgroundColor}
+              onChange={(e) => setToraJustifiedBackgroundColor(e.target.value)}
+              disabled={!toraJustifiedUseBackground}
+            />
+          </Field>
+          <Field label="Row height">
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={5}
+                max={10}
+                step={0.25}
+                value={toraJustifiedRowHeightFactor}
+                onChange={(e) =>
+                  setToraJustifiedRowHeightFactor(
+                    Math.min(10, Math.max(5, Number(e.target.value) || 7)),
+                  )
+                }
+                className="w-full accent-[hsl(var(--primary))]"
+              />
+              <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                /{toraJustifiedRowHeightFactor.toFixed(2)}
+              </span>
+            </div>
+          </Field>
+          <Field label="Desktop gutter">
+            <Input
+              type="number"
+              min={0}
+              max={60}
+              value={toraJustifiedDesktopGutter}
+              onChange={(e) =>
+                setToraJustifiedDesktopGutter(
+                  Math.min(60, Math.max(0, Number(e.target.value) || 0)),
+                )
+              }
+            />
+          </Field>
+          <Field label="Mobile gutter">
+            <Input
+              type="number"
+              min={0}
+              max={40}
+              value={toraJustifiedMobileGutter}
+              onChange={(e) =>
+                setToraJustifiedMobileGutter(
+                  Math.min(40, Math.max(0, Number(e.target.value) || 0)),
+                )
+              }
+            />
+          </Field>
+          <Field label="Thumbnail hover">
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={toraJustifiedHoverInset}
+                onChange={(e) => setToraJustifiedHoverInset(e.target.checked)}
+              />
+              Clip and fade on hover
+            </label>
+          </Field>
+          <Field label="Lead hover dim">
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={toraJustifiedDimOnLeadHover}
+                onChange={(e) => setToraJustifiedDimOnLeadHover(e.target.checked)}
+              />
+              Dim surrounding page
+            </label>
+          </Field>
+          <Field label="Thumbnail select">
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={toraJustifiedScrollOnSelect}
+                onChange={(e) => setToraJustifiedScrollOnSelect(e.target.checked)}
+              />
+              Scroll back to lead
+            </label>
+          </Field>
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm">
         <input

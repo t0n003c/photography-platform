@@ -15,6 +15,7 @@ export const GridEnum = z.enum([
   "cinematic",
   "horizontal-lenis",
   "tora-props-catalog",
+  "tora-justified-showcase",
 ]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
@@ -317,6 +318,17 @@ const GalleryBlock = z.object({
   toraPropsCaptionColor: z.string().default("#edd8aa"),
   toraPropsShowCaptions: z.boolean().default(true),
   toraPropsCaptionSource: ToraPropsCaptionSource.default("auto"),
+  toraJustifiedUseBackground: z.boolean().default(true),
+  toraJustifiedBackgroundColor: z.string().default("#252626"),
+  toraJustifiedTitleColor: z.string().default("#f7f7f7"),
+  toraJustifiedAccentColor: z.string().default("#edd8aa"),
+  toraJustifiedTitleSource: ToraPropsCaptionSource.default("auto"),
+  toraJustifiedRowHeightFactor: z.number().min(5).max(10).default(7),
+  toraJustifiedDesktopGutter: z.number().int().min(0).max(60).default(25),
+  toraJustifiedMobileGutter: z.number().int().min(0).max(40).default(15),
+  toraJustifiedHoverInset: z.boolean().default(true),
+  toraJustifiedDimOnLeadHover: z.boolean().default(true),
+  toraJustifiedScrollOnSelect: z.boolean().default(true),
 });
 // Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
 // WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.
@@ -347,6 +359,7 @@ export const BannerLayoutEnum = z.enum([
   "toramochie-classic",
   "toramochie-wedding-studio",
   "toramochie-minimal-slider",
+  "toramochie-full-width-slider",
 ]);
 const BannerSlide = z.object({
   id,
@@ -364,10 +377,12 @@ const BannerBlock = z.object({
   photoId: z.string().nullable().default(null),
   // Optional multi-photo set used by collage-style banner layouts.
   photoIds: z.array(z.string()).default([]),
-  // Optional per-slide content used by ToraMochie minimal slider.
+  // Optional per-slide content used by ToraMochie slider layouts.
   slides: z.array(BannerSlide).default([]),
   minimalSliderAutoplay: z.boolean().default(false),
   minimalSliderAutoplayMs: z.number().int().min(1200).max(12000).default(4500),
+  fullWidthSliderAccentColor: z.string().default("#f7f7f7"),
+  fullWidthSliderDimImages: z.boolean().default(true),
   eyebrow: z.string().default(""),
   typewriterWords: z.string().default(""),
   headline: z.string().default(""),

@@ -29,6 +29,10 @@ how to *work* in it. Authoritative long-form: [`docs/`](docs/) (start with
    layout, spacing, text overlays, typography/font feel, text styling, controls, and interaction
    states. Preserve this app's data model, accessibility, performance, responsive behavior, and
    light/dark mode support; clearly call out any intentional deviations before/when delivering.
+9. **Notify when done.** After finishing verification/cleanup and before the final response,
+   send a short completion notification:
+   `curl -fsS -d "Codex task complete: <brief summary>" https://ntfy.toramochie.com/Codex?`.
+   If the notification fails, mention that in the final response.
 
 ---
 

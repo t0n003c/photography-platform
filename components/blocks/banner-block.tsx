@@ -14,6 +14,7 @@ import {
   ToraMinimalSlider,
   type ToraMinimalSliderItem,
 } from "@/components/blocks/tora-minimal-slider";
+import { ToraFullWidthSlider } from "@/components/blocks/tora-full-width-slider";
 import { getFeaturedPhotos } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -516,6 +517,68 @@ function ToraOverlay({ block, subtle = false }: { block: BannerData; subtle?: bo
   );
 }
 
+const TORA_MINIMAL_SLIDE_COPY = [
+  { subtitle: "for couples", headline: "Another way", buttonLabel: "Read More" },
+  { subtitle: "for models", headline: "Human feel", buttonLabel: "Read More" },
+  { subtitle: "for travels", headline: "Ocean song", buttonLabel: "Read More" },
+  { subtitle: "for pleasure", headline: "Golden place", buttonLabel: "Read More" },
+] as const;
+
+const TORA_FULL_WIDTH_SLIDE_COPY = [
+  { subtitle: "", headline: "London's portraits", buttonLabel: "" },
+  { subtitle: "", headline: "Melbourne's portraits", buttonLabel: "" },
+  { subtitle: "", headline: "Porto's portraits", buttonLabel: "" },
+  { subtitle: "", headline: "Washington's portraits", buttonLabel: "" },
+] as const;
+
+function resolveToraSliderItems({
+  block,
+  photo,
+  photos,
+  defaultCopy,
+}: {
+  block: BannerData;
+  photo: PhotoDTO | undefined;
+  photos: PhotoDTO[];
+  defaultCopy: readonly {
+    subtitle: string;
+    headline: string;
+    buttonLabel: string;
+  }[];
+}) {
+  const photoById = new Map(photos.map((item) => [item.id, item]));
+  const fallbackPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
+  const sourceSlides =
+    (block.slides ?? []).length > 0
+      ? block.slides
+      : fallbackPhotos.map((item, index) => {
+          const copy = defaultCopy[index % defaultCopy.length];
+          return {
+            id: `${item.id}-${index}`,
+            photoId: item.id,
+            subtitle: copy.subtitle,
+            headline: copy.headline,
+            buttonLabel: copy.buttonLabel,
+            buttonHref: block.ctaHref || "#",
+          };
+        });
+
+  return sourceSlides.map((slide, index) => {
+    const copy = defaultCopy[index % defaultCopy.length];
+    return {
+      id: slide.id,
+      subtitle: slide.subtitle || copy.subtitle,
+      headline: slide.headline || copy.headline,
+      buttonLabel: slide.buttonLabel || block.ctaLabel || copy.buttonLabel,
+      buttonHref: slide.buttonHref || block.ctaHref || "#",
+      photo:
+        (slide.photoId ? photoById.get(slide.photoId) : undefined) ??
+        fallbackPhotos[index % Math.max(fallbackPhotos.length, 1)] ??
+        photo,
+    };
+  });
+}
+
 function ToraCopy({
   block,
   variant,
@@ -659,36 +722,12 @@ function ToraMochieBanner({
   const layout = block.layout;
 
   if (layout === "toramochie-minimal-slider") {
-    const photoById = new Map(photos.map((item) => [item.id, item]));
-    const fallbackPhotos = photos.length > 0 ? photos : photo ? [photo] : [];
-    const defaultCopy = [
-      ["for couples", "Another way"],
-      ["for models", "Human feel"],
-      ["for travels", "Ocean song"],
-      ["for pleasure", "Golden place"],
-    ] as const;
-    const sourceSlides =
-      (block.slides ?? []).length > 0
-        ? block.slides
-        : fallbackPhotos.map((item, index) => ({
-            id: `${item.id}-${index}`,
-            photoId: item.id,
-            subtitle: defaultCopy[index % defaultCopy.length][0],
-            headline: defaultCopy[index % defaultCopy.length][1],
-            buttonLabel: block.ctaLabel || "Read More",
-            buttonHref: block.ctaHref || "#",
-          }));
-    const sliderItems: ToraMinimalSliderItem[] = sourceSlides.map((slide, index) => ({
-      id: slide.id,
-      subtitle: slide.subtitle || defaultCopy[index % defaultCopy.length][0],
-      headline: slide.headline || defaultCopy[index % defaultCopy.length][1],
-      buttonLabel: slide.buttonLabel || block.ctaLabel || "Read More",
-      buttonHref: slide.buttonHref || block.ctaHref || "#",
-      photo:
-        (slide.photoId ? photoById.get(slide.photoId) : undefined) ??
-        fallbackPhotos[index % Math.max(fallbackPhotos.length, 1)] ??
-        photo,
-    }));
+    const sliderItems: ToraMinimalSliderItem[] = resolveToraSliderItems({
+      block,
+      photo,
+      photos,
+      defaultCopy: TORA_MINIMAL_SLIDE_COPY,
+    });
 
     return (
       <ToraMinimalSlider
@@ -696,6 +735,26 @@ function ToraMochieBanner({
         height={block.height}
         autoplay={block.minimalSliderAutoplay ?? false}
         autoplayMs={block.minimalSliderAutoplayMs ?? 4500}
+      />
+    );
+  }
+
+  if (layout === "toramochie-full-width-slider") {
+    const sliderItems = resolveToraSliderItems({
+      block,
+      photo,
+      photos,
+      defaultCopy: TORA_FULL_WIDTH_SLIDE_COPY,
+    });
+
+    return (
+      <ToraFullWidthSlider
+        items={sliderItems}
+        height={block.height}
+        autoplay={block.minimalSliderAutoplay ?? true}
+        autoplayMs={block.minimalSliderAutoplayMs ?? 5000}
+        accentColor={block.fullWidthSliderAccentColor ?? "#f7f7f7"}
+        dimImages={block.fullWidthSliderDimImages ?? true}
       />
     );
   }
@@ -949,14 +1008,17 @@ export async function BannerBlock({
   let wallPhotos = photos;
   if (block.source === "featured" && !resolved) {
     try {
+      const isToraSliderLayout =
+        block.layout === "toramochie-minimal-slider" ||
+        block.layout === "toramochie-full-width-slider";
       const featuredCount =
         block.layout === "toramochie-full-wall"
           ? 24
           : block.layout === "toramochie-wedding-studio"
             ? 2
-            : block.layout === "toramochie-minimal-slider"
+            : isToraSliderLayout
               ? 4
-            : 1;
+              : 1;
       const featured = await getFeaturedPhotos(
         featuredCount,
       );
@@ -964,7 +1026,7 @@ export async function BannerBlock({
       if (
         (block.layout === "toramochie-full-wall" ||
           block.layout === "toramochie-wedding-studio" ||
-          block.layout === "toramochie-minimal-slider") &&
+          isToraSliderLayout) &&
         wallPhotos.length === 0
       ) {
         wallPhotos = featured;

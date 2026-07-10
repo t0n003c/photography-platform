@@ -16,6 +16,7 @@ export type GridType =
   | "css-glitch"
   | "palmer-draggable"
   | "tora-sliphover"
+  | "tora-justified-showcase"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Scope =
@@ -112,6 +113,7 @@ export interface PalmerDraggableConfig {
 }
 
 export type ToraSliphoverLabelSource = "auto" | "headline" | "alt" | "caption";
+export type ToraJustifiedTitleSource = ToraSliphoverLabelSource;
 
 export interface ToraSliphoverConfig {
   useBackground: boolean;
@@ -119,6 +121,20 @@ export interface ToraSliphoverConfig {
   labelSource: ToraSliphoverLabelSource;
   labelBackgroundColor: string;
   labelTextColor: string;
+}
+
+export interface ToraJustifiedConfig {
+  useBackground: boolean;
+  backgroundColor: string;
+  titleColor: string;
+  accentColor: string;
+  titleSource: ToraJustifiedTitleSource;
+  rowHeightFactor: number;
+  desktopGutter: number;
+  mobileGutter: number;
+  hoverInset: boolean;
+  dimOnLeadHover: boolean;
+  scrollOnSelect: boolean;
 }
 
 export interface RenderConfig {
@@ -136,6 +152,7 @@ export interface RenderConfig {
   infiniteCanvas: InfiniteCanvasConfig;
   palmerDraggable: PalmerDraggableConfig;
   toraSliphover: ToraSliphoverConfig;
+  toraJustified: ToraJustifiedConfig;
 }
 
 function imageTrailVariant(value: unknown): ImageTrailVariant {
@@ -215,6 +232,15 @@ function toraSliphoverLabelSource(value: unknown): ToraSliphoverLabelSource {
     return value;
   }
   return "auto";
+}
+
+function toraJustifiedTitleSource(value: unknown): ToraJustifiedTitleSource {
+  return toraSliphoverLabelSource(value);
+}
+
+function boundedNumber(value: unknown, fallback: number, min: number, max: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
 }
 
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
@@ -297,6 +323,17 @@ export async function resolveRenderConfig(
     toraSliphoverLabelSource?: ToraSliphoverLabelSource;
     toraSliphoverLabelBackgroundColor?: string;
     toraSliphoverLabelTextColor?: string;
+    toraJustifiedUseBackground?: boolean;
+    toraJustifiedBackgroundColor?: string;
+    toraJustifiedTitleColor?: string;
+    toraJustifiedAccentColor?: string;
+    toraJustifiedTitleSource?: ToraJustifiedTitleSource;
+    toraJustifiedRowHeightFactor?: number;
+    toraJustifiedDesktopGutter?: number;
+    toraJustifiedMobileGutter?: number;
+    toraJustifiedHoverInset?: boolean;
+    toraJustifiedDimOnLeadHover?: boolean;
+    toraJustifiedScrollOnSelect?: boolean;
   };
   const palmerUsesCustomColors =
     cfgJson.palmerUseCustomColors ??
@@ -375,6 +412,24 @@ export async function resolveRenderConfig(
       labelSource: toraSliphoverLabelSource(cfgJson.toraSliphoverLabelSource),
       labelBackgroundColor: cfgJson.toraSliphoverLabelBackgroundColor ?? "#111111",
       labelTextColor: cfgJson.toraSliphoverLabelTextColor ?? "#f8f3df",
+    },
+    toraJustified: {
+      useBackground: cfgJson.toraJustifiedUseBackground ?? true,
+      backgroundColor: cfgJson.toraJustifiedBackgroundColor ?? "#252626",
+      titleColor: cfgJson.toraJustifiedTitleColor ?? "#f7f7f7",
+      accentColor: cfgJson.toraJustifiedAccentColor ?? "#edd8aa",
+      titleSource: toraJustifiedTitleSource(cfgJson.toraJustifiedTitleSource),
+      rowHeightFactor: boundedNumber(
+        cfgJson.toraJustifiedRowHeightFactor,
+        7,
+        5,
+        10,
+      ),
+      desktopGutter: boundedNumber(cfgJson.toraJustifiedDesktopGutter, 25, 0, 60),
+      mobileGutter: boundedNumber(cfgJson.toraJustifiedMobileGutter, 15, 0, 40),
+      hoverInset: cfgJson.toraJustifiedHoverInset ?? true,
+      dimOnLeadHover: cfgJson.toraJustifiedDimOnLeadHover ?? true,
+      scrollOnSelect: cfgJson.toraJustifiedScrollOnSelect ?? true,
     },
   };
 
@@ -526,6 +581,48 @@ export async function resolveRenderConfig(
       labelTextColor:
         draft.toraSliphoverLabelTextColor ??
         config.toraSliphover.labelTextColor,
+    },
+    toraJustified: {
+      useBackground:
+        draft.toraJustifiedUseBackground ??
+        config.toraJustified.useBackground,
+      backgroundColor:
+        draft.toraJustifiedBackgroundColor ??
+        config.toraJustified.backgroundColor,
+      titleColor:
+        draft.toraJustifiedTitleColor ?? config.toraJustified.titleColor,
+      accentColor:
+        draft.toraJustifiedAccentColor ?? config.toraJustified.accentColor,
+      titleSource:
+        draft.toraJustifiedTitleSource !== undefined
+          ? toraJustifiedTitleSource(draft.toraJustifiedTitleSource)
+          : config.toraJustified.titleSource,
+      rowHeightFactor: boundedNumber(
+        draft.toraJustifiedRowHeightFactor,
+        config.toraJustified.rowHeightFactor,
+        5,
+        10,
+      ),
+      desktopGutter: boundedNumber(
+        draft.toraJustifiedDesktopGutter,
+        config.toraJustified.desktopGutter,
+        0,
+        60,
+      ),
+      mobileGutter: boundedNumber(
+        draft.toraJustifiedMobileGutter,
+        config.toraJustified.mobileGutter,
+        0,
+        40,
+      ),
+      hoverInset:
+        draft.toraJustifiedHoverInset ?? config.toraJustified.hoverInset,
+      dimOnLeadHover:
+        draft.toraJustifiedDimOnLeadHover ??
+        config.toraJustified.dimOnLeadHover,
+      scrollOnSelect:
+        draft.toraJustifiedScrollOnSelect ??
+        config.toraJustified.scrollOnSelect,
     },
   };
 }

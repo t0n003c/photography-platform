@@ -21,6 +21,7 @@ export interface GridProps {
 
 export type ToraPropsCaptionSource = "auto" | "headline" | "alt" | "caption";
 export type ToraSliphoverLabelSource = ToraPropsCaptionSource;
+export type ToraJustifiedTitleSource = ToraPropsCaptionSource;
 
 export interface ToraPropsCatalogGridProps {
   photos: PhotoDTO[];
@@ -42,8 +43,27 @@ export interface ToraSliphoverGridProps {
   labelTextColor?: string;
 }
 
+export interface ToraJustifiedShowcaseGridProps {
+  photos: PhotoDTO[];
+  onOpen: (index: number) => void;
+  useBackground?: boolean;
+  backgroundColor?: string;
+  titleColor?: string;
+  accentColor?: string;
+  titleSource?: ToraJustifiedTitleSource;
+  rowHeightFactor?: number;
+  desktopGutter?: number;
+  mobileGutter?: number;
+  hoverInset?: boolean;
+  dimOnLeadHover?: boolean;
+  scrollOnSelect?: boolean;
+}
+
 const TORA_PROPS_DEFAULT_BACKGROUND = "#252626";
 const TORA_PROPS_DEFAULT_CAPTION = "#edd8aa";
+const TORA_JUSTIFIED_DEFAULT_BACKGROUND = "#252626";
+const TORA_JUSTIFIED_DEFAULT_TITLE = "#f7f7f7";
+const TORA_JUSTIFIED_DEFAULT_ACCENT = "#edd8aa";
 const TORA_SLIPHOVER_DEFAULT_BACKGROUND = "#f3eadb";
 const TORA_SLIPHOVER_LEGACY_DARK_BACKGROUND = "#242625";
 const TORA_SLIPHOVER_DEFAULT_LABEL_BG = "#111111";
@@ -119,6 +139,11 @@ function distributeSliphoverColumns(photos: PhotoDTO[], columnCount: number) {
 
 function isDefaultColor(value: string | undefined, defaultValue: string): boolean {
   return !value || value.trim().toLowerCase() === defaultValue;
+}
+
+function clampNumber(value: number | undefined, min: number, max: number, fallback: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
 }
 
 /** Masonry via CSS columns; items avoid breaking across columns. */
@@ -226,6 +251,267 @@ export function ToraPropsCatalogGrid({
               </button>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type ToraJustifiedRow = {
+  height: number;
+  items: {
+    photo: PhotoDTO;
+    index: number;
+    width: number;
+  }[];
+};
+
+function buildToraJustifiedRows(
+  photos: PhotoDTO[],
+  width: number,
+  viewportHeight: number,
+  rowHeightFactor: number,
+  gutter: number,
+): ToraJustifiedRow[] {
+  const safeWidth = Math.max(280, width);
+  const targetHeight = clampNumber(
+    viewportHeight / rowHeightFactor,
+    90,
+    260,
+    140,
+  );
+  const rows: ToraJustifiedRow[] = [];
+  let current: { photo: PhotoDTO; index: number; imageRatio: number }[] = [];
+  let ratioSum = 0;
+
+  photos.forEach((photo, index) => {
+    const imageRatio = Math.max(0.2, ratio(photo));
+    current.push({ photo, index, imageRatio });
+    ratioSum += imageRatio;
+
+    const projectedWidth =
+      ratioSum * targetHeight + Math.max(0, current.length - 1) * gutter;
+    if (projectedWidth < safeWidth) return;
+
+    const rowHeight =
+      (safeWidth - Math.max(0, current.length - 1) * gutter) / ratioSum;
+    rows.push({
+      height: rowHeight,
+      items: current.map((item) => ({
+        photo: item.photo,
+        index: item.index,
+        width: item.imageRatio * rowHeight,
+      })),
+    });
+    current = [];
+    ratioSum = 0;
+  });
+
+  if (current.length > 0) {
+    rows.push({
+      height: targetHeight,
+      items: current.map((item) => ({
+        photo: item.photo,
+        index: item.index,
+        width: item.imageRatio * targetHeight,
+      })),
+    });
+  }
+
+  return rows;
+}
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = React.useState(false);
+  React.useEffect(() => {
+    const query = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!query) return;
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+/** ToraMochie Justified Gallery reference: lead image with title plus
+ * viewport-height justified thumbnail rows that promote a selected image. */
+export function ToraJustifiedShowcaseGrid({
+  photos,
+  onOpen,
+  useBackground = true,
+  backgroundColor = TORA_JUSTIFIED_DEFAULT_BACKGROUND,
+  titleColor = TORA_JUSTIFIED_DEFAULT_TITLE,
+  accentColor = TORA_JUSTIFIED_DEFAULT_ACCENT,
+  titleSource = "auto",
+  rowHeightFactor = 7,
+  desktopGutter = 25,
+  mobileGutter = 15,
+  hoverInset = true,
+  dimOnLeadHover = true,
+  scrollOnSelect = true,
+}: ToraJustifiedShowcaseGridProps) {
+  const rootRef = React.useRef<HTMLElement>(null);
+  const innerRef = React.useRef<HTMLDivElement>(null);
+  const reducedMotion = usePrefersReducedMotion();
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const [leadHovered, setLeadHovered] = React.useState(false);
+  const [metrics, setMetrics] = React.useState({
+    width: 1200,
+    viewportHeight: 980,
+    mobile: false,
+  });
+
+  React.useEffect(() => {
+    if (activeIndex < photos.length) return;
+    setActiveIndex(0);
+  }, [activeIndex, photos.length]);
+
+  React.useEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+    const update = () => {
+      setMetrics({
+        width: inner.clientWidth || window.innerWidth,
+        viewportHeight: window.innerHeight || 980,
+        mobile: window.innerWidth < 768,
+      });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(inner);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!dimOnLeadHover || !leadHovered) return;
+    document.body.classList.add("tora-justified-page-dim");
+    return () => document.body.classList.remove("tora-justified-page-dim");
+  }, [dimOnLeadHover, leadHovered]);
+
+  if (photos.length === 0) return null;
+
+  const safeIndex = Math.min(activeIndex, photos.length - 1);
+  const activePhoto = photos[safeIndex];
+  const activeTitle = propsCaption(activePhoto, safeIndex, titleSource);
+  const gutter = metrics.mobile
+    ? clampNumber(mobileGutter, 0, 40, 15)
+    : clampNumber(desktopGutter, 0, 60, 25);
+  const rows = buildToraJustifiedRows(
+    photos,
+    metrics.width,
+    metrics.viewportHeight,
+    clampNumber(rowHeightFactor, 5, 10, 7),
+    gutter,
+  );
+  const style = {
+    "--tora-justified-gutter": `${gutter}px`,
+    "--tora-justified-bg": backgroundColor,
+    "--tora-justified-title": titleColor,
+    "--tora-justified-accent": accentColor,
+  } as React.CSSProperties;
+
+  const scrollToLead = () => {
+    const root = rootRef.current;
+    if (!root || !scrollOnSelect) return;
+    const offset = window.innerWidth < 768 ? 80 : 20;
+    const top = root.getBoundingClientRect().top + window.scrollY - offset;
+    const lenis = (
+      window as Window & {
+        __lenis?: {
+          scrollTo?: (
+            target: number,
+            options?: { duration?: number; immediate?: boolean },
+          ) => void;
+        };
+      }
+    ).__lenis;
+    if (lenis?.scrollTo) {
+      lenis.scrollTo(top, {
+        duration: reducedMotion ? 0 : 0.7,
+        immediate: reducedMotion,
+      });
+      return;
+    }
+    window.scrollTo({
+      top,
+      behavior: reducedMotion ? "auto" : "smooth",
+    });
+  };
+
+  const selectPhoto = (index: number) => {
+    setActiveIndex(index);
+    window.requestAnimationFrame(scrollToLead);
+  };
+
+  return (
+    <section
+      ref={rootRef}
+      className={cn(
+        "tora-justified-showcase",
+        !useBackground && "tora-justified-showcase--plain",
+        hoverInset && "tora-justified-showcase--hover-inset",
+        dimOnLeadHover && leadHovered && "is-lead-hovered",
+      )}
+      style={style}
+    >
+      <div ref={innerRef} className="tora-justified-showcase__inner">
+        <button
+          type="button"
+          className="tora-justified-showcase__lead"
+          aria-label={`Open ${activeTitle}`}
+          onClick={() => onOpen(safeIndex)}
+          onPointerEnter={(event) => {
+            if (event.pointerType === "mouse") setLeadHovered(true);
+          }}
+          onPointerLeave={() => setLeadHovered(false)}
+          onPointerCancel={() => setLeadHovered(false)}
+        >
+          <ResponsiveImage
+            photo={activePhoto}
+            sizes="100vw"
+            priority={safeIndex === 0}
+            className="tora-justified-showcase__lead-picture"
+            imgClassName="tora-justified-showcase__lead-image"
+          />
+        </button>
+        <h2 className="tora-justified-showcase__title">{activeTitle}</h2>
+        <div className="tora-justified-showcase__gallery" aria-label="Gallery thumbnails">
+          {rows.map((row, rowIndex) => (
+            <div
+              className="tora-justified-showcase__row"
+              key={`${rowIndex}-${row.items[0]?.photo.id ?? "row"}`}
+              style={{ height: `${row.height}px` }}
+            >
+              {row.items.map(({ photo, index, width }) => {
+                const label = propsCaption(photo, index, titleSource);
+                return (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    className={cn(
+                      "tora-justified-showcase__thumb",
+                      index === safeIndex && "is-active",
+                    )}
+                    style={{ width: `${width}px` }}
+                    aria-label={`Show ${label}`}
+                    aria-current={index === safeIndex ? "true" : undefined}
+                    onClick={() => selectPhoto(index)}
+                  >
+                    <ResponsiveImage
+                      photo={photo}
+                      sizes="(min-width:1280px) 18vw, (min-width:768px) 25vw, 55vw"
+                      className="h-full w-full"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
     </section>

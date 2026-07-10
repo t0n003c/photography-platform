@@ -387,12 +387,42 @@ function makeBannerSlide(index = 0, photoId: string | null = null) {
   };
 }
 
+function makeFullWidthBannerSlide(index = 0, photoId: string | null = null) {
+  const headlines = [
+    "London's portraits",
+    "Melbourne's portraits",
+    "Porto's portraits",
+    "Washington's portraits",
+  ] as const;
+  return {
+    id: newBlockId(),
+    photoId,
+    subtitle: "",
+    headline: headlines[index % headlines.length],
+    buttonLabel: "",
+    buttonHref: "#",
+  };
+}
+
 const GALLERY_TORA_PROPS_DEFAULTS = {
   toraPropsShowBackground: true,
   toraPropsBackgroundColor: "#252626",
   toraPropsCaptionColor: "#edd8aa",
   toraPropsShowCaptions: true,
   toraPropsCaptionSource: "auto",
+} as const;
+const GALLERY_TORA_JUSTIFIED_DEFAULTS = {
+  toraJustifiedUseBackground: true,
+  toraJustifiedBackgroundColor: "#252626",
+  toraJustifiedTitleColor: "#f7f7f7",
+  toraJustifiedAccentColor: "#edd8aa",
+  toraJustifiedTitleSource: "auto",
+  toraJustifiedRowHeightFactor: 7,
+  toraJustifiedDesktopGutter: 25,
+  toraJustifiedMobileGutter: 15,
+  toraJustifiedHoverInset: true,
+  toraJustifiedDimOnLeadHover: true,
+  toraJustifiedScrollOnSelect: true,
 } as const;
 const TORA_HEADING_DEFAULT_LABELS: Record<string, string> = {
   "tora-classic": "HEADINGS",
@@ -536,8 +566,8 @@ function makeBlock(type: BlockType): Block {
       textColor: "#2d251d",
       accentColor: "#8b5e34",
     };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS };
-    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS };
+    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, fullWidthSliderAccentColor: "#f7f7f7", fullWidthSliderDimImages: true, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "testimonials": return {
       id,
@@ -1110,6 +1140,9 @@ function blockSummary(block: Block): string {
     case "banner":
       if (block.layout === "toramochie-minimal-slider") {
         return `Tora minimal slider · ${(block.slides ?? []).length} slides`;
+      }
+      if (block.layout === "toramochie-full-width-slider") {
+        return `Tora full width slider · ${(block.slides ?? []).length} slides`;
       }
       return block.headline || block.source;
     case "testimonials":
@@ -4921,14 +4954,15 @@ function LeafEditor({
                       });
                     }}
                   >
-                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option><option value="tora-props-catalog">Tora props catalog</option>
+                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="tora-justified-showcase">Tora justified showcase</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option><option value="tora-props-catalog">Tora props catalog</option>
                   </Select>
                 </Field>
                 {/* The 3D infinite carousel and cinematic 3D scroll manage their own
                     layout, so the tight/normal/airy spacing control doesn't apply. */}
                 {block.gridType !== "carousel3d" &&
                   block.gridType !== "cinematic" &&
-                  block.gridType !== "tora-props-catalog" && (
+                  block.gridType !== "tora-props-catalog" &&
+                  block.gridType !== "tora-justified-showcase" && (
                   <Field label="Spacing">
                     <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
                       <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
@@ -5027,6 +5061,143 @@ function LeafEditor({
                         onChange={(e) => set({ toraPropsBackgroundColor: e.target.value })}
                         disabled={block.toraPropsShowBackground === false}
                       />
+                    </Field>
+                  </>
+                )}
+                {block.gridType === "tora-justified-showcase" && (
+                  <>
+                    <Field label="Title source">
+                      <Select
+                        value={block.toraJustifiedTitleSource ?? "auto"}
+                        onChange={(e) =>
+                          set({
+                            toraJustifiedTitleSource:
+                              e.target.value as typeof block.toraJustifiedTitleSource,
+                          })
+                        }
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="headline">Headline</option>
+                        <option value="alt">Alt text</option>
+                        <option value="caption">Caption</option>
+                      </Select>
+                    </Field>
+                    <Field label="Title color">
+                      <Input
+                        type="color"
+                        value={block.toraJustifiedTitleColor ?? "#f7f7f7"}
+                        onChange={(e) => set({ toraJustifiedTitleColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Accent color">
+                      <Input
+                        type="color"
+                        value={block.toraJustifiedAccentColor ?? "#edd8aa"}
+                        onChange={(e) => set({ toraJustifiedAccentColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Background">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraJustifiedUseBackground ?? true}
+                          onChange={(e) => set({ toraJustifiedUseBackground: e.target.checked })}
+                        />
+                        Show gallery band
+                      </label>
+                    </Field>
+                    <Field label="Background color">
+                      <Input
+                        type="color"
+                        value={block.toraJustifiedBackgroundColor ?? "#252626"}
+                        onChange={(e) => set({ toraJustifiedBackgroundColor: e.target.value })}
+                        disabled={block.toraJustifiedUseBackground === false}
+                      />
+                    </Field>
+                    <Field label="Row height">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={5}
+                          max={10}
+                          step={0.25}
+                          value={block.toraJustifiedRowHeightFactor ?? 7}
+                          onChange={(e) =>
+                            set({
+                              toraJustifiedRowHeightFactor: Math.min(
+                                10,
+                                Math.max(5, Number(e.target.value) || 7),
+                              ),
+                            })
+                          }
+                          className="w-full accent-[hsl(var(--primary))]"
+                        />
+                        <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                          /{(block.toraJustifiedRowHeightFactor ?? 7).toFixed(2)}
+                        </span>
+                      </div>
+                    </Field>
+                    <Field label="Desktop gutter">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={60}
+                        value={block.toraJustifiedDesktopGutter ?? 25}
+                        onChange={(e) =>
+                          set({
+                            toraJustifiedDesktopGutter: Math.min(
+                              60,
+                              Math.max(0, Number(e.target.value) || 0),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Mobile gutter">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={40}
+                        value={block.toraJustifiedMobileGutter ?? 15}
+                        onChange={(e) =>
+                          set({
+                            toraJustifiedMobileGutter: Math.min(
+                              40,
+                              Math.max(0, Number(e.target.value) || 0),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Thumbnail hover">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraJustifiedHoverInset ?? true}
+                          onChange={(e) => set({ toraJustifiedHoverInset: e.target.checked })}
+                        />
+                        Clip and fade on hover
+                      </label>
+                    </Field>
+                    <Field label="Lead hover dim">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraJustifiedDimOnLeadHover ?? true}
+                          onChange={(e) => set({ toraJustifiedDimOnLeadHover: e.target.checked })}
+                        />
+                        Dim surrounding page
+                      </label>
+                    </Field>
+                    <Field label="Thumbnail select">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraJustifiedScrollOnSelect ?? true}
+                          onChange={(e) => set({ toraJustifiedScrollOnSelect: e.target.checked })}
+                        />
+                        Scroll back to lead image
+                      </label>
                     </Field>
                   </>
                 )}
@@ -5274,6 +5445,8 @@ function LeafEditor({
       const isToraWall = block.layout === "toramochie-full-wall";
       const isToraWedding = block.layout === "toramochie-wedding-studio";
       const isToraMinimal = block.layout === "toramochie-minimal-slider";
+      const isToraFullWidthSlider = block.layout === "toramochie-full-width-slider";
+      const isToraSlider = isToraMinimal || isToraFullWidthSlider;
       const isToraMultiPhoto = isToraWall || isToraWedding;
       const isSpecialHero = isPrisma || isAgency;
       const bannerPhotoIds = block.photoIds ?? [];
@@ -5307,7 +5480,10 @@ function LeafEditor({
           patch.ctaHref = block.ctaHref || "#";
           patch.overlay = "none";
           patch.height = block.height === "short" ? "tall" : block.height;
-        } else if (layout === "toramochie-minimal-slider") {
+        } else if (
+          layout === "toramochie-minimal-slider" ||
+          layout === "toramochie-full-width-slider"
+        ) {
           patch.height = "full";
           patch.overlay = "none";
           patch.effect = "none";
@@ -5316,10 +5492,17 @@ function LeafEditor({
             bannerSlides.length > 0
               ? bannerSlides
               : Array.from({ length: 4 }, (_, index) =>
-                  makeBannerSlide(index, bannerPhotoIds[index] ?? null),
+                  layout === "toramochie-full-width-slider"
+                    ? makeFullWidthBannerSlide(index, bannerPhotoIds[index] ?? null)
+                    : makeBannerSlide(index, bannerPhotoIds[index] ?? null),
                 );
-          patch.minimalSliderAutoplay ??= false;
-          patch.minimalSliderAutoplayMs ??= 4500;
+          patch.minimalSliderAutoplay ??= layout === "toramochie-full-width-slider";
+          patch.minimalSliderAutoplayMs ??=
+            layout === "toramochie-full-width-slider" ? 5000 : 4500;
+          if (layout === "toramochie-full-width-slider") {
+            patch.fullWidthSliderAccentColor ??= "#f7f7f7";
+            patch.fullWidthSliderDimImages ??= true;
+          }
         }
         set(patch);
       };
@@ -5358,6 +5541,7 @@ function LeafEditor({
               <option value="toramochie-classic">Classic</option>
               <option value="toramochie-wedding-studio">Wedding studio</option>
               <option value="toramochie-minimal-slider">Minimal slider</option>
+              <option value="toramochie-full-width-slider">Full width slider</option>
             </optgroup>
           </Select>
         </Field>
@@ -5379,7 +5563,7 @@ function LeafEditor({
                 <option value="dark">Strong darken</option>
               </Select>
             </Field>
-          ) : !isSpecialHero && !isToraMinimal && (
+          ) : !isSpecialHero && !isToraSlider && (
             <Field label="Darken image">
               <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
                 <option value="auto">Auto (only behind text)</option>
@@ -5532,10 +5716,10 @@ function LeafEditor({
           )}
         </>
       );
-      if (isToraMinimal) {
+      if (isToraSlider) {
         return (
           <div className="space-y-4">
-            <SettingsGroup title="Minimal slider">
+            <SettingsGroup title={isToraFullWidthSlider ? "Full width slider" : "Minimal slider"}>
               <div className="grid gap-2 sm:grid-cols-2">
                 {layoutField}
                 <Field label="Height">
@@ -5559,7 +5743,10 @@ function LeafEditor({
                     min={1200}
                     max={12000}
                     step={100}
-                    value={block.minimalSliderAutoplayMs ?? 4500}
+                    value={
+                      block.minimalSliderAutoplayMs ??
+                      (isToraFullWidthSlider ? 5000 : 4500)
+                    }
                     onChange={(e) =>
                       set({
                         minimalSliderAutoplayMs: Math.max(
@@ -5570,6 +5757,27 @@ function LeafEditor({
                     }
                   />
                 </Field>
+                {isToraFullWidthSlider && (
+                  <>
+                    <Field label="Accent color">
+                      <Input
+                        type="color"
+                        value={block.fullWidthSliderAccentColor ?? "#f7f7f7"}
+                        onChange={(e) => set({ fullWidthSliderAccentColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Slide dimming">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.fullWidthSliderDimImages ?? true}
+                          onChange={(e) => set({ fullWidthSliderDimImages: e.target.checked })}
+                        />
+                        Dim slide photos
+                      </label>
+                    </Field>
+                  </>
+                )}
               </div>
             </SettingsGroup>
 
@@ -5583,7 +5791,9 @@ function LeafEditor({
                     set({
                       slides: [
                         ...bannerSlides,
-                        makeBannerSlide(bannerSlides.length),
+                        isToraFullWidthSlider
+                          ? makeFullWidthBannerSlide(bannerSlides.length)
+                          : makeBannerSlide(bannerSlides.length),
                       ],
                     })
                   }
@@ -5595,7 +5805,9 @@ function LeafEditor({
               <div className="space-y-3">
                 {bannerSlides.length === 0 && (
                   <p className="rounded-md border border-dashed px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">
-                    Add slides to set per-photo titles and buttons.
+                    {isToraFullWidthSlider
+                      ? "Add slides to set per-photo titles and links."
+                      : "Add slides to set per-photo titles and buttons."}
                   </p>
                 )}
                 {bannerSlides.map((slide, index) => {
@@ -5654,28 +5866,32 @@ function LeafEditor({
                           />
                         </Field>
                         <div className="grid gap-2 sm:grid-cols-2">
-                          <Field label="Subtitle">
-                            <Input
-                              value={slide.subtitle ?? ""}
-                              onChange={(e) => updateBannerSlide(index, { subtitle: e.target.value })}
-                              placeholder="for couples"
-                            />
-                          </Field>
+                          {!isToraFullWidthSlider && (
+                            <Field label="Subtitle">
+                              <Input
+                                value={slide.subtitle ?? ""}
+                                onChange={(e) => updateBannerSlide(index, { subtitle: e.target.value })}
+                                placeholder="for couples"
+                              />
+                            </Field>
+                          )}
                           <Field label="Headline">
                             <Input
                               value={slide.headline ?? ""}
                               onChange={(e) => updateBannerSlide(index, { headline: e.target.value })}
-                              placeholder="Another way"
+                              placeholder={isToraFullWidthSlider ? "London's portraits" : "Another way"}
                             />
                           </Field>
-                          <Field label="Button label">
-                            <Input
-                              value={slide.buttonLabel ?? ""}
-                              onChange={(e) => updateBannerSlide(index, { buttonLabel: e.target.value })}
-                              placeholder="Read More"
-                            />
-                          </Field>
-                          <Field label="Button link">
+                          {!isToraFullWidthSlider && (
+                            <Field label="Button label">
+                              <Input
+                                value={slide.buttonLabel ?? ""}
+                                onChange={(e) => updateBannerSlide(index, { buttonLabel: e.target.value })}
+                                placeholder="Read More"
+                              />
+                            </Field>
+                          )}
+                          <Field label={isToraFullWidthSlider ? "Title link" : "Button link"}>
                             <Input
                               value={slide.buttonHref ?? ""}
                               onChange={(e) => updateBannerSlide(index, { buttonHref: e.target.value })}

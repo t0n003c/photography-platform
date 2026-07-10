@@ -31,6 +31,7 @@ const CreateSchema = z.object({
       "css-glitch",
       "palmer-draggable",
       "tora-sliphover",
+      "tora-justified-showcase",
       "carousel-3d-scroll",
       "alternative-scroll",
     ])

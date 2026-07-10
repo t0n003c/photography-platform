@@ -15,6 +15,8 @@ export type GridType =
   | "infinite-canvas"
   | "css-glitch"
   | "palmer-draggable"
+  | "tora-sliphover"
+  | "tora-justified-showcase"
   | "carousel-3d-scroll"
   | "alternative-scroll";
 export type Spacing = "tight" | "normal" | "airy";

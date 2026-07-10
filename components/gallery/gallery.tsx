@@ -9,9 +9,11 @@ import {
   JustifiedGrid,
   MasonryGrid,
   MosaicGrid,
+  ToraJustifiedShowcaseGrid,
   ToraPropsCatalogGrid,
   ToraSliphoverGrid,
   UniformGrid,
+  type ToraJustifiedTitleSource,
   type ToraPropsCaptionSource,
   type ToraSliphoverLabelSource,
 } from "./grids";
@@ -49,6 +51,7 @@ interface GalleryLayout {
     | "css-glitch"
     | "palmer-draggable"
     | "tora-sliphover"
+    | "tora-justified-showcase"
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
@@ -129,6 +132,20 @@ interface GalleryLayout {
     labelSource?: ToraSliphoverLabelSource;
     labelBackgroundColor?: string;
     labelTextColor?: string;
+  };
+  /** ToraMochie Justified Gallery reference: lead image + justified thumbnails. */
+  toraJustified?: {
+    useBackground?: boolean;
+    backgroundColor?: string;
+    titleColor?: string;
+    accentColor?: string;
+    titleSource?: ToraJustifiedTitleSource;
+    rowHeightFactor?: number;
+    desktopGutter?: number;
+    mobileGutter?: number;
+    hoverInset?: boolean;
+    dimOnLeadHover?: boolean;
+    scrollOnSelect?: boolean;
   };
   /** ToraMochie Props catalog only: static inventory grid colors/captions. */
   toraProps?: {
@@ -518,6 +535,23 @@ export function Gallery({
           captionColor={layout.toraProps?.captionColor}
           showCaptions={layout.toraProps?.showCaptions}
           captionSource={layout.toraProps?.captionSource}
+        />
+      )}
+      {layout.gridType === "tora-justified-showcase" && (
+        <ToraJustifiedShowcaseGrid
+          photos={photos}
+          onOpen={openAt}
+          useBackground={layout.toraJustified?.useBackground}
+          backgroundColor={layout.toraJustified?.backgroundColor}
+          titleColor={layout.toraJustified?.titleColor}
+          accentColor={layout.toraJustified?.accentColor}
+          titleSource={layout.toraJustified?.titleSource}
+          rowHeightFactor={layout.toraJustified?.rowHeightFactor}
+          desktopGutter={layout.toraJustified?.desktopGutter}
+          mobileGutter={layout.toraJustified?.mobileGutter}
+          hoverInset={layout.toraJustified?.hoverInset}
+          dimOnLeadHover={layout.toraJustified?.dimOnLeadHover}
+          scrollOnSelect={layout.toraJustified?.scrollOnSelect}
         />
       )}
     </>

@@ -10,6 +10,7 @@ interface ResponsiveImageProps {
   sizes: string;
   priority?: boolean;
   className?: string;
+  imgClassName?: string;
   /** CSS object-position for the <img> (focal point), e.g. "50% 25%". */
   objectPosition?: string;
   /** Extra inline style merged onto the <img> (e.g. a zoom transform). */
@@ -38,6 +39,7 @@ export function ResponsiveImage({
   sizes,
   priority = false,
   className,
+  imgClassName,
   objectPosition,
   style,
 }: ResponsiveImageProps) {
@@ -85,7 +87,7 @@ export function ResponsiveImage({
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
-        className="block h-full w-full object-cover"
+        className={imgClassName ?? "block h-full w-full object-cover"}
         style={
           objectPosition || style ? { objectPosition, ...style } : undefined
         }

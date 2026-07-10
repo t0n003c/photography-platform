@@ -176,6 +176,19 @@ export async function GalleryBlock({
       showCaptions: block.toraPropsShowCaptions,
       captionSource: block.toraPropsCaptionSource,
     },
+    toraJustified: {
+      useBackground: block.toraJustifiedUseBackground,
+      backgroundColor: block.toraJustifiedBackgroundColor,
+      titleColor: block.toraJustifiedTitleColor,
+      accentColor: block.toraJustifiedAccentColor,
+      titleSource: block.toraJustifiedTitleSource,
+      rowHeightFactor: block.toraJustifiedRowHeightFactor,
+      desktopGutter: block.toraJustifiedDesktopGutter,
+      mobileGutter: block.toraJustifiedMobileGutter,
+      hoverInset: block.toraJustifiedHoverInset,
+      dimOnLeadHover: block.toraJustifiedDimOnLeadHover,
+      scrollOnSelect: block.toraJustifiedScrollOnSelect,
+    },
   };
 
   // Cinematic 3D scroll is a layout choice (gridType) — it renders full-bleed
@@ -222,7 +235,10 @@ export async function GalleryBlock({
     }
   }
 
-  if (block.gridType === "tora-props-catalog") {
+  if (
+    block.gridType === "tora-props-catalog" ||
+    block.gridType === "tora-justified-showcase"
+  ) {
     return <Gallery photos={photos} layout={layout} />;
   }
 
