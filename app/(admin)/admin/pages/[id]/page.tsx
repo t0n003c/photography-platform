@@ -423,6 +423,7 @@ const GALLERY_TORA_JUSTIFIED_DEFAULTS = {
   toraJustifiedHoverInset: true,
   toraJustifiedDimOnLeadHover: true,
   toraJustifiedScrollOnSelect: true,
+  toraJustifiedShowBlurredSideFill: true,
 } as const;
 const TORA_HEADING_DEFAULT_LABELS: Record<string, string> = {
   "tora-classic": "HEADINGS",
@@ -5197,6 +5198,20 @@ function LeafEditor({
                           onChange={(e) => set({ toraJustifiedScrollOnSelect: e.target.checked })}
                         />
                         Scroll back to lead image
+                      </label>
+                    </Field>
+                    <Field label="Lead image backdrop">
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.toraJustifiedShowBlurredSideFill ?? true}
+                          onChange={(e) =>
+                            set({
+                              toraJustifiedShowBlurredSideFill: e.target.checked,
+                            })
+                          }
+                        />
+                        Show blurred side fill
                       </label>
                     </Field>
                   </>

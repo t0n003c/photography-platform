@@ -329,6 +329,7 @@ const GalleryBlock = z.object({
   toraJustifiedHoverInset: z.boolean().default(true),
   toraJustifiedDimOnLeadHover: z.boolean().default(true),
   toraJustifiedScrollOnSelect: z.boolean().default(true),
+  toraJustifiedShowBlurredSideFill: z.boolean().default(true),
 });
 // Banner has its own effect set (Ken Burns / reveal are CSS, distortion is
 // WebGL). Kept separate from the gallery's EffectEnum so they don't cross over.

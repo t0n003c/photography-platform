@@ -188,6 +188,7 @@ export async function GalleryBlock({
       hoverInset: block.toraJustifiedHoverInset,
       dimOnLeadHover: block.toraJustifiedDimOnLeadHover,
       scrollOnSelect: block.toraJustifiedScrollOnSelect,
+      showBlurredSideFill: block.toraJustifiedShowBlurredSideFill,
     },
   };
 

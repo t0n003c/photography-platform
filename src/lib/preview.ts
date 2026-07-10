@@ -85,6 +85,7 @@ export interface PreviewConfig {
   toraJustifiedHoverInset?: boolean;
   toraJustifiedDimOnLeadHover?: boolean;
   toraJustifiedScrollOnSelect?: boolean;
+  toraJustifiedShowBlurredSideFill?: boolean;
 }
 
 export const PREVIEW_PARAM = "__pc";

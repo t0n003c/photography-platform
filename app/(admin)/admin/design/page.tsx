@@ -251,6 +251,14 @@ function ConfigEditor({
         ? cfg.toraJustifiedScrollOnSelect
         : true,
     );
+  const [
+    toraJustifiedShowBlurredSideFill,
+    setToraJustifiedShowBlurredSideFill,
+  ] = useState<boolean>(
+    typeof cfg.toraJustifiedShowBlurredSideFill === "boolean"
+      ? cfg.toraJustifiedShowBlurredSideFill
+      : true,
+  );
   const [saving, setSaving] = useState(false);
   const [settingDefault, setSettingDefault] = useState(false);
 
@@ -271,6 +279,7 @@ function ConfigEditor({
       toraJustifiedHoverInset,
       toraJustifiedDimOnLeadHover,
       toraJustifiedScrollOnSelect,
+      toraJustifiedShowBlurredSideFill,
     }),
     [
       gridType,
@@ -290,6 +299,7 @@ function ConfigEditor({
       toraJustifiedHoverInset,
       toraJustifiedDimOnLeadHover,
       toraJustifiedScrollOnSelect,
+      toraJustifiedShowBlurredSideFill,
     ],
   );
 
@@ -314,6 +324,7 @@ function ConfigEditor({
         toraJustifiedHoverInset,
         toraJustifiedDimOnLeadHover,
         toraJustifiedScrollOnSelect,
+        toraJustifiedShowBlurredSideFill,
       };
       const res = await api.patch<{ data: PageConfig }>(
         `/api/v1/admin/page-configs/${config.id}`,
@@ -510,6 +521,18 @@ function ConfigEditor({
                 onChange={(e) => setToraJustifiedScrollOnSelect(e.target.checked)}
               />
               Scroll back to lead
+            </label>
+          </Field>
+          <Field label="Lead image backdrop">
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={toraJustifiedShowBlurredSideFill}
+                onChange={(e) =>
+                  setToraJustifiedShowBlurredSideFill(e.target.checked)
+                }
+              />
+              Show blurred side fill
             </label>
           </Field>
         </div>

@@ -98,6 +98,7 @@ export interface PreviewDraft {
   toraJustifiedHoverInset?: boolean;
   toraJustifiedDimOnLeadHover?: boolean;
   toraJustifiedScrollOnSelect?: boolean;
+  toraJustifiedShowBlurredSideFill?: boolean;
 }
 
 type PreviewDevice = "desktop" | "mobile";

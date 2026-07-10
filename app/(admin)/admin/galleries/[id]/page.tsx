@@ -1023,6 +1023,10 @@ function LayoutCard({
     useState(true);
   const [toraJustifiedScrollOnSelect, setToraJustifiedScrollOnSelect] =
     useState(true);
+  const [
+    toraJustifiedShowBlurredSideFill,
+    setToraJustifiedShowBlurredSideFill,
+  ] = useState(true);
   const [baseConfig, setBaseConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
@@ -1303,6 +1307,11 @@ function LayoutCard({
         if (typeof c.toraJustifiedScrollOnSelect === "boolean") {
           setToraJustifiedScrollOnSelect(c.toraJustifiedScrollOnSelect);
         }
+        if (typeof c.toraJustifiedShowBlurredSideFill === "boolean") {
+          setToraJustifiedShowBlurredSideFill(
+            c.toraJustifiedShowBlurredSideFill,
+          );
+        }
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
@@ -1372,6 +1381,7 @@ function LayoutCard({
         toraJustifiedHoverInset,
         toraJustifiedDimOnLeadHover,
         toraJustifiedScrollOnSelect,
+        toraJustifiedShowBlurredSideFill,
       };
       let id = gallery.pageConfigId;
       if (!id) {
@@ -2036,6 +2046,17 @@ function LayoutCard({
                       />
                       Scroll to lead on select
                     </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={toraJustifiedShowBlurredSideFill}
+                        onChange={(e) =>
+                          setToraJustifiedShowBlurredSideFill(e.target.checked)
+                        }
+                      />
+                      Show blurred side fill
+                    </label>
                   </div>
                 </div>
               )}
@@ -2184,6 +2205,7 @@ function LayoutCard({
                 toraJustifiedHoverInset,
                 toraJustifiedDimOnLeadHover,
                 toraJustifiedScrollOnSelect,
+                toraJustifiedShowBlurredSideFill,
               }}
               height={560}
             />

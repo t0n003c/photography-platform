@@ -135,6 +135,7 @@ export interface ToraJustifiedConfig {
   hoverInset: boolean;
   dimOnLeadHover: boolean;
   scrollOnSelect: boolean;
+  showBlurredSideFill: boolean;
 }
 
 export interface RenderConfig {
@@ -334,6 +335,7 @@ export async function resolveRenderConfig(
     toraJustifiedHoverInset?: boolean;
     toraJustifiedDimOnLeadHover?: boolean;
     toraJustifiedScrollOnSelect?: boolean;
+    toraJustifiedShowBlurredSideFill?: boolean;
   };
   const palmerUsesCustomColors =
     cfgJson.palmerUseCustomColors ??
@@ -430,6 +432,8 @@ export async function resolveRenderConfig(
       hoverInset: cfgJson.toraJustifiedHoverInset ?? true,
       dimOnLeadHover: cfgJson.toraJustifiedDimOnLeadHover ?? true,
       scrollOnSelect: cfgJson.toraJustifiedScrollOnSelect ?? true,
+      showBlurredSideFill:
+        cfgJson.toraJustifiedShowBlurredSideFill ?? true,
     },
   };
 
@@ -623,6 +627,9 @@ export async function resolveRenderConfig(
       scrollOnSelect:
         draft.toraJustifiedScrollOnSelect ??
         config.toraJustified.scrollOnSelect,
+      showBlurredSideFill:
+        draft.toraJustifiedShowBlurredSideFill ??
+        config.toraJustified.showBlurredSideFill,
     },
   };
 }

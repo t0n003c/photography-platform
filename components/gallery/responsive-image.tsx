@@ -11,6 +11,8 @@ interface ResponsiveImageProps {
   priority?: boolean;
   className?: string;
   imgClassName?: string;
+  /** Paint the dominant-color/LQIP preview on the picture backdrop. */
+  showPlaceholderBackdrop?: boolean;
   /** CSS object-position for the <img> (focal point), e.g. "50% 25%". */
   objectPosition?: string;
   /** Extra inline style merged onto the <img> (e.g. a zoom transform). */
@@ -40,6 +42,7 @@ export function ResponsiveImage({
   priority = false,
   className,
   imgClassName,
+  showPlaceholderBackdrop = true,
   objectPosition,
   style,
 }: ResponsiveImageProps) {
@@ -73,7 +76,10 @@ export function ResponsiveImage({
   }
 
   return (
-    <picture className={cn("block", className)} style={placeholderStyle}>
+    <picture
+      className={cn("block", className)}
+      style={showPlaceholderBackdrop ? placeholderStyle : undefined}
+    >
       {webp.length > 0 && (
         <source type="image/webp" srcSet={buildSrcSet(webp)} sizes={sizes} />
       )}

@@ -57,6 +57,7 @@ export interface ToraJustifiedShowcaseGridProps {
   hoverInset?: boolean;
   dimOnLeadHover?: boolean;
   scrollOnSelect?: boolean;
+  showBlurredSideFill?: boolean;
 }
 
 const TORA_PROPS_DEFAULT_BACKGROUND = "#252626";
@@ -350,6 +351,7 @@ export function ToraJustifiedShowcaseGrid({
   hoverInset = true,
   dimOnLeadHover = true,
   scrollOnSelect = true,
+  showBlurredSideFill = true,
 }: ToraJustifiedShowcaseGridProps) {
   const rootRef = React.useRef<HTMLElement>(null);
   const innerRef = React.useRef<HTMLDivElement>(null);
@@ -483,6 +485,7 @@ export function ToraJustifiedShowcaseGrid({
             priority={safeIndex === 0}
             className="tora-justified-showcase__lead-picture"
             imgClassName="tora-justified-showcase__lead-image"
+            showPlaceholderBackdrop={showBlurredSideFill}
           />
         </button>
         <h2 className="tora-justified-showcase__title">{activeTitle}</h2>

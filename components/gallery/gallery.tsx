@@ -146,6 +146,7 @@ interface GalleryLayout {
     hoverInset?: boolean;
     dimOnLeadHover?: boolean;
     scrollOnSelect?: boolean;
+    showBlurredSideFill?: boolean;
   };
   /** ToraMochie Props catalog only: static inventory grid colors/captions. */
   toraProps?: {
@@ -552,6 +553,7 @@ export function Gallery({
           hoverInset={layout.toraJustified?.hoverInset}
           dimOnLeadHover={layout.toraJustified?.dimOnLeadHover}
           scrollOnSelect={layout.toraJustified?.scrollOnSelect}
+          showBlurredSideFill={layout.toraJustified?.showBlurredSideFill}
         />
       )}
     </>

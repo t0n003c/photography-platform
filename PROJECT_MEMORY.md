@@ -1651,7 +1651,10 @@ is gitignored):
   Settings expose title/accent/background colors, title source, gutters, row height, interaction
   toggles, and a `Use background color` toggle. With that toggle off, both the gallery surface and
   thumbnail placeholders are transparent; the default title/accent colors follow light/dark mode,
-  while custom title/accent colors remain explicit overrides.
+  while custom title/accent colors remain explicit overrides. `Show blurred side fill` controls
+  whether the lead image's LQIP remains visible beside portrait/contained photos; it defaults on
+  for compatibility, and turning it off reveals the gallery/page background without changing
+  responsive image sources or loading priority.
   ToraMochie/Reflector Casting page follow-up: the top casting intro is an About block layout
   (`tora-casting`) because it is a title/body/three-photo editorial intro; desktop shows three
   430:380 portraits, mobile auto-cycles through the three selected photos with a CSS-only

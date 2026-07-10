@@ -55,6 +55,30 @@ describe("page builder blocks", () => {
     });
   });
 
+  it("keeps and defaults the justified showcase blurred side fill", () => {
+    const blocks = parseBlocks([
+      {
+        id: "gallery-default",
+        type: "gallery",
+        gridType: "tora-justified-showcase",
+      },
+      {
+        id: "gallery-plain-lead",
+        type: "gallery",
+        gridType: "tora-justified-showcase",
+        toraJustifiedShowBlurredSideFill: false,
+      },
+    ]);
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({
+      toraJustifiedShowBlurredSideFill: true,
+    });
+    expect(blocks[1]).toMatchObject({
+      toraJustifiedShowBlurredSideFill: false,
+    });
+  });
+
   it("keeps location map blocks with selected locations", () => {
     const blocks = parseBlocks([
       {

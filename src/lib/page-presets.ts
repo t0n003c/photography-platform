@@ -49,6 +49,7 @@ const GALLERY_TORA_JUSTIFIED_DEFAULTS = {
   toraJustifiedHoverInset: true,
   toraJustifiedDimOnLeadHover: true,
   toraJustifiedScrollOnSelect: true,
+  toraJustifiedShowBlurredSideFill: true,
 } as const;
 
 // Starter blocks per page type. `gen` returns a fresh unique id per block.
