@@ -62,6 +62,40 @@ describe("page builder blocks", () => {
     ]);
   });
 
+  it("keeps split contacts reference styles with scoped photo collection", () => {
+    const blocks = parseBlocks([
+      {
+        id: "contact-info",
+        type: "contactForm",
+        style: "tora-contact-info",
+        contactHeroPhotoId: "stale-hero",
+        contactImagePhotoIds: ["stale-mosaic"],
+      },
+      {
+        id: "images-form",
+        type: "contactForm",
+        style: "tora-images-form",
+        contactHeroPhotoId: "stale-hero-2",
+        contactImagePhotoIds: ["photo-a", "photo-b"],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({
+      id: "contact-info",
+      type: "contactForm",
+      style: "tora-contact-info",
+      contactInfoHeading: "CONTACT INFO",
+    });
+    expect(blocks[1]).toMatchObject({
+      id: "images-form",
+      type: "contactForm",
+      style: "tora-images-form",
+      contactImageHeading: "IMAGES WITH FORM",
+    });
+    expect(collectPhotoIds(blocks)).toEqual(["photo-a", "photo-b"]);
+  });
+
   it("creates a contact form in contact page presets", () => {
     const blocks = presetBlocks("contact", () => "id");
 

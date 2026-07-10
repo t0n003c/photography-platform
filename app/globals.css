@@ -3135,6 +3135,10 @@ main:has(.tora-contact-section) .py-4:has(.tora-contact-section) {
   padding-top: 6px;
 }
 
+.tora-contact-reference--images-form .tora-contact-reference__section--image-heading {
+  padding-top: 116px;
+}
+
 .tora-contact-reference-heading {
   text-align: center;
   text-transform: uppercase;
@@ -3374,6 +3378,10 @@ main:has(.tora-contact-reference) .py-4:has(.tora-contact-reference) {
     padding-top: 84px;
   }
 
+  .tora-contact-reference--images-form .tora-contact-reference__section--image-heading {
+    padding-top: 84px;
+  }
+
   .tora-contact-reference-info {
     gap: 42px 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3418,6 +3426,10 @@ main:has(.tora-contact-reference) .py-4:has(.tora-contact-reference) {
   }
 
   .tora-contact-reference__section--info-heading {
+    padding-top: 64px;
+  }
+
+  .tora-contact-reference--images-form .tora-contact-reference__section--image-heading {
     padding-top: 64px;
   }
 

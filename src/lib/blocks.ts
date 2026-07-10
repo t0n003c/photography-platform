@@ -743,6 +743,8 @@ export const ContactFormStyleEnum = z.enum([
   "card",
   "minimal",
   "tora-contact",
+  "tora-contact-info",
+  "tora-images-form",
   "tora-contacts-reference",
 ]);
 const ContactInfoItem = z.object({
@@ -1166,8 +1168,15 @@ export function collectPhotoIds(blocks: Block[]): string[] {
       }
     }
     if (b.type === "contactForm") {
-      if (b.contactHeroPhotoId) ids.push(b.contactHeroPhotoId);
-      ids.push(...b.contactImagePhotoIds);
+      if (b.style === "tora-contacts-reference" && b.contactHeroPhotoId) {
+        ids.push(b.contactHeroPhotoId);
+      }
+      if (
+        b.style === "tora-contacts-reference" ||
+        b.style === "tora-images-form"
+      ) {
+        ids.push(...b.contactImagePhotoIds);
+      }
     }
     if (b.type === "logos") ids.push(...b.photoIds);
     if (b.type === "gallery" && b.filterMode === "custom") {

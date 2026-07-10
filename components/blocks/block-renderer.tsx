@@ -426,7 +426,11 @@ function LeafView({
     case "customLink":
       return <CustomLinkBlock block={block} />;
     case "contactForm": {
-      if (block.style === "tora-contacts-reference") {
+      if (
+        block.style === "tora-contacts-reference" ||
+        block.style === "tora-contact-info" ||
+        block.style === "tora-images-form"
+      ) {
         return <ToraContactsReferenceBlock block={block} photoMap={photoMap} />;
       }
 
@@ -911,7 +915,10 @@ const FULL_BLEED = new Set([
 function isFullBleed(block: Block): boolean {
   if (
     block.type === "contactForm" &&
-    (block.style === "tora-contact" || block.style === "tora-contacts-reference")
+    (block.style === "tora-contact" ||
+      block.style === "tora-contacts-reference" ||
+      block.style === "tora-contact-info" ||
+      block.style === "tora-images-form")
   ) {
     return true;
   }

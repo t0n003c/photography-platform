@@ -87,6 +87,15 @@ export function ToraContactsReferenceBlock({
   block: ContactBlockData;
   photoMap: Map<string, PhotoDTO>;
 }) {
+  const mode =
+    block.style === "tora-contact-info"
+      ? "contact-info"
+      : block.style === "tora-images-form"
+        ? "images-form"
+        : "combined";
+  const showHero = mode === "combined";
+  const showInfo = mode === "combined" || mode === "contact-info";
+  const showImagesForm = mode === "combined" || mode === "images-form";
   const heroPhoto = block.contactHeroPhotoId ? photoMap.get(block.contactHeroPhotoId) : undefined;
   const mosaicPhotos = (block.contactImagePhotoIds ?? [])
     .map((id) => photoMap.get(id))
@@ -128,89 +137,99 @@ export function ToraContactsReferenceBlock({
     "Contact";
 
   return (
-    <section className="tora-contact-reference" style={vars}>
-      <div className="tora-contact-reference-hero">
-        {heroPhoto ? (
-          <ResponsiveImage
-            photo={heroPhoto}
-            sizes="100vw"
-            priority
-            className="tora-contact-reference-hero__image"
-          />
-        ) : (
-          <div className="tora-contact-reference-hero__placeholder" aria-hidden="true" />
-        )}
-        <span className="tora-contact-reference-hero__overlay" aria-hidden="true" />
-        <h1>{heroTitle}</h1>
-      </div>
-
-      <div className="tora-contact-reference__section tora-contact-reference__section--info-heading">
-        <SectionHeading eyebrow={block.contactInfoEyebrow} title={block.contactInfoHeading} />
-      </div>
-
-      <div className="tora-contact-reference-info">
-        <div className="tora-contact-reference-info__intro">
-          <p>{infoIntro}</p>
-        </div>
-        {infoItems.map((item) => (
-          <div className="tora-contact-reference-info__item" key={item.id}>
-            <h3>{item.title}</h3>
-            {item.address && <p>{item.address}</p>}
-            {item.phone && (
-              <ReferenceLink href={item.href} className="tora-contact-reference-info__phone">
-                {item.phone}
-              </ReferenceLink>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="tora-contact-reference__section tora-contact-reference__section--image-heading">
-        <SectionHeading eyebrow={block.contactImageEyebrow} title={block.contactImageHeading} />
-      </div>
-
-      <div className="tora-contact-reference-image-form">
-        {socialLinks.length > 0 && (
-          <div className="tora-contact-reference-socials">
-            {socialLinks.map((link) => (
-              <ReferenceLink href={link.href} className="tora-contact-reference-socials__link" key={link.id}>
-                {link.label}
-              </ReferenceLink>
-            ))}
-          </div>
-        )}
-        <div className="tora-contact-reference-image-form__content">
-          <div className="tora-contact-reference-mosaic">
-            {mosaicFrames.map((photo, index) => (
-              <MosaicFrame
-                key={photo?.id ?? `placeholder-${index}`}
-                photo={photo}
-                index={index}
-              />
-            ))}
-          </div>
-          <div className="tora-contact-reference-form-wrap">
-            <ContactForm
-              submitLabel={block.submitLabel || "SUBMIT NOW"}
-              variant="tora"
-              subjectFallback={formHeading}
-              toraLayout="stacked"
-              showPhone
-              toraPlaceholders={{
-                name: "Name",
-                email: "Email",
-                phone: "Phone Number",
-                message: "Message",
-              }}
+    <section className={cn("tora-contact-reference", `tora-contact-reference--${mode}`)} style={vars}>
+      {showHero && (
+        <div className="tora-contact-reference-hero">
+          {heroPhoto ? (
+            <ResponsiveImage
+              photo={heroPhoto}
+              sizes="100vw"
+              priority
+              className="tora-contact-reference-hero__image"
             />
-          </div>
-          {block.contactSideCaption && (
-            <div className="tora-contact-reference-copy" aria-label={block.contactSideCaption}>
-              <span>{block.contactSideCaption}</span>
-            </div>
+          ) : (
+            <div className="tora-contact-reference-hero__placeholder" aria-hidden="true" />
           )}
+          <span className="tora-contact-reference-hero__overlay" aria-hidden="true" />
+          <h1>{heroTitle}</h1>
         </div>
-      </div>
+      )}
+
+      {showInfo && (
+        <>
+          <div className="tora-contact-reference__section tora-contact-reference__section--info-heading">
+            <SectionHeading eyebrow={block.contactInfoEyebrow} title={block.contactInfoHeading} />
+          </div>
+
+          <div className="tora-contact-reference-info">
+            <div className="tora-contact-reference-info__intro">
+              <p>{infoIntro}</p>
+            </div>
+            {infoItems.map((item) => (
+              <div className="tora-contact-reference-info__item" key={item.id}>
+                <h3>{item.title}</h3>
+                {item.address && <p>{item.address}</p>}
+                {item.phone && (
+                  <ReferenceLink href={item.href} className="tora-contact-reference-info__phone">
+                    {item.phone}
+                  </ReferenceLink>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {showImagesForm && (
+        <>
+          <div className="tora-contact-reference__section tora-contact-reference__section--image-heading">
+            <SectionHeading eyebrow={block.contactImageEyebrow} title={block.contactImageHeading} />
+          </div>
+
+          <div className="tora-contact-reference-image-form">
+            {socialLinks.length > 0 && (
+              <div className="tora-contact-reference-socials">
+                {socialLinks.map((link) => (
+                  <ReferenceLink href={link.href} className="tora-contact-reference-socials__link" key={link.id}>
+                    {link.label}
+                  </ReferenceLink>
+                ))}
+              </div>
+            )}
+            <div className="tora-contact-reference-image-form__content">
+              <div className="tora-contact-reference-mosaic">
+                {mosaicFrames.map((photo, index) => (
+                  <MosaicFrame
+                    key={photo?.id ?? `placeholder-${index}`}
+                    photo={photo}
+                    index={index}
+                  />
+                ))}
+              </div>
+              <div className="tora-contact-reference-form-wrap">
+                <ContactForm
+                  submitLabel={block.submitLabel || "SUBMIT NOW"}
+                  variant="tora"
+                  subjectFallback={formHeading}
+                  toraLayout="stacked"
+                  showPhone
+                  toraPlaceholders={{
+                    name: "Name",
+                    email: "Email",
+                    phone: "Phone Number",
+                    message: "Message",
+                  }}
+                />
+              </div>
+              {block.contactSideCaption && (
+                <div className="tora-contact-reference-copy" aria-label={block.contactSideCaption}>
+                  <span>{block.contactSideCaption}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }
