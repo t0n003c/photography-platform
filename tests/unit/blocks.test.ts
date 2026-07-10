@@ -176,6 +176,7 @@ describe("page builder blocks", () => {
         style: "creative",
         creativeTextLayout: "reference",
         creativePhotoSize: "70",
+        creativePhotoRatio: "16-9",
         photoId: "creative-photo",
         dimPhoto: false,
       },
@@ -227,6 +228,7 @@ describe("page builder blocks", () => {
       dimPhoto: true,
       creativeTextLayout: "split",
       creativePhotoSize: "60",
+      creativePhotoRatio: "auto",
       infoListTextPosition: "left",
     });
     expect(blocks[2]).toMatchObject({
@@ -242,6 +244,7 @@ describe("page builder blocks", () => {
       style: "creative",
       creativeTextLayout: "reference",
       creativePhotoSize: "70",
+      creativePhotoRatio: "16-9",
       photoId: "creative-photo",
       dimPhoto: false,
     });

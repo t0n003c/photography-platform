@@ -446,6 +446,14 @@ export const InfoBlockStyleEnum = z.enum([
 ]);
 const InfoBlockCreativeTextLayoutEnum = z.enum(["split", "reference"]);
 const InfoBlockCreativePhotoSizeEnum = z.enum(["50", "60", "70"]);
+const InfoBlockCreativePhotoRatioEnum = z.enum([
+  "auto",
+  "4-5",
+  "1-1",
+  "16-9",
+  "3-2",
+  "2-3",
+]);
 const InfoBlockTextPositionEnum = z.enum(["left", "center"]);
 const InfoBlockTabItem = z.object({
   id,
@@ -472,6 +480,7 @@ const InfoBlock = z.object({
   dimPhoto: z.boolean().default(true),
   creativeTextLayout: InfoBlockCreativeTextLayoutEnum.default("split"),
   creativePhotoSize: InfoBlockCreativePhotoSizeEnum.default("60"),
+  creativePhotoRatio: InfoBlockCreativePhotoRatioEnum.default("auto"),
   infoListTextPosition: InfoBlockTextPositionEnum.default("left"),
   buttonLabel: z.string().default("LET'S CONNECT"),
   buttonHref: z.string().default("#"),

@@ -611,6 +611,7 @@ function makeBlock(type: BlockType): Block {
       dimPhoto: true,
       creativeTextLayout: "split",
       creativePhotoSize: "60",
+      creativePhotoRatio: "auto",
       infoListTextPosition: "left",
       buttonLabel: "LET'S CONNECT",
       buttonHref: "#",
@@ -1784,6 +1785,7 @@ function LeafEditor({
           ? "reference"
           : (block.creativeTextLayout ?? "split");
       const creativePhotoSize = block.creativePhotoSize ?? "60";
+      const creativePhotoRatio = block.creativePhotoRatio ?? "auto";
       const infoListTextPosition =
         block.style === "infoListReference"
           ? "center"
@@ -1830,6 +1832,7 @@ function LeafEditor({
           patch.creativeTextLayout =
             block.style === "creativeReference" ? "reference" : creativeTextLayout;
           patch.creativePhotoSize = creativePhotoSize;
+          patch.creativePhotoRatio = creativePhotoRatio;
         }
         if (style === "infoList") {
           patch.infoListTextPosition =
@@ -1918,6 +1921,26 @@ function LeafEditor({
                   <option value="50">Small photo</option>
                   <option value="60">Reference photo</option>
                   <option value="70">Large photo</option>
+                </Select>
+              </Field>
+            )}
+            {isCreativeStyle && (
+              <Field label="Photo ratio">
+                <Select
+                  value={creativePhotoRatio}
+                  onChange={(e) =>
+                    set({
+                      style: "creative",
+                      creativePhotoRatio: e.target.value as typeof creativePhotoRatio,
+                    })
+                  }
+                >
+                  <option value="auto">Auto</option>
+                  <option value="4-5">4:5</option>
+                  <option value="1-1">1:1</option>
+                  <option value="16-9">16:9</option>
+                  <option value="3-2">3:2</option>
+                  <option value="2-3">2:3</option>
                 </Select>
               </Field>
             )}

@@ -135,7 +135,12 @@ export function ToraInfoBlock({
       ? "reference"
       : (block.creativeTextLayout ?? "split");
   const creativePhotoSize = block.creativePhotoSize ?? "60";
+  const creativePhotoRatio = block.creativePhotoRatio ?? "auto";
   const creativePhotoSizeClass = `tora-info-block--creative-photo-${creativePhotoSize}`;
+  const creativePhotoRatioClass =
+    creativePhotoRatio === "auto"
+      ? null
+      : `tora-info-block--creative-ratio-${creativePhotoRatio}`;
   const creativeImageSizes = `(max-width: 991px) 100vw, ${creativePhotoSize}vw`;
   const infoListTextPosition =
     block.style === "infoListReference"
@@ -149,6 +154,7 @@ export function ToraInfoBlock({
           className={cn(
             "tora-info-block tora-info-block--creative-reference",
             creativePhotoSizeClass,
+            creativePhotoRatioClass,
             !dimPhoto && "tora-info-block--no-photo-dim",
           )}
         >
@@ -193,6 +199,7 @@ export function ToraInfoBlock({
         className={cn(
           "tora-info-block tora-info-block--creative",
           creativePhotoSizeClass,
+          creativePhotoRatioClass,
         )}
       >
         <div className="tora-info-creative">

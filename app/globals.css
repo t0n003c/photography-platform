@@ -7427,6 +7427,110 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   }
 }
 
+.tora-info-block--creative-ratio-4-5 {
+  --tora-info-creative-ratio: 4 / 5;
+}
+
+.tora-info-block--creative-ratio-1-1 {
+  --tora-info-creative-ratio: 1 / 1;
+}
+
+.tora-info-block--creative-ratio-16-9 {
+  --tora-info-creative-ratio: 16 / 9;
+}
+
+.tora-info-block--creative-ratio-3-2 {
+  --tora-info-creative-ratio: 3 / 2;
+}
+
+.tora-info-block--creative-ratio-2-3 {
+  --tora-info-creative-ratio: 2 / 3;
+}
+
+.tora-info-block--creative-ratio-4-5 .tora-info-creative,
+.tora-info-block--creative-ratio-4-5 .tora-info-creative-reference,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative-reference,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative-reference,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative-reference,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative-reference {
+  min-height: 0;
+}
+
+.tora-info-block--creative-ratio-4-5 .tora-info-creative__image,
+.tora-info-block--creative-ratio-4-5 .tora-info-creative-reference__image-wrap,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative__image,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative-reference__image-wrap,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative__image,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative-reference__image-wrap,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative__image,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative-reference__image-wrap,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative__image,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative-reference__image-wrap {
+  aspect-ratio: var(--tora-info-creative-ratio);
+  min-height: 0;
+}
+
+.tora-info-block--creative-ratio-4-5 .tora-info-creative__panel,
+.tora-info-block--creative-ratio-4-5 .tora-info-creative-reference__text-wrap,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative__panel,
+.tora-info-block--creative-ratio-1-1 .tora-info-creative-reference__text-wrap,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative__panel,
+.tora-info-block--creative-ratio-16-9 .tora-info-creative-reference__text-wrap,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative__panel,
+.tora-info-block--creative-ratio-3-2 .tora-info-creative-reference__text-wrap,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative__panel,
+.tora-info-block--creative-ratio-2-3 .tora-info-creative-reference__text-wrap {
+  padding-block: clamp(45px, 7vw, 90px);
+}
+
+@media (max-width: 991px) {
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative,
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative-reference,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative-reference,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative-reference,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative-reference,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative-reference {
+    aspect-ratio: var(--tora-info-creative-ratio);
+    min-height: min(480px, 100svh - 140px);
+  }
+
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative__image,
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative-reference__image-wrap,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative__image,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative-reference__image-wrap,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative__image,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative-reference__image-wrap,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative__image,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative-reference__image-wrap,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative__image,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative-reference__image-wrap {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative__panel,
+  .tora-info-block--creative-ratio-4-5 .tora-info-creative-reference__text-wrap,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative__panel,
+  .tora-info-block--creative-ratio-1-1 .tora-info-creative-reference__text-wrap,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative__panel,
+  .tora-info-block--creative-ratio-16-9 .tora-info-creative-reference__text-wrap,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative__panel,
+  .tora-info-block--creative-ratio-3-2 .tora-info-creative-reference__text-wrap,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative__panel,
+  .tora-info-block--creative-ratio-2-3 .tora-info-creative-reference__text-wrap {
+    min-height: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tora-info-button,
   .tora-info-tabs__tab,
