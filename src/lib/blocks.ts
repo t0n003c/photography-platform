@@ -1104,9 +1104,11 @@ export function collectPhotoIds(blocks: Block[]): string[] {
     }
     if (b.type === "pricing") {
       if (b.pricingSliderBackgroundPhotoId) ids.push(b.pricingSliderBackgroundPhotoId);
-      for (const plan of b.plans) {
-        if (plan.photoId) ids.push(plan.photoId);
-        if (plan.mediaPhotoId) ids.push(plan.mediaPhotoId);
+      if (b.style !== "tora-pricing-slider") {
+        for (const plan of b.plans) {
+          if (plan.photoId) ids.push(plan.photoId);
+          if (plan.mediaPhotoId) ids.push(plan.mediaPhotoId);
+        }
       }
     }
     if (b.type === "logos") ids.push(...b.photoIds);

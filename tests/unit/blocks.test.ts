@@ -807,7 +807,7 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual([]);
   });
 
-  it("keeps Tora pricing slider options and collects its background image", () => {
+  it("keeps Tora pricing slider options and only collects its block background image", () => {
     const blocks = parseBlocks([
       {
         id: "price-slider",
@@ -826,6 +826,7 @@ describe("page builder blocks", () => {
             id: "business",
             name: "Business",
             photoId: "photo-plan",
+            mediaPhotoId: "photo-plan-media",
             highlighted: true,
           },
         ],
@@ -852,7 +853,7 @@ describe("page builder blocks", () => {
         },
       ],
     });
-    expect(collectPhotoIds(blocks)).toEqual(["photo-pricing-bg", "photo-plan"]);
+    expect(collectPhotoIds(blocks)).toEqual(["photo-pricing-bg"]);
   });
 
   it("keeps team blocks and collects member portraits", () => {

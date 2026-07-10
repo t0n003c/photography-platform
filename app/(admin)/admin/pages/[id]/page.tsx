@@ -3492,49 +3492,51 @@ function LeafEditor({
                       </p>
                     </div>
                   )}
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <div
-                      className={`grid gap-3 rounded-lg border p-3 ${
-                        isCastingServices ? "" : "lg:grid-cols-2"
-                      }`}
-                    >
-                      <Field label={isCastingServices ? "Offering image" : "Plan image / background"}>
-                        <PhotoPicker
-                          photos={photos}
-                          value={plan.photoId ?? null}
-                          onChange={(photoId) =>
-                            updatePlan(planIndex, { photoId })
-                          }
-                          containerClassName="max-h-48"
-                        />
-                      </Field>
-                      {!isCastingServices && (
-                        <div className="space-y-2">
-                          <Field label="Media panel image">
-                            <PhotoPicker
-                              photos={photos}
-                              value={plan.mediaPhotoId ?? null}
-                              onChange={(mediaPhotoId) =>
-                                updatePlan(planIndex, { mediaPhotoId })
-                              }
-                              containerClassName="max-h-36"
-                            />
-                          </Field>
-                          <Field label="Media video link">
-                            <Input
-                              value={plan.mediaVideoUrl ?? ""}
-                              placeholder="Optional video URL"
-                              onChange={(e) =>
-                                updatePlan(planIndex, {
-                                  mediaVideoUrl: e.target.value,
-                                })
-                              }
-                            />
-                          </Field>
-                        </div>
-                      )}
+                  {!isPricingSlider && (
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <div
+                        className={`grid gap-3 rounded-lg border p-3 ${
+                          isCastingServices ? "" : "lg:grid-cols-2"
+                        }`}
+                      >
+                        <Field label={isCastingServices ? "Offering image" : "Plan image / background"}>
+                          <PhotoPicker
+                            photos={photos}
+                            value={plan.photoId ?? null}
+                            onChange={(photoId) =>
+                              updatePlan(planIndex, { photoId })
+                            }
+                            containerClassName="max-h-48"
+                          />
+                        </Field>
+                        {!isCastingServices && (
+                          <div className="space-y-2">
+                            <Field label="Media panel image">
+                              <PhotoPicker
+                                photos={photos}
+                                value={plan.mediaPhotoId ?? null}
+                                onChange={(mediaPhotoId) =>
+                                  updatePlan(planIndex, { mediaPhotoId })
+                                }
+                                containerClassName="max-h-36"
+                              />
+                            </Field>
+                            <Field label="Media video link">
+                              <Input
+                                value={plan.mediaVideoUrl ?? ""}
+                                placeholder="Optional video URL"
+                                onChange={(e) =>
+                                  updatePlan(planIndex, {
+                                    mediaVideoUrl: e.target.value,
+                                  })
+                                }
+                              />
+                            </Field>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {!isCastingServices && (
                     <>
                       <Field label="Monthly price">
