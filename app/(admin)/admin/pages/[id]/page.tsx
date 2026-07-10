@@ -4309,20 +4309,22 @@ function LeafEditor({
 
               {showContactInfoSettings && (
                 <SettingsGroup title="Contact info">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Field label="Small label">
-                      <Input
-                        value={block.contactInfoEyebrow ?? ""}
-                        onChange={(e) => set({ contactInfoEyebrow: e.target.value })}
-                      />
-                    </Field>
-                    <Field label="Heading">
-                      <Input
-                        value={block.contactInfoHeading ?? ""}
-                        onChange={(e) => set({ contactInfoHeading: e.target.value })}
-                      />
-                    </Field>
-                  </div>
+                  {isCombinedContactsReference && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Field label="Small label">
+                        <Input
+                          value={block.contactInfoEyebrow ?? ""}
+                          onChange={(e) => set({ contactInfoEyebrow: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Heading">
+                        <Input
+                          value={block.contactInfoHeading ?? ""}
+                          onChange={(e) => set({ contactInfoHeading: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                  )}
                   <Field label="Large intro">
                     <Textarea
                       rows={3}
@@ -4416,20 +4418,22 @@ function LeafEditor({
               {showImagesFormSettings && (
                 <>
                   <SettingsGroup title="Images with form">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Field label="Small label">
-                        <Input
-                          value={block.contactImageEyebrow ?? ""}
-                          onChange={(e) => set({ contactImageEyebrow: e.target.value })}
-                        />
-                      </Field>
-                      <Field label="Heading">
-                        <Input
-                          value={block.contactImageHeading ?? ""}
-                          onChange={(e) => set({ contactImageHeading: e.target.value })}
-                        />
-                      </Field>
-                    </div>
+                    {isCombinedContactsReference && (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Field label="Small label">
+                          <Input
+                            value={block.contactImageEyebrow ?? ""}
+                            onChange={(e) => set({ contactImageEyebrow: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Heading">
+                          <Input
+                            value={block.contactImageHeading ?? ""}
+                            onChange={(e) => set({ contactImageHeading: e.target.value })}
+                          />
+                        </Field>
+                      </div>
+                    )}
                     <Field label="Mosaic photos">
                       <PhotoPicker
                         photos={photos}

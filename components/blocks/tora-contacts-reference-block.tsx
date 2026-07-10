@@ -96,6 +96,7 @@ export function ToraContactsReferenceBlock({
   const showHero = mode === "combined";
   const showInfo = mode === "combined" || mode === "contact-info";
   const showImagesForm = mode === "combined" || mode === "images-form";
+  const showReferenceHeadings = mode === "combined";
   const heroPhoto = block.contactHeroPhotoId ? photoMap.get(block.contactHeroPhotoId) : undefined;
   const mosaicPhotos = (block.contactImagePhotoIds ?? [])
     .map((id) => photoMap.get(id))
@@ -157,9 +158,11 @@ export function ToraContactsReferenceBlock({
 
       {showInfo && (
         <>
-          <div className="tora-contact-reference__section tora-contact-reference__section--info-heading">
-            <SectionHeading eyebrow={block.contactInfoEyebrow} title={block.contactInfoHeading} />
-          </div>
+          {showReferenceHeadings && (
+            <div className="tora-contact-reference__section tora-contact-reference__section--info-heading">
+              <SectionHeading eyebrow={block.contactInfoEyebrow} title={block.contactInfoHeading} />
+            </div>
+          )}
 
           <div className="tora-contact-reference-info">
             <div className="tora-contact-reference-info__intro">
@@ -182,9 +185,11 @@ export function ToraContactsReferenceBlock({
 
       {showImagesForm && (
         <>
-          <div className="tora-contact-reference__section tora-contact-reference__section--image-heading">
-            <SectionHeading eyebrow={block.contactImageEyebrow} title={block.contactImageHeading} />
-          </div>
+          {showReferenceHeadings && (
+            <div className="tora-contact-reference__section tora-contact-reference__section--image-heading">
+              <SectionHeading eyebrow={block.contactImageEyebrow} title={block.contactImageHeading} />
+            </div>
+          )}
 
           <div className="tora-contact-reference-image-form">
             {socialLinks.length > 0 && (
