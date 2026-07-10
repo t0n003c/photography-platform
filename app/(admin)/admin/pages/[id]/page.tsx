@@ -88,11 +88,41 @@ const newBlockId = () =>
     ? crypto.randomUUID()
     : `b-${Date.now()}-${Math.floor(performance.now())}`;
 
-// Leaf block types offered in the "add" menu (columns handled separately).
-const LEAF_TYPES: BlockType[] = [
-  "heading", "subheading", "richtext", "image", "portfolioList", "about", "imageComparison", "featureCarousel", "bookSlider", "gallery", "banner",
-  "quote", "infoBlock", "testimonials", "team", "pricing", "shop", "cta", "customLink", "contactForm", "faq", "logos", "spacer", "divider", "categoryIndex", "locationIndex",
-  "locationMap", "scrollShowcase", "instagram", "columns",
+// Leaf block types offered in the top-level "add" menu (columns handled separately).
+const ADD_BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
+  {
+    label: "Content",
+    types: ["heading", "subheading", "richtext", "quote", "infoBlock", "faq"],
+  },
+  {
+    label: "Media & galleries",
+    types: [
+      "image",
+      "imageComparison",
+      "featureCarousel",
+      "bookSlider",
+      "gallery",
+      "banner",
+      "portfolioList",
+      "scrollShowcase",
+    ],
+  },
+  {
+    label: "Profile & proof",
+    types: ["about", "testimonials", "team", "logos", "instagram"],
+  },
+  {
+    label: "Commerce & conversion",
+    types: ["pricing", "shop", "cta", "contactForm", "customLink"],
+  },
+  {
+    label: "Indexes & maps",
+    types: ["categoryIndex", "locationIndex", "locationMap"],
+  },
+  {
+    label: "Layout",
+    types: ["columns", "spacer", "divider"],
+  },
 ];
 
 function makeInfoBlockTab(index = 0) {
@@ -1075,10 +1105,14 @@ function AddBlockMenu({ onAdd }: { onAdd: (t: BlockType) => void }) {
         className="h-8"
       >
         <option value="">+ Add block…</option>
-        {LEAF_TYPES.map((t) => (
-          <option key={t} value={t}>
-            {BLOCK_LABELS[t]}
-          </option>
+        {ADD_BLOCK_GROUPS.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.types.map((t) => (
+              <option key={t} value={t}>
+                {BLOCK_LABELS[t]}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </Select>
     </div>
