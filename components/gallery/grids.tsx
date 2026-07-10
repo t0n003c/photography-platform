@@ -410,17 +410,25 @@ export function ToraJustifiedShowcaseGrid({
     clampNumber(rowHeightFactor, 5, 10, 7),
     gutter,
   );
-  const useThemeTitle =
-    !useBackground &&
-    titleColor.trim().toLowerCase() === TORA_JUSTIFIED_DEFAULT_TITLE;
-  const useThemeAccent =
-    !useBackground &&
-    accentColor.trim().toLowerCase() === TORA_JUSTIFIED_DEFAULT_ACCENT;
+  const hasCustomBackground = !isDefaultColor(
+    backgroundColor,
+    TORA_JUSTIFIED_DEFAULT_BACKGROUND,
+  );
+  const hasCustomTitle = !isDefaultColor(
+    titleColor,
+    TORA_JUSTIFIED_DEFAULT_TITLE,
+  );
+  const hasCustomAccent = !isDefaultColor(
+    accentColor,
+    TORA_JUSTIFIED_DEFAULT_ACCENT,
+  );
   const style = {
     "--tora-justified-gutter": `${gutter}px`,
-    "--tora-justified-bg": useBackground ? backgroundColor : "transparent",
-    ...(!useThemeTitle && { "--tora-justified-title": titleColor }),
-    ...(!useThemeAccent && { "--tora-justified-accent": accentColor }),
+    ...(useBackground && hasCustomBackground
+      ? { "--tora-justified-bg": backgroundColor }
+      : {}),
+    ...(hasCustomTitle ? { "--tora-justified-title": titleColor } : {}),
+    ...(hasCustomAccent ? { "--tora-justified-accent": accentColor } : {}),
   } as React.CSSProperties;
 
   const scrollToLead = () => {
@@ -462,6 +470,9 @@ export function ToraJustifiedShowcaseGrid({
       className={cn(
         "tora-justified-showcase",
         !useBackground && "tora-justified-showcase--plain",
+        useBackground &&
+          hasCustomBackground &&
+          "tora-justified-showcase--custom-bg",
         hoverInset && "tora-justified-showcase--hover-inset",
         dimOnLeadHover && leadHovered && "is-lead-hovered",
       )}

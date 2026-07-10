@@ -1649,10 +1649,12 @@ is gitignored):
   block. It promotes a selected photo into an 80vh lead image/title, builds viewport-derived
   justified thumbnail rows, and supports the reference hover clip/dim and scroll-to-lead behavior.
   Settings expose title/accent/background colors, title source, gutters, row height, interaction
-  toggles, and a `Use background color` toggle. With that toggle off, both the gallery surface and
-  thumbnail placeholders are transparent; the default title/accent colors follow light/dark mode,
-  while custom title/accent colors remain explicit overrides. `Show blurred side fill` controls
-  whether the lead image's LQIP remains visible beside portrait/contained photos; it defaults on
+  toggles, and a `Use background color` toggle. The saved source defaults (`#252626`, `#f7f7f7`,
+  `#edd8aa`) are theme tokens rather than fixed custom colors: light mode uses the cream, dark, and
+  brown-gold CSS palette; dark mode uses the source palette; and only genuinely custom picker values
+  stay fixed. With the background toggle off, the gallery surface and thumbnail placeholders are
+  transparent. The `Show blurred side fill` control determines whether the lead image's LQIP
+  remains visible beside portrait/contained photos; it defaults on
   for compatibility, and turning it off reveals the gallery/page background without changing
   responsive image sources or loading priority.
   ToraMochie/Reflector Casting page follow-up: the top casting intro is an About block layout
