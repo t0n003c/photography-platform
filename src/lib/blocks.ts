@@ -648,6 +648,7 @@ const PricingBlock = z.object({
       "tora-simple",
       "tora-with-media",
       "tora-image-background",
+      "tora-price-list-style-1",
       "tora-pricing-slider",
       "tora-price-list-style-3",
       "tora-casting-services",

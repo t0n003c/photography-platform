@@ -9576,6 +9576,533 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   color: #fff;
 }
 
+.tora-pricelist-style1 {
+  --tora-style1-bg: #f7f2ea;
+  --tora-style1-surface: #fffaf2;
+  --tora-style1-contact-bg: #efe7dc;
+  --tora-style1-text: #1d1c1a;
+  --tora-style1-muted: rgb(29 28 26 / 0.64);
+  --tora-style1-border: rgb(29 28 26 / 0.22);
+  --tora-style1-accent: #a37a35;
+  --tora-style1-overlay: rgb(0 0 0 / 0.34);
+  --tora-price-dark: var(--tora-style1-text);
+  --tora-price-light: var(--tora-style1-surface);
+  --tora-price-grey: var(--tora-style1-muted);
+  --tora-price-light-grey: var(--tora-style1-border);
+  --tora-price-main: var(--tora-style1-accent);
+  --tora-style3-surface: var(--tora-style1-surface);
+  --tora-style3-text: var(--tora-style1-text);
+  --tora-style3-muted: var(--tora-style1-muted);
+  position: relative;
+  overflow-x: clip;
+  background: var(--tora-style1-bg);
+  color: var(--tora-style1-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  padding: 100px 0 0;
+}
+
+.tora-pricelist-style1.is-dark {
+  --tora-style1-bg: #252626;
+  --tora-style1-surface: #2d2b2b;
+  --tora-style1-contact-bg: #2d2b2b;
+  --tora-style1-text: #f7f7f7;
+  --tora-style1-muted: rgb(247 247 247 / 0.66);
+  --tora-style1-border: rgb(221 197 159 / 0.34);
+  --tora-style1-accent: #ddc59f;
+  --tora-style1-overlay: rgb(0 0 0 / 0.42);
+}
+
+.dark .tora-pricelist-style1.is-auto-theme {
+  --tora-style1-bg: #252626;
+  --tora-style1-surface: #2d2b2b;
+  --tora-style1-contact-bg: #2d2b2b;
+  --tora-style1-text: #f7f7f7;
+  --tora-style1-muted: rgb(247 247 247 / 0.66);
+  --tora-style1-border: rgb(221 197 159 / 0.34);
+  --tora-style1-accent: #ddc59f;
+  --tora-style1-overlay: rgb(0 0 0 / 0.42);
+}
+
+.tora-pricelist-style1__heading {
+  max-width: 1174px;
+  margin-bottom: 70px;
+  text-align: center;
+}
+
+.tora-pricelist-style1__heading h2,
+.tora-pricelist-style1-contact .title {
+  margin: 0;
+  color: var(--tora-style1-text);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1__heading p {
+  max-width: 680px;
+  margin: 22px auto 0;
+  color: var(--tora-style1-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.tora-pricelist-style1__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+
+.tora-pricelist-style1__card {
+  cursor: pointer;
+  outline: none;
+}
+
+.tora-pricelist-style1__card:focus-visible {
+  outline: 2px solid var(--tora-style1-accent);
+  outline-offset: 4px;
+}
+
+.tora-pricelist-style1__card .wrap {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  border: 1px solid var(--tora-style1-border);
+  padding: 50px;
+  transition: border-color 350ms ease;
+}
+
+.tora-pricelist-style1__card:hover .wrap,
+.tora-pricelist-style1__card.active .wrap,
+.tora-pricelist-style1__card:focus-visible .wrap {
+  border-color: var(--tora-style1-accent);
+}
+
+.tora-pricelist-style1__card-image {
+  position: relative;
+  margin-bottom: 45px;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+}
+
+.tora-pricelist-style1__card-image .tora-price-image {
+  position: absolute;
+  inset: 0;
+  transition: filter 350ms ease;
+}
+
+.tora-pricelist-style1__card:hover .tora-pricelist-style1__card-image .tora-price-image,
+.tora-pricelist-style1__card:focus-visible .tora-pricelist-style1__card-image .tora-price-image {
+  filter: grayscale(100%);
+}
+
+.tora-pricelist-style1__card-image h3 {
+  position: absolute;
+  left: 40px;
+  bottom: 30px;
+  z-index: 2;
+  margin: 0;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1__card-note {
+  margin: -18px 0 22px;
+  color: var(--tora-style1-muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.tora-pricelist-style1 .subtitle {
+  margin: 0 0 10px;
+  color: var(--tora-style1-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1 .tora-price-list-wrap {
+  margin-bottom: 30px;
+  color: var(--tora-style1-muted);
+}
+
+.tora-pricelist-style1 .price-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  color: var(--tora-style1-text);
+  font-family: var(--font-playfair), var(--font-serif);
+  font-size: 35px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.5;
+}
+
+.tora-pricelist-style1 .currency {
+  margin-right: 8px;
+}
+
+.tora-pricelist-style1__feature {
+  position: relative;
+  isolation: isolate;
+  min-height: 680px;
+  margin-top: 120px;
+  overflow: hidden;
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+  padding: 100px 0;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 350ms ease;
+}
+
+.tora-pricelist-style1__feature:hover,
+.tora-pricelist-style1__feature:focus-visible {
+  clip-path: inset(35px 35px 35px 35px);
+}
+
+.tora-pricelist-style1__feature::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.14)),
+    var(--tora-style1-overlay);
+}
+
+.tora-pricelist-style1__feature .tora-price-bg-image {
+  z-index: 1;
+}
+
+.tora-pricelist-style1__feature-inner {
+  position: relative;
+  z-index: 10;
+}
+
+.tora-pricelist-style1__feature-copy {
+  max-width: 500px;
+}
+
+.tora-pricelist-style1__feature .price-wrap {
+  justify-content: flex-start;
+  margin: 0 0 50px;
+  color: #fff;
+}
+
+.tora-pricelist-style1__feature .tora-price-check {
+  margin-right: 15px;
+}
+
+.tora-pricelist-style1__feature h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1__feature .text {
+  margin: 40px 0 0;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.tora-pricelist-style1__feature .subtitle {
+  margin-top: 50px;
+  color: #fff;
+}
+
+.tora-pricelist-style1__feature .tora-price-list-wrap {
+  margin-top: 15px;
+  color: #fff;
+}
+
+.tora-pricelist-style1__editorial {
+  display: grid;
+  gap: 100px;
+  padding: 100px 15px 0;
+}
+
+.tora-pricelist-style1__editorial-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  align-items: center;
+  gap: 100px;
+  min-width: 0;
+}
+
+.tora-pricelist-style1__editorial-row.is-reverse {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+}
+
+.tora-pricelist-style1__editorial-row.is-reverse .tora-pricelist-style1__editorial-image {
+  order: 2;
+  aspect-ratio: 16 / 10;
+}
+
+.tora-pricelist-style1__editorial-row.is-reverse .tora-pricelist-style1__editorial-copy {
+  order: 1;
+}
+
+.tora-pricelist-style1__editorial-image {
+  aspect-ratio: 2 / 3;
+  background: var(--tora-style1-surface);
+  min-width: 0;
+}
+
+.tora-pricelist-style1__editorial-copy {
+  min-width: 0;
+}
+
+.tora-pricelist-style1__editorial-copy h3 {
+  margin: 0 0 32px;
+  color: var(--tora-style1-text);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1__editorial-copy p {
+  margin: 0;
+  color: var(--tora-style1-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.tora-pricelist-style1__editorial-copy p + p {
+  margin-top: 20px;
+}
+
+.tora-pricelist-style1__editorial-copy .a-btn-3 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 126px;
+  min-height: 38px;
+  margin-top: 34px;
+  background: color-mix(in oklab, var(--tora-style1-text) 18%, transparent);
+  color: var(--tora-style1-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 350ms ease,
+    color 350ms ease;
+}
+
+.tora-pricelist-style1__editorial-copy .a-btn-3:hover,
+.tora-pricelist-style1__editorial-copy .a-btn-3:focus-visible {
+  background: var(--tora-style1-accent);
+  color: #fff;
+}
+
+.tora-pricelist-style1__contact-band {
+  margin-top: 120px;
+  background: var(--tora-style1-contact-bg);
+  color: var(--tora-style1-text);
+  padding: 80px 0;
+}
+
+.tora-pricelist-style1-contact .top-wrap {
+  margin-bottom: 70px;
+  text-align: center;
+}
+
+.tora-pricelist-style1-contact .top-wrap p {
+  margin: 20px 0 0;
+  color: var(--tora-style1-muted);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.tora-pricelist-style1-contact .form {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 35px 30px;
+}
+
+.tora-pricelist-style1-contact textarea,
+.tora-pricelist-style1-contact .button-wrap {
+  grid-column: 1 / -1;
+}
+
+.tora-pricelist-style1-contact input,
+.tora-pricelist-style1-contact textarea {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--tora-style1-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--tora-style1-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.6;
+  outline: none;
+  padding: 0 0 10px;
+  transition: border-color 450ms ease;
+}
+
+.tora-pricelist-style1-contact textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.tora-pricelist-style1-contact input::placeholder,
+.tora-pricelist-style1-contact textarea::placeholder {
+  color: var(--tora-style1-muted);
+}
+
+.tora-pricelist-style1-contact input:focus,
+.tora-pricelist-style1-contact textarea:focus {
+  border-color: var(--tora-style1-accent);
+}
+
+.tora-pricelist-style1-contact .button-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.tora-pricelist-style1-contact .term-wrap label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  color: var(--tora-style1-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.tora-pricelist-style1-contact .term-wrap input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.tora-pricelist-style1-contact .term-wrap label > span:first-of-type {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 1px solid var(--tora-style1-accent);
+}
+
+.tora-pricelist-style1-contact .term-wrap label > span:first-of-type::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--tora-style1-accent);
+  border-width: 0 2px 2px 0;
+  opacity: 0;
+  transform: rotate(45deg);
+}
+
+.tora-pricelist-style1-contact .term-wrap input:checked + span::after {
+  opacity: 1;
+}
+
+.tora-pricelist-style1-contact .term-wrap a {
+  color: var(--tora-style1-accent);
+  text-decoration: none;
+  transition: color 450ms ease;
+}
+
+.tora-pricelist-style1-contact .a-btn-5 {
+  min-width: 118px;
+  min-height: 38px;
+  border: 0;
+  background: var(--tora-style1-accent);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition:
+    background 350ms ease,
+    color 350ms ease,
+    opacity 350ms ease;
+}
+
+.tora-pricelist-style1-contact .a-btn-5:hover:not(:disabled),
+.tora-pricelist-style1-contact .a-btn-5:focus-visible:not(:disabled) {
+  background: transparent;
+  color: var(--tora-style1-accent);
+  outline: 1px solid var(--tora-style1-accent);
+}
+
+.tora-pricelist-style1-contact .a-btn-5:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.tora-pricelist-style1-total {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--tora-style1-border);
+  background: color-mix(in oklab, var(--tora-style1-contact-bg) 94%, transparent);
+  color: var(--tora-style1-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 13px 20px 10px;
+  text-transform: uppercase;
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease;
+}
+
+.tora-pricelist-style1-total.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.tora-pricelist-style1-total .total-price {
+  color: var(--tora-style1-accent);
+  font-family: var(--font-playfair), var(--font-serif);
+  font-size: 24px;
+  letter-spacing: 1px;
+}
+
 .tora-pricelist-style3 {
   --tora-style3-bg: #f4efe6;
   --tora-style3-surface: #fffaf2;
@@ -10378,6 +10905,218 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
 }
 
 @media (max-width: 991px) {
+  .tora-pricelist-style1 {
+    padding-top: 70px;
+  }
+
+  .tora-pricelist-style1__heading {
+    margin-bottom: 52px;
+  }
+
+  .tora-pricelist-style1__card .wrap {
+    padding: 40px;
+  }
+
+  .tora-pricelist-style1__feature {
+    min-height: 560px;
+    margin-top: 95px;
+    padding: 80px 0;
+  }
+
+  .tora-pricelist-style1__feature:hover,
+  .tora-pricelist-style1__feature:focus-visible {
+    clip-path: inset(25px 25px 25px 25px);
+  }
+
+  .tora-pricelist-style1__editorial {
+    gap: 76px;
+    padding-top: 80px;
+  }
+
+  .tora-pricelist-style1__editorial-row,
+  .tora-pricelist-style1__editorial-row.is-reverse {
+    gap: 58px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tora-pricelist-style1__contact-band {
+    margin-top: 95px;
+    padding: 70px 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .tora-pricelist-style1 {
+    padding-top: 50px;
+  }
+
+  .tora-pricelist-style1__heading {
+    margin-bottom: 38px;
+    padding-inline: 22px;
+  }
+
+  .tora-pricelist-style1__heading h2,
+  .tora-pricelist-style1-contact .title {
+    font-size: 16px;
+    letter-spacing: 3px;
+  }
+
+  .tora-pricelist-style1__heading p {
+    font-size: 15px;
+  }
+
+  .tora-pricelist-style1__cards {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .tora-pricelist-style1__card {
+    margin-inline: auto;
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .tora-pricelist-style1__card .wrap {
+    padding: 24px;
+  }
+
+  .tora-pricelist-style1__card-image {
+    margin-bottom: 30px;
+  }
+
+  .tora-pricelist-style1__card-image h3 {
+    left: 50%;
+    bottom: 10px;
+    width: 100%;
+    padding-inline: 15px;
+    text-align: center;
+    letter-spacing: 1px;
+    transform: translateX(-50%);
+  }
+
+  .tora-pricelist-style1 .price-wrap {
+    font-size: 29px;
+  }
+
+  .tora-pricelist-style1__feature {
+    min-height: 482px;
+    margin-top: 55px;
+    padding: 35px 0;
+  }
+
+  .tora-pricelist-style1__feature:hover,
+  .tora-pricelist-style1__feature:focus-visible {
+    clip-path: inset(15px 5px 15px 5px);
+  }
+
+  .tora-pricelist-style1__feature::before {
+    background: rgb(0 0 0 / 0.58);
+  }
+
+  .tora-pricelist-style1__feature-copy {
+    max-width: none;
+    padding-inline: 5px;
+  }
+
+  .tora-pricelist-style1__feature .price-wrap {
+    margin-bottom: 25px;
+  }
+
+  .tora-pricelist-style1__feature h3 {
+    font-size: 21px;
+    letter-spacing: 1px;
+  }
+
+  .tora-pricelist-style1__feature .text {
+    margin-top: 10px;
+  }
+
+  .tora-pricelist-style1__feature .subtitle {
+    margin-top: 30px;
+  }
+
+  .tora-pricelist-style1__editorial {
+    gap: 55px;
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 45px;
+  }
+
+  .tora-pricelist-style1__editorial-row,
+  .tora-pricelist-style1__editorial-row.is-reverse {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tora-pricelist-style1__editorial-row.is-reverse .tora-pricelist-style1__editorial-image,
+  .tora-pricelist-style1__editorial-row.is-reverse .tora-pricelist-style1__editorial-copy {
+    order: initial;
+  }
+
+  .tora-pricelist-style1__editorial-image,
+  .tora-pricelist-style1__editorial-row.is-reverse .tora-pricelist-style1__editorial-image {
+    aspect-ratio: 4 / 5;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tora-pricelist-style1__editorial-copy {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tora-pricelist-style1__editorial-copy h3 {
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 22px;
+  }
+
+  .tora-pricelist-style1__contact-band {
+    margin-top: 40px;
+    padding: 35px 0;
+  }
+
+  .tora-pricelist-style1-contact .top-wrap {
+    margin-bottom: 35px;
+  }
+
+  .tora-pricelist-style1-contact .top-wrap p {
+    margin-top: 15px;
+    font-size: 16px;
+  }
+
+  .tora-pricelist-style1-contact .form {
+    grid-template-columns: 1fr;
+  }
+
+  .tora-pricelist-style1-contact .button-wrap {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tora-pricelist-style1-contact .a-btn-5 {
+    width: 100%;
+  }
+
+  .tora-pricelist-style1-total {
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    justify-content: space-between;
+    padding: 12px 14px;
+  }
+
+  .tora-pricelist-style1-total .total-price {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 991px) {
   .tora-pricelist-style3 {
     padding-top: 62px;
   }
@@ -11072,6 +11811,14 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   .tora-price-check,
   .tora-price-check::before,
   .tora-pricelist--with-media .video-btn,
+  .tora-pricelist-style1__card .wrap,
+  .tora-pricelist-style1__card-image .tora-price-image,
+  .tora-pricelist-style1__feature,
+  .tora-pricelist-style1__editorial-copy .a-btn-3,
+  .tora-pricelist-style1-contact input,
+  .tora-pricelist-style1-contact textarea,
+  .tora-pricelist-style1-contact .a-btn-5,
+  .tora-pricelist-style1-total,
   .tora-pricelist-style3-contact input,
   .tora-pricelist-style3-contact textarea,
   .tora-pricelist-style3-contact .a-btn-3,

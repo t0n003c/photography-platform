@@ -931,6 +931,64 @@ describe("page builder blocks", () => {
     expect(collectPhotoIds(blocks)).toEqual(["photo-pricing-bg"]);
   });
 
+  it("keeps Tora price list style 1 and collects plan imagery", () => {
+    const blocks = parseBlocks([
+      {
+        id: "price-list-1",
+        type: "pricing",
+        style: "tora-price-list-style-1",
+        heading: "SAVE YOUR HISTORY",
+        theme: "dark",
+        showBillingToggle: false,
+        plans: [
+          {
+            id: "package-1",
+            name: "PACKAGE #1",
+            photoId: "photo-package-1",
+            monthlyPrice: 500,
+            features: [{ id: "prints", text: "Fine art prints" }],
+          },
+          {
+            id: "package-2",
+            name: "PACKAGE #2",
+            photoId: "photo-package-2",
+            mediaPhotoId: "photo-package-2-media",
+            monthlyPrice: 650,
+          },
+        ],
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      id: "price-list-1",
+      type: "pricing",
+      style: "tora-price-list-style-1",
+      heading: "SAVE YOUR HISTORY",
+      theme: "dark",
+      showBillingToggle: false,
+      plans: [
+        {
+          id: "package-1",
+          name: "PACKAGE #1",
+          photoId: "photo-package-1",
+          monthlyPrice: 500,
+        },
+        {
+          id: "package-2",
+          name: "PACKAGE #2",
+          photoId: "photo-package-2",
+          mediaPhotoId: "photo-package-2-media",
+          monthlyPrice: 650,
+        },
+      ],
+    });
+    expect(collectPhotoIds(blocks)).toEqual([
+      "photo-package-1",
+      "photo-package-2",
+      "photo-package-2-media",
+    ]);
+  });
+
   it("keeps team blocks and collects member portraits", () => {
     const blocks = parseBlocks([
       {

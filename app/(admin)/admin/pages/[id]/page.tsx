@@ -3226,8 +3226,26 @@ function LeafEditor({
       };
       const isCastingServices = block.style === "tora-casting-services";
       const isPricingSlider = block.style === "tora-pricing-slider";
+      const isPriceListStyle1 = block.style === "tora-price-list-style-1";
       const updatePricingStyle = (style: typeof block.style) => {
         const patch: Partial<typeof block> = { style };
+        if (style === "tora-price-list-style-1") {
+          if (
+            !block.heading.trim() ||
+            block.heading.trim() === "Plans that Scale with You"
+          ) {
+            patch.heading = "SAVE YOUR HISTORY";
+          }
+          if (
+            !block.description.trim() ||
+            block.description.trim() ===
+              "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs."
+          ) {
+            patch.description = "";
+          }
+          patch.theme = block.theme === "auto" ? "dark" : block.theme;
+          patch.showBillingToggle = false;
+        }
         if (style === "tora-pricing-slider") {
           if (!block.eyebrow.trim()) patch.eyebrow = "CHOOSE OWN";
           if (
@@ -3266,6 +3284,9 @@ function LeafEditor({
                 <option value="tora-simple">Tora simple banner</option>
                 <option value="tora-with-media">Tora with media</option>
                 <option value="tora-image-background">Tora image background</option>
+                <option value="tora-price-list-style-1">
+                  Tora price list style 1
+                </option>
                 <option value="tora-pricing-slider">Tora pricing slider</option>
                 <option value="tora-price-list-style-3">
                   Tora price list style 3
@@ -3462,7 +3483,7 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            {!isCastingServices && !isPricingSlider && (
+            {!isCastingServices && !isPricingSlider && !isPriceListStyle1 && (
               <>
                 <Field label="Billing toggle">
                   <label className="flex h-9 items-center gap-2 text-sm">
@@ -3507,7 +3528,16 @@ function LeafEditor({
               <div key={plan.id} className="rounded-lg border p-3">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                    {isCastingServices ? "Offering" : "Plan"} {planIndex + 1}
+                    {isCastingServices
+                      ? "Offering"
+                      : isPriceListStyle1 && planIndex < 2
+                        ? "Package"
+                        : isPriceListStyle1 && planIndex === 2
+                          ? "Featured package"
+                          : isPriceListStyle1
+                            ? "Editorial row"
+                            : "Plan"}{" "}
+                    {planIndex + 1}
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
