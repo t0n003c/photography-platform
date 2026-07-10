@@ -170,9 +170,26 @@ describe("page builder blocks", () => {
         photoId: "reference-photo",
         dimPhoto: false,
       },
+      {
+        id: "info-creative-options",
+        type: "infoBlock",
+        style: "creative",
+        creativeTextLayout: "reference",
+        creativePhotoSize: "70",
+        photoId: "creative-photo",
+        dimPhoto: false,
+      },
+      {
+        id: "info-list-options",
+        type: "infoBlock",
+        style: "infoList",
+        infoListTextPosition: "center",
+        photoId: "list-photo",
+        dimPhoto: true,
+      },
     ]);
 
-    expect(blocks).toHaveLength(3);
+    expect(blocks).toHaveLength(5);
     expect(blocks[0]).toMatchObject({
       id: "info",
       type: "infoBlock",
@@ -208,6 +225,9 @@ describe("page builder blocks", () => {
       tabs: [],
       accordionItems: [],
       dimPhoto: true,
+      creativeTextLayout: "split",
+      creativePhotoSize: "60",
+      infoListTextPosition: "left",
     });
     expect(blocks[2]).toMatchObject({
       id: "info-reference",
@@ -216,6 +236,23 @@ describe("page builder blocks", () => {
       photoId: "reference-photo",
       dimPhoto: false,
     });
+    expect(blocks[3]).toMatchObject({
+      id: "info-creative-options",
+      type: "infoBlock",
+      style: "creative",
+      creativeTextLayout: "reference",
+      creativePhotoSize: "70",
+      photoId: "creative-photo",
+      dimPhoto: false,
+    });
+    expect(blocks[4]).toMatchObject({
+      id: "info-list-options",
+      type: "infoBlock",
+      style: "infoList",
+      infoListTextPosition: "center",
+      photoId: "list-photo",
+      dimPhoto: true,
+    });
     expect(collectPhotoIds(blocks)).toEqual([
       "lead-photo",
       "signature-photo",
@@ -223,6 +260,8 @@ describe("page builder blocks", () => {
       "tab-accent-a",
       "tab-photo-b",
       "reference-photo",
+      "creative-photo",
+      "list-photo",
     ]);
   });
 

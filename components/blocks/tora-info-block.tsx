@@ -124,15 +124,82 @@ export function ToraInfoBlock({
   const primaryPhoto = photoById(photoMap, block.photoId);
   const secondaryPhoto = photoById(photoMap, block.secondaryPhotoId);
   const dimPhoto = block.dimPhoto ?? true;
+  const normalizedStyle =
+    block.style === "creativeReference"
+      ? "creative"
+      : block.style === "infoListReference"
+        ? "infoList"
+        : block.style;
+  const creativeTextLayout =
+    block.style === "creativeReference"
+      ? "reference"
+      : (block.creativeTextLayout ?? "split");
+  const creativePhotoSize = block.creativePhotoSize ?? "60";
+  const creativePhotoSizeClass = `tora-info-block--creative-photo-${creativePhotoSize}`;
+  const creativeImageSizes = `(max-width: 991px) 100vw, ${creativePhotoSize}vw`;
+  const infoListTextPosition =
+    block.style === "infoListReference"
+      ? "center"
+      : (block.infoListTextPosition ?? "left");
 
-  if (block.style === "creative") {
+  if (normalizedStyle === "creative") {
+    if (creativeTextLayout === "reference") {
+      return (
+        <section
+          className={cn(
+            "tora-info-block tora-info-block--creative-reference",
+            creativePhotoSizeClass,
+            !dimPhoto && "tora-info-block--no-photo-dim",
+          )}
+        >
+          <div className="tora-info-creative-reference">
+            <div className="tora-info-creative-reference__image-wrap">
+              <ToraInfoPhoto
+                photo={primaryPhoto}
+                className="tora-info-creative-reference__image"
+                sizes={creativeImageSizes}
+                priority
+              />
+              {dimPhoto && (
+                <div
+                  className="tora-info-creative-reference__shade"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+            <div className="tora-info-creative-reference__text-wrap">
+              {eyebrow && (
+                <p className="tora-info-creative-reference__eyebrow">{eyebrow}</p>
+              )}
+              {title && <h2 className="tora-info-creative-reference__title">{title}</h2>}
+              {text && (
+                <div className="tora-info-creative-reference__text">
+                  <Paragraphs text={text} />
+                </div>
+              )}
+              <ToraInfoButton
+                href={block.buttonHref}
+                label={block.buttonLabel}
+                className="tora-info-button--light"
+              />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
-      <section className="tora-info-block tora-info-block--creative">
+      <section
+        className={cn(
+          "tora-info-block tora-info-block--creative",
+          creativePhotoSizeClass,
+        )}
+      >
         <div className="tora-info-creative">
           <ToraInfoPhoto
             photo={primaryPhoto}
             className="tora-info-creative__image"
-            sizes="(max-width: 991px) 100vw, 60vw"
+            sizes={creativeImageSizes}
             priority
           />
           <div className="tora-info-creative__panel">
@@ -154,51 +221,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "creativeReference") {
-    return (
-      <section
-        className={cn(
-          "tora-info-block tora-info-block--creative-reference",
-          !dimPhoto && "tora-info-block--no-photo-dim",
-        )}
-      >
-        <div className="tora-info-creative-reference">
-          <div className="tora-info-creative-reference__image-wrap">
-            <ToraInfoPhoto
-              photo={primaryPhoto}
-              className="tora-info-creative-reference__image"
-              sizes="(max-width: 991px) 100vw, 60vw"
-              priority
-            />
-            {dimPhoto && (
-              <div
-                className="tora-info-creative-reference__shade"
-                aria-hidden="true"
-              />
-            )}
-          </div>
-          <div className="tora-info-creative-reference__text-wrap">
-            {eyebrow && (
-              <p className="tora-info-creative-reference__eyebrow">{eyebrow}</p>
-            )}
-            {title && <h2 className="tora-info-creative-reference__title">{title}</h2>}
-            {text && (
-              <div className="tora-info-creative-reference__text">
-                <Paragraphs text={text} />
-              </div>
-            )}
-            <ToraInfoButton
-              href={block.buttonHref}
-              label={block.buttonLabel}
-              className="tora-info-button--light"
-            />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (block.style === "simpleText") {
+  if (normalizedStyle === "simpleText") {
     return (
       <section className="tora-info-block tora-info-block--simple-text">
         <div className="tora-info-simple-text">
@@ -208,7 +231,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "quote") {
+  if (normalizedStyle === "quote") {
     return (
       <section className="tora-info-block tora-info-block--quote">
         <div className="tora-info-quote">
@@ -219,8 +242,8 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "infoList" || block.style === "infoListReference") {
-    const isReference = block.style === "infoListReference";
+  if (normalizedStyle === "infoList") {
+    const isReference = infoListTextPosition === "center";
     return (
       <section
         className={cn(
@@ -285,7 +308,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "classic") {
+  if (normalizedStyle === "classic") {
     return (
       <section className="tora-info-block tora-info-block--classic">
         <div className="tora-info-classic">
@@ -301,7 +324,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "tabs") {
+  if (normalizedStyle === "tabs") {
     const items: ToraInfoTabViewItem[] = block.tabs.map((item) => ({
       id: item.id,
       title: item.title,
@@ -316,7 +339,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "textStyle") {
+  if (normalizedStyle === "textStyle") {
     return (
       <section className="tora-info-block tora-info-block--text-style">
         <div className="tora-info-text-style">
@@ -334,7 +357,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "accordion") {
+  if (normalizedStyle === "accordion") {
     return (
       <section className="tora-info-block tora-info-block--accordion">
         <ToraInfoAccordion items={block.accordionItems} />
@@ -342,7 +365,7 @@ export function ToraInfoBlock({
     );
   }
 
-  if (block.style === "simple") {
+  if (normalizedStyle === "simple") {
     return (
       <section className="tora-info-block tora-info-block--simple">
         <div className="tora-info-simple">

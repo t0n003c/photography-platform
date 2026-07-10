@@ -609,6 +609,9 @@ function makeBlock(type: BlockType): Block {
       photoId: null,
       secondaryPhotoId: null,
       dimPhoto: true,
+      creativeTextLayout: "split",
+      creativePhotoSize: "60",
+      infoListTextPosition: "left",
       buttonLabel: "LET'S CONNECT",
       buttonHref: "#",
       tabs: [makeInfoBlockTab(0), makeInfoBlockTab(1), makeInfoBlockTab(2), makeInfoBlockTab(3)],
@@ -1768,35 +1771,46 @@ function LeafEditor({
     case "infoBlock": {
       const tabs = block.tabs ?? [];
       const accordionItems = block.accordionItems ?? [];
-      const needsPhoto =
-        block.style === "creative" ||
-        block.style === "creativeReference" ||
-        block.style === "infoList" ||
-        block.style === "infoListReference";
+      const normalizedInfoStyle =
+        block.style === "creativeReference"
+          ? "creative"
+          : block.style === "infoListReference"
+            ? "infoList"
+            : block.style;
+      const isCreativeStyle = normalizedInfoStyle === "creative";
+      const isInfoListStyle = normalizedInfoStyle === "infoList";
+      const creativeTextLayout =
+        block.style === "creativeReference"
+          ? "reference"
+          : (block.creativeTextLayout ?? "split");
+      const creativePhotoSize = block.creativePhotoSize ?? "60";
+      const infoListTextPosition =
+        block.style === "infoListReference"
+          ? "center"
+          : (block.infoListTextPosition ?? "left");
+      const needsPhoto = isCreativeStyle || isInfoListStyle;
+      const showsPhotoDimming =
+        isInfoListStyle || (isCreativeStyle && creativeTextLayout === "reference");
       const usesButton =
-        block.style === "creative" ||
-        block.style === "creativeReference" ||
-        block.style === "classic" ||
-        block.style === "simple";
+        isCreativeStyle ||
+        normalizedInfoStyle === "classic" ||
+        normalizedInfoStyle === "simple";
       const usesTitle =
-        block.style === "creative" ||
-        block.style === "creativeReference" ||
-        block.style === "infoList" ||
-        block.style === "infoListReference" ||
-        block.style === "classic" ||
-        block.style === "textStyle" ||
-        block.style === "modern";
+        isCreativeStyle ||
+        isInfoListStyle ||
+        normalizedInfoStyle === "classic" ||
+        normalizedInfoStyle === "textStyle" ||
+        normalizedInfoStyle === "modern";
       const usesEyebrow =
-        block.style === "creative" ||
-        block.style === "creativeReference" ||
-        block.style === "tabs" ||
-        block.style === "textStyle" ||
-        block.style === "simple" ||
-        block.style === "modern";
+        isCreativeStyle ||
+        normalizedInfoStyle === "tabs" ||
+        normalizedInfoStyle === "textStyle" ||
+        normalizedInfoStyle === "simple" ||
+        normalizedInfoStyle === "modern";
       const usesText =
-        block.style !== "quote" &&
-        block.style !== "accordion";
-      const usesQuote = block.style === "quote" || block.style === "modern";
+        normalizedInfoStyle !== "quote" &&
+        normalizedInfoStyle !== "accordion";
+      const usesQuote = normalizedInfoStyle === "quote" || normalizedInfoStyle === "modern";
       const updateTab = (index: number, patch: Partial<(typeof tabs)[number]>) => {
         set({ tabs: tabs.map((item, i) => (i === index ? { ...item, ...patch } : item)) });
       };
@@ -1810,8 +1824,17 @@ function LeafEditor({
           ),
         });
       };
-      const updateInfoStyle = (style: typeof block.style) => {
+      const updateInfoStyle = (style: typeof normalizedInfoStyle) => {
         const patch: Partial<typeof block> = { style };
+        if (style === "creative") {
+          patch.creativeTextLayout =
+            block.style === "creativeReference" ? "reference" : creativeTextLayout;
+          patch.creativePhotoSize = creativePhotoSize;
+        }
+        if (style === "infoList") {
+          patch.infoListTextPosition =
+            block.style === "infoListReference" ? "center" : infoListTextPosition;
+        }
         if (style === "tabs" && tabs.length === 0) {
           patch.tabs = [
             makeInfoBlockTab(0),
@@ -1838,12 +1861,6 @@ function LeafEditor({
         if (style === "modern" && !block.eyebrow.trim()) {
           patch.eyebrow = "PHOTOGRAPHER / TRAVELLER";
         }
-        if (style === "creativeReference") {
-          patch.dimPhoto = false;
-        }
-        if (style === "infoListReference") {
-          patch.dimPhoto = true;
-        }
         set(patch);
       };
 
@@ -1851,13 +1868,14 @@ function LeafEditor({
         <div className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Style">
-              <Select value={block.style} onChange={(e) => updateInfoStyle(e.target.value as typeof block.style)}>
+              <Select
+                value={normalizedInfoStyle}
+                onChange={(e) => updateInfoStyle(e.target.value as typeof normalizedInfoStyle)}
+              >
                 <option value="creative">Creative</option>
-                <option value="creativeReference">Creative reference</option>
                 <option value="simpleText">Simple text</option>
                 <option value="quote">Quote</option>
                 <option value="infoList">Info list</option>
-                <option value="infoListReference">Info list reference</option>
                 <option value="classic">Classic</option>
                 <option value="tabs">Tabs style</option>
                 <option value="textStyle">Text style</option>
@@ -1866,8 +1884,65 @@ function LeafEditor({
                 <option value="modern">Modern</option>
               </Select>
             </Field>
+            {isCreativeStyle && (
+              <Field label="Text layout">
+                <Select
+                  value={creativeTextLayout}
+                  onChange={(e) => {
+                    const nextLayout = e.target.value as typeof creativeTextLayout;
+                    set({
+                      style: "creative",
+                      creativeTextLayout: nextLayout,
+                      ...(nextLayout === "reference" && creativeTextLayout !== "reference"
+                        ? { dimPhoto: false }
+                        : {}),
+                    });
+                  }}
+                >
+                  <option value="split">Side panel</option>
+                  <option value="reference">Centered panel</option>
+                </Select>
+              </Field>
+            )}
+            {isCreativeStyle && (
+              <Field label="Photo size">
+                <Select
+                  value={creativePhotoSize}
+                  onChange={(e) =>
+                    set({
+                      style: "creative",
+                      creativePhotoSize: e.target.value as typeof creativePhotoSize,
+                    })
+                  }
+                >
+                  <option value="50">Small photo</option>
+                  <option value="60">Reference photo</option>
+                  <option value="70">Large photo</option>
+                </Select>
+              </Field>
+            )}
+            {isInfoListStyle && (
+              <Field label="Text position">
+                <Select
+                  value={infoListTextPosition}
+                  onChange={(e) => {
+                    const nextPosition = e.target.value as typeof infoListTextPosition;
+                    set({
+                      style: "infoList",
+                      infoListTextPosition: nextPosition,
+                      ...(nextPosition === "center" && infoListTextPosition !== "center"
+                        ? { dimPhoto: true }
+                        : {}),
+                    });
+                  }}
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                </Select>
+              </Field>
+            )}
             {usesEyebrow && (
-              <Field label={block.style === "tabs" ? "Intro heading" : "Small label"}>
+              <Field label={normalizedInfoStyle === "tabs" ? "Intro heading" : "Small label"}>
                 <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
               </Field>
             )}
@@ -1894,20 +1969,22 @@ function LeafEditor({
               <Field label="Image">
                 <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
               </Field>
-              <Field label="Photo dimming">
-                <label className="flex h-9 items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={block.dimPhoto ?? true}
-                    onChange={(e) => set({ dimPhoto: e.target.checked })}
-                  />
-                  Dim photo overlay
-                </label>
-              </Field>
+              {showsPhotoDimming && (
+                <Field label="Photo dimming">
+                  <label className="flex h-9 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={block.dimPhoto ?? true}
+                      onChange={(e) => set({ dimPhoto: e.target.checked })}
+                    />
+                    Dim photo overlay
+                  </label>
+                </Field>
+              )}
             </>
           )}
 
-          {block.style === "modern" && (
+          {normalizedInfoStyle === "modern" && (
             <Field label="Signature image">
               <PhotoPicker photos={photos} value={block.secondaryPhotoId ?? null} onChange={(pid) => set({ secondaryPhotoId: pid })} />
             </Field>
@@ -1924,7 +2001,7 @@ function LeafEditor({
             </div>
           )}
 
-          {block.style === "tabs" && (
+          {normalizedInfoStyle === "tabs" && (
             <div className="space-y-2">
               {tabs.map((item, index) => (
                 <div key={item.id} className="space-y-2 rounded border p-2">
@@ -1958,7 +2035,7 @@ function LeafEditor({
             </div>
           )}
 
-          {block.style === "accordion" && (
+          {normalizedInfoStyle === "accordion" && (
             <div className="space-y-2">
               {accordionItems.map((item, index) => (
                 <div key={item.id} className="space-y-2 rounded border p-2">

@@ -6491,6 +6491,36 @@ main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-car
   padding: 120px 50px;
 }
 
+.tora-info-block--creative-photo-50 .tora-info-creative__image,
+.tora-info-block--creative-photo-50 .tora-info-creative-reference__image-wrap {
+  flex-basis: 50%;
+}
+
+.tora-info-block--creative-photo-50 .tora-info-creative__panel,
+.tora-info-block--creative-photo-50 .tora-info-creative-reference__text-wrap {
+  flex-basis: 50%;
+}
+
+.tora-info-block--creative-photo-60 .tora-info-creative__image,
+.tora-info-block--creative-photo-60 .tora-info-creative-reference__image-wrap {
+  flex-basis: 60%;
+}
+
+.tora-info-block--creative-photo-60 .tora-info-creative__panel,
+.tora-info-block--creative-photo-60 .tora-info-creative-reference__text-wrap {
+  flex-basis: 40%;
+}
+
+.tora-info-block--creative-photo-70 .tora-info-creative__image,
+.tora-info-block--creative-photo-70 .tora-info-creative-reference__image-wrap {
+  flex-basis: 70%;
+}
+
+.tora-info-block--creative-photo-70 .tora-info-creative__panel,
+.tora-info-block--creative-photo-70 .tora-info-creative-reference__text-wrap {
+  flex-basis: 30%;
+}
+
 .tora-info-creative__eyebrow,
 .tora-info-simple__eyebrow,
 .tora-info-modern__eyebrow,

@@ -430,6 +430,8 @@ const QuoteBlock = z.object({
 });
 export const InfoBlockStyleEnum = z.enum([
   "creative",
+  // Legacy saved values. The admin UI now exposes these as options on the
+  // combined creative/info-list styles, but parsing keeps old pages valid.
   "creativeReference",
   "simpleText",
   "quote",
@@ -442,6 +444,9 @@ export const InfoBlockStyleEnum = z.enum([
   "simple",
   "modern",
 ]);
+const InfoBlockCreativeTextLayoutEnum = z.enum(["split", "reference"]);
+const InfoBlockCreativePhotoSizeEnum = z.enum(["50", "60", "70"]);
+const InfoBlockTextPositionEnum = z.enum(["left", "center"]);
 const InfoBlockTabItem = z.object({
   id,
   title: z.string().default("COMMERCIAL"),
@@ -465,6 +470,9 @@ const InfoBlock = z.object({
   photoId: z.string().nullable().default(null),
   secondaryPhotoId: z.string().nullable().default(null),
   dimPhoto: z.boolean().default(true),
+  creativeTextLayout: InfoBlockCreativeTextLayoutEnum.default("split"),
+  creativePhotoSize: InfoBlockCreativePhotoSizeEnum.default("60"),
+  infoListTextPosition: InfoBlockTextPositionEnum.default("left"),
   buttonLabel: z.string().default("LET'S CONNECT"),
   buttonHref: z.string().default("#"),
   tabs: z.array(InfoBlockTabItem).default([]),
