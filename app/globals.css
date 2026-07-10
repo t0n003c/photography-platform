@@ -2018,6 +2018,10 @@ html.js .pr-root.is-enhanced {
   color: hsl(var(--foreground));
 }
 
+.tora-justified-showcase--plain .tora-justified-showcase__thumb {
+  background: transparent;
+}
+
 .tora-justified-showcase__inner {
   box-sizing: border-box;
   margin: 0 auto;

@@ -5103,7 +5103,7 @@ function LeafEditor({
                           checked={block.toraJustifiedUseBackground ?? true}
                           onChange={(e) => set({ toraJustifiedUseBackground: e.target.checked })}
                         />
-                        Show gallery band
+                        Use background color
                       </label>
                     </Field>
                     <Field label="Background color">

@@ -408,11 +408,17 @@ export function ToraJustifiedShowcaseGrid({
     clampNumber(rowHeightFactor, 5, 10, 7),
     gutter,
   );
+  const useThemeTitle =
+    !useBackground &&
+    titleColor.trim().toLowerCase() === TORA_JUSTIFIED_DEFAULT_TITLE;
+  const useThemeAccent =
+    !useBackground &&
+    accentColor.trim().toLowerCase() === TORA_JUSTIFIED_DEFAULT_ACCENT;
   const style = {
     "--tora-justified-gutter": `${gutter}px`,
-    "--tora-justified-bg": backgroundColor,
-    "--tora-justified-title": titleColor,
-    "--tora-justified-accent": accentColor,
+    "--tora-justified-bg": useBackground ? backgroundColor : "transparent",
+    ...(!useThemeTitle && { "--tora-justified-title": titleColor }),
+    ...(!useThemeAccent && { "--tora-justified-accent": accentColor }),
   } as React.CSSProperties;
 
   const scrollToLead = () => {

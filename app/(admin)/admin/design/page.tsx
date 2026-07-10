@@ -425,7 +425,7 @@ function ConfigEditor({
                 checked={toraJustifiedUseBackground}
                 onChange={(e) => setToraJustifiedUseBackground(e.target.checked)}
               />
-              Show gallery band
+              Use background color
             </label>
           </Field>
           <Field label="Background color">

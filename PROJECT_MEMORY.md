@@ -1644,6 +1644,14 @@ is gitignored):
   theme defaults. Settings expose caption visibility/source (`auto`, `headline`, `alt`, `caption`),
   caption color, background toggle, and background color. It intentionally uses existing photo
   metadata for prop codes instead of introducing a separate inventory-code field.
+  ToraMochie/Reflector Justified Gallery follow-up: `/justified-gallery/` is represented as
+  the `tora-justified-showcase` grid type in the Gallery editor, Design editor, and Pages Gallery
+  block. It promotes a selected photo into an 80vh lead image/title, builds viewport-derived
+  justified thumbnail rows, and supports the reference hover clip/dim and scroll-to-lead behavior.
+  Settings expose title/accent/background colors, title source, gutters, row height, interaction
+  toggles, and a `Use background color` toggle. With that toggle off, both the gallery surface and
+  thumbnail placeholders are transparent; the default title/accent colors follow light/dark mode,
+  while custom title/accent colors remain explicit overrides.
   ToraMochie/Reflector Casting page follow-up: the top casting intro is an About block layout
   (`tora-casting`) because it is a title/body/three-photo editorial intro; desktop shows three
   430:380 portraits, mobile auto-cycles through the three selected photos with a CSS-only
