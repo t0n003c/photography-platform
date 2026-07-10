@@ -9,11 +9,22 @@ export function ContactForm({
   className = "",
   variant = "default",
   subjectFallback = "",
+  toraLayout = "split",
+  toraPlaceholders,
+  showPhone = false,
 }: {
   submitLabel?: string;
   className?: string;
   variant?: "default" | "tora";
   subjectFallback?: string;
+  toraLayout?: "split" | "stacked";
+  toraPlaceholders?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
+  };
+  showPhone?: boolean;
 }) {
   const formId = useId();
   const [ts, setTs] = useState(0);
@@ -67,17 +78,24 @@ export function ContactForm({
   }
 
   if (variant === "tora") {
+    const placeholders = {
+      name: toraPlaceholders?.name ?? "Full name",
+      email: toraPlaceholders?.email ?? "E-mail",
+      phone: toraPlaceholders?.phone ?? "Phone Number",
+      message: toraPlaceholders?.message ?? "Message..",
+    };
+
     return (
       <form
         onSubmit={onSubmit}
-        className={`tora-contact-form ${className}`}
+        className={`tora-contact-form tora-contact-form--${toraLayout} ${className}`}
       >
         <div className="tora-contact-form__row">
           <ToraField
             id={`${formId}-name`}
             label="Name"
             name="name"
-            placeholder="Full name"
+            placeholder={placeholders.name}
             required
           />
           <ToraField
@@ -85,10 +103,19 @@ export function ContactForm({
             label="Email"
             name="email"
             type="email"
-            placeholder="E-mail"
+            placeholder={placeholders.email}
             required
           />
         </div>
+        {showPhone && (
+          <ToraField
+            id={`${formId}-phone`}
+            label="Phone Number"
+            name="subject"
+            type="tel"
+            placeholder={placeholders.phone}
+          />
+        )}
         <div className="tora-contact-form__field tora-contact-form__field--message">
           <label htmlFor={`${formId}-message`} className="sr-only">
             Message
@@ -98,7 +125,7 @@ export function ContactForm({
             name="message"
             required
             rows={4}
-            placeholder="Message.."
+            placeholder={placeholders.message}
           />
         </div>
         <div aria-hidden className="absolute left-[-9999px]">

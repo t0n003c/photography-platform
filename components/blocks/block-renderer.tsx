@@ -16,6 +16,7 @@ import { PricingBlock } from "@/components/blocks/pricing-block";
 import { ShopBlock } from "@/components/blocks/shop-block";
 import { ToraInfoBlock } from "@/components/blocks/tora-info-block";
 import { CustomLinkBlock } from "@/components/blocks/custom-link-block";
+import { ToraContactsReferenceBlock } from "@/components/blocks/tora-contacts-reference-block";
 import {
   CategoryIndexBlock,
   LocationIndexBlock,
@@ -425,6 +426,10 @@ function LeafView({
     case "customLink":
       return <CustomLinkBlock block={block} />;
     case "contactForm": {
+      if (block.style === "tora-contacts-reference") {
+        return <ToraContactsReferenceBlock block={block} photoMap={photoMap} />;
+      }
+
       if (block.style === "tora-contact") {
         const heading = block.heading?.trim() || "GET IN TOUCH";
         const body = block.body?.trim();
@@ -904,7 +909,10 @@ const FULL_BLEED = new Set([
   "logos",
 ]);
 function isFullBleed(block: Block): boolean {
-  if (block.type === "contactForm" && block.style === "tora-contact") {
+  if (
+    block.type === "contactForm" &&
+    (block.style === "tora-contact" || block.style === "tora-contacts-reference")
+  ) {
     return true;
   }
   return FULL_BLEED.has(block.type);

@@ -421,6 +421,35 @@ function makeCustomLinkItem(index = 0) {
   };
 }
 
+function makeContactInfoItem(index = 0) {
+  const defaults = [
+    ["PHOTOSTUDIO", "231 Main Street Chicago, IL", "+1 312 229 9000"],
+    ["OFFICE", "93 W Division Street Chicago, IL", "+1 312 943 0367"],
+  ] as const;
+  const [title, address, phone] = defaults[index % defaults.length];
+  return {
+    id: newBlockId(),
+    title,
+    address,
+    phone,
+    href: "",
+  };
+}
+
+function makeContactSocialLink(index = 0) {
+  const defaults = [
+    ["Facebook", "#"],
+    ["Instagram", "#"],
+    ["Twitter", "#"],
+  ] as const;
+  const [label, href] = defaults[index % defaults.length];
+  return {
+    id: newBlockId(),
+    label,
+    href,
+  };
+}
+
 function makeBannerSlide(index = 0, photoId: string | null = null) {
   const defaults = [
     ["for couples", "Another way"],
@@ -789,7 +818,32 @@ function makeBlock(type: BlockType): Block {
       textColor: "#f8f3df",
       accentColor: "#d8c98d",
     };
-    case "contactForm": return { id, type, style: "stacked", eyebrow: "Contact", heading: "Get in touch", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" };
+    case "contactForm": return {
+      id,
+      type,
+      style: "stacked",
+      eyebrow: "Contact",
+      heading: "Get in touch",
+      body: "Tell me about your session, event, or print order and I'll be in touch soon.",
+      submitLabel: "Send message",
+      align: "left",
+      contactHeroPhotoId: null,
+      contactHeroTitle: "CONTACTS",
+      contactHeroOverlayOpacity: 0.45,
+      contactInfoEyebrow: "CONTACT",
+      contactInfoHeading: "CONTACT INFO",
+      contactInfoIntro: "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
+      contactInfoItems: [makeContactInfoItem(0), makeContactInfoItem(1)],
+      contactImageEyebrow: "CONTACT",
+      contactImageHeading: "IMAGES WITH FORM",
+      contactSocialLinks: [
+        makeContactSocialLink(0),
+        makeContactSocialLink(1),
+        makeContactSocialLink(2),
+      ],
+      contactImagePhotoIds: [],
+      contactSideCaption: "Designed by © REFLECTOR Studio. All Right Reserved 2019",
+    };
     case "spacer": return {
       id,
       type,
@@ -4066,66 +4120,380 @@ function LeafEditor({
         </div>
       );
     }
-    case "contactForm":
+    case "contactForm": {
+      const isContactsReference = block.style === "tora-contacts-reference";
+      const contactInfoItems = block.contactInfoItems ?? [];
+      const contactSocialLinks = block.contactSocialLinks ?? [];
+      const contactImagePhotoIds = block.contactImagePhotoIds ?? [];
+      const updateInfoItem = (
+        index: number,
+        patch: Partial<(typeof contactInfoItems)[number]>,
+      ) => {
+        set({
+          contactInfoItems: contactInfoItems.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
+      const updateSocialLink = (
+        index: number,
+        patch: Partial<(typeof contactSocialLinks)[number]>,
+      ) => {
+        set({
+          contactSocialLinks: contactSocialLinks.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, ...patch } : item,
+          ),
+        });
+      };
       return (
-        <div className="space-y-2">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Form style">
-              <Select
-                value={block.style}
-                onChange={(e) => {
-                  const style = e.target.value as typeof block.style;
-                  set({
-                    style,
-                    ...(style === "tora-contact"
-                      ? {
-                          eyebrow: block.eyebrow === "Contact" ? "" : block.eyebrow,
-                          heading:
-                            block.heading === "Get in touch"
-                              ? "GET IN TOUCH"
-                              : block.heading,
-                          body:
-                            block.body ===
-                            "Tell me about your session, event, or print order and I'll be in touch soon."
-                              ? ""
-                              : block.body,
-                          submitLabel:
-                            block.submitLabel === "Send message"
-                              ? "SUBMIT NOW"
-                              : block.submitLabel,
-                          align: "center",
-                        }
-                      : {}),
-                  });
-                }}
-              >
-                <option value="stacked">Stacked intro</option>
-                <option value="split">Split intro + form</option>
-                <option value="card">Card form</option>
-                <option value="minimal">Minimal</option>
-                <option value="tora-contact">Tora contact</option>
-              </Select>
-            </Field>
-            <AlignField value={block.align} onChange={(align) => set({ align })} />
-            <Field label="Top label">
-              <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
-            </Field>
-            <Field label="Heading">
-              <Input value={block.heading} onChange={(e) => set({ heading: e.target.value })} />
-            </Field>
-            <Field label="Submit button">
-              <Input value={block.submitLabel} onChange={(e) => set({ submitLabel: e.target.value })} />
-            </Field>
-          </div>
-          <Field label="Intro text">
-            <Textarea rows={3} value={block.body} onChange={(e) => set({ body: e.target.value })} />
-          </Field>
+        <div className="space-y-3">
+          <SettingsGroup title="Layout">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Form style">
+                <Select
+                  value={block.style}
+                  onChange={(e) => {
+                    const style = e.target.value as typeof block.style;
+                    set({
+                      style,
+                      ...(style === "tora-contact"
+                        ? {
+                            eyebrow: block.eyebrow === "Contact" ? "" : block.eyebrow,
+                            heading:
+                              block.heading === "Get in touch"
+                                ? "GET IN TOUCH"
+                                : block.heading,
+                            body:
+                              block.body ===
+                              "Tell me about your session, event, or print order and I'll be in touch soon."
+                                ? ""
+                                : block.body,
+                            submitLabel:
+                              block.submitLabel === "Send message"
+                                ? "SUBMIT NOW"
+                                : block.submitLabel,
+                            align: "center",
+                          }
+                        : {}),
+                      ...(style === "tora-contacts-reference"
+                        ? {
+                            heading:
+                              block.heading === "Get in touch"
+                                ? "CONTACT INFO"
+                                : block.heading,
+                            submitLabel:
+                              block.submitLabel === "Send message"
+                                ? "SUBMIT NOW"
+                                : block.submitLabel,
+                            align: "center",
+                            contactHeroTitle: block.contactHeroTitle || "CONTACTS",
+                            contactHeroOverlayOpacity: block.contactHeroOverlayOpacity ?? 0.45,
+                            contactInfoEyebrow: block.contactInfoEyebrow || "CONTACT",
+                            contactInfoHeading: block.contactInfoHeading || "CONTACT INFO",
+                            contactInfoIntro:
+                              block.contactInfoIntro ||
+                              "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
+                            contactInfoItems:
+                              contactInfoItems.length > 0
+                                ? contactInfoItems
+                                : [makeContactInfoItem(0), makeContactInfoItem(1)],
+                            contactImageEyebrow: block.contactImageEyebrow || "CONTACT",
+                            contactImageHeading:
+                              block.contactImageHeading || "IMAGES WITH FORM",
+                            contactSocialLinks:
+                              contactSocialLinks.length > 0
+                                ? contactSocialLinks
+                                : [
+                                    makeContactSocialLink(0),
+                                    makeContactSocialLink(1),
+                                    makeContactSocialLink(2),
+                                  ],
+                            contactImagePhotoIds,
+                            contactSideCaption:
+                              block.contactSideCaption ||
+                              "Designed by © REFLECTOR Studio. All Right Reserved 2019",
+                          }
+                        : {}),
+                    });
+                  }}
+                >
+                  <option value="stacked">Stacked intro</option>
+                  <option value="split">Split intro + form</option>
+                  <option value="card">Card form</option>
+                  <option value="minimal">Minimal</option>
+                  <option value="tora-contact">Tora contact</option>
+                  <option value="tora-contacts-reference">Tora contacts reference</option>
+                </Select>
+              </Field>
+              {!isContactsReference && (
+                <AlignField value={block.align} onChange={(align) => set({ align })} />
+              )}
+              <Field label="Submit button">
+                <Input value={block.submitLabel} onChange={(e) => set({ submitLabel: e.target.value })} />
+              </Field>
+            </div>
+          </SettingsGroup>
+
+          {isContactsReference ? (
+            <>
+              <SettingsGroup title="Hero">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Hero title">
+                    <Input
+                      value={block.contactHeroTitle ?? ""}
+                      onChange={(e) => set({ contactHeroTitle: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Photo dim">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={0.85}
+                      step={0.05}
+                      value={block.contactHeroOverlayOpacity ?? 0.45}
+                      onChange={(e) => set({ contactHeroOverlayOpacity: Number(e.target.value) })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Hero photo">
+                  <PhotoPicker
+                    photos={photos}
+                    value={block.contactHeroPhotoId ?? null}
+                    onChange={(photoId) => set({ contactHeroPhotoId: photoId })}
+                  />
+                </Field>
+              </SettingsGroup>
+
+              <SettingsGroup title="Contact info">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Small label">
+                    <Input
+                      value={block.contactInfoEyebrow ?? ""}
+                      onChange={(e) => set({ contactInfoEyebrow: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Heading">
+                    <Input
+                      value={block.contactInfoHeading ?? ""}
+                      onChange={(e) => set({ contactInfoHeading: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Large intro">
+                  <Textarea
+                    rows={3}
+                    value={block.contactInfoIntro ?? ""}
+                    onChange={(e) => set({ contactInfoIntro: e.target.value })}
+                  />
+                </Field>
+                <div className="space-y-2">
+                  {contactInfoItems.map((item, index) => (
+                    <div key={item.id} className="space-y-2 rounded-md border p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                          Contact item {index + 1}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={index === 0}
+                            onClick={() => set({ contactInfoItems: swapAt(contactInfoItems, index, index - 1) })}
+                            aria-label="Move contact item up"
+                            className="h-8 w-8"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={index === contactInfoItems.length - 1}
+                            onClick={() => set({ contactInfoItems: swapAt(contactInfoItems, index, index + 1) })}
+                            aria-label="Move contact item down"
+                            className="h-8 w-8"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => set({ contactInfoItems: contactInfoItems.filter((_, itemIndex) => itemIndex !== index) })}
+                            aria-label="Remove contact item"
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Field label="Title">
+                          <Input
+                            value={item.title ?? ""}
+                            onChange={(e) => updateInfoItem(index, { title: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Phone">
+                          <Input
+                            value={item.phone ?? ""}
+                            onChange={(e) => updateInfoItem(index, { phone: e.target.value })}
+                          />
+                        </Field>
+                      </div>
+                      <Field label="Address">
+                        <Input
+                          value={item.address ?? ""}
+                          onChange={(e) => updateInfoItem(index, { address: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Phone link">
+                        <Input
+                          value={item.href ?? ""}
+                          onChange={(e) => updateInfoItem(index, { href: e.target.value })}
+                          placeholder="tel:+13122299000"
+                        />
+                      </Field>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set({ contactInfoItems: [...contactInfoItems, makeContactInfoItem(contactInfoItems.length)] })}
+                  >
+                    Add contact item
+                  </Button>
+                </div>
+              </SettingsGroup>
+
+              <SettingsGroup title="Images with form">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Small label">
+                    <Input
+                      value={block.contactImageEyebrow ?? ""}
+                      onChange={(e) => set({ contactImageEyebrow: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Heading">
+                    <Input
+                      value={block.contactImageHeading ?? ""}
+                      onChange={(e) => set({ contactImageHeading: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Mosaic photos">
+                  <PhotoPicker
+                    photos={photos}
+                    selectedIds={contactImagePhotoIds}
+                    onToggle={(photoId) =>
+                      set({
+                        contactImagePhotoIds: contactImagePhotoIds.includes(photoId)
+                          ? contactImagePhotoIds.filter((id) => id !== photoId)
+                          : [...contactImagePhotoIds, photoId],
+                      })
+                    }
+                  />
+                </Field>
+                <PhotoOrderList
+                  photos={photos}
+                  ids={contactImagePhotoIds}
+                  onChange={(ids) => set({ contactImagePhotoIds: ids })}
+                />
+                <Field label="Side caption">
+                  <Input
+                    value={block.contactSideCaption ?? ""}
+                    onChange={(e) => set({ contactSideCaption: e.target.value })}
+                  />
+                </Field>
+              </SettingsGroup>
+
+              <SettingsGroup title="Social links">
+                <div className="space-y-2">
+                  {contactSocialLinks.map((item, index) => (
+                    <div key={item.id} className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]">
+                      <Field label="Label">
+                        <Input
+                          value={item.label ?? ""}
+                          onChange={(e) => updateSocialLink(index, { label: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Link">
+                        <Input
+                          value={item.href ?? ""}
+                          onChange={(e) => updateSocialLink(index, { href: e.target.value })}
+                        />
+                      </Field>
+                      <div className="flex items-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === 0}
+                          onClick={() => set({ contactSocialLinks: swapAt(contactSocialLinks, index, index - 1) })}
+                          aria-label="Move social link up"
+                          className="h-8 w-8"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={index === contactSocialLinks.length - 1}
+                          onClick={() => set({ contactSocialLinks: swapAt(contactSocialLinks, index, index + 1) })}
+                          aria-label="Move social link down"
+                          className="h-8 w-8"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => set({ contactSocialLinks: contactSocialLinks.filter((_, itemIndex) => itemIndex !== index) })}
+                          aria-label="Remove social link"
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set({ contactSocialLinks: [...contactSocialLinks, makeContactSocialLink(contactSocialLinks.length)] })}
+                  >
+                    Add social link
+                  </Button>
+                </div>
+              </SettingsGroup>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Top label">
+                  <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
+                </Field>
+                <Field label="Heading">
+                  <Input value={block.heading} onChange={(e) => set({ heading: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Intro text">
+                <Textarea rows={3} value={block.body} onChange={(e) => set({ body: e.target.value })} />
+              </Field>
+            </>
+          )}
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             Messages submit to the existing contact inbox. Manage received messages in{" "}
             <Link href="/admin/contact" className="underline underline-offset-2">Inbox</Link>.
           </p>
         </div>
       );
+    }
     case "image":
       return (
         <div className="grid gap-2 sm:grid-cols-2">

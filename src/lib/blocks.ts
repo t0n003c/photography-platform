@@ -743,7 +743,20 @@ export const ContactFormStyleEnum = z.enum([
   "card",
   "minimal",
   "tora-contact",
+  "tora-contacts-reference",
 ]);
+const ContactInfoItem = z.object({
+  id,
+  title: z.string().default("PHOTOSTUDIO"),
+  address: z.string().default("231 Main Street Chicago, IL"),
+  phone: z.string().default("+1 312 229 9000"),
+  href: z.string().default(""),
+});
+const ContactSocialLink = z.object({
+  id,
+  label: z.string().default("Facebook"),
+  href: z.string().default("#"),
+});
 const ContactFormBlock = z.object({
   ...baseBlock,
   type: z.literal("contactForm"),
@@ -755,6 +768,41 @@ const ContactFormBlock = z.object({
     .default("Tell me about your session, event, or print order and I'll be in touch soon."),
   submitLabel: z.string().default("Send message"),
   align: AlignEnum.default("left"),
+  contactHeroPhotoId: z.string().nullable().default(null),
+  contactHeroTitle: z.string().default("CONTACTS"),
+  contactHeroOverlayOpacity: z.number().min(0).max(0.85).default(0.45),
+  contactInfoEyebrow: z.string().default("CONTACT"),
+  contactInfoHeading: z.string().default("CONTACT INFO"),
+  contactInfoIntro: z
+    .string()
+    .default("IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW"),
+  contactInfoItems: z.array(ContactInfoItem).default([
+    {
+      id: "photostudio",
+      title: "PHOTOSTUDIO",
+      address: "231 Main Street Chicago, IL",
+      phone: "+1 312 229 9000",
+      href: "",
+    },
+    {
+      id: "office",
+      title: "OFFICE",
+      address: "93 W Division Street Chicago, IL",
+      phone: "+1 312 943 0367",
+      href: "",
+    },
+  ]),
+  contactImageEyebrow: z.string().default("CONTACT"),
+  contactImageHeading: z.string().default("IMAGES WITH FORM"),
+  contactSocialLinks: z.array(ContactSocialLink).default([
+    { id: "facebook", label: "Facebook", href: "#" },
+    { id: "instagram", label: "Instagram", href: "#" },
+    { id: "twitter", label: "Twitter", href: "#" },
+  ]),
+  contactImagePhotoIds: z.array(z.string()).default([]),
+  contactSideCaption: z
+    .string()
+    .default("Designed by © REFLECTOR Studio. All Right Reserved 2019"),
 });
 const SpacerBlock = z.object({
   ...baseBlock,
@@ -1116,6 +1164,10 @@ export function collectPhotoIds(blocks: Block[]): string[] {
           if (plan.mediaPhotoId) ids.push(plan.mediaPhotoId);
         }
       }
+    }
+    if (b.type === "contactForm") {
+      if (b.contactHeroPhotoId) ids.push(b.contactHeroPhotoId);
+      ids.push(...b.contactImagePhotoIds);
     }
     if (b.type === "logos") ids.push(...b.photoIds);
     if (b.type === "gallery" && b.filterMode === "custom") {

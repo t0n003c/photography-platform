@@ -96,7 +96,47 @@ export function presetBlocks(type: PageType, gen: () => string): Block[] {
       return [
         { id: gen(), type: "heading", text: "Get in touch", level: 1, align: "left", font: "sans", spacing: "normal" },
         { id: gen(), type: "richtext", text: "Tell visitors how to reach you.", align: "left", font: "sans", size: "base" },
-        { id: gen(), type: "contactForm", style: "stacked", eyebrow: "Contact", heading: "Start a conversation", body: "Tell me about your session, event, or print order and I'll be in touch soon.", submitLabel: "Send message", align: "left" },
+        {
+          id: gen(),
+          type: "contactForm",
+          style: "stacked",
+          eyebrow: "Contact",
+          heading: "Start a conversation",
+          body: "Tell me about your session, event, or print order and I'll be in touch soon.",
+          submitLabel: "Send message",
+          align: "left",
+          contactHeroPhotoId: null,
+          contactHeroTitle: "CONTACTS",
+          contactHeroOverlayOpacity: 0.45,
+          contactInfoEyebrow: "CONTACT",
+          contactInfoHeading: "CONTACT INFO",
+          contactInfoIntro: "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
+          contactInfoItems: [
+            {
+              id: gen(),
+              title: "PHOTOSTUDIO",
+              address: "231 Main Street Chicago, IL",
+              phone: "+1 312 229 9000",
+              href: "",
+            },
+            {
+              id: gen(),
+              title: "OFFICE",
+              address: "93 W Division Street Chicago, IL",
+              phone: "+1 312 943 0367",
+              href: "",
+            },
+          ],
+          contactImageEyebrow: "CONTACT",
+          contactImageHeading: "IMAGES WITH FORM",
+          contactSocialLinks: [
+            { id: gen(), label: "Facebook", href: "#" },
+            { id: gen(), label: "Instagram", href: "#" },
+            { id: gen(), label: "Twitter", href: "#" },
+          ],
+          contactImagePhotoIds: [],
+          contactSideCaption: "Designed by © REFLECTOR Studio. All Right Reserved 2019",
+        },
       ];
     case "standard":
     default:

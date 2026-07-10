@@ -2943,6 +2943,10 @@ body.tora-justified-page-dim .tora-justified-showcase__gallery {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.tora-contact-form--stacked .tora-contact-form__row {
+  display: block;
+}
+
 .tora-contact-form__field {
   margin-bottom: 40px;
 }
@@ -3041,6 +3045,420 @@ main:has(.tora-contact-section) + footer {
 
 main:has(.tora-contact-section) .py-4:has(.tora-contact-section) {
   padding-bottom: 0;
+}
+
+.tora-contact-reference {
+  --tora-contact-ref-bg: #f6f0e6;
+  --tora-contact-ref-panel: #fffaf2;
+  --tora-contact-ref-text: #252525;
+  --tora-contact-ref-muted: rgb(37 37 37 / 0.64);
+  --tora-contact-ref-line: rgb(37 37 37 / 0.22);
+  --tora-contact-ref-accent: #8b6d35;
+  --tora-contact-bg: var(--tora-contact-ref-bg);
+  --tora-contact-control: var(--tora-contact-ref-panel);
+  --tora-contact-text: var(--tora-contact-ref-text);
+  --tora-contact-muted: var(--tora-contact-ref-muted);
+  --tora-contact-accent: var(--tora-contact-ref-accent);
+  background: var(--tora-contact-ref-bg);
+  color: var(--tora-contact-ref-text);
+  font-family: var(--font-josefin), system-ui, sans-serif;
+  overflow: clip;
+}
+
+.dark .tora-contact-reference {
+  --tora-contact-ref-bg: #252626;
+  --tora-contact-ref-panel: #353535;
+  --tora-contact-ref-text: #f7f7f7;
+  --tora-contact-ref-muted: rgb(247 247 247 / 0.72);
+  --tora-contact-ref-line: rgb(247 247 247 / 0.22);
+  --tora-contact-ref-accent: #ddc59f;
+}
+
+.tora-contact-reference-hero {
+  align-items: center;
+  display: flex;
+  height: clamp(215px, 32.1vw, 463px);
+  justify-content: center;
+  position: relative;
+}
+
+.tora-contact-reference-hero__image,
+.tora-contact-reference-hero__placeholder,
+.tora-contact-reference-hero__overlay {
+  inset: 0;
+  position: absolute;
+}
+
+.tora-contact-reference-hero__image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-contact-reference-hero__placeholder {
+  background:
+    linear-gradient(135deg, rgb(221 197 159 / 0.34), transparent 52%),
+    linear-gradient(315deg, rgb(80 82 78 / 0.35), transparent 48%),
+    var(--tora-contact-ref-panel);
+}
+
+.tora-contact-reference-hero__overlay {
+  background: rgb(0 0 0 / var(--tora-contact-ref-hero-overlay, 0.45));
+  z-index: 1;
+}
+
+.tora-contact-reference-hero h1 {
+  color: #fff;
+  font-size: clamp(29px, 4.17vw, 60px);
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  margin: 0;
+  position: relative;
+  text-align: center;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.tora-contact-reference__section {
+  margin: 0 auto;
+  padding-left: 15px;
+  padding-right: 15px;
+  width: min(100%, 1170px);
+}
+
+.tora-contact-reference__section--info-heading {
+  padding-top: 116px;
+}
+
+.tora-contact-reference__section--image-heading {
+  padding-top: 6px;
+}
+
+.tora-contact-reference-heading {
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.tora-contact-reference-heading p,
+.tora-contact-reference-heading h2 {
+  color: var(--tora-contact-ref-text);
+  margin: 0;
+}
+
+.tora-contact-reference-heading p {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.56px;
+  line-height: 1.2;
+  margin-bottom: 19px;
+}
+
+.tora-contact-reference-heading h2 {
+  font-size: 29px;
+  font-weight: 700;
+  letter-spacing: 3.77px;
+  line-height: 1.3;
+}
+
+.tora-contact-reference-info {
+  display: grid;
+  grid-template-columns: minmax(0, 40%) repeat(2, minmax(0, 30%));
+  margin: 0 auto;
+  padding: 88px 15px 111px;
+  width: min(100%, 1140px);
+}
+
+.tora-contact-reference-info__intro,
+.tora-contact-reference-info__item {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.tora-contact-reference-info__intro p {
+  color: var(--tora-contact-ref-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.42;
+  margin: 0;
+  max-width: 360px;
+  text-transform: uppercase;
+}
+
+.tora-contact-reference-info__item h3 {
+  color: var(--tora-contact-ref-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.2;
+  margin: 0 0 15px;
+  text-transform: uppercase;
+}
+
+.tora-contact-reference-info__item p,
+.tora-contact-reference-info__phone {
+  color: var(--tora-contact-ref-muted);
+  display: block;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.67;
+  margin: 0;
+  text-decoration: none;
+}
+
+a.tora-contact-reference-info__phone:hover,
+a.tora-contact-reference-info__phone:focus-visible {
+  color: var(--tora-contact-ref-accent);
+}
+
+.tora-contact-reference-image-form {
+  margin: 0 auto;
+  padding: 71px 15px 120px;
+  width: min(100%, 1170px);
+}
+
+.tora-contact-reference-socials {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 45px;
+  margin-bottom: 50px;
+}
+
+.tora-contact-reference-socials__link {
+  color: var(--tora-contact-ref-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  line-height: 1.2;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 350ms ease;
+}
+
+a.tora-contact-reference-socials__link:hover,
+a.tora-contact-reference-socials__link:focus-visible {
+  color: var(--tora-contact-ref-accent);
+}
+
+.tora-contact-reference-image-form__content {
+  display: grid;
+  gap: 0 140px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  position: relative;
+}
+
+.tora-contact-reference-mosaic {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tora-contact-reference-mosaic__item {
+  aspect-ratio: 1;
+  background: var(--tora-contact-ref-panel);
+  overflow: hidden;
+}
+
+.tora-contact-reference-mosaic__item img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.tora-contact-reference-mosaic__placeholder {
+  height: 100%;
+  width: 100%;
+}
+
+.tora-contact-reference-mosaic__placeholder.is-1,
+.tora-contact-reference-mosaic__placeholder.is-4 {
+  background: #d8c98d;
+}
+
+.tora-contact-reference-mosaic__placeholder.is-2,
+.tora-contact-reference-mosaic__placeholder.is-5 {
+  background: #8aa1a6;
+}
+
+.tora-contact-reference-mosaic__placeholder.is-3,
+.tora-contact-reference-mosaic__placeholder.is-6 {
+  background: #b7775b;
+}
+
+.dark .tora-contact-reference-mosaic__placeholder.is-1,
+.dark .tora-contact-reference-mosaic__placeholder.is-4 {
+  background: #5f5940;
+}
+
+.dark .tora-contact-reference-mosaic__placeholder.is-2,
+.dark .tora-contact-reference-mosaic__placeholder.is-5 {
+  background: #46585b;
+}
+
+.dark .tora-contact-reference-mosaic__placeholder.is-3,
+.dark .tora-contact-reference-mosaic__placeholder.is-6 {
+  background: #604538;
+}
+
+.tora-contact-reference-form-wrap {
+  min-width: 0;
+}
+
+.tora-contact-reference .tora-contact-form__field {
+  margin-bottom: 40px;
+}
+
+.tora-contact-reference .tora-contact-form input:not([type="submit"]),
+.tora-contact-reference .tora-contact-form textarea {
+  border-bottom-color: var(--tora-contact-ref-line);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.tora-contact-reference .tora-contact-form input:focus,
+.tora-contact-reference .tora-contact-form textarea:focus {
+  border-bottom-color: var(--tora-contact-ref-accent);
+}
+
+.tora-contact-reference .tora-contact-form__actions {
+  justify-content: flex-start;
+  margin-top: 25px;
+}
+
+.tora-contact-reference .tora-contact-form button {
+  background: transparent;
+}
+
+.tora-contact-reference .tora-contact-form button:hover:not(:disabled),
+.tora-contact-reference .tora-contact-form button:focus-visible {
+  background: var(--tora-contact-ref-accent);
+  color: var(--tora-contact-ref-bg);
+}
+
+.tora-contact-reference-copy {
+  bottom: 0;
+  color: var(--tora-contact-ref-muted);
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  right: -105px;
+  top: 0;
+  width: 24px;
+}
+
+.tora-contact-reference-copy span {
+  display: block;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+main:has(.tora-contact-reference) + footer {
+  margin-top: 0;
+}
+
+main:has(.tora-contact-reference) .py-4:has(.tora-contact-reference) {
+  padding-bottom: 0;
+}
+
+@media (max-width: 991px) {
+  .tora-contact-reference__section--info-heading {
+    padding-top: 84px;
+  }
+
+  .tora-contact-reference-info {
+    gap: 42px 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-bottom: 82px;
+    padding-top: 64px;
+  }
+
+  .tora-contact-reference-info__intro {
+    grid-column: 1 / -1;
+  }
+
+  .tora-contact-reference-image-form {
+    padding-bottom: 88px;
+  }
+
+  .tora-contact-reference-image-form__content {
+    gap: 58px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tora-contact-reference-copy {
+    position: static;
+    width: auto;
+  }
+
+  .tora-contact-reference-copy span {
+    position: static;
+    transform: none;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 640px) {
+  .tora-contact-reference-hero {
+    height: 185px;
+  }
+
+  .tora-contact-reference-hero h1 {
+    font-size: 29px;
+    letter-spacing: 2px;
+    line-height: 1.35;
+  }
+
+  .tora-contact-reference__section--info-heading {
+    padding-top: 64px;
+  }
+
+  .tora-contact-reference-heading p {
+    margin-bottom: 14px;
+  }
+
+  .tora-contact-reference-heading h2 {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+
+  .tora-contact-reference-info {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 66px;
+    padding-top: 50px;
+  }
+
+  .tora-contact-reference-info__intro,
+  .tora-contact-reference-info__item {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .tora-contact-reference-info__intro p {
+    max-width: none;
+  }
+
+  .tora-contact-reference-image-form {
+    padding-bottom: 72px;
+    padding-top: 52px;
+  }
+
+  .tora-contact-reference-socials {
+    gap: 12px 24px;
+    margin-bottom: 38px;
+  }
+
+  .tora-contact-reference-mosaic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 main:has(.tora-shop-block, .tora-shop-coming-soon, .tora-product-page, .tora-cart-page) + footer {

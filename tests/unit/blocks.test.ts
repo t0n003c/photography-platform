@@ -25,6 +25,43 @@ describe("page builder blocks", () => {
     });
   });
 
+  it("keeps contacts reference blocks and collects selected photos", () => {
+    const blocks = parseBlocks([
+      {
+        id: "contacts-reference",
+        type: "contactForm",
+        style: "tora-contacts-reference",
+        contactHeroPhotoId: "photo-hero",
+        contactImagePhotoIds: ["photo-a", "photo-b", "photo-c"],
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "contacts-reference",
+      type: "contactForm",
+      style: "tora-contacts-reference",
+      contactHeroTitle: "CONTACTS",
+      contactInfoHeading: "CONTACT INFO",
+      contactImageHeading: "IMAGES WITH FORM",
+      contactInfoItems: [
+        expect.objectContaining({ title: "PHOTOSTUDIO" }),
+        expect.objectContaining({ title: "OFFICE" }),
+      ],
+      contactSocialLinks: [
+        expect.objectContaining({ label: "Facebook" }),
+        expect.objectContaining({ label: "Instagram" }),
+        expect.objectContaining({ label: "Twitter" }),
+      ],
+    });
+    expect(collectPhotoIds(blocks)).toEqual([
+      "photo-hero",
+      "photo-a",
+      "photo-b",
+      "photo-c",
+    ]);
+  });
+
   it("creates a contact form in contact page presets", () => {
     const blocks = presetBlocks("contact", () => "id");
 
