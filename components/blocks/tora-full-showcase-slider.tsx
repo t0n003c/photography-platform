@@ -8,6 +8,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
@@ -21,6 +23,14 @@ export interface ToraFullShowcaseSliderItem {
 }
 
 type CSSVars = CSSProperties & { [key: `--${string}`]: string | number | undefined };
+
+type DragState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  lastX: number;
+  locked: boolean;
+};
 
 function isExternalHref(href: string) {
   return /^https?:\/\//i.test(href);
@@ -88,19 +98,28 @@ export function ToraFullShowcaseSlider({
 }: {
   items: ToraFullShowcaseSliderItem[];
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const itemCount = items.length;
+  const cloneCount = itemCount > 1 ? Math.min(3, itemCount) : 0;
+  const [activeIndex, setActiveIndex] = useState(() => cloneCount);
   const [enhanced, setEnhanced] = useState(false);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [slidesPerView, setSlidesPerView] = useState(3);
-  const itemCount = items.length;
+  const [dragOffset, setDragOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const resetTimerRef = useRef<number | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const suppressClickRef = useRef(false);
 
   const displayItems = useMemo(() => {
     if (itemCount === 0) return [];
     if (itemCount === 1) return items;
-    return [...items, ...items.slice(0, Math.min(3, itemCount))];
-  }, [itemCount, items]);
+    return [
+      ...items.slice(-cloneCount),
+      ...items,
+      ...items.slice(0, cloneCount),
+    ];
+  }, [cloneCount, itemCount, items]);
 
   const clearAutoplay = useCallback(() => {
     if (intervalRef.current === null) return;
@@ -115,6 +134,20 @@ export function ToraFullShowcaseSlider({
       setActiveIndex((current) => current + 1);
     }, 2500);
   }, [clearAutoplay, itemCount]);
+
+  const moveBy = useCallback(
+    (delta: -1 | 1) => {
+      clearAutoplay();
+      setTransitionEnabled(true);
+      setActiveIndex((current) => current + delta);
+    },
+    [clearAutoplay],
+  );
+
+  useEffect(() => {
+    setActiveIndex(cloneCount);
+    setDragOffset(0);
+  }, [cloneCount, itemCount]);
 
   useEffect(() => {
     setEnhanced(!prefersReducedMotion());
@@ -146,18 +179,116 @@ export function ToraFullShowcaseSlider({
   }, [clearAutoplay, startAutoplay]);
 
   useEffect(() => {
-    if (itemCount <= 1 || activeIndex < itemCount) return;
+    if (cloneCount === 0 || itemCount <= 1) return;
+    const firstRealIndex = cloneCount;
+    const afterLastRealIndex = cloneCount + itemCount;
+    if (activeIndex >= firstRealIndex && activeIndex < afterLastRealIndex) return;
+
     if (resetTimerRef.current !== null) {
       window.clearTimeout(resetTimerRef.current);
     }
     resetTimerRef.current = window.setTimeout(() => {
       setTransitionEnabled(false);
-      setActiveIndex(0);
+      setActiveIndex(() => {
+        const raw = activeIndex - firstRealIndex;
+        const normalized = ((raw % itemCount) + itemCount) % itemCount;
+        return firstRealIndex + normalized;
+      });
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => setTransitionEnabled(true));
       });
     }, 1500);
-  }, [activeIndex, itemCount]);
+  }, [activeIndex, cloneCount, itemCount]);
+
+  const cancelDrag = useCallback(() => {
+    dragRef.current = null;
+    setDragging(false);
+    setDragOffset(0);
+    startAutoplay();
+  }, [startAutoplay]);
+
+  const onPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (itemCount <= 1) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      dragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        locked: false,
+      };
+    },
+    [itemCount],
+  );
+
+  const onPointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      if (!drag.locked) {
+        if (absY > 10 && absY > absX * 1.15) {
+          cancelDrag();
+          return;
+        }
+        if (absX < 12 || absX <= absY) return;
+
+        drag.locked = true;
+        clearAutoplay();
+        setDragging(true);
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
+
+      drag.lastX = event.clientX;
+      setDragOffset(dx);
+      event.preventDefault();
+    },
+    [cancelDrag, clearAutoplay],
+  );
+
+  const finishDrag = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+
+      const dx = drag.lastX - drag.startX;
+      const slideWidth =
+        event.currentTarget.getBoundingClientRect().width / Math.max(1, slidesPerView);
+      const threshold = Math.min(180, Math.max(48, slideWidth * 0.16));
+
+      dragRef.current = null;
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      if (drag.locked) {
+        suppressClickRef.current = true;
+        setDragging(false);
+        setDragOffset(0);
+        if (Math.abs(dx) >= threshold) {
+          moveBy(dx < 0 ? 1 : -1);
+        } else {
+          setTransitionEnabled(true);
+        }
+      }
+
+      startAutoplay();
+    },
+    [moveBy, slidesPerView, startAutoplay],
+  );
+
+  const onClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return;
+    suppressClickRef.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   if (displayItems.length === 0) return null;
 
@@ -167,23 +298,31 @@ export function ToraFullShowcaseSlider({
     <div
       className={`tora-full-showcase-slider ${enhanced ? "is-enhanced" : "is-static"} ${
         transitionEnabled ? "" : "is-resetting"
-      }`}
+      } ${dragging ? "is-dragging" : ""}`}
       onMouseEnter={clearAutoplay}
       onMouseLeave={startAutoplay}
       onFocus={clearAutoplay}
       onBlur={startAutoplay}
+      onClickCapture={onClickCapture}
+      onPointerCancel={cancelDrag}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={finishDrag}
+      onDragStart={(event) => event.preventDefault()}
       style={
         {
           "--tora-showcase-index": activeIndex,
           "--tora-showcase-offset": offset,
+          "--tora-showcase-drag": `${dragOffset}px`,
         } as CSSVars
       }
     >
       <div className="tora-full-showcase-slider__viewport">
         <div className="tora-full-showcase-slider__track">
           {displayItems.map((item, index) => {
-            const isClone = index >= itemCount;
-            const visibleIndex = index % itemCount;
+            const isClone =
+              cloneCount > 0 && (index < cloneCount || index >= cloneCount + itemCount);
+            const visibleIndex = (index - cloneCount + itemCount) % itemCount;
             return (
               <SlideLink
                 href={item.linkHref}

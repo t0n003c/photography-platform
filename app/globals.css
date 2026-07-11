@@ -6274,13 +6274,21 @@ main:has(.portfolio-list-tora-full-showcase-slider) .py-4:has(.portfolio-list-to
 
 .tora-full-showcase-slider {
   --tora-showcase-offset: 0%;
+  --tora-showcase-drag: 0px;
   background: var(--portfolio-bg);
   color: #fff;
+  cursor: grab;
   overflow: hidden;
+  user-select: none;
+}
+
+.tora-full-showcase-slider.is-dragging {
+  cursor: grabbing;
 }
 
 .tora-full-showcase-slider__viewport {
   overflow: hidden;
+  touch-action: pan-y;
   width: 100%;
 }
 
@@ -6297,15 +6305,15 @@ main:has(.portfolio-list-tora-full-showcase-slider) .py-4:has(.portfolio-list-to
 
 .tora-full-showcase-slider__track {
   display: flex;
-  transform: translate3d(var(--tora-showcase-offset), 0, 0);
+  transform: translate3d(calc(var(--tora-showcase-offset) + var(--tora-showcase-drag)), 0, 0);
   transition: transform 1500ms ease;
   width: 100%;
   will-change: transform;
 }
 
 .tora-full-showcase-slider.is-resetting .tora-full-showcase-slider__track,
+.tora-full-showcase-slider.is-dragging .tora-full-showcase-slider__track,
 .tora-full-showcase-slider.is-static .tora-full-showcase-slider__track {
-  transform: none;
   transition: none;
 }
 
