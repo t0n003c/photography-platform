@@ -1954,6 +1954,7 @@ html.js .pr-root.is-enhanced {
 .font-playfair { font-family: var(--font-playfair), Georgia, "Times New Roman", serif; }
 .font-cormorant { font-family: var(--font-cormorant), Georgia, "Times New Roman", serif; }
 .font-montserrat { font-family: var(--font-montserrat), system-ui, sans-serif; }
+.font-open-sans { font-family: var(--font-open-sans), system-ui, sans-serif; }
 .font-grotesk { font-family: var(--font-space-grotesk), system-ui, sans-serif; }
 
 /* ToraMochie / Reflector Props catalog reference. Source behavior: dark showroom
@@ -2239,6 +2240,229 @@ body.tora-justified-page-dim .tora-justified-showcase__gallery {
   body.tora-justified-page-dim header,
   body.tora-justified-page-dim footer,
   body.tora-justified-page-dim .tora-justified-showcase__gallery {
+    transition: none;
+  }
+}
+
+/* ToraMochie Portfolio reference. Large Essential Grid-style filters followed by
+   full-width masonry with a Washington-skin camera hover overlay. */
+.tora-portfolio-masonry {
+  --tora-portfolio-filter: color-mix(in srgb, hsl(var(--foreground)) 56%, transparent);
+  --tora-portfolio-filter-active: hsl(var(--foreground));
+  --tora-portfolio-separator: color-mix(in srgb, hsl(var(--foreground)) 18%, transparent);
+  --tora-portfolio-tile: color-mix(in srgb, hsl(var(--muted)) 82%, hsl(var(--foreground)) 10%);
+  --tora-portfolio-cover: rgba(0, 0, 0, 0.65);
+  background: transparent;
+  color: hsl(var(--foreground));
+  overflow-x: clip;
+  padding: clamp(2rem, 5vw, 5.35rem) 0 clamp(2.5rem, 6.5vw, 6.9rem);
+}
+
+.dark .tora-portfolio-masonry {
+  --tora-portfolio-filter: rgba(247, 247, 247, 0.68);
+  --tora-portfolio-filter-active: #f7f7f7;
+  --tora-portfolio-separator: rgba(247, 247, 247, 0.22);
+  --tora-portfolio-tile: #3f424a;
+}
+
+.tora-portfolio-masonry__filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 auto clamp(2.5rem, 4.4vw, 3.45rem);
+  max-width: min(100% - 30px, 1110px);
+  row-gap: 0.8rem;
+}
+
+.tora-portfolio-masonry__filter {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--tora-portfolio-separator);
+  color: var(--tora-portfolio-filter);
+  cursor: pointer;
+  display: inline-block;
+  font-family: var(--font-open-sans), system-ui, sans-serif;
+  font-size: clamp(1.45rem, 2.1vw, 1.875rem);
+  font-weight: 300;
+  line-height: 1;
+  margin: 0;
+  padding: 15px 15px 10px 20px;
+  text-align: center;
+  transition: color 280ms ease;
+  white-space: nowrap;
+}
+
+.tora-portfolio-masonry__filter:last-child {
+  border-right: 0;
+}
+
+.tora-portfolio-masonry__filter:hover,
+.tora-portfolio-masonry__filter.is-active {
+  color: var(--tora-portfolio-filter-active);
+}
+
+.tora-portfolio-masonry__filter:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+.tora-portfolio-masonry__columns {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.tora-portfolio-masonry__column {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tora-portfolio-masonry__fallback {
+  column-count: 4;
+  column-gap: 12px;
+  width: 100%;
+}
+
+.tora-portfolio-masonry__item {
+  appearance: none;
+  background: var(--tora-portfolio-tile);
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  line-height: 1;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  text-align: left;
+  width: 100%;
+  will-change: transform;
+}
+
+.tora-portfolio-masonry__fallback .tora-portfolio-masonry__item {
+  break-inside: avoid;
+  margin-bottom: 12px;
+}
+
+.tora-portfolio-masonry__item:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+.tora-portfolio-masonry__picture,
+.tora-portfolio-masonry__image {
+  display: block;
+  width: 100%;
+}
+
+.tora-portfolio-masonry__image {
+  height: auto;
+}
+
+.tora-portfolio-masonry__cover {
+  align-items: center;
+  background: var(--tora-portfolio-cover);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 400ms linear;
+}
+
+.tora-portfolio-masonry__camera {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 56px;
+  justify-content: center;
+  opacity: 0;
+  transform: translate3d(0, -18px, 0);
+  transition:
+    background 400ms linear,
+    opacity 400ms linear 100ms,
+    transform 400ms linear 100ms;
+  width: 56px;
+}
+
+.tora-portfolio-masonry__item:hover .tora-portfolio-masonry__cover,
+.tora-portfolio-masonry__item:focus-visible .tora-portfolio-masonry__cover {
+  opacity: 1;
+}
+
+.tora-portfolio-masonry__item:hover .tora-portfolio-masonry__camera,
+.tora-portfolio-masonry__item:focus-visible .tora-portfolio-masonry__camera {
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.tora-portfolio-masonry__item--no-overlay .tora-portfolio-masonry__cover {
+  display: none;
+}
+
+.tora-portfolio-masonry__empty {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-open-sans), system-ui, sans-serif;
+  font-size: 0.95rem;
+  margin: 0;
+  padding: 2rem 15px;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .tora-portfolio-masonry__fallback {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 600px) {
+  .tora-portfolio-masonry {
+    padding: 1.55rem 0 2.5rem;
+  }
+
+  .tora-portfolio-masonry__filters {
+    margin-bottom: 2.35rem;
+    max-width: min(100% - 30px, 390px);
+    row-gap: 0.9rem;
+  }
+
+  .tora-portfolio-masonry__filter {
+    font-size: clamp(1.35rem, 7vw, 1.875rem);
+    padding: 13px 13px 9px 17px;
+  }
+
+  .tora-portfolio-masonry__columns,
+  .tora-portfolio-masonry__column {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .tora-portfolio-masonry__fallback {
+    column-count: 1;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .tora-portfolio-masonry__cover {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tora-portfolio-masonry__filter,
+  .tora-portfolio-masonry__cover,
+  .tora-portfolio-masonry__camera {
     transition: none;
   }
 }

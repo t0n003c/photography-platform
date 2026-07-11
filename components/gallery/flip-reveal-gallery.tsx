@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Camera } from "lucide-react";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import { cn } from "@/src/lib/utils";
 import { FlipReveal, FlipRevealItem } from "@/components/ui/flip-reveal";
@@ -27,10 +28,13 @@ export interface FlipRevealSortConfig {
   overrides?: Record<string, { mode: FlipRevealSortMode; photoIds?: string[] }>;
 }
 
+export type FilteredGalleryStyle = "flip-reveal" | "tora-portfolio-masonry";
+
 interface FlipRevealGalleryProps {
   photos: PhotoDTO[];
   tabs: FlipRevealFilterTab[];
   photoFilters: Record<string, string[]>;
+  filterStyle?: FilteredGalleryStyle;
   showOverlayText?: boolean;
   sort?: FlipRevealSortConfig;
 }
@@ -95,13 +99,306 @@ function sortPhotos(
   });
 }
 
-export function FlipRevealGallery({
+type PortfolioMasonryItem = {
+  photo: PhotoDTO;
+  index: number;
+};
+
+function portfolioColumnCount(width: number) {
+  if (width <= 520) return 1;
+  if (width <= 1024) return 3;
+  return 4;
+}
+
+function distributePortfolioColumns(
+  items: PortfolioMasonryItem[],
+  columnCount: number,
+) {
+  const columns = Array.from({ length: columnCount }, () => ({
+    height: 0,
+    items: [] as PortfolioMasonryItem[],
+  }));
+
+  items.forEach((item) => {
+    const ratio =
+      item.photo.width > 0 && item.photo.height > 0
+        ? item.photo.height / item.photo.width
+        : 1;
+    const target = columns.reduce((shortest, column) =>
+      column.height < shortest.height ? column : shortest,
+    );
+    target.items.push(item);
+    target.height += Math.max(0.45, ratio);
+  });
+
+  return columns;
+}
+
+function ToraPortfolioMasonryGallery({
   photos,
   tabs,
   photoFilters,
   showOverlayText = true,
   sort,
-}: FlipRevealGalleryProps) {
+}: Omit<FlipRevealGalleryProps, "filterStyle">) {
+  const initialKey = tabs[0]?.key ?? "all";
+  const rootRef = React.useRef<HTMLElement>(null);
+  const itemRefs = React.useRef(new Map<string, HTMLButtonElement>());
+  const previousRectsRef = React.useRef(new Map<string, DOMRect>());
+  const pendingFlipRef = React.useRef(false);
+  const didMeasureRef = React.useRef(false);
+  const [activeKey, setActiveKey] = React.useState(initialKey);
+  const [columnCount, setColumnCount] = React.useState(4);
+  const [mounted, setMounted] = React.useState(false);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const sourceIndex = React.useMemo(
+    () => new Map(photos.map((photo, index) => [photo.id, index])),
+    [photos],
+  );
+  const filterTabs = React.useMemo(
+    () => [{ key: "all", label: "All" }, ...tabs],
+    [tabs],
+  );
+  const activePhotos = React.useMemo(() => {
+    if (activeKey === "all") return photos;
+    return photos.filter((photo) => photoFilters[photo.id]?.includes(activeKey));
+  }, [activeKey, photoFilters, photos]);
+  const orderedPhotos = React.useMemo(() => {
+    const tab = tabs.find((item) => item.key === activeKey);
+    const override = sort?.overrides?.[activeKey];
+    const mode = override?.mode ?? sort?.mode ?? "source";
+    const customIds =
+      override?.photoIds && override.photoIds.length > 0
+        ? override.photoIds
+        : activeKey !== "all" && tab?.photoIds?.length
+        ? tab.photoIds
+        : sort?.photoIds ?? [];
+    return sortPhotos(activePhotos, sourceIndex, mode, customIds);
+  }, [activeKey, activePhotos, sort, sourceIndex, tabs]);
+  const visibleItems = React.useMemo(
+    () =>
+      orderedPhotos.map((photo) => ({
+        photo,
+        index: sourceIndex.get(photo.id) ?? 0,
+      })),
+    [orderedPhotos, sourceIndex],
+  );
+  const columns = React.useMemo(
+    () => distributePortfolioColumns(visibleItems, columnCount),
+    [columnCount, visibleItems],
+  );
+
+  const reduceMotion = React.useCallback(
+    () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
+
+  const captureItemRects = React.useCallback(() => {
+    const rects = new Map<string, DOMRect>();
+    itemRefs.current.forEach((element, id) => {
+      rects.set(id, element.getBoundingClientRect());
+    });
+    return rects;
+  }, []);
+
+  React.useEffect(() => {
+    if (activeKey === "all" || tabs.some((tab) => tab.key === activeKey)) return;
+    setActiveKey(tabs[0]?.key ?? "all");
+  }, [activeKey, tabs]);
+
+  React.useEffect(() => {
+    setMounted(true);
+    const root = rootRef.current;
+    if (!root) return;
+    const update = () => {
+      const nextColumnCount = portfolioColumnCount(
+        root.clientWidth || window.innerWidth,
+      );
+      setColumnCount((currentColumnCount) => {
+        if (currentColumnCount === nextColumnCount) return currentColumnCount;
+        if (didMeasureRef.current && !reduceMotion()) {
+          previousRectsRef.current = captureItemRects();
+          pendingFlipRef.current = true;
+        }
+        return nextColumnCount;
+      });
+      didMeasureRef.current = true;
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [captureItemRects, reduceMotion]);
+
+  React.useLayoutEffect(() => {
+    if (!pendingFlipRef.current) return;
+    pendingFlipRef.current = false;
+    const previousRects = previousRectsRef.current;
+    previousRectsRef.current = new Map();
+    if (reduceMotion()) return;
+
+    itemRefs.current.forEach((element, id) => {
+      element.getAnimations().forEach((animation) => animation.cancel());
+      const before = previousRects.get(id);
+      if (!before) {
+        element.animate(
+          [
+            { opacity: 0, transform: "translate3d(0, 18px, 0) scale(0.98)" },
+            { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+          ],
+          {
+            duration: 760,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          },
+        );
+        return;
+      }
+      const after = element.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      const scaleX = before.width / Math.max(after.width, 1);
+      const scaleY = before.height / Math.max(after.height, 1);
+      const moved =
+        Math.abs(dx) > 0.5 ||
+        Math.abs(dy) > 0.5 ||
+        Math.abs(scaleX - 1) > 0.01 ||
+        Math.abs(scaleY - 1) > 0.01;
+      if (!moved) return;
+
+      element.animate(
+        [
+          {
+            transform: `translate3d(${dx}px, ${dy}px, 0) scale(${scaleX}, ${scaleY})`,
+            transformOrigin: "top left",
+          },
+          {
+            transform: "translate3d(0, 0, 0) scale(1, 1)",
+            transformOrigin: "top left",
+          },
+        ],
+        {
+          duration: 1000,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    });
+  }, [columns, reduceMotion]);
+
+  const selectFilter = (key: string) => {
+    if (key === activeKey) return;
+    if (!reduceMotion()) {
+      previousRectsRef.current = captureItemRects();
+      pendingFlipRef.current = true;
+    }
+    setActiveKey(key);
+  };
+
+  const openAt = React.useCallback((index: number) => {
+    setActiveIndex(index);
+    setLightboxOpen(true);
+  }, []);
+
+  const item = ({ photo, index }: PortfolioMasonryItem) => {
+    const label = photoTitle(photo);
+    return (
+      <button
+        key={photo.id}
+        ref={(element) => {
+          if (element) itemRefs.current.set(photo.id, element);
+          else itemRefs.current.delete(photo.id);
+        }}
+        type="button"
+        aria-label={`View ${label}`}
+        className={cn(
+          "tora-portfolio-masonry__item",
+          !showOverlayText && "tora-portfolio-masonry__item--no-overlay",
+        )}
+        onClick={() => openAt(index)}
+      >
+        <ResponsiveImage
+          photo={photo}
+          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 100vw"
+          priority={index < 4}
+          className="tora-portfolio-masonry__picture"
+          imgClassName="tora-portfolio-masonry__image"
+        />
+        {showOverlayText && (
+          <span className="tora-portfolio-masonry__cover" aria-hidden="true">
+            <span className="tora-portfolio-masonry__camera">
+              <Camera className="h-5 w-5" strokeWidth={1.8} />
+            </span>
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  return (
+    <section ref={rootRef} className="tora-portfolio-masonry">
+      <div
+        role="tablist"
+        aria-label="Gallery filters"
+        className="tora-portfolio-masonry__filters"
+      >
+        {filterTabs.map((tab) => {
+          const active = activeKey === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => selectFilter(tab.key)}
+              className={cn(
+                "tora-portfolio-masonry__filter",
+                active && "is-active",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {visibleItems.length > 0 ? (
+        mounted ? (
+          <div className="tora-portfolio-masonry__columns">
+            {columns.map((column, columnIndex) => (
+              <div className="tora-portfolio-masonry__column" key={columnIndex}>
+                {column.items.map(item)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="tora-portfolio-masonry__fallback">
+            {visibleItems.map(item)}
+          </div>
+        )
+      ) : (
+        <p className="tora-portfolio-masonry__empty">
+          No photos in this filter.
+        </p>
+      )}
+
+      <Lightbox
+        photos={photos}
+        index={activeIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onIndexChange={setActiveIndex}
+      />
+    </section>
+  );
+}
+
+function DefaultFlipRevealGallery({
+  photos,
+  tabs,
+  photoFilters,
+  showOverlayText = true,
+  sort,
+}: Omit<FlipRevealGalleryProps, "filterStyle">) {
   const [activeKey, setActiveKey] = React.useState("all");
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -232,4 +529,14 @@ export function FlipRevealGallery({
       />
     </div>
   );
+}
+
+export function FlipRevealGallery({
+  filterStyle = "flip-reveal",
+  ...props
+}: FlipRevealGalleryProps) {
+  if (filterStyle === "tora-portfolio-masonry") {
+    return <ToraPortfolioMasonryGallery {...props} />;
+  }
+  return <DefaultFlipRevealGallery {...props} />;
 }

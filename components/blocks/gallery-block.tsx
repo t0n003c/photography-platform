@@ -217,20 +217,28 @@ export async function GalleryBlock({
   }
 
   if (block.filterMode && block.filterMode !== "none") {
+    const filterStyle = block.filterStyle ?? "flip-reveal";
     const config =
       block.filterMode === "custom"
         ? customFilterConfig(block)
         : await taxonomyFilterConfig(photos, block.filterMode);
     if (config.tabs.length > 0) {
+      const gallery = (
+        <FlipRevealGallery
+          photos={photos}
+          tabs={config.tabs}
+          photoFilters={config.photoFilters}
+          filterStyle={filterStyle}
+          showOverlayText={block.showOverlayText ?? true}
+          sort={flipRevealSortConfig(block)}
+        />
+      );
+      if (filterStyle === "tora-portfolio-masonry") {
+        return gallery;
+      }
       return (
         <Container className="py-8">
-          <FlipRevealGallery
-            photos={photos}
-            tabs={config.tabs}
-            photoFilters={config.photoFilters}
-            showOverlayText={block.showOverlayText ?? true}
-            sort={flipRevealSortConfig(block)}
-          />
+          {gallery}
         </Container>
       );
     }

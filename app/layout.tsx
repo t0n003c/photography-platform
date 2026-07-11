@@ -5,6 +5,7 @@ import {
   Playfair_Display,
   Cormorant_Garamond,
   Montserrat,
+  Open_Sans,
   Space_Grotesk,
 } from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
@@ -21,8 +22,9 @@ const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin", d
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-cormorant", display: "swap" });
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
+const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans", display: "swap" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
-const fontVars = `${josefin.variable} ${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${spaceGrotesk.variable}`;
+const fontVars = `${josefin.variable} ${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${openSans.variable} ${spaceGrotesk.variable}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();

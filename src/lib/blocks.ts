@@ -280,6 +280,7 @@ const GalleryFilterSort = z.object({
   sortMode: GallerySortEnum.default("source"),
   photoIds: z.array(z.string()).default([]),
 });
+const GalleryFilterStyleEnum = z.enum(["flip-reveal", "tora-portfolio-masonry"]);
 const ToraPropsCaptionSource = z.enum(["auto", "headline", "alt", "caption"]);
 const GalleryBlock = z.object({
   ...baseBlock,
@@ -301,6 +302,7 @@ const GalleryBlock = z.object({
   // Flip Reveal filter tabs for page gallery blocks. Category/location derive
   // tabs from taxonomy memberships; custom tabs carry their own photo choices.
   filterMode: z.enum(["none", "category", "location", "custom"]).default("none"),
+  filterStyle: GalleryFilterStyleEnum.default("flip-reveal"),
   showOverlayText: z.boolean().default(true),
   sortMode: GallerySortEnum.default("source"),
   manualOrderPhotoIds: z.array(z.string()).default([]),

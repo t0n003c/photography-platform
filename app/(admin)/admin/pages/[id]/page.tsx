@@ -652,7 +652,7 @@ function makeBlock(type: BlockType): Block {
       textColor: "#2d251d",
       accentColor: "#8b5e34",
     };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", filterStyle: "flip-reveal", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS };
     case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, fullWidthSliderAccentColor: "#f7f7f7", fullWidthSliderDimImages: true, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "infoBlock": return {
@@ -5890,6 +5890,7 @@ function LeafEditor({
     }
     case "gallery": {
       const filterMode = block.filterMode ?? "none";
+      const filterStyle = block.filterStyle ?? "flip-reveal";
       const customFilters = block.customFilters ?? [];
       const sortMode = (block.sortMode ?? "source") as GallerySortMode;
       const manualOrderPhotoIds = block.manualOrderPhotoIds ?? [];
@@ -6272,6 +6273,19 @@ function LeafEditor({
           {filterMode !== "none" && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Filter style">
+                  <Select
+                    value={filterStyle}
+                    onChange={(e) =>
+                      set({
+                        filterStyle: e.target.value as typeof filterStyle,
+                      })
+                    }
+                  >
+                    <option value="flip-reveal">Flip reveal</option>
+                    <option value="tora-portfolio-masonry">Tora portfolio masonry</option>
+                  </Select>
+                </Field>
                 <Field label="Default sort">
                   <Select
                     value={sortMode}
@@ -6286,14 +6300,22 @@ function LeafEditor({
                     ))}
                   </Select>
                 </Field>
-                <Field label="Image overlay text">
+                <Field
+                  label={
+                    filterStyle === "tora-portfolio-masonry"
+                      ? "Hover overlay"
+                      : "Image overlay text"
+                  }
+                >
                   <label className="flex h-9 items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={block.showOverlayText ?? true}
                       onChange={(e) => set({ showOverlayText: e.target.checked })}
                     />
-                    Show text over photos
+                    {filterStyle === "tora-portfolio-masonry"
+                      ? "Show camera overlay"
+                      : "Show text over photos"}
                   </label>
                 </Field>
               </div>
