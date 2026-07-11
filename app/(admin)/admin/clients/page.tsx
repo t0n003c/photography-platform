@@ -202,6 +202,7 @@ export default function ClientsPage() {
         <EmptyState
           title="No clients yet"
           description="Add a client to share galleries with them."
+          illustration="contact-inbox"
           action={
             <Button onClick={() => setShowNew(true)}>
               <Plus className="h-4 w-4" />

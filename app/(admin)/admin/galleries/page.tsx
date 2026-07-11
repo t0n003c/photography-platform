@@ -189,6 +189,7 @@ export default function GalleriesPage() {
         <EmptyState
           title="No galleries yet"
           description="Create a gallery to start sharing photos."
+          illustration="empty-galleries"
           action={
             <Button onClick={() => setShowNew(true)}>
               <Plus className="h-4 w-4" />

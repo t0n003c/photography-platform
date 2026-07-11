@@ -1,0 +1,81 @@
+export const ADMIN_ILLUSTRATIONS = {
+  "empty-galleries": {
+    webp: "/illustrations/admin/xiaohei/01-empty-galleries.webp",
+    png: "/illustrations/admin/xiaohei/01-empty-galleries.png",
+    alt: "Xiaohei carries a blank frame toward empty gallery frames waiting to be filled.",
+    width: 1672,
+    height: 941,
+  },
+  "layout-builder": {
+    webp: "/illustrations/admin/xiaohei/02-layout-builder.webp",
+    png: "/illustrations/admin/xiaohei/02-layout-builder.png",
+    alt: "Xiaohei arranges photo cards into a hand-drawn layout frame.",
+    width: 1672,
+    height: 941,
+  },
+  "demo-pages": {
+    webp: "/illustrations/admin/xiaohei/03-demo-pages.webp",
+    png: "/illustrations/admin/xiaohei/03-demo-pages.png",
+    alt: "Xiaohei pulls a wagon of placeholder photo cards toward demo, ready, and publish boards.",
+    width: 1672,
+    height: 941,
+  },
+  "contact-inbox": {
+    webp: "/illustrations/admin/xiaohei/04-contact-inbox.webp",
+    png: "/illustrations/admin/xiaohei/04-contact-inbox.png",
+    alt: "Xiaohei waits beside an open mailbox as a paper airplane client message approaches.",
+    width: 1672,
+    height: 941,
+  },
+  "security-spam": {
+    webp: "/illustrations/admin/xiaohei/05-security-spam.webp",
+    png: "/illustrations/admin/xiaohei/05-security-spam.png",
+    alt: "Xiaohei cranks a sieve that catches spam envelopes while a clean message passes through.",
+    width: 1672,
+    height: 941,
+  },
+  "categories-locations": {
+    webp: "/illustrations/admin/xiaohei/06-categories-locations.webp",
+    png: "/illustrations/admin/xiaohei/06-categories-locations.png",
+    alt: "Xiaohei sorts messy photo cards into category and place drawers.",
+    width: 1672,
+    height: 941,
+  },
+  "lightbox-preload": {
+    webp: "/illustrations/admin/xiaohei/07-lightbox-preload.webp",
+    png: "/illustrations/admin/xiaohei/07-lightbox-preload.png",
+    alt: "Xiaohei stages previous and next photo cards beside a central lightbox frame.",
+    width: 1672,
+    height: 941,
+  },
+  "upload-queue": {
+    webp: "/illustrations/admin/xiaohei/08-upload-queue.webp",
+    png: "/illustrations/admin/xiaohei/08-upload-queue.png",
+    alt: "Xiaohei turns a crank on a conveyor that processes uploaded photo cards.",
+    width: 1672,
+    height: 941,
+  },
+  "publish-page": {
+    webp: "/illustrations/admin/xiaohei/09-publish-page.webp",
+    png: "/illustrations/admin/xiaohei/09-publish-page.png",
+    alt: "Xiaohei pushes a draft page through a gate so it becomes live.",
+    width: 1672,
+    height: 941,
+  },
+  referrals: {
+    webp: "/illustrations/admin/xiaohei/10-referrals.webp",
+    png: "/illustrations/admin/xiaohei/10-referrals.png",
+    alt: "Xiaohei checks a clipboard while search, social, and direct paths lead into a gallery door.",
+    width: 1672,
+    height: 941,
+  },
+  "admin-setup-path": {
+    webp: "/illustrations/admin/xiaohei/11-admin-setup-path.webp",
+    png: "/illustrations/admin/xiaohei/11-admin-setup-path.png",
+    alt: "Xiaohei untangles an orange thread connecting gallery, design, and page setup stations.",
+    width: 1672,
+    height: 941,
+  },
+} as const;
+
+export type AdminIllustrationKey = keyof typeof ADMIN_ILLUSTRATIONS;

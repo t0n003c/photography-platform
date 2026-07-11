@@ -453,7 +453,12 @@ function TabButton({
 
 function ContactTable({ rows }: { rows: ContactRow[] }) {
   if (rows.length === 0) {
-    return <EmptyState title="No contact activity" />;
+    return (
+      <EmptyState
+        title="No contact activity"
+        illustration="security-spam"
+      />
+    );
   }
   return (
     <Card>
@@ -531,7 +536,14 @@ function EventTable({
   rows: SecurityEventRow[];
   showSource?: boolean;
 }) {
-  if (rows.length === 0) return <EmptyState title={`No ${title.toLowerCase()}`} />;
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        title={`No ${title.toLowerCase()}`}
+        illustration="security-spam"
+      />
+    );
+  }
   return (
     <Card>
       <CardHeader>
@@ -589,7 +601,9 @@ function EventTable({
 }
 
 function TrafficSourcesTable({ rows }: { rows: TrafficSourceRow[] }) {
-  if (rows.length === 0) return <EmptyState title="No traffic sources" />;
+  if (rows.length === 0) {
+    return <EmptyState title="No traffic sources" illustration="referrals" />;
+  }
   return (
     <Card>
       <CardHeader>
@@ -626,7 +640,9 @@ function TrafficSourcesTable({ rows }: { rows: TrafficSourceRow[] }) {
 }
 
 function IpTable({ rows }: { rows: IpRow[] }) {
-  if (rows.length === 0) return <EmptyState title="No IP activity" />;
+  if (rows.length === 0) {
+    return <EmptyState title="No IP activity" illustration="security-spam" />;
+  }
   return (
     <Card>
       <CardHeader>

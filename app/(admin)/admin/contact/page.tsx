@@ -209,6 +209,7 @@ export default function ContactPage() {
         <EmptyState
           title="No messages"
           description="Nothing matches the current filters."
+          illustration="contact-inbox"
         />
       ) : (
         <div className="space-y-4">

@@ -368,6 +368,7 @@ function TaxonomyCard<T extends Category | Location>({
           <EmptyState
             title="Nothing here yet"
             description={`Create a ${kind} to get started.`}
+            illustration="categories-locations"
           />
         ) : (
           <ul className="divide-y">

@@ -353,6 +353,7 @@ export function FolderDropPanel({
           <EmptyState
             title="No folders yet"
             description="Switch to the Folders view to create one."
+            illustration="empty-galleries"
           />
         ) : (
           <ul className="-mx-1 space-y-0.5">
@@ -1046,6 +1047,7 @@ function FolderPhotos({
           <EmptyState
             title="No photos yet"
             description="Add photos from your library to this folder."
+            illustration="upload-queue"
             action={
               <Button onClick={() => setShowAdd(true)}>
                 <Plus className="h-4 w-4" />
@@ -1364,6 +1366,7 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
               <EmptyState
                 title="No folders yet"
                 description="Create your first folder to start organizing."
+                illustration="empty-galleries"
                 action={
                   <Button onClick={() => setModal({ kind: "new-root" })}>
                     <FolderPlus className="h-4 w-4" />
@@ -1420,6 +1423,7 @@ export function FoldersManager({ embedded = false }: { embedded?: boolean }) {
               <EmptyState
                 title="Select or create a folder"
                 description="Pick a folder on the left to view and organize its photos."
+                illustration="empty-galleries"
               />
             </CardContent>
           </Card>

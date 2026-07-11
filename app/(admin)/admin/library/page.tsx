@@ -1059,6 +1059,7 @@ export default function LibraryPage() {
         <EmptyState
           title="No photos yet"
           description="Upload images to get started."
+          illustration="upload-queue"
         />
       ) : (
         <>

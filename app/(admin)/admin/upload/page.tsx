@@ -254,6 +254,7 @@ export default function UploadPage() {
             <EmptyState
               title="No files yet"
               description="Uploaded files will appear here with progress."
+              illustration="upload-queue"
             />
           ) : (
             <ul className="space-y-3">
