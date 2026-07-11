@@ -1,15 +1,12 @@
-# AI & Third-Party Integrations — Proposals
+# AI & Third-Party Integrations
 
-Status: **proposal**. This document evaluates three optional integrations for the
-photography platform. Each is presented with its cost / privacy / self-hosting
-trade-offs, the abstraction (provider seam) it would sit behind, and an explicit
-**env-gated, off-by-default** opt-in.
+Status: living integration notes. Instagram Graph and Remotion slideshow video are
+implemented behind opt-in gates; tagging/alt-text remains proposal-only.
 
-> **Owner sign-off gate.** None of these are wired into the running system without
-> the owner's explicit approval. The **only** exception is Instagram, which is
-> already abstracted behind `InstagramProvider` and is **inert without a token**
+> **Owner sign-off gate.** New external integrations still require explicit approval.
+> Instagram is abstracted behind `InstagramProvider` and is **inert without a token**
 > (`IG_ACCESS_TOKEN` unset → it falls back to recent public photos and makes no
-> external calls). **Remotion is now IMPLEMENTED but OPT-IN and OFF by default**
+> external calls). **Remotion is IMPLEMENTED but OPT-IN and OFF by default**
 > (`VIDEO_RENDER_ENABLED=false`; the admin endpoint returns 501 and the worker
 > never loads Remotion until enabled) — enabling it changes the deployment shape
 > (see below). The tagging/alt-text integration is still **not wired**.
@@ -31,7 +28,7 @@ Instagram-ready 30–60s recap with cross-fades, captions, and music) using
 [Remotion](https://www.remotion.dev/) (React → video). The owner could offer this
 as a deliverable alongside a client gallery.
 
-### ⚠️ Deployment-shape warning (requires owner approval before wiring)
+### ⚠️ Deployment-shape warning (implemented, but opt-in)
 Server-side Remotion rendering runs frames through a **headless Chromium**. That
 means:
 
@@ -40,17 +37,18 @@ means:
   attack surface.
 - Rendering is **CPU- and RAM-heavy** and bursty (encoding many frames + an
   ffmpeg mux). It competes directly with the existing sharp pipeline for cores.
-- This is a **different deployment shape** from the current "sharp in a lean
+- This is a **different deployment shape** from the default "sharp in a lean
   worker" model: bigger images, higher memory ceilings, possibly a dedicated
   render worker / separate machine, and longer job durations.
 
-Because it changes the deployment shape and resource budget, **it must not be
-wired without explicit owner approval.** This doc only sketches the abstraction.
+Because it changes the deployment shape and resource budget, it remains disabled unless
+`VIDEO_RENDER_ENABLED=true` and the worker is built with Chromium dependencies.
 
-### Abstraction (proposed)
-A `VideoRenderProvider` seam (mirrors `StorageProvider` / `EmailProvider`), plus a
-dedicated BullMQ `video-render` queue so the heavy work stays off the request path
-and isolated from `media-processing`.
+### Implementation shape
+
+The implemented path uses a dedicated BullMQ `video-render` queue, dynamic Remotion import
+inside the worker, `src/video/render.ts`, and the `remotion/` composition. The pseudo-interface
+below is the original design sketch; the live code is the source of truth.
 
 ```ts
 // src/video/provider.ts  (proposed — not implemented)
@@ -73,8 +71,8 @@ export interface VideoRenderProvider {
 
 Where it plugs in:
 
-- **Factory** `getVideoRenderProvider()` in `src/video/index.ts`, env-gated by
-  `VIDEO_RENDER_DRIVER` (default `disabled`; `remotion` opt-in).
+- **Gate**: `VIDEO_RENDER_ENABLED=false` keeps the admin endpoint disabled; building the
+  worker with `INSTALL_REMOTION_DEPS=true` bakes the Chromium dependencies needed to render.
 - **Queue**: a BullMQ `video-render` queue (separate from `media-processing`),
   low priority, low concurrency (1–2), high per-job memory ceiling. A
   `RemotionVideoRenderProvider` runs `@remotion/renderer` inside the worker.
@@ -210,8 +208,7 @@ Where it plugs in:
 | Integration | Wired today? | Gate | Default |
 |---|---|---|---|
 | **Instagram Graph** | Yes, behind `InstagramProvider` | `IG_ACCESS_TOKEN` | Inert (fallback to public photos) |
-| **Remotion video** | **No** | owner approval + `VIDEO_RENDER_DRIVER` | Disabled (changes deployment shape) |
+| **Remotion video** | Yes | `VIDEO_RENDER_ENABLED=true` + worker build arg `INSTALL_REMOTION_DEPS=true` | Disabled (changes deployment shape) |
 | **HF / local tagging** | **No** | owner approval + `TAGGING_DRIVER` | Disabled (hosted = data leaves box) |
 
-**Nothing in this doc beyond the already-abstracted, token-inert Instagram
-integration is enabled without explicit owner sign-off.**
+**Tagging/alt-text remains proposal-only and requires explicit owner sign-off before wiring.**

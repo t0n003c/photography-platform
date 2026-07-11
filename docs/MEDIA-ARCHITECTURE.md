@@ -1,8 +1,7 @@
 # Media Architecture
 
-Phase 0 planning document. Authoritative reference for how original photos and their
-web derivatives are stored, processed, served, and protected on the self-hosted
-photography platform.
+Living media-subsystem reference for how original photos and their web derivatives are
+stored, processed, served, and protected on the self-hosted photography platform.
 
 > **Scope note:** This document describes the media subsystem only (storage, the sharp
 > pipeline, metadata, backups). Delivery/caching tuning lives in `PERFORMANCE.md`.

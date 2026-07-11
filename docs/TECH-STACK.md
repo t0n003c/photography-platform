@@ -1,7 +1,8 @@
 # Tech Stack — Self-Hosted Photography Platform
 
-**Status:** Phase 0 planning. No application code written yet.
-**Product:** Self-hosted photography portfolio + private client galleries + light (deferred) print store, replacing WordPress/WooCommerce.
+**Status:** living stack reference. This began as the Phase 0 stack comparison and now
+tracks the implemented choices.
+**Product:** Self-hosted photography portfolio + private client galleries + light print store, replacing WordPress/WooCommerce.
 **Deployment target:** Docker Compose on a NAS, behind Nginx Proxy Manager + Cloudflare Tunnel.
 **Operating constraints that shape every choice below:**
 

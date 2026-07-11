@@ -1,7 +1,7 @@
 # Performance
 
-Phase 0 planning document. Defines the performance bar for the self-hosted photography
-platform, the strategies to hit it, and how it is measured and enforced in CI.
+Living performance reference for the self-hosted photography platform: the performance bar,
+the strategies used to hit it, and how it is measured and enforced in CI.
 
 The product UX bar is Pixieset / Pic-Time: image-heavy pages that still feel instant. That
 means our hardest performance problem is delivering many high-res photos without wrecking

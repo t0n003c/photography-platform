@@ -173,12 +173,12 @@ remotion/ scripts/ tests/ public/
   as SQL in `src/db/migrations/` (currently through `0009_require_biometric.sql`). Apply
   with `npm run db:migrate` (or `RUN_MIGRATIONS=true` on container start).
 - **Core tables** (in `app.ts`): `user`, `account`, `session`, `passkey`, `twoFactor`,
-  `verification` (auth); `photo`, `photo_variant`, `photo_location` (media); `collection`
-  - `collection_photo` (categories), `location`, `folder` + `folder_photo`; `gallery`,
-    `gallery_photo`, `gallery_access_grant` (private galleries + expiring share links);
-    `client`; `favorite`, `download`; `layout`, `page_config`, `page`, `menu`, `menu_item`
-    (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments seam);
-    `site_settings`, `audit_log`, `contact_submission`.
+  `verification` (auth); `photo`, `photo_variant`, `photo_location` (media); `collection`,
+  `collection_photo` (categories), `location`, `folder`, `folder_photo`; `gallery`,
+  `gallery_photo`, `gallery_access_grant` (private galleries + expiring share links);
+  `client`; `favorite`, `download`; `layout`, `page_config`, `page`, `menu`, `menu_item`
+  (CMS/layout); `product`, `order`, `order_item`, `invoice` (store/payments seam);
+  `site_settings`, `audit_log`, `contact_submission`, `security_event`.
 - **`page_config`** is the per-surface layout instance: `scope` ∈
   `home|gallery|category|location|about|global`, plus `grid_type`, `spacing`, `theme`,
   `hero` (jsonb), `config` (jsonb), `is_default`. Public pages resolve their config via
@@ -252,7 +252,8 @@ is gitignored):
 - **Auth (SECRET):** `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SETTINGS_ENCRYPTION_KEY`
   (dedicated AES key for encrypting stored settings/secrets — generate `openssl rand -hex 32`;
   currently derived from `BETTER_AUTH_SECRET` until set in prod).
-- **Storage:** `STORAGE_DRIVER` (`s3`|`fs`), `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`
+- **Storage:** `STORAGE_DRIVER` (`minio` generic S3 driver name, pointed at SeaweedFS
+  by default, or `filesystem`), `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`
   (SECRET), `S3_SECRET_ACCESS_KEY` (SECRET), `S3_BUCKET`, `S3_FORCE_PATH_STYLE`,
   `STORAGE_FS_PATH`.
 - **Email:** `EMAIL_DRIVER` (`smtp`|`resend`), `EMAIL_FROM`, `CONTACT_NOTIFY_EMAIL`,
@@ -342,6 +343,14 @@ is gitignored):
   CI Lighthouse previously reported `/` SEO at 0.92 vs the 0.95 budget because the home page
   emitted no `<title>`; `buildMetadata()` now emits an absolute fallback title when no route
   title is provided.
+- **2026-07-11 audit state:** `npm run typecheck`, `npm run lint`, `npm test`,
+  `E2E_BASE_URL=http://localhost:3001 npm run test:e2e`, Docker health, and a broad
+  Chrome route smoke all passed with 0 page/console errors. Follow-up recommendations:
+  align auth/login IP handling with `src/lib/request.ts` (do not trust production XFF),
+  handle the nested Next/PostCSS advisory via a controlled patch path, refactor the large
+  Pages editor, centralize gallery/block option descriptors, add streaming storage reads
+  for originals/ZIP/video downloads, optimize the location-map N+1 query, and deepen
+  worker health checks.
 - **Store reliability follow-up:** `/api/health` remains a dependency-free liveness check,
   while `/api/health?deep=1` now pings Postgres + Redis and returns per-check readiness details.
   Playwright has a fixture-safe store smoke (`tests/e2e/store-checkout.spec.ts`) that temporarily

@@ -1,7 +1,7 @@
-# API Design — Phase 0 Planning
+# API Design
 
-> **Status:** Phase 0 planning artifact. No application code yet. Defines the API surface,
-> auth boundaries, conventions, and protocols for the self-hosted photography platform.
+> **Status:** living API reference. This began as the Phase 0 plan and now tracks the
+> implemented v1 route-handler surface, auth boundaries, conventions, and protocols.
 > Companion to [`DATA-MODEL.md`](./DATA-MODEL.md).
 
 ---
@@ -352,15 +352,20 @@ Response `201` (raw token shown exactly once):
 | PATCH/DELETE | `/admin/locations/{id}`     | edit / remove |
 | PATCH        | `/admin/locations/reorder`  | reorder       |
 
-### 4.10 Admin — Clients & Audit `[admin:admin]`
+### 4.10 Admin — Clients, Audit, Settings & Security `[admin:admin]`
 
-| Method           | Path                  | Purpose                                                 |
-| ---------------- | --------------------- | ------------------------------------------------------- |
-| GET/POST         | `/admin/clients`      | list / create lightweight client                        |
-| GET/PATCH/DELETE | `/admin/clients/{id}` | detail / edit / soft delete                             |
-| GET              | `/admin/audit-log`    | cursor-paginated audit log (filter actor/action/entity) |
-| GET              | `/admin/contact`      | list contact submissions (filter status/verdict)        |
-| PATCH            | `/admin/contact/{id}` | update status (read/replied/archived)                   |
+| Method           | Path                         | Purpose                                                       |
+| ---------------- | ---------------------------- | ------------------------------------------------------------- |
+| GET/POST         | `/admin/clients`             | list / create lightweight client                              |
+| GET/PATCH/DELETE | `/admin/clients/{id}`        | detail / edit / soft delete                                   |
+| GET              | `/admin/audit-log`           | cursor-paginated audit log (filter actor/action/entity)       |
+| GET              | `/admin/contact`             | list contact submissions (filter status/verdict)              |
+| PATCH            | `/admin/contact/{id}`        | update status (read/replied/archived)                         |
+| GET/PATCH        | `/admin/settings`            | site, store, payment, email, integration, and security settings |
+| POST             | `/admin/settings/test-email` | send a test email through the live email configuration        |
+| POST             | `/admin/settings/icon`       | upload site icon / logo assets                                |
+| GET              | `/admin/security`            | Security & Spam dashboard summary, event rows, source/device breakdowns |
+| GET              | `/admin/storage`             | storage usage summary for the admin dashboard                 |
 
 ### 4.11 Contact Form `[public]`
 
@@ -575,9 +580,9 @@ downloads (§4.3) use a separate `zip-build` queue with concurrency caps (§5).
 - **Caching:** public reads send `Cache-Control` + `ETag`; media variant URLs are
   content-addressed/immutable and far-future cacheable. Private/client-gallery responses are
   `no-store`.
-- **Media delivery:** variant URLs are served through the app (or a media route) that resolves
-  storage keys via `StorageProvider`; client-gallery originals/large variants require an active
-  grant + permission and use short-lived signed URLs.
+- **Media delivery:** variants and authorized originals are served through app routes that
+  resolve storage keys via `StorageProvider`; private bytes require an admin session or an
+  active grant token/permission and are sent `private, no-store`.
 - **Observability:** every response carries `X-Request-Id`; mutations write `audit_log`.
 - **Email:** outbound (grant delivery, contact notifications, future invoices) goes through the
   `EmailProvider` (SMTP/Resend), typically enqueued via BullMQ.

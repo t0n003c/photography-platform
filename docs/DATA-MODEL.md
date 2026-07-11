@@ -1,7 +1,7 @@
-# Data Model — Phase 0 Planning
+# Data Model
 
-> **Status:** Phase 0 planning artifact. No application code yet. This document defines the
-> authoritative data model for the self-hosted photography platform.
+> **Status:** living data-model reference. This began as the Phase 0 plan and now tracks
+> the implemented schema at a practical/documentation level.
 >
 > **Schema source of truth:** [Drizzle ORM](https://orm.drizzle.team) schema definitions
 > (`src/db/schema/*.ts`) are the single source of truth. All migrations are generated and
@@ -450,7 +450,7 @@ instance (home, gallery, category, location, about).
 | Field                   | Type        | Constraints      | Notes                                      |
 | ----------------------- | ----------- | ---------------- | ------------------------------------------ |
 | id                      | text        | PK               |                                            |
-| key                     | text        | NOT NULL, UNIQUE | `masonry` \| `justified` \| `uniform-grid` |
+| key                     | text        | NOT NULL, UNIQUE | legacy catalog key; new gallery types are stored directly on `page_config.grid_type` |
 | name                    | text        | NOT NULL         |                                            |
 | schema                  | jsonb       | NULL             | JSON schema describing allowed config keys |
 | created_at / updated_at | timestamptz | NOT NULL         |                                            |
@@ -462,8 +462,8 @@ instance (home, gallery, category, location, about).
 | id                      | text        | PK                      |                                                                |
 | scope                   | text        | NOT NULL                | `home`\|`gallery`\|`category`\|`location`\|`about`\|`global`   |
 | layout_id               | text        | FK → layout.id, NULL    | chosen layout type                                             |
-| grid_type               | text        | NULL                    | `masonry`\|`justified`\|`uniform` (resolved)                   |
-| spacing                 | text        | NULL                    | `tight`\|`normal`\|`spacious` or px                            |
+| grid_type               | text        | NULL                    | free-form text; current UI/API allow masonry, justified, uniform, horizontal-lenis, parallax-ring, image-trail, rotating-scroll, diagonal-slideshow, depth-gallery, infinite-canvas, css-glitch, palmer-draggable, Tora layouts, carousel-3d-scroll, and alternative-scroll |
+| spacing                 | text        | NULL                    | `tight`\|`normal`\|`airy` or layout-specific string             |
 | theme                   | text        | NULL                    | `light`\|`dark`\|`auto` default                                |
 | hero                    | jsonb       | NULL                    | hero config: `{ enabled, photoId, headline, height, overlay }` |
 | config                  | jsonb       | NOT NULL DEFAULT `'{}'` | full per-page JSON (columns, gutters, ordering, etc.)          |
@@ -471,6 +471,24 @@ instance (home, gallery, category, location, about).
 | created_at / updated_at | timestamptz | NOT NULL                |                                                                |
 
 Indexes: `INDEX(scope)`; partial `UNIQUE(scope) WHERE is_default` (one default per scope).
+
+### 12.3 `site_settings`
+
+Singleton row (`id='site'`) for runtime-editable settings. Secrets are encrypted with
+`SETTINGS_ENCRYPTION_KEY` before storage and are never returned to the client in plaintext.
+
+Key groups:
+
+- Branding/locale: `site_title`, `tagline`, `description`, `locale`, `timezone`,
+  `date_format`, `week_starts_on`, `icon_storage_key`, `logo_storage_key`.
+- Email: `email_driver`, `email_from`, SMTP fields, encrypted SMTP password, encrypted
+  Resend API key.
+- Store checkout/payments: checkout copy, tax/shipping/promo settings, Stripe readiness
+  fields, encrypted Stripe secret/webhook values, statement descriptor.
+- Integrations: encrypted Instagram token.
+- Security & Spam: `captcha_enabled` for Turnstile login gating, plus
+  `security_config` JSON (`contactSpamThreshold`, `contactBlockHighRisk`, blocked IPs,
+  blocked countries, blocked email domains, blocked keywords).
 
 **Example `config` (jsonb):**
 
@@ -701,7 +719,38 @@ Indexes: `INDEX(status)`, `INDEX(created_at)`, `INDEX(spam_verdict)`.
 
 ---
 
-## 16. Indexing & Performance Strategy
+## 16. Security & Traffic Events
+
+### 16.1 `security_event`
+
+Event rows that power the admin **Security & Spam** dashboard. This table is an operator
+visibility surface, not an authorization source of truth.
+
+| Field      | Type        | Constraints                 | Notes                                              |
+| ---------- | ----------- | --------------------------- | -------------------------------------------------- |
+| id         | text        | PK                          |                                                    |
+| surface    | text        | NOT NULL                    | `contact`\|`login`\|`traffic`                      |
+| action     | text        | NOT NULL                    | e.g. `login.failed`, `contact.submitted`           |
+| outcome    | text        | NOT NULL DEFAULT `unknown`  | `allowed`\|`blocked`\|`spam`\|`failed`\|`success`\|`unknown` |
+| ip_address | text        | NULL                        | Derived from request headers; see `src/lib/request.ts` |
+| country    | text        | NULL                        | Cloudflare/Vercel country header when present      |
+| user_agent | text        | NULL                        | Raw user agent                                     |
+| browser    | text        | NULL                        | Parsed browser family                              |
+| os         | text        | NULL                        | Parsed OS family                                   |
+| device     | text        | NULL                        | Parsed device class                                |
+| referrer   | text        | NULL                        | Normalized referrer                                |
+| source     | text        | NULL                        | Traffic source such as `google`, `instagram`, `direct` |
+| path       | text        | NULL                        | Request path                                       |
+| email      | text        | NULL                        | Normalized email where relevant                    |
+| metadata   | jsonb       | NULL                        | Context-specific summary                           |
+| created_at | timestamptz | NOT NULL                    |                                                    |
+
+Indexes: `INDEX(created_at)`, `INDEX(surface, outcome)`, `INDEX(ip_address)`,
+`INDEX(source)`.
+
+---
+
+## 17. Indexing & Performance Strategy
 
 **Foreign keys.** Every FK column is indexed (Postgres does **not** auto-index the referencing
 side). FK delete behavior: `CASCADE` for owned children (variants, join rows, favorites,

@@ -1,12 +1,12 @@
-# SECURITY.md — Phase 0 Security Plan
+# SECURITY.md — Security Plan & Current Controls
 
 > Self-hosted photography platform: public site + private client galleries + light print store.
 > Replaces WordPress/WooCommerce. Hosted on a NAS, fronted by Nginx Proxy Manager (NPM) +
 > Cloudflare Tunnel (no public inbound ports — Cloudflare Tunnel **egress only**).
 
-This document is authoritative for Phase 0 security decisions. It defines the threat model,
-auth flows, account protection, session handling, HTTP/CSP headers, upload validation,
-private gallery access control, secrets handling, and a per-area audit checklist.
+This document began as the Phase 0 security plan and now tracks the implemented security
+posture plus remaining hardening work. Code remains authoritative; use this as the
+operational/security checklist.
 
 ---
 
@@ -138,7 +138,9 @@ rotating tokens, managing other admins, payment settings) require **fresh** auth
 
 - Require a re-assertion within the last *N* minutes (e.g. 5–15). If stale, force a step-up
   challenge (passkey assertion preferred; TOTP fallback).
-- Step-up is recorded on the session as `lastStrongAuthAt`; mutations check it server-side.
+- Current implementation gates destructive admin routes with `requireFreshAuth()`, using the
+  session creation time as the freshness proxy because successful re-authentication mints a
+  fresh session. A dedicated `lastStrongAuthAt` remains a possible refinement.
 
 ### 2.5 Factor policy (admin-controlled)
 
@@ -167,7 +169,7 @@ flowchart TD
     H --> K{Sensitive/admin action?}
     I --> K
     F --> K
-    K -->|Yes & lastStrongAuthAt stale| L[Step-up: passkey preferred, TOTP fallback]
+    K -->|Yes & session freshness stale| L[Step-up: passkey preferred, TOTP fallback]
     K -->|No| M[Create Redis session + set cookie]
     L --> M
     J --> N[Deny + generic message]
@@ -235,8 +237,9 @@ flowchart TD
 
 ### 4.2 Session store (Redis/Valkey)
 
-- Sessions stored in Redis keyed `sess:<id>` with: user id, role, factor state
-  (`mfaPending`, `lastStrongAuthAt`), device metadata (UA, IP, created/last-seen), and timeouts.
+- Sessions are Redis-backed through Better Auth and include user/role/session metadata,
+  created/update timestamps, and expiry state. Step-up currently uses session creation time as
+  its freshness proxy.
 - Enables instant server-side revocation (delete the key) and central session listing.
 
 ### 4.3 Rotation & timeouts
@@ -274,7 +277,7 @@ PWA service worker (Serwist).
 |--------|----------------|
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
 | `X-Content-Type-Options` | `nosniff` |
-| `X-Frame-Options` / CSP `frame-ancestors` | `DENY` / `'none'` (clickjacking) |
+| `X-Frame-Options` / CSP `frame-ancestors` | `SAMEORIGIN` / `'self'` so the admin live-preview iframe can embed same-origin pages |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | disable camera, microphone, geolocation, etc. unless needed |
 | `Cross-Origin-Opener-Policy` | `same-origin` |
@@ -283,24 +286,27 @@ PWA service worker (Serwist).
 ### 5.2 Content-Security-Policy (nonce-based)
 
 Use a **per-request nonce** for scripts (no `unsafe-inline` for scripts). Three.js/WebGL run as
-normal bundled scripts (no `eval` needed for the core; avoid any library mode requiring
-`unsafe-eval`). Example policy (illustrative — finalize during implementation):
+normal bundled scripts (no `eval` needed for production; development allows `unsafe-eval` for
+Next tooling). The current middleware enforces this policy and reports violations to
+`/api/csp-report`:
 
 ```
 default-src 'self';
 script-src 'self' 'nonce-<RANDOM>';
-style-src 'self' 'nonce-<RANDOM>';      /* or hashed styles; avoid blanket unsafe-inline */
-img-src 'self' data: blob: https://<image-cdn-or-tunnel-host>;
-media-src 'self' blob:;
+style-src 'self' 'unsafe-inline';       /* required for current React/Tailwind inline styles */
+img-src 'self' data: blob: https://tiles.openfreemap.org;
+media-src 'self' blob: https:;
 font-src 'self';
-connect-src 'self' https://<api-host> https://<payment-provider>;
-worker-src 'self';                      /* service worker + web workers */
+connect-src 'self' https://challenges.cloudflare.com https://tiles.openfreemap.org https://router.project-osrm.org;
+frame-src 'self' https://challenges.cloudflare.com;
+worker-src 'self' blob:;                /* service worker + web workers */
 manifest-src 'self';                    /* PWA manifest */
-frame-ancestors 'none';
+frame-ancestors 'self';
 base-uri 'self';
 form-action 'self';
 object-src 'none';
-upgrade-insecure-requests;
+upgrade-insecure-requests;              /* only when served over HTTPS */
+report-uri /api/csp-report;
 ```
 
 Notes:
@@ -310,7 +316,8 @@ Notes:
   variant host. Keep the host list tight.
 - **PWA/Serwist**: `worker-src 'self'` and `manifest-src 'self'` allow the service worker and
   manifest; the SW itself must be served same-origin with a correct content type.
-- Ship CSP in **report-only** first with a reporting endpoint, then enforce.
+- CSP is **enforced** in middleware. `style-src 'unsafe-inline'` is the remaining pragmatic
+  exception to revisit after inline style usage is reduced.
 
 ---
 
@@ -412,7 +419,8 @@ is a clean derivative, not the attacker's bytes.
 - [ ] WebAuthn verifies attestation, signature, and monotonic sign counter (rejects regressions).
 - [ ] Passkey registration requires an authenticated/step-up context.
 - [ ] Factor policy is admin-configurable; passkey is strong/passwordless, never a weak override.
-- [ ] Step-up enforced server-side on all sensitive admin actions via `lastStrongAuthAt`.
+- [ ] Step-up enforced server-side on sensitive admin actions; current code uses session
+  creation time as the freshness proxy, with `lastStrongAuthAt` as a possible refinement.
 - [ ] Recovery codes hashed, single-use, regenerable behind step-up.
 
 ### Account protection
@@ -428,10 +436,10 @@ is a clean derivative, not the attacker's bytes.
 - [ ] CSRF protection on all mutations (server actions + REST); no side effects on GET.
 
 ### Headers / CSP
-- [ ] All baseline headers present (HSTS, nosniff, frame-ancestors none, referrer policy, etc.).
+- [ ] All baseline headers present (HSTS, nosniff, same-origin frame protection, referrer policy, etc.).
 - [ ] CSP nonce-based; no `unsafe-inline`/`unsafe-eval` for scripts.
 - [ ] CSP permits WebGL textures, blob/data images, service worker, and manifest only as needed.
-- [ ] CSP started report-only with reporting, then enforced.
+- [ ] CSP enforced with violation reporting.
 
 ### Uploads
 - [ ] Size + pixel/dimension limits enforced before heavy processing.

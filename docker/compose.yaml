@@ -55,7 +55,7 @@ services:
     # No host ports published by default — the app and worker reach SeaweedFS
     # over the internal Docker network (hostname `seaweedfs`), so it stays
     # invisible from the host. Storage usage is visible in the admin dashboard
-    # instead (Settings → Dashboard "Storage" card).
+    # instead (Admin Dashboard → "Storage used" card).
     #
     # ── DEBUG: expose the SeaweedFS UIs on the host ──────────────────────────
     # Uncomment the block below (and `docker compose up -d seaweedfs`) to reach:

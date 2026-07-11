@@ -45,14 +45,14 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Add TOTP (authenticator) second factor _(plugin enabled; enroll/verify routes live under /api/auth)._
 - [x] Add passkeys (WebAuthn) _(@better-auth/passkey plugin enabled)._
 - [x] Implement account lockout + rate-limiting (Better Auth Redis rate-limit + custom login/2FA/reset rules; app-level Redis limiter for uploads/contact/downloads/unlock).
-- [~] Secure sessions (Redis), CSRF (Better Auth + SameSite), security headers, CSP. _CSP ships **Report-Only** first per SECURITY.md §5.2; flip to enforce after the Phase 3/4 UI lands._
+- [x] Secure sessions (Redis), CSRF (Better Auth + SameSite), security headers, and nonce-based CSP. _CSP later moved from Report-Only to enforced; see ADR-0022._
 - [x] Build the media pipeline: chunked upload → BullMQ → sharp derivatives (AVIF/WebP/JPEG × thumb–xlarge) + LQIP + dominant color → StorageProvider → DB. Idempotent; verified end-to-end.
 - [x] `StorageProvider` (SeaweedFS/S3 default) with originals/derivatives separation + authorized media-serving route.
 - [x] Build core REST API (public portfolio, client-gallery share-token tier, admin CRUD, contact, store stub) per `API-DESIGN.md`.
 - [x] Implement audit logging for sensitive/admin actions.
 - [x] **Summary + pause for approval.**
 
-> Deferred within Phase 2 (small, tracked): full EXIF/capture-date extraction (needs an EXIF parser dep — pending approval), the zip-build worker for multi-photo downloads (rows + endpoints exist, builder stubbed), admin category/location membership editing on photos, CSP enforce-mode, and step-up (fresh-auth) gating on destructive admin ops.
+> Deferred within Phase 2 items were later resolved in post-v1 work: full EXIF/capture-date extraction, zip-build downloads, admin category/location membership editing, enforced CSP, and destructive-action step-up. Remaining refinements are tracked below.
 
 ---
 
@@ -114,7 +114,11 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] Caching per `CACHING-STRATEGY.md`: middleware enforces private `no-store` (admin/login/client-gallery/auth) + CDN `s-maxage`+SWR on public read APIs; media route immutable vs no-store; CSP report endpoint.
 - [x] **Summary + pause for approval.**
 
-> Deferred within Phase 6 (tracked, from the security audit): **step-up auth** (`isFresh` exists but isn't enforced on destructive admin ops — needs a real `lastStrongAuthAt` + UI support); a **Redis query cache** for hot public lists (HTTP/CDN layer done; data-layer cache is a follow-up); flipping CSP from Report-Only to **enforce** (after a clean report window); tighter AVIF magic-byte sniffing. Real secrets must be set at deploy (now fail-closed in prod).
+> Phase 6 security-audit follow-ups that later shipped: destructive-action step-up,
+> Redis query cache for hot public lists, enforced CSP, and stricter production secret
+> checks. Remaining refinements: a dedicated `lastStrongAuthAt` instead of session-created-at
+> freshness, tighter style CSP, and ongoing dependency audit follow-up for the nested
+> Next/PostCSS advisory.
 
 ---
 
@@ -138,9 +142,11 @@ Phased delivery plan for the self-hosted photography platform (Next.js 15 + Post
 - [x] **Redis query cache** for hot public lists with mutation invalidation.
 - [x] **2FA QR code**, **in-gallery drag-to-reorder**, swappable **InstagramProvider** (Graph + fallback).
 - [x] **CI** (GitHub Actions: lint/typecheck/test/build + Lighthouse + Playwright) and a **Playwright WebGL e2e**.
-- [x] Remotion **evaluated** (skill added locally) and proposed in `AI-INTEGRATIONS.md` (not wired — changes deployment shape).
+- [x] Remotion **evaluated** (skill added locally) and later implemented as opt-in video rendering.
 
-> Still needing a browser/CI to _execute_ (set up, not run here): the Lighthouse pass and the Playwright suite run in CI. Smaller follow-ups: streaming zip for very large galleries, `lastStrongAuthAt` step-up refinement, tightening `style-src`.
+> Smaller follow-ups: streaming ZIP/download handling for very large galleries, `lastStrongAuthAt`
+> step-up refinement, tightening `style-src`, and the 2026-07-11 architecture-audit items
+> captured in `PROJECT_MEMORY.md`.
 
 ---
 

@@ -1,7 +1,7 @@
 # Folder Structure
 
-> Phase 0 planning document. Proposed repo layout for the self-hosted photography
-> platform: **one Next.js 15 app + one BullMQ worker, same repository**, sharing
+> Living repo-layout reference for the self-hosted photography platform:
+> **one Next.js 15 app + one BullMQ worker, same repository**, sharing
 > domain modules. See [ARCHITECTURE.md](./ARCHITECTURE.md) for how these pieces relate.
 
 ## Guiding principles
@@ -32,7 +32,7 @@ photography-platform/
 │   │   ├── contact/              # Contact form (spam-protected)
 │   │   └── g/[token]/            # Private client gallery via expiring share link
 │   ├── (admin)/                  # Auth-gated admin UI (uploads, galleries, policy)
-│   │   └── admin/                # Dashboard, gallery mgmt, Store, layout editor, settings
+│   │   └── admin/                # Dashboard, gallery/page mgmt, Store, Design, Security, Settings
 │   ├── api/                      # Route handlers — the only mutation ingress
 │   │   ├── auth/                 # Better Auth handlers (password, TOTP, WebAuthn)
 │   │   ├── uploads/              # Validate original, persist, enqueue process job

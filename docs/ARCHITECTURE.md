@@ -1,6 +1,6 @@
 # Architecture
 
-> Phase 0 planning document for a self-hosted photography platform.
+> Living architecture reference for the implemented self-hosted photography platform.
 > Authoritative companions: [CACHING-STRATEGY.md](./CACHING-STRATEGY.md) and [SECURITY.md](./SECURITY.md).
 > Folder/repo layout lives in [FOLDER-STRUCTURE.md](./FOLDER-STRUCTURE.md).
 
@@ -14,13 +14,14 @@ The system is intentionally **two long-lived processes that share one codebase**
 
 1. **`web`** — a single Next.js 15 (App Router) application serving three concerns:
    - the **public portfolio** (Categories: Portraits/Events/Nature, plus Location/travel),
-   - the **admin** surface (upload, gallery management, layout config, auth policy),
+   - the **admin** surface (upload, library, gallery/page management, design, settings,
+     Security & Spam, account controls),
    - the **API** (route handlers for auth, uploads, gallery access, contact form,
-     and the deferred payment seams).
+     and store/payment seams).
 2. **`worker`** — a separate Node process running a **BullMQ** consumer that performs
    all heavy/async work (image derivative generation, EXIF normalization, email send,
    future invoicing jobs). It imports the _same_ domain modules as `web` (DB schema,
-   storage drivers, image pipeline, email drivers) but never serves HTTP.
+   storage drivers, image pipeline, email drivers) and exposes only a small health endpoint.
 
 Both processes are **stateless**; all durable state lives in **PostgreSQL 16**
 (relational data), **Redis/Valkey** (sessions, rate-limit counters, cache, the job

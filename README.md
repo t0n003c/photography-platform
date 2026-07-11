@@ -15,8 +15,9 @@ Core platform is **built and running**: auth (password + TOTP 2FA + passkeys), t
 upload→`sharp`→derivatives media pipeline, the public portfolio (categories + locations)
 with multiple gallery layouts, private client galleries with expiring share links, and a
 full admin **CMS** (upload, library, galleries, page builder, layout/design editor,
-settings, menus). The page builder includes curated blocks such as galleries, banners,
-contact forms, scroll showcases, logos/FAQs, and testimonials. Store checkout supports
+settings, menus, Security & Spam dashboard). The page builder includes curated blocks such
+as galleries, banners, contact forms, scroll showcases, logos/FAQs, and testimonials.
+Store checkout supports
 **manual invoice requests**, customer order-status lookup, receipts, fulfillment tracking,
 refund tracking, tax CSV export, and optional Stripe Checkout/refunds/Stripe Tax from
 Settings -> Payments only when the account, keys, and webhook secret are configured. Stripe

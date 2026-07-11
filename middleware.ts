@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Global security headers + nonce-based CSP (SECURITY.md §5). CSP ships in
-// Report-Only first (per §5.2) so the WebGL/PWA work in later phases can be
-// validated before enforcing. Baseline headers are enforced now.
+// Global security headers + enforced nonce-based CSP (SECURITY.md §5).
+// Scripts are nonce-gated; styles remain inline-compatible for Tailwind/React.
 export function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isProd = process.env.NODE_ENV === "production";
