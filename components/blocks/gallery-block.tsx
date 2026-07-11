@@ -12,6 +12,7 @@ import {
   getLocationPhotos,
   getGalleryPhotos,
   getPhotoFilterMemberships,
+  getPhotoFilterOptions,
 } from "@/src/db/queries/public";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -43,6 +44,41 @@ async function loadPhotos(block: GalleryBlockData): Promise<PhotoDTO[]> {
   } catch {
     return [];
   }
+}
+
+function selectedTaxonomyFilterKeys(block: GalleryBlockData): string[] {
+  if (block.filterMode !== "category" && block.filterMode !== "location") {
+    return [];
+  }
+  return [...new Set((block.filterSorts ?? []).map((filter) => filter.key).filter(Boolean))];
+}
+
+async function loadSelectedTaxonomyFilterPhotos(
+  block: GalleryBlockData,
+): Promise<PhotoDTO[] | null> {
+  if (block.filterMode !== "category" && block.filterMode !== "location") {
+    return null;
+  }
+  const selectedKeys = selectedTaxonomyFilterKeys(block);
+  if (selectedKeys.length === 0) return null;
+
+  const selectedTabs = await getPhotoFilterOptions(selectedKeys, block.filterMode);
+  if (selectedTabs.length === 0) return null;
+
+  const pages = await Promise.all(
+    selectedTabs.map((tab) =>
+      block.filterMode === "category"
+        ? getCategoryPhotos(tab.key, null, block.limit)
+        : getLocationPhotos(tab.key, null, block.limit),
+    ),
+  );
+  const photosById = new Map<string, PhotoDTO>();
+  for (const page of pages) {
+    for (const photo of page.photos) {
+      if (!photosById.has(photo.id)) photosById.set(photo.id, photo);
+    }
+  }
+  return Array.from(photosById.values());
 }
 
 function customFilterPhotos(block: GalleryBlockData, photoMap: PhotoMap): PhotoDTO[] {
@@ -106,10 +142,13 @@ function flipRevealSortConfig(block: GalleryBlockData): FlipRevealSortConfig {
 async function taxonomyFilterConfig(
   photos: PhotoDTO[],
   mode: "category" | "location",
+  selectedFilterKeys: string[] = [],
 ): Promise<{
   tabs: FlipRevealFilterTab[];
   photoFilters: Record<string, string[]>;
 }> {
+  const selectedKeys = [...new Set(selectedFilterKeys.filter(Boolean))];
+  const selectedSet = new Set(selectedKeys);
   const memberships = await getPhotoFilterMemberships(
     photos.map((photo) => photo.id),
     mode,
@@ -118,11 +157,22 @@ async function taxonomyFilterConfig(
   const photoFilters: Record<string, string[]> = {};
 
   for (const membership of memberships) {
+    if (selectedSet.size > 0 && !selectedSet.has(membership.key)) continue;
     tabsByKey.set(membership.key, membership.label);
     photoFilters[membership.photoId] = [
       ...(photoFilters[membership.photoId] ?? []),
       membership.key,
     ];
+  }
+
+  if (selectedKeys.length > 0) {
+    const selectedTabs = await getPhotoFilterOptions(selectedKeys, mode);
+    if (selectedTabs.length > 0) {
+      return {
+        tabs: selectedTabs,
+        photoFilters,
+      };
+    }
   }
 
   return {
@@ -145,7 +195,7 @@ export async function GalleryBlock({
   const photos =
     block.filterMode === "custom"
       ? customFilterPhotos(block, photoMap)
-      : await loadPhotos(block);
+      : (await loadSelectedTaxonomyFilterPhotos(block)) ?? await loadPhotos(block);
   if (photos.length === 0) {
     // On the live site an empty gallery renders nothing; in the editor preview
     // show why so it's not just a blank spot.
@@ -221,7 +271,11 @@ export async function GalleryBlock({
     const config =
       block.filterMode === "custom"
         ? customFilterConfig(block)
-        : await taxonomyFilterConfig(photos, block.filterMode);
+        : await taxonomyFilterConfig(
+            photos,
+            block.filterMode,
+            selectedTaxonomyFilterKeys(block),
+          );
     if (config.tabs.length > 0) {
       const gallery = (
         <FlipRevealGallery

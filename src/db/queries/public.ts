@@ -63,6 +63,10 @@ export interface PhotoFilterMembership {
   key: string;
   label: string;
 }
+export interface PhotoFilterOption {
+  key: string;
+  label: string;
+}
 
 interface MembershipCursor {
   s: number;
@@ -263,7 +267,7 @@ export async function getLocationPhotos(
 }
 
 // Filter labels for page-builder gallery blocks. The page block already chooses
-// the photo set; this only derives tabs from published category/location links.
+// the photo set; memberships map photos to published category/location links.
 export async function getPhotoFilterMemberships(
   photoIds: string[],
   mode: PhotoFilterMode,
@@ -304,6 +308,47 @@ export async function getPhotoFilterMemberships(
       ),
     )
     .orderBy(asc(location.sortOrder), asc(location.name));
+}
+
+export async function getPhotoFilterOptions(
+  keys: string[],
+  mode: PhotoFilterMode,
+): Promise<PhotoFilterOption[]> {
+  const selectedKeys = [...new Set(keys.filter(Boolean))];
+  if (selectedKeys.length === 0) return [];
+
+  const rows =
+    mode === "category"
+      ? await db
+          .select({
+            key: collection.id,
+            label: collection.name,
+          })
+          .from(collection)
+          .where(
+            and(
+              inArray(collection.id, selectedKeys),
+              eq(collection.isPublished, true),
+            ),
+          )
+      : await db
+          .select({
+            key: location.id,
+            label: location.name,
+          })
+          .from(location)
+          .where(
+            and(
+              inArray(location.id, selectedKeys),
+              eq(location.isPublished, true),
+            ),
+          );
+
+  const byKey = new Map(rows.map((row) => [row.key, row]));
+  return selectedKeys.flatMap((key) => {
+    const row = byKey.get(key);
+    return row ? [row] : [];
+  });
 }
 
 // ── Public galleries ─────────────────────────────────────────────────────────
