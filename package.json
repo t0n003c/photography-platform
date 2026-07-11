@@ -27,6 +27,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
+    "seed:feature-demos": "tsx scripts/seed-feature-demos.ts",
     "seed:store-examples": "tsx scripts/seed-store-examples.ts",
     "test": "vitest run",
     "test:watch": "vitest",
