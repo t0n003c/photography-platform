@@ -10,6 +10,10 @@ import {
   ToraParallaxShowcase,
   type ToraParallaxShowcaseItem,
 } from "@/components/blocks/tora-parallax-showcase";
+import {
+  ToraFullShowcaseSlider,
+  type ToraFullShowcaseSliderItem,
+} from "@/components/blocks/tora-full-showcase-slider";
 import { ToraModelsMasonryMotion } from "@/components/blocks/tora-models-masonry-motion";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -465,6 +469,23 @@ function ParallaxShowcase({
   return <ToraParallaxShowcase items={showcaseItems} />;
 }
 
+function FullShowcaseSlider({
+  items,
+  photos,
+}: {
+  items: PortfolioListItemData[];
+  photos: Map<string, PhotoDTO>;
+}) {
+  const showcaseItems: ToraFullShowcaseSliderItem[] = items.map((item, index) => ({
+    id: item.id,
+    title: item.title.trim() || `Portfolio ${index + 1}`,
+    linkHref: item.linkHref,
+    photo: item.photoId ? photos.get(item.photoId) : undefined,
+  }));
+
+  return <ToraFullShowcaseSlider items={showcaseItems} />;
+}
+
 export function PortfolioListBlock({
   block,
   photoMap,
@@ -475,6 +496,7 @@ export function PortfolioListBlock({
   const items = block.items ?? [];
   const style = block.style ?? "modern";
   const isParallaxShowcase = style === "tora-parallax-showcase";
+  const isFullShowcaseSlider = style === "tora-full-showcase-slider";
   const usesToraModelsThemeDefaults =
     style === "tora-models-masonry" &&
     block.showBackground !== false &&
@@ -512,7 +534,7 @@ export function PortfolioListBlock({
       style={vars}
     >
       <div className="portfolio-list-container">
-        {!isParallaxShowcase && <Header block={block} />}
+        {!isParallaxShowcase && !isFullShowcaseSlider && <Header block={block} />}
         {items.length === 0 ? (
           <div className="portfolio-list-empty">Portfolio list - add items</div>
         ) : style === "category-cards" ? (
@@ -527,6 +549,8 @@ export function PortfolioListBlock({
           <ProgressSlider items={items} photos={photoMap} />
         ) : style === "tora-parallax-showcase" ? (
           <ParallaxShowcase items={items} photos={photoMap} />
+        ) : style === "tora-full-showcase-slider" ? (
+          <FullShowcaseSlider items={items} photos={photoMap} />
         ) : style === "tora-models-masonry" ? (
           <ToraModelsMasonry items={items} photos={photoMap} />
         ) : style === "tora-wedding-stories" ? (

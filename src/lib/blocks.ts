@@ -123,6 +123,7 @@ const PortfolioListBlock = z.object({
       "mix-masonry",
       "tora-progress-slider",
       "tora-parallax-showcase",
+      "tora-full-showcase-slider",
       "tora-models-masonry",
       "tora-wedding-stories",
     ])

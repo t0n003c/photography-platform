@@ -4607,6 +4607,7 @@ function LeafEditor({
       const supportsHoverPhoto = style === "distortion";
       const isToraModelsMasonry = style === "tora-models-masonry";
       const isToraWeddingStories = style === "tora-wedding-stories";
+      const isToraFullShowcaseSlider = style === "tora-full-showcase-slider";
       return (
         <div className="space-y-4">
           <SettingsGroup title="Layout">
@@ -4623,6 +4624,8 @@ function LeafEditor({
                           ? "FEATURED GALLERIES"
                           : next === "tora-parallax-showcase"
                             ? "PARALLAX SHOWCASE"
+                          : next === "tora-full-showcase-slider"
+                            ? ""
                           : next === "tora-models-masonry"
                             ? "OUR MODELS"
                           : next === "tora-wedding-stories"
@@ -4639,23 +4642,29 @@ function LeafEditor({
                       eyebrow:
                         next === "tora-models-masonry"
                           ? "CHECK OUT"
+                          : next === "tora-full-showcase-slider"
+                            ? ""
                           : next === "tora-wedding-stories"
                             ? ""
                             : block.eyebrow,
                       backgroundColor:
                         next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          || next === "tora-full-showcase-slider"
                           ? "#252626"
                           : block.backgroundColor,
                       textColor:
                         next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          || next === "tora-full-showcase-slider"
                           ? "#f8f3df"
                           : block.textColor,
                       accentColor:
                         next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          || next === "tora-full-showcase-slider"
                           ? "#d8c98d"
                           : block.accentColor,
                       body:
                         next === "tora-models-masonry" || next === "tora-wedding-stories"
+                          || next === "tora-full-showcase-slider"
                           ? ""
                           : block.body,
                     });
@@ -4668,22 +4677,27 @@ function LeafEditor({
                   <option value="mix-masonry">Mix masonry</option>
                   <option value="tora-progress-slider">Tora progress slider</option>
                   <option value="tora-parallax-showcase">Tora parallax showcase</option>
+                  <option value="tora-full-showcase-slider">Tora full showcase slider</option>
                   <option value="tora-models-masonry">Tora models masonry</option>
                   <option value="tora-wedding-stories">Tora wedding stories</option>
                 </Select>
               </Field>
-              <Field label="Top label">
-                <Input
-                  value={block.eyebrow ?? ""}
-                  onChange={(e) => set({ eyebrow: e.target.value })}
-                />
-              </Field>
-              <Field label="Title">
-                <Input
-                  value={block.title ?? ""}
-                  onChange={(e) => set({ title: e.target.value })}
-                />
-              </Field>
+              {!isToraFullShowcaseSlider && (
+                <>
+                  <Field label="Top label">
+                    <Input
+                      value={block.eyebrow ?? ""}
+                      onChange={(e) => set({ eyebrow: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Title">
+                    <Input
+                      value={block.title ?? ""}
+                      onChange={(e) => set({ title: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
               <Field label="Background">
                 <label className="flex h-9 items-center gap-2 text-sm">
                   <input
@@ -4717,7 +4731,7 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            {!isToraModelsMasonry && !isToraWeddingStories && (
+            {!isToraModelsMasonry && !isToraWeddingStories && !isToraFullShowcaseSlider && (
               <Field label="Intro text">
                 <Textarea
                   rows={2}
