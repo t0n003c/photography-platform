@@ -18,3 +18,13 @@ export function clientIp(req: Request): string {
 export function userAgent(req: Request): string | undefined {
   return req.headers.get("user-agent") ?? undefined;
 }
+
+export function clientCountry(req: Request): string | null {
+  const raw =
+    req.headers.get("cf-ipcountry") ??
+    req.headers.get("x-vercel-ip-country") ??
+    req.headers.get("x-country-code");
+  const country = raw?.trim().toUpperCase();
+  if (!country || country === "XX" || country === "T1") return null;
+  return /^[A-Z]{2}$/.test(country) ? country : null;
+}

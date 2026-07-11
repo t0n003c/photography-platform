@@ -20,6 +20,10 @@ import {
   normalizeStripeTaxCode,
   storePaymentStatus,
 } from "@/src/lib/store-settings";
+import {
+  normalizeSecurityConfig,
+  SecurityConfigInputSchema,
+} from "@/src/lib/security-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +89,7 @@ export async function GET() {
       igAccessTokenSet: Boolean(row?.igAccessTokenEnc),
       captchaEnabled: row?.captchaEnabled ?? false,
       captchaConfigured: captchaConfigured(),
+      securityConfig: normalizeSecurityConfig(row?.securityConfig),
     },
   });
 }
@@ -156,6 +161,7 @@ const PatchSchema = z.object({
   stripeSecretKey: z.string().nullable().optional(),
   stripeWebhookSecret: z.string().nullable().optional(),
   captchaEnabled: z.boolean().optional(),
+  securityConfig: SecurityConfigInputSchema.optional(),
 });
 
 // PATCH — upsert the singleton settings row. Secrets are encrypted at rest.
@@ -189,6 +195,9 @@ export async function PATCH(req: Request) {
   if (body.smtpPort !== undefined) updates.smtpPort = body.smtpPort;
   if (body.smtpSecure !== undefined) updates.smtpSecure = body.smtpSecure;
   if (body.captchaEnabled !== undefined) updates.captchaEnabled = body.captchaEnabled;
+  if (body.securityConfig !== undefined) {
+    updates.securityConfig = normalizeSecurityConfig(body.securityConfig);
+  }
   setIf("smtpUser", "smtpUser");
   setIf("storeNotifyEmail", "storeNotifyEmail");
   setIf("storeCheckoutLabel", "storeCheckoutLabel");

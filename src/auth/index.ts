@@ -111,14 +111,39 @@ export const auth = betterAuth({
       if (ctx.path !== "/sign-in/email") return;
       const { getSiteSettingsRow } = await import("@/src/db/queries/settings");
       const row = await getSiteSettingsRow();
+      const { isBlockedIp, normalizeSecurityConfig } = await import(
+        "@/src/lib/security-settings"
+      );
+      const security = normalizeSecurityConfig(row?.securityConfig);
+      const ipHeader =
+        ctx.headers?.get("cf-connecting-ip") ??
+        ctx.headers?.get("x-forwarded-for") ??
+        "";
+      const ip = ipHeader.split(",")[0]?.trim() ?? "";
+      const countryRaw =
+        ctx.headers?.get("cf-ipcountry")?.trim().toUpperCase() ??
+        ctx.headers?.get("x-vercel-ip-country")?.trim().toUpperCase() ??
+        "";
+      const country =
+        /^[A-Z]{2}$/.test(countryRaw) && countryRaw !== "XX" && countryRaw !== "T1"
+          ? countryRaw
+          : "";
+      if (ip && isBlockedIp(ip, security.blockedIps)) {
+        throw new APIError("FORBIDDEN", {
+          message: "Request blocked.",
+          code: "REQUEST_BLOCKED",
+        });
+      }
+      if (country && security.blockedCountries.includes(country)) {
+        throw new APIError("FORBIDDEN", {
+          message: "Request blocked.",
+          code: "REQUEST_BLOCKED",
+        });
+      }
       if (!row?.captchaEnabled) return;
       const { verifyTurnstile } = await import("@/src/lib/turnstile");
       const token = ctx.headers?.get("x-captcha-response") ?? undefined;
-      const ip =
-        ctx.headers?.get("cf-connecting-ip") ??
-        ctx.headers?.get("x-forwarded-for") ??
-        undefined;
-      const ok = await verifyTurnstile(token, ip ?? undefined);
+      const ok = await verifyTurnstile(token, ip || undefined);
       if (!ok) {
         throw new APIError("FORBIDDEN", {
           message: "Human verification failed. Please try again.",

@@ -73,6 +73,8 @@ export function middleware(request: NextRequest) {
   // CDN-cacheable with stale-while-revalidate. The media route sets its own
   // (immutable vs no-store) and is left alone.
   const path = request.nextUrl.pathname;
+  const isPublicRuntimeConfig =
+    path === "/api/v1/auth-config" || path === "/api/v1/contact-config";
   const isPrivate =
     path.startsWith("/admin") ||
     path.startsWith("/login") ||
@@ -82,6 +84,8 @@ export function middleware(request: NextRequest) {
     path.startsWith("/api/auth");
   if (isPrivate) {
     res.headers.set("Cache-Control", "private, no-store");
+  } else if (isPublicRuntimeConfig) {
+    res.headers.set("Cache-Control", "no-store");
   } else if (
     request.method === "GET" &&
     path.startsWith("/api/v1") &&

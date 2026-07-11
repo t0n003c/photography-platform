@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  ContactCaptchaWidget,
+  useContactCaptcha,
+} from "@/components/forms/contact-captcha";
 
 export function AboutContactForm({ submitLabel = "Send" }: { submitLabel?: string }) {
   const [ts, setTs] = useState(0);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const captcha = useContactCaptcha();
 
   useEffect(() => setTs(Date.now()), []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (captcha.enabled && !captcha.token) {
+      setStatus("error");
+      return;
+    }
     setStatus("sending");
     const form = new FormData(event.currentTarget);
     const body = {
@@ -19,6 +28,7 @@ export function AboutContactForm({ submitLabel = "Send" }: { submitLabel?: strin
       message: String(form.get("message") ?? ""),
       company: String(form.get("company") ?? ""),
       _ts: ts,
+      captchaToken: captcha.token ?? undefined,
     };
     try {
       const res = await fetch("/api/v1/contact", {
@@ -26,8 +36,10 @@ export function AboutContactForm({ submitLabel = "Send" }: { submitLabel?: strin
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
+      if (!res.ok) captcha.reset();
       setStatus(res.ok ? "sent" : "error");
     } catch {
+      captcha.reset();
       setStatus("error");
     }
   }
@@ -54,6 +66,7 @@ export function AboutContactForm({ submitLabel = "Send" }: { submitLabel?: strin
       {status === "error" && (
         <p className="about-modern-form-error">Something went wrong. Please try again.</p>
       )}
+      <ContactCaptchaWidget captcha={captcha} className="flex justify-center" />
       <button type="submit" disabled={status === "sending"}>
         {status === "sending" ? "Sending..." : submitLabel}
       </button>

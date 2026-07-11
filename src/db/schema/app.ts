@@ -22,6 +22,7 @@ import type {
   StorePromoCode,
   StoreShippingProfile,
 } from "@/src/lib/store-settings";
+import type { SecurityConfig } from "@/src/lib/security-settings";
 
 // Application tables (DATA-MODEL §4–§15). Drizzle is the source of truth.
 // Conventions: text ULID PKs, timestamptz, money in integer cents, enums typed
@@ -553,6 +554,11 @@ export const siteSettings = pgTable("site_settings", {
   igAccessTokenEnc: text("ig_access_token_enc"), // Instagram Graph API token (AES-256-GCM)
   // Bot protection: require Cloudflare Turnstile at login (keys live in env).
   captchaEnabled: boolean("captcha_enabled").notNull().default(false),
+  // Public contact spam/security rules. Login keeps captchaEnabled for back-compat.
+  securityConfig: jsonb("security_config")
+    .$type<SecurityConfig>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   updatedAt: updatedAt(),
 });
 

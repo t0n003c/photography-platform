@@ -16,6 +16,18 @@ interface LightboxProps {
 const FOCUSABLE =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+type Variant = PhotoDTO["variants"][number];
+
+function variantsForFormat(variants: Variant[], format: string): Variant[] {
+  return variants
+    .filter((variant) => variant.format === format)
+    .sort((a, b) => a.width - b.width);
+}
+
+function buildSrcSet(variants: Variant[]): string {
+  return variants.map((variant) => `${variant.url} ${variant.width}w`).join(", ");
+}
+
 export function Lightbox({
   photos,
   index,
@@ -26,6 +38,7 @@ export function Lightbox({
   const total = photos.length;
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocused = React.useRef<HTMLElement | null>(null);
+  const preloadedImages = React.useRef<HTMLImageElement[]>([]);
 
   const goPrev = React.useCallback(() => {
     if (total === 0) return;
@@ -94,6 +107,37 @@ export function Lightbox({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose, goPrev, goNext]);
+
+  // Warm adjacent slides after the lightbox is open so arrow/touch navigation is
+  // immediate without promoting non-visible images to fetchPriority=high.
+  React.useEffect(() => {
+    if (!open || total < 2) return;
+    const adjacent = [
+      photos[(index - 1 + total) % total],
+      photos[(index + 1) % total],
+    ].filter(Boolean);
+    const seen = new Set<string>();
+    const images: HTMLImageElement[] = [];
+
+    for (const adjacentPhoto of adjacent) {
+      const webp = variantsForFormat(adjacentPhoto.variants, "webp");
+      const jpeg = variantsForFormat(adjacentPhoto.variants, "jpeg");
+      const sourcePool = webp.length > 0 ? webp : jpeg;
+      const fallbackPool = jpeg.length > 0 ? jpeg : webp;
+      const fallback = fallbackPool[fallbackPool.length - 1];
+      if (!fallback || seen.has(fallback.url)) continue;
+      seen.add(fallback.url);
+
+      const image = new Image();
+      if (sourcePool.length > 0) image.srcset = buildSrcSet(sourcePool);
+      image.sizes = "100vw";
+      image.decoding = "async";
+      image.src = fallback.url;
+      images.push(image);
+    }
+
+    preloadedImages.current = images;
+  }, [index, open, photos, total]);
 
   if (!open) return null;
   const photo = photos[index];

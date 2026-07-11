@@ -15,6 +15,10 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Check, CheckCircleIcon, Info, Play, StarIcon, X } from "lucide-react";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
+import {
+  ContactCaptchaWidget,
+  useContactCaptcha,
+} from "@/components/forms/contact-captcha";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/src/lib/utils";
 import type { LeafBlock } from "@/src/lib/blocks";
@@ -883,6 +887,7 @@ function ToraStyle3ContactForm({
   const [startedAt, setStartedAt] = useState(0);
   const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<PriceRequestStatus>("idle");
+  const captcha = useContactCaptcha();
 
   useEffect(() => {
     setStartedAt(Date.now());
@@ -892,6 +897,10 @@ function ToraStyle3ContactForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (captcha.enabled && !captcha.token) {
+      setStatus("error");
+      return;
+    }
     setStatus("sending");
 
     const form = new FormData(event.currentTarget);
@@ -926,10 +935,12 @@ function ToraStyle3ContactForm({
           message,
           company: String(form.get("company") ?? ""),
           _ts: startedAt,
+          captchaToken: captcha.token ?? undefined,
         }),
       });
 
       if (!response.ok) {
+        captcha.reset();
         setStatus("error");
         return;
       }
@@ -938,6 +949,7 @@ function ToraStyle3ContactForm({
       setAgreed(false);
       setStatus("sent");
     } catch {
+      captcha.reset();
       setStatus("error");
     }
   }
@@ -963,6 +975,7 @@ function ToraStyle3ContactForm({
         <div className="input-wrap textarea-wrap">
           <textarea name="message" placeholder="Message" rows={5} required />
         </div>
+        <ContactCaptchaWidget captcha={captcha} className="flex justify-center" />
         <div className="button-wrap">
           <div className="term-wrap">
             <label htmlFor={`${formId}-terms`}>
@@ -1038,6 +1051,7 @@ function ToraStyle1ContactForm({
   const [startedAt, setStartedAt] = useState(0);
   const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<PriceRequestStatus>("idle");
+  const captcha = useContactCaptcha();
 
   useEffect(() => {
     setStartedAt(Date.now());
@@ -1047,6 +1061,10 @@ function ToraStyle1ContactForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (captcha.enabled && !captcha.token) {
+      setStatus("error");
+      return;
+    }
     setStatus("sending");
 
     const form = new FormData(event.currentTarget);
@@ -1088,10 +1106,12 @@ function ToraStyle1ContactForm({
           message,
           company: String(form.get("company") ?? ""),
           _ts: startedAt,
+          captchaToken: captcha.token ?? undefined,
         }),
       });
 
       if (!response.ok) {
+        captcha.reset();
         setStatus("error");
         return;
       }
@@ -1100,6 +1120,7 @@ function ToraStyle1ContactForm({
       setAgreed(false);
       setStatus("sent");
     } catch {
+      captcha.reset();
       setStatus("error");
     }
   }
@@ -1126,6 +1147,7 @@ function ToraStyle1ContactForm({
           placeholder="List 3 things about you I should know"
           rows={4}
         />
+        <ContactCaptchaWidget captcha={captcha} className="flex justify-center" />
         <div className="button-wrap">
           <div className="term-wrap">
             <label htmlFor={`${formId}-terms`}>

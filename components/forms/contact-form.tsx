@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import {
+  ContactCaptchaWidget,
+  useContactCaptcha,
+} from "@/components/forms/contact-captcha";
 
 // Spam-protected contact form (honeypot `company` + min-fill-time `_ts`),
 // posting to the public API. The server scores spam; we always show success.
@@ -31,11 +35,16 @@ export function ContactForm({
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
+  const captcha = useContactCaptcha();
 
   useEffect(() => setTs(Date.now()), []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (captcha.enabled && !captcha.token) {
+      setStatus("error");
+      return;
+    }
     setStatus("sending");
     const fd = new FormData(e.currentTarget);
     const body = {
@@ -45,6 +54,7 @@ export function ContactForm({
       message: String(fd.get("message") ?? ""),
       company: String(fd.get("company") ?? ""), // honeypot
       _ts: ts,
+      captchaToken: captcha.token ?? undefined,
     };
     try {
       const res = await fetch("/api/v1/contact", {
@@ -52,8 +62,10 @@ export function ContactForm({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
+      if (!res.ok) captcha.reset();
       setStatus(res.ok ? "sent" : "error");
     } catch {
+      captcha.reset();
       setStatus("error");
     }
   }
@@ -139,6 +151,10 @@ export function ContactForm({
             Something went wrong. Please try again.
           </p>
         )}
+        <ContactCaptchaWidget
+          captcha={captcha}
+          className="tora-contact-form__captcha"
+        />
         <div className="tora-contact-form__actions">
           <button type="submit" disabled={status === "sending"}>
             {status === "sending" ? "Sending..." : submitLabel}
@@ -183,6 +199,7 @@ export function ContactForm({
           <input name="company" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
+      <ContactCaptchaWidget captcha={captcha} className="flex justify-center" />
       {status === "error" && (
         <p className="text-sm text-red-600">
           Something went wrong. Please try again.

@@ -1,45 +1,90 @@
 import { z } from "zod";
-import { accepted, tooMany, parseJson } from "@/src/lib/http";
+import { accepted, forbidden, tooMany, parseJson } from "@/src/lib/http";
 import { rateLimit } from "@/src/lib/ratelimit";
-import { clientIp, userAgent } from "@/src/lib/request";
+import { clientCountry, clientIp, userAgent } from "@/src/lib/request";
 import { newId } from "@/src/lib/id";
 import { getEnv } from "@/src/lib/env";
 import { db } from "@/src/db/client";
 import { contactSubmission } from "@/src/db/schema";
 import { enqueueEmail } from "@/src/email/send";
 import { contactNotification } from "@/src/email/templates";
+import { getSiteSettingsRow } from "@/src/db/queries/settings";
+import { captchaConfigured, verifyTurnstile } from "@/src/lib/turnstile";
+import {
+  countLinks,
+  isBlockedEmailDomain,
+  isBlockedIp,
+  matchingKeywords,
+  normalizeSecurityConfig,
+} from "@/src/lib/security-settings";
 
 export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  subject: z.string().optional(),
-  message: z.string().min(1),
-  phone: z.string().optional(),
-  company: z.string().optional(), // honeypot — bots fill hidden fields
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(254),
+  subject: z.string().trim().max(180).optional(),
+  message: z.string().trim().min(1).max(5000),
+  phone: z.string().trim().max(80).optional(),
+  company: z.string().trim().max(200).optional(), // honeypot — bots fill hidden fields
   _ts: z.number().optional(), // form-render timestamp for too-fast detection
-  captchaToken: z.string().optional(),
+  captchaToken: z.string().max(4096).optional(),
 });
 
 // POST /api/v1/contact — public, spam-protected contact form.
 export async function POST(req: Request) {
   const ip = clientIp(req);
+  const country = clientCountry(req);
+  const settings = await getSiteSettingsRow();
+  const security = normalizeSecurityConfig(settings?.securityConfig);
 
-  // Two-tier rate limit: 3/hour AND 10/day. Distinct keys so each window's
+  if (isBlockedIp(ip, security.blockedIps)) {
+    return forbidden("Request blocked.");
+  }
+  if (country && security.blockedCountries.includes(country)) {
+    return forbidden("Request blocked.");
+  }
+
+  // Two-tier rate limit: hourly AND daily. Distinct keys so each window's
   // counter + TTL are independent.
-  const hourly = await rateLimit(`contact:h:${ip}`, 3, 3600);
+  const hourly = await rateLimit(`contact:h:${ip}`, security.contactHourlyLimit, 3600);
   if (!hourly.ok) return tooMany(hourly.retryAfter);
-  const daily = await rateLimit(`contact:d:${ip}`, 10, 86400);
+  const daily = await rateLimit(`contact:d:${ip}`, security.contactDailyLimit, 86400);
   if (!daily.ok) return tooMany(daily.retryAfter);
 
   const parsed = await parseJson(req, contactSchema);
   if ("error" in parsed) return parsed.error;
   const body = parsed.data;
 
-  const honeypot = !!(body.company && body.company.trim().length > 0);
-  const tooFast = body._ts !== undefined && Date.now() - body._ts < 3000;
-  const flagged = honeypot || tooFast;
+  const honeypot = !!body.company;
+  const tooFast =
+    body._ts !== undefined && Date.now() - body._ts < security.contactMinSubmitMs;
+  const captchaRequired = security.contactCaptchaEnabled && captchaConfigured();
+  const captchaFailed =
+    captchaRequired && !(await verifyTurnstile(body.captchaToken, ip));
+  const linkCount = countLinks(`${body.subject ?? ""}\n${body.message}`);
+  const tooManyLinks =
+    security.contactMaxLinks > 0 && linkCount > security.contactMaxLinks;
+  const emailDomainBlocked = isBlockedEmailDomain(
+    body.email,
+    security.blockedEmailDomains,
+  );
+  const keywordMatches = matchingKeywords(
+    [body.name, body.email, body.subject ?? "", body.message].join("\n"),
+    security.blockedKeywords,
+  );
+  const spamFlags = [
+    honeypot,
+    tooFast,
+    captchaFailed,
+    tooManyLinks,
+    emailDomainBlocked,
+    keywordMatches.length > 0,
+  ];
+  const flagged = spamFlags.some(Boolean);
+  const spamScore = flagged
+    ? Math.min(1, spamFlags.filter(Boolean).length / 3)
+    : 0;
 
   await db.insert(contactSubmission).values({
     id: newId(),
@@ -48,9 +93,19 @@ export async function POST(req: Request) {
     phone: body.phone ?? null,
     subject: body.subject ?? null,
     message: body.message,
-    spamScore: flagged ? 1.0 : 0.0,
+    spamScore,
     spamVerdict: flagged ? "spam" : "ham",
-    spamSignals: { honeypot, tooFast },
+    spamSignals: {
+      honeypot,
+      tooFast,
+      captchaRequired,
+      captchaFailed,
+      linkCount,
+      tooManyLinks,
+      emailDomainBlocked,
+      keywordMatches,
+      country,
+    },
     status: flagged ? "spam" : "new",
     ipAddress: ip,
     userAgent: userAgent(req) ?? null,
