@@ -15,11 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
-import type {
-  StorePromoCode,
-  StoreShippingProfile,
-} from "@/src/lib/store-settings";
-import type { SecurityConfig } from "@/src/lib/security-settings";
+import type { StorePromoCode, StoreShippingProfile } from "@/src/lib/store-settings";
 
 interface SettingsDTO {
   siteTitle: string;
@@ -66,8 +62,6 @@ interface SettingsDTO {
     label: string;
   };
   igAccessTokenSet: boolean;
-  captchaConfigured: boolean;
-  securityConfig: SecurityConfig;
 }
 
 function errMsg(err: unknown): string {
@@ -149,17 +143,6 @@ function newPromoCode(): StorePromoCode {
 
 function normalizeCodeInput(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "").slice(0, 40);
-}
-
-function listText(items: string[]) {
-  return items.join("\n");
-}
-
-function textList(value: string) {
-  return value
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 function paymentStatusFor(settings: {
@@ -290,23 +273,7 @@ export default function SettingsPage() {
   const update = <K extends keyof SettingsDTO>(key: K, value: SettingsDTO[K]) =>
     setS((prev) => (prev ? { ...prev, [key]: value } : prev));
 
-  const updateSecurity = <K extends keyof SecurityConfig>(
-    key: K,
-    value: SecurityConfig[K],
-  ) =>
-    setS((prev) =>
-      prev
-        ? {
-            ...prev,
-            securityConfig: { ...prev.securityConfig, [key]: value },
-          }
-        : prev,
-    );
-
-  const updateShippingProfile = (
-    id: string,
-    patch: Partial<StoreShippingProfile>,
-  ) =>
+  const updateShippingProfile = (id: string, patch: Partial<StoreShippingProfile>) =>
     setS((prev) =>
       prev
         ? {
@@ -366,7 +333,6 @@ export default function SettingsPage() {
         storeStripeShippingTaxCode: s.storeStripeShippingTaxCode,
         stripePublishableKey: s.stripePublishableKey,
         stripeStatementDescriptor: s.stripeStatementDescriptor,
-        securityConfig: s.securityConfig,
       };
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
@@ -560,158 +526,6 @@ export default function SettingsPage() {
         </div>
       </SettingsSection>
 
-      {/* Security */}
-      <SettingsSection title="Security & spam">
-        <div className="space-y-4">
-          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={s.securityConfig.contactCaptchaEnabled}
-              onChange={(e) =>
-                updateSecurity("contactCaptchaEnabled", e.target.checked)
-              }
-            />
-            <span>
-              <span className="block font-medium">
-                Require Turnstile on contact forms
-              </span>
-              <span className="block text-xs text-[hsl(var(--muted-foreground))]">
-                Uses the same Cloudflare Turnstile keys as login protection. The
-                challenge renders only when keys are configured.
-              </span>
-            </span>
-          </label>
-          {!s.captchaConfigured && (
-            <p className="rounded-lg bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))]">
-              Add TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY to the environment before
-              enabling contact-form Turnstile.
-            </p>
-          )}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Contact submissions per hour">
-              <Input
-                type="number"
-                min={1}
-                max={100}
-                value={s.securityConfig.contactHourlyLimit}
-                onChange={(e) =>
-                  updateSecurity(
-                    "contactHourlyLimit",
-                    Math.max(1, Number(e.target.value) || 1),
-                  )
-                }
-              />
-            </Field>
-            <Field label="Contact submissions per day">
-              <Input
-                type="number"
-                min={1}
-                max={500}
-                value={s.securityConfig.contactDailyLimit}
-                onChange={(e) =>
-                  updateSecurity(
-                    "contactDailyLimit",
-                    Math.max(1, Number(e.target.value) || 1),
-                  )
-                }
-              />
-            </Field>
-            <Field
-              label="Minimum fill time"
-              hint="Milliseconds before a contact submission is trusted. Faster submissions are stored as spam."
-            >
-              <Input
-                type="number"
-                min={0}
-                max={30000}
-                step={500}
-                value={s.securityConfig.contactMinSubmitMs}
-                onChange={(e) =>
-                  updateSecurity(
-                    "contactMinSubmitMs",
-                    Math.max(0, Number(e.target.value) || 0),
-                  )
-                }
-              />
-            </Field>
-            <Field
-              label="Max links before spam"
-              hint="Set to 0 to disable link-count scoring."
-            >
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={s.securityConfig.contactMaxLinks}
-                onChange={(e) =>
-                  updateSecurity(
-                    "contactMaxLinks",
-                    Math.max(0, Number(e.target.value) || 0),
-                  )
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field
-              label="Blocked IPs / CIDR"
-              hint="One per line. IPv4 CIDR ranges and exact IPv4/IPv6 matches are supported."
-            >
-              <Textarea
-                rows={5}
-                value={listText(s.securityConfig.blockedIps)}
-                onChange={(e) =>
-                  updateSecurity("blockedIps", textList(e.target.value))
-                }
-                placeholder={"203.0.113.10\n198.51.100.0/24"}
-              />
-            </Field>
-            <Field
-              label="Blocked countries"
-              hint="Cloudflare country codes, one per line. Example: RU, CN."
-            >
-              <Textarea
-                rows={5}
-                value={listText(s.securityConfig.blockedCountries)}
-                onChange={(e) =>
-                  updateSecurity("blockedCountries", textList(e.target.value))
-                }
-                placeholder={"RU\nCN"}
-              />
-            </Field>
-            <Field
-              label="Blocked email domains"
-              hint="Subdomains are included. Example: spam.example blocks a.spam.example."
-            >
-              <Textarea
-                rows={5}
-                value={listText(s.securityConfig.blockedEmailDomains)}
-                onChange={(e) =>
-                  updateSecurity("blockedEmailDomains", textList(e.target.value))
-                }
-                placeholder={"tempmail.example\nspam.example"}
-              />
-            </Field>
-            <Field
-              label="Blocked keywords"
-              hint="Matching submissions are stored as spam and do not send notifications."
-            >
-              <Textarea
-                rows={5}
-                value={listText(s.securityConfig.blockedKeywords)}
-                onChange={(e) =>
-                  updateSecurity("blockedKeywords", textList(e.target.value))
-                }
-                placeholder={"crypto\ncasino"}
-              />
-            </Field>
-          </div>
-        </div>
-      </SettingsSection>
-
       {/* Store */}
       <SettingsSection title="Store">
         <div className="space-y-4">
@@ -892,8 +706,7 @@ export default function SettingsPage() {
                           value={profile.mode}
                           onChange={(event) =>
                             updateShippingProfile(profile.id, {
-                              mode: event.target
-                                .value as StoreShippingProfile["mode"],
+                              mode: event.target.value as StoreShippingProfile["mode"],
                             })
                           }
                         >
@@ -956,10 +769,7 @@ export default function SettingsPage() {
                     prev
                       ? {
                           ...prev,
-                          storePromoCodes: [
-                            ...prev.storePromoCodes,
-                            newPromoCode(),
-                          ],
+                          storePromoCodes: [...prev.storePromoCodes, newPromoCode()],
                         }
                       : prev,
                   )
@@ -1100,10 +910,7 @@ export default function SettingsPage() {
                               usageLimit:
                                 event.target.value &&
                                 Number.isFinite(Number(event.target.value))
-                                  ? Math.max(
-                                      1,
-                                      Math.floor(Number(event.target.value)),
-                                    )
+                                  ? Math.max(1, Math.floor(Number(event.target.value)))
                                   : null,
                             })
                           }

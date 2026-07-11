@@ -13,12 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Spinner } from "@/components/ui/feedback";
+import { Field, Input, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
+import type { SecurityConfig } from "@/src/lib/security-settings";
 import { cn } from "@/src/lib/utils";
 
 type Tone = "neutral" | "green" | "amber" | "red" | "blue";
-type View = "overview" | "contact" | "login" | "traffic" | "ips";
+type View = "overview" | "rules" | "contact" | "login" | "traffic" | "ips";
 
 interface SecuritySummary {
   contactTotal: number;
@@ -98,8 +100,14 @@ interface SecurityResponse {
   recentEvents: SecurityEventRow[];
 }
 
+interface SecuritySettingsDTO {
+  captchaConfigured: boolean;
+  securityConfig: SecurityConfig;
+}
+
 const TABS: { id: View; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "rules", label: "Rules" },
   { id: "contact", label: "Contact" },
   { id: "login", label: "Login" },
   { id: "traffic", label: "Traffic" },
@@ -175,6 +183,17 @@ function metadataText(value: unknown): string {
   return parts.length ? parts.join(" / ") : "-";
 }
 
+function listText(items: string[]) {
+  return items.join("\n");
+}
+
+function textList(value: string) {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function StatCard({
   label,
   value,
@@ -199,6 +218,212 @@ function StatCard({
         <div className="rounded-md bg-[hsl(var(--muted))] p-2">
           <Icon className="h-4 w-4" />
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SecurityRulesPanel({
+  settings,
+  saving,
+  onChange,
+  onSave,
+}: {
+  settings: SecuritySettingsDTO | null;
+  saving: boolean;
+  onChange: <K extends keyof SecurityConfig>(key: K, value: SecurityConfig[K]) => void;
+  onSave: () => Promise<void>;
+}) {
+  if (!settings) return <EmptyState title="Security rules unavailable" />;
+  const config = settings.securityConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Security & Spam Rules</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="space-y-5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSave();
+          }}
+        >
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={config.contactCaptchaEnabled}
+              onChange={(event) =>
+                onChange("contactCaptchaEnabled", event.target.checked)
+              }
+            />
+            <span>
+              <span className="block font-medium">
+                Require Turnstile on contact forms
+              </span>
+              <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                Uses the same Cloudflare Turnstile keys as login protection. The
+                challenge renders only when keys are configured.
+              </span>
+            </span>
+          </label>
+          {!settings.captchaConfigured && (
+            <p className="rounded-lg bg-[hsl(var(--muted))] p-3 text-xs text-[hsl(var(--muted-foreground))]">
+              Add TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY to the environment before
+              enabling contact-form Turnstile.
+            </p>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label="Contact submissions per hour"
+              htmlFor="security-contact-hourly-limit"
+            >
+              <Input
+                id="security-contact-hourly-limit"
+                type="number"
+                min={1}
+                max={100}
+                value={config.contactHourlyLimit}
+                onChange={(event) =>
+                  onChange(
+                    "contactHourlyLimit",
+                    Math.max(1, Number(event.target.value) || 1),
+                  )
+                }
+              />
+            </Field>
+            <Field
+              label="Contact submissions per day"
+              htmlFor="security-contact-daily-limit"
+            >
+              <Input
+                id="security-contact-daily-limit"
+                type="number"
+                min={1}
+                max={500}
+                value={config.contactDailyLimit}
+                onChange={(event) =>
+                  onChange(
+                    "contactDailyLimit",
+                    Math.max(1, Number(event.target.value) || 1),
+                  )
+                }
+              />
+            </Field>
+            <Field
+              label="Minimum fill time"
+              htmlFor="security-contact-min-submit-ms"
+              hint="Milliseconds before a contact submission is trusted. Faster submissions are stored as spam."
+            >
+              <Input
+                id="security-contact-min-submit-ms"
+                type="number"
+                min={0}
+                max={30000}
+                step={500}
+                value={config.contactMinSubmitMs}
+                onChange={(event) =>
+                  onChange(
+                    "contactMinSubmitMs",
+                    Math.max(0, Number(event.target.value) || 0),
+                  )
+                }
+              />
+            </Field>
+            <Field
+              label="Max links before spam"
+              htmlFor="security-contact-max-links"
+              hint="Set to 0 to disable link-count scoring."
+            >
+              <Input
+                id="security-contact-max-links"
+                type="number"
+                min={0}
+                max={100}
+                value={config.contactMaxLinks}
+                onChange={(event) =>
+                  onChange(
+                    "contactMaxLinks",
+                    Math.max(0, Number(event.target.value) || 0),
+                  )
+                }
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label="Blocked IPs / CIDR"
+              htmlFor="security-blocked-ips"
+              hint="One per line. IPv4 CIDR ranges and exact IPv4/IPv6 matches are supported."
+            >
+              <Textarea
+                id="security-blocked-ips"
+                rows={5}
+                value={listText(config.blockedIps)}
+                onChange={(event) =>
+                  onChange("blockedIps", textList(event.target.value))
+                }
+                placeholder={"203.0.113.10\n198.51.100.0/24"}
+              />
+            </Field>
+            <Field
+              label="Blocked countries"
+              htmlFor="security-blocked-countries"
+              hint="Cloudflare country codes, one per line. Example: RU, CN."
+            >
+              <Textarea
+                id="security-blocked-countries"
+                rows={5}
+                value={listText(config.blockedCountries)}
+                onChange={(event) =>
+                  onChange("blockedCountries", textList(event.target.value))
+                }
+                placeholder={"RU\nCN"}
+              />
+            </Field>
+            <Field
+              label="Blocked email domains"
+              htmlFor="security-blocked-email-domains"
+              hint="Subdomains are included. Example: spam.example blocks a.spam.example."
+            >
+              <Textarea
+                id="security-blocked-email-domains"
+                rows={5}
+                value={listText(config.blockedEmailDomains)}
+                onChange={(event) =>
+                  onChange("blockedEmailDomains", textList(event.target.value))
+                }
+                placeholder={"tempmail.example\nspam.example"}
+              />
+            </Field>
+            <Field
+              label="Blocked keywords"
+              htmlFor="security-blocked-keywords"
+              hint="Matching submissions are stored as spam and do not send notifications."
+            >
+              <Textarea
+                id="security-blocked-keywords"
+                rows={5}
+                value={listText(config.blockedKeywords)}
+                onChange={(event) =>
+                  onChange("blockedKeywords", textList(event.target.value))
+                }
+                placeholder={"crypto\ncasino"}
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving && <Spinner />}
+              Save rules
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );
@@ -442,7 +667,9 @@ function IpTable({ rows }: { rows: IpRow[] }) {
 export default function SecurityPage() {
   const { toast } = useToast();
   const [data, setData] = useState<SecurityResponse | null>(null);
+  const [settings, setSettings] = useState<SecuritySettingsDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingRules, setSavingRules] = useState(false);
   const [view, setView] = useState<View>("overview");
 
   useEffect(() => {
@@ -450,8 +677,14 @@ export default function SecurityPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await api.get<SecurityResponse>("/api/v1/admin/security");
-        if (!cancelled) setData(res);
+        const [securityRes, settingsRes] = await Promise.all([
+          api.get<SecurityResponse>("/api/v1/admin/security"),
+          api.get<{ data: SecuritySettingsDTO }>("/api/v1/admin/settings"),
+        ]);
+        if (!cancelled) {
+          setData(securityRes);
+          setSettings(settingsRes.data);
+        }
       } catch (err) {
         if (!cancelled) toast(errMsg(err), "error");
       } finally {
@@ -463,6 +696,34 @@ export default function SecurityPage() {
       cancelled = true;
     };
   }, [toast]);
+
+  const updateSecurity = <K extends keyof SecurityConfig>(
+    key: K,
+    value: SecurityConfig[K],
+  ) =>
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            securityConfig: { ...prev.securityConfig, [key]: value },
+          }
+        : prev,
+    );
+
+  const saveRules = async () => {
+    if (!settings) return;
+    setSavingRules(true);
+    try {
+      await api.patch("/api/v1/admin/settings", {
+        securityConfig: settings.securityConfig,
+      });
+      toast("Security rules saved", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setSavingRules(false);
+    }
+  };
 
   const stats = useMemo(() => {
     if (!data) return [];
@@ -547,6 +808,14 @@ export default function SecurityPage() {
                 <EventTable title="Recent Events" rows={data.recentEvents} />
                 <IpTable rows={data.topIps.slice(0, 10)} />
               </>
+            )}
+            {view === "rules" && (
+              <SecurityRulesPanel
+                settings={settings}
+                saving={savingRules}
+                onChange={updateSecurity}
+                onSave={saveRules}
+              />
             )}
             {view === "contact" && <ContactTable rows={data.contacts} />}
             {view === "login" && (
