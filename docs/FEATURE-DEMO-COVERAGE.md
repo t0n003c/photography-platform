@@ -3,6 +3,11 @@
 `npm run seed:feature-demos` creates publish-ready demo content using stable
 `demo-` slugs and ids. Re-running it replaces only its own demo records.
 
+The seed also generates stable generic solid-color placeholder photos
+(`demo-feature-photo-*`) with real responsive variants, so the demo set does not
+depend on uploaded photography while still exercising image aspect ratios,
+gallery flow, lightboxes, proofing, and map/gallery references.
+
 ## Public Pages
 
 | Demo page                         | Coverage                                                                                                                                                               |
