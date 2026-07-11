@@ -70,6 +70,77 @@ function pxInput(value: string): number {
   return Number.isFinite(next) ? next : 0;
 }
 
+function clampInt(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function BoundedNumberInput({
+  value,
+  min,
+  max,
+  fallback,
+  onValueChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  onValueChange: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value ?? fallback));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) {
+      setDraft(String(value ?? fallback));
+    }
+  }, [fallback, value]);
+
+  const commit = useCallback(
+    (rawValue: string) => {
+      const next = clampInt(Number(rawValue), min, max, fallback);
+      setDraft(String(next));
+      onValueChange(next);
+    },
+    [fallback, max, min, onValueChange],
+  );
+
+  return (
+    <Input
+      type="number"
+      min={min}
+      max={max}
+      step={1}
+      value={draft}
+      onFocus={() => {
+        focusedRef.current = true;
+      }}
+      onChange={(e) => {
+        const nextDraft = e.target.value;
+        setDraft(nextDraft);
+        const nextValue = Number(nextDraft);
+        if (
+          Number.isFinite(nextValue) &&
+          nextValue >= min &&
+          nextValue <= max
+        ) {
+          onValueChange(Math.round(nextValue));
+        }
+      }}
+      onBlur={(e) => {
+        focusedRef.current = false;
+        commit(e.target.value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
 // Scroll the live-preview iframe to a block and briefly highlight it. The iframe
 // is same-origin, so we can reach into its document by the block's data-id.
 function locateInPreview(blockId: string) {
@@ -6327,33 +6398,27 @@ function LeafEditor({
                 {filterStyle === "tora-portfolio-masonry" && (
                   <>
                     <Field label="Pagination text size">
-                      <Input
-                        type="number"
+                      <BoundedNumberInput
                         min={18}
                         max={48}
+                        fallback={30}
                         value={toraPortfolioFilterTextSize}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           set({
-                            toraPortfolioFilterTextSize: Math.min(
-                              48,
-                              Math.max(18, Number(e.target.value) || 30),
-                            ),
+                            toraPortfolioFilterTextSize: value,
                           })
                         }
                       />
                     </Field>
                     <Field label="Separator size">
-                      <Input
-                        type="number"
+                      <BoundedNumberInput
                         min={16}
                         max={90}
+                        fallback={55}
                         value={toraPortfolioSeparatorSize}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           set({
-                            toraPortfolioSeparatorSize: Math.min(
-                              90,
-                              Math.max(16, Number(e.target.value) || 55),
-                            ),
+                            toraPortfolioSeparatorSize: value,
                           })
                         }
                       />
