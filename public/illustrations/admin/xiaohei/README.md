@@ -3,11 +3,13 @@
 Generated admin/support illustrations for the photography platform.
 
 Use the `.webp` files in app UI. Keep the `.png` files as source/fallback
-exports. All images are 16:9, white-background, hand-drawn Xiaohei-style
-illustrations intended for admin empty states, onboarding, help panels, and
-support documentation.
+exports. All images are 16:9 hand-drawn Xiaohei-style illustrations intended
+for admin empty states, onboarding, help panels, and support documentation.
+The base files are white-background light-mode artwork; `*-dark` files are
+transparent-background dark-mode artwork.
 
-Open `contact-sheet.svg` to review the full pack.
+Open `contact-sheet.svg` to review the full pack with automatic light/dark
+artwork, or `contact-sheet-dark.svg` to review only the dark variants.
 
 ## Usage Notes
 

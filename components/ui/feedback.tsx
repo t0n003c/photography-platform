@@ -24,22 +24,37 @@ export function EmptyState({
   const illustrationAsset = illustration
     ? ADMIN_ILLUSTRATIONS[illustration]
     : null;
+  const illustrationClass = "mx-auto mb-6 w-full max-w-sm sm:max-w-md";
 
   return (
     <div className="rounded-xl border border-dashed p-10 text-center">
       {illustrationAsset && (
-        <picture className="mx-auto mb-6 block w-full max-w-sm sm:max-w-md">
-          <source srcSet={illustrationAsset.webp} type="image/webp" />
-          <img
-            src={illustrationAsset.png}
-            alt={illustrationAsset.alt}
-            width={illustrationAsset.width}
-            height={illustrationAsset.height}
-            loading="lazy"
-            decoding="async"
-            className="h-auto w-full object-contain"
-          />
-        </picture>
+        <>
+          <picture className={cn(illustrationClass, "block dark:hidden")}>
+            <source srcSet={illustrationAsset.webp} type="image/webp" />
+            <img
+              src={illustrationAsset.png}
+              alt={illustrationAsset.alt}
+              width={illustrationAsset.width}
+              height={illustrationAsset.height}
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-full object-contain"
+            />
+          </picture>
+          <picture className={cn(illustrationClass, "hidden dark:block")}>
+            <source srcSet={illustrationAsset.darkWebp} type="image/webp" />
+            <img
+              src={illustrationAsset.darkPng}
+              alt={illustrationAsset.alt}
+              width={illustrationAsset.width}
+              height={illustrationAsset.height}
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-full object-contain"
+            />
+          </picture>
+        </>
       )}
       <p className="font-medium">{title}</p>
       {description && (

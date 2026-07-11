@@ -11,7 +11,9 @@
       "recommendedUse": "Gallery list empty state",
       "png": "/illustrations/admin/xiaohei/01-empty-galleries.png",
       "webp": "/illustrations/admin/xiaohei/01-empty-galleries.webp",
-      "alt": "Xiaohei carries a blank frame toward empty gallery frames waiting to be filled."
+      "alt": "Xiaohei carries a blank frame toward empty gallery frames waiting to be filled.",
+      "darkPng": "/illustrations/admin/xiaohei/01-empty-galleries-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/01-empty-galleries-dark.webp"
     },
     {
       "id": "layout-builder",
@@ -19,7 +21,9 @@
       "recommendedUse": "Design/layout onboarding or layout editor help",
       "png": "/illustrations/admin/xiaohei/02-layout-builder.png",
       "webp": "/illustrations/admin/xiaohei/02-layout-builder.webp",
-      "alt": "Xiaohei arranges photo cards into a hand-drawn layout frame."
+      "alt": "Xiaohei arranges photo cards into a hand-drawn layout frame.",
+      "darkPng": "/illustrations/admin/xiaohei/02-layout-builder-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/02-layout-builder-dark.webp"
     },
     {
       "id": "demo-pages",
@@ -27,7 +31,9 @@
       "recommendedUse": "Demo pages intro or demo content empty state",
       "png": "/illustrations/admin/xiaohei/03-demo-pages.png",
       "webp": "/illustrations/admin/xiaohei/03-demo-pages.webp",
-      "alt": "Xiaohei pulls a wagon of placeholder photo cards toward demo, ready, and publish boards."
+      "alt": "Xiaohei pulls a wagon of placeholder photo cards toward demo, ready, and publish boards.",
+      "darkPng": "/illustrations/admin/xiaohei/03-demo-pages-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/03-demo-pages-dark.webp"
     },
     {
       "id": "contact-inbox",
@@ -35,7 +41,9 @@
       "recommendedUse": "Contact inquiries empty state",
       "png": "/illustrations/admin/xiaohei/04-contact-inbox.png",
       "webp": "/illustrations/admin/xiaohei/04-contact-inbox.webp",
-      "alt": "Xiaohei waits beside an open mailbox as a paper airplane client message approaches."
+      "alt": "Xiaohei waits beside an open mailbox as a paper airplane client message approaches.",
+      "darkPng": "/illustrations/admin/xiaohei/04-contact-inbox-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/04-contact-inbox-dark.webp"
     },
     {
       "id": "security-spam",
@@ -43,7 +51,9 @@
       "recommendedUse": "Security and spam dashboard intro or empty state",
       "png": "/illustrations/admin/xiaohei/05-security-spam.png",
       "webp": "/illustrations/admin/xiaohei/05-security-spam.webp",
-      "alt": "Xiaohei cranks a sieve that catches spam envelopes while a clean message passes through."
+      "alt": "Xiaohei cranks a sieve that catches spam envelopes while a clean message passes through.",
+      "darkPng": "/illustrations/admin/xiaohei/05-security-spam-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/05-security-spam-dark.webp"
     },
     {
       "id": "categories-locations",
@@ -51,7 +61,9 @@
       "recommendedUse": "Categories and locations setup help",
       "png": "/illustrations/admin/xiaohei/06-categories-locations.png",
       "webp": "/illustrations/admin/xiaohei/06-categories-locations.webp",
-      "alt": "Xiaohei sorts messy photo cards into category and place drawers."
+      "alt": "Xiaohei sorts messy photo cards into category and place drawers.",
+      "darkPng": "/illustrations/admin/xiaohei/06-categories-locations-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/06-categories-locations-dark.webp"
     },
     {
       "id": "lightbox-preload",
@@ -59,7 +71,9 @@
       "recommendedUse": "Lightbox performance help or feature explanation",
       "png": "/illustrations/admin/xiaohei/07-lightbox-preload.png",
       "webp": "/illustrations/admin/xiaohei/07-lightbox-preload.webp",
-      "alt": "Xiaohei stages previous and next photo cards beside a central lightbox frame."
+      "alt": "Xiaohei stages previous and next photo cards beside a central lightbox frame.",
+      "darkPng": "/illustrations/admin/xiaohei/07-lightbox-preload-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/07-lightbox-preload-dark.webp"
     },
     {
       "id": "upload-queue",
@@ -67,7 +81,9 @@
       "recommendedUse": "Upload processing empty state or media pipeline help",
       "png": "/illustrations/admin/xiaohei/08-upload-queue.png",
       "webp": "/illustrations/admin/xiaohei/08-upload-queue.webp",
-      "alt": "Xiaohei turns a crank on a conveyor that processes uploaded photo cards."
+      "alt": "Xiaohei turns a crank on a conveyor that processes uploaded photo cards.",
+      "darkPng": "/illustrations/admin/xiaohei/08-upload-queue-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/08-upload-queue-dark.webp"
     },
     {
       "id": "publish-page",
@@ -75,7 +91,9 @@
       "recommendedUse": "Page publishing onboarding or publish confirmation",
       "png": "/illustrations/admin/xiaohei/09-publish-page.png",
       "webp": "/illustrations/admin/xiaohei/09-publish-page.webp",
-      "alt": "Xiaohei pushes a draft page through a gate so it becomes live."
+      "alt": "Xiaohei pushes a draft page through a gate so it becomes live.",
+      "darkPng": "/illustrations/admin/xiaohei/09-publish-page-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/09-publish-page-dark.webp"
     },
     {
       "id": "referrals",
@@ -83,7 +101,9 @@
       "recommendedUse": "Traffic source analytics or security/referrer help",
       "png": "/illustrations/admin/xiaohei/10-referrals.png",
       "webp": "/illustrations/admin/xiaohei/10-referrals.webp",
-      "alt": "Xiaohei checks a clipboard while search, social, and direct paths lead into a gallery door."
+      "alt": "Xiaohei checks a clipboard while search, social, and direct paths lead into a gallery door.",
+      "darkPng": "/illustrations/admin/xiaohei/10-referrals-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/10-referrals-dark.webp"
     },
     {
       "id": "admin-setup-path",
@@ -91,7 +111,9 @@
       "recommendedUse": "Admin onboarding overview",
       "png": "/illustrations/admin/xiaohei/11-admin-setup-path.png",
       "webp": "/illustrations/admin/xiaohei/11-admin-setup-path.webp",
-      "alt": "Xiaohei untangles an orange thread connecting gallery, design, and page setup stations."
+      "alt": "Xiaohei untangles an orange thread connecting gallery, design, and page setup stations.",
+      "darkPng": "/illustrations/admin/xiaohei/11-admin-setup-path-dark.png",
+      "darkWebp": "/illustrations/admin/xiaohei/11-admin-setup-path-dark.webp"
     }
   ]
 }

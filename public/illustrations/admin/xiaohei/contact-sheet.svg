@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1520 1180" role="img" aria-labelledby="title desc">
   <title id="title">Xiaohei admin illustration pack contact sheet</title>
-  <desc id="desc">Contact sheet for 11 generated Xiaohei admin illustrations.</desc>
+  <desc id="desc">Contact sheet for 11 generated Xiaohei admin illustrations with automatic light and dark artwork.</desc>
   <style>
     :root { --paper:#f8f6f2; --ink:#171717; --muted:#756f67; --line:#d9d1c7; --card:#fffefd; }
+    .dark-img { display:none; }
     @media (prefers-color-scheme:dark) {
       :root { --paper:#181818; --ink:#f8f4ed; --muted:#b9b2aa; --line:#38322c; --card:#1b1b1a; }
+      .light-img { display:none; }
+      .dark-img { display:inline; }
     }
     svg { background:var(--paper); }
     .title { fill:var(--ink); font-family:Avenir, Montserrat, Arial, sans-serif; font-size:32px; letter-spacing:7px; }
@@ -12,18 +15,18 @@
     .card { fill:var(--card); stroke:var(--line); stroke-width:2; }
   </style>
   <text class="title" x="60" y="72">XIAOHEI ADMIN ILLUSTRATION PACK</text>
-  <text class="meta" x="60" y="104">11 IMAGES · WEBP PREFERRED · PNG SOURCE/FALLBACK</text>
+  <text class="meta" x="60" y="104">11 IMAGES · WEBP PREFERRED · PNG SOURCE/FALLBACK · LIGHT/DARK ARTWORK</text>
   <g transform="translate(60 142)">
-    <g transform="translate(0 0)"><rect class="card" width="330" height="250" rx="8"/><image href="01-empty-galleries.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">01 EMPTY GALLERIES</text></g>
-    <g transform="translate(370 0)"><rect class="card" width="330" height="250" rx="8"/><image href="02-layout-builder.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">02 LAYOUT BUILDER</text></g>
-    <g transform="translate(740 0)"><rect class="card" width="330" height="250" rx="8"/><image href="03-demo-pages.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">03 DEMO PAGES</text></g>
-    <g transform="translate(1110 0)"><rect class="card" width="330" height="250" rx="8"/><image href="04-contact-inbox.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">04 CONTACT INBOX</text></g>
-    <g transform="translate(0 290)"><rect class="card" width="330" height="250" rx="8"/><image href="05-security-spam.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">05 SECURITY SPAM</text></g>
-    <g transform="translate(370 290)"><rect class="card" width="330" height="250" rx="8"/><image href="06-categories-locations.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">06 CATEGORIES LOCATIONS</text></g>
-    <g transform="translate(740 290)"><rect class="card" width="330" height="250" rx="8"/><image href="07-lightbox-preload.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">07 LIGHTBOX PRELOAD</text></g>
-    <g transform="translate(1110 290)"><rect class="card" width="330" height="250" rx="8"/><image href="08-upload-queue.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">08 UPLOAD QUEUE</text></g>
-    <g transform="translate(0 580)"><rect class="card" width="330" height="250" rx="8"/><image href="09-publish-page.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">09 PUBLISH PAGE</text></g>
-    <g transform="translate(370 580)"><rect class="card" width="330" height="250" rx="8"/><image href="10-referrals.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">10 REFERRALS</text></g>
-    <g transform="translate(740 580)"><rect class="card" width="330" height="250" rx="8"/><image href="11-admin-setup-path.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">11 ADMIN SETUP PATH</text></g>
+    <g transform="translate(0 0)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="01-empty-galleries.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="01-empty-galleries-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">01 EMPTY GALLERIES</text></g>
+    <g transform="translate(370 0)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="02-layout-builder.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="02-layout-builder-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">02 LAYOUT BUILDER</text></g>
+    <g transform="translate(740 0)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="03-demo-pages.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="03-demo-pages-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">03 DEMO PAGES</text></g>
+    <g transform="translate(1110 0)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="04-contact-inbox.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="04-contact-inbox-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">04 CONTACT INBOX</text></g>
+    <g transform="translate(0 290)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="05-security-spam.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="05-security-spam-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">05 SECURITY SPAM</text></g>
+    <g transform="translate(370 290)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="06-categories-locations.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="06-categories-locations-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">06 CATEGORIES LOCATIONS</text></g>
+    <g transform="translate(740 290)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="07-lightbox-preload.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="07-lightbox-preload-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">07 LIGHTBOX PRELOAD</text></g>
+    <g transform="translate(1110 290)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="08-upload-queue.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="08-upload-queue-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">08 UPLOAD QUEUE</text></g>
+    <g transform="translate(0 580)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="09-publish-page.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="09-publish-page-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">09 PUBLISH PAGE</text></g>
+    <g transform="translate(370 580)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="10-referrals.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="10-referrals-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">10 REFERRALS</text></g>
+    <g transform="translate(740 580)"><rect class="card" width="330" height="250" rx="8"/><image class="light-img" href="11-admin-setup-path.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><image class="dark-img" href="11-admin-setup-path-dark.png" x="14" y="16" width="302" height="170" preserveAspectRatio="xMidYMid meet"/><text class="label" x="18" y="222">11 ADMIN SETUP PATH</text></g>
   </g>
 </svg>
