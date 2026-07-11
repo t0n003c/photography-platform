@@ -58,6 +58,10 @@ function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
 }
 
+function normalizeContactFormStyle(style: string | undefined) {
+  return style === "minimal" ? "stacked" : style ?? "stacked";
+}
+
 function swapAt<T>(arr: T[], i: number, j: number): T[] {
   if (j < 0 || j >= arr.length) return arr;
   const next = [...arr];
@@ -1396,7 +1400,7 @@ function blockSummary(block: Block): string {
         ? block.buttonLabel || "Custom link"
         : `${block.items.length} links`;
     case "contactForm":
-      return `${block.style} · ${block.heading || "Contact"}`;
+      return `${normalizeContactFormStyle(block.style)} · ${block.heading || "Contact"}`;
     case "columns":
       return `${block.columns.length} columns`;
     case "faq":
@@ -4229,6 +4233,7 @@ function LeafEditor({
       const isCombinedContactsReference = block.style === "tora-contacts-reference";
       const isContactInfoReference = block.style === "tora-contact-info";
       const isImagesFormReference = block.style === "tora-images-form";
+      const currentStyle = normalizeContactFormStyle(block.style);
       const usesContactsReference =
         isCombinedContactsReference || isContactInfoReference || isImagesFormReference;
       const showContactInfoSettings = isCombinedContactsReference || isContactInfoReference;
@@ -4262,7 +4267,7 @@ function LeafEditor({
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Form style">
                 <Select
-                value={block.style}
+                value={currentStyle}
                 onChange={(e) => {
                   const style = e.target.value as typeof block.style;
                   const nextIsCombinedContactsReference = style === "tora-contacts-reference";
@@ -4358,7 +4363,6 @@ function LeafEditor({
                   <option value="stacked">Stacked intro</option>
                   <option value="split">Split intro + form</option>
                   <option value="card">Card form</option>
-                  <option value="minimal">Minimal</option>
                   <option value="tora-contact">Tora contact</option>
                   <option value="tora-contact-info">Tora contact info</option>
                   <option value="tora-images-form">Tora images with form</option>

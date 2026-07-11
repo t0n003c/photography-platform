@@ -25,6 +25,23 @@ describe("page builder blocks", () => {
     });
   });
 
+  it("normalizes legacy minimal contact forms to stacked", () => {
+    const blocks = parseBlocks([
+      {
+        id: "contact-minimal",
+        type: "contactForm",
+        style: "minimal",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "contact-minimal",
+      type: "contactForm",
+      style: "stacked",
+    });
+  });
+
   it("keeps contacts reference blocks and collects selected photos", () => {
     const blocks = parseBlocks([
       {

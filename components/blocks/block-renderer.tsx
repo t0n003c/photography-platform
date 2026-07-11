@@ -493,19 +493,6 @@ function LeafView({
           </div>
         );
       }
-      if (block.style === "minimal") {
-        return (
-          <div>
-            {(block.heading || block.body || block.eyebrow) && (
-              <div className="mb-6">{intro}</div>
-            )}
-            <ContactForm
-              submitLabel={block.submitLabel || "Send message"}
-              className="[&_button]:rounded-md"
-            />
-          </div>
-        );
-      }
       return (
         <div>
           <div className="mb-8">{intro}</div>

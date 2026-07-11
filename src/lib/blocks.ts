@@ -743,7 +743,7 @@ const CustomLinkBlock = z.object({
   textColor: z.string().default("#f8f3df"),
   accentColor: z.string().default("#d8c98d"),
 });
-export const ContactFormStyleEnum = z.enum([
+const ContactFormStyleInputEnum = z.enum([
   "stacked",
   "split",
   "card",
@@ -753,6 +753,19 @@ export const ContactFormStyleEnum = z.enum([
   "tora-images-form",
   "tora-contacts-reference",
 ]);
+export const ContactFormStyleEnum = z.enum([
+  "stacked",
+  "split",
+  "card",
+  "tora-contact",
+  "tora-contact-info",
+  "tora-images-form",
+  "tora-contacts-reference",
+]);
+type ContactFormStyle = z.infer<typeof ContactFormStyleEnum>;
+const ContactFormStyleSchema = ContactFormStyleInputEnum.default("stacked").transform(
+  (style): ContactFormStyle => (style === "minimal" ? "stacked" : style),
+);
 const ContactInfoItem = z.object({
   id,
   title: z.string().default("PHOTOSTUDIO"),
@@ -768,7 +781,7 @@ const ContactSocialLink = z.object({
 const ContactFormBlock = z.object({
   ...baseBlock,
   type: z.literal("contactForm"),
-  style: ContactFormStyleEnum.default("stacked"),
+  style: ContactFormStyleSchema,
   eyebrow: z.string().default("Contact"),
   heading: z.string().default("Get in touch"),
   body: z
