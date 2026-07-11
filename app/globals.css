@@ -2249,7 +2249,9 @@ body.tora-justified-page-dim .tora-justified-showcase__gallery {
 .tora-portfolio-masonry {
   --tora-portfolio-filter: color-mix(in srgb, hsl(var(--foreground)) 56%, transparent);
   --tora-portfolio-filter-active: hsl(var(--foreground));
+  --tora-portfolio-filter-size: 30px;
   --tora-portfolio-separator: color-mix(in srgb, hsl(var(--foreground)) 18%, transparent);
+  --tora-portfolio-separator-size: 55px;
   --tora-portfolio-tile: color-mix(in srgb, hsl(var(--muted)) 82%, hsl(var(--foreground)) 10%);
   --tora-portfolio-cover: rgba(0, 0, 0, 0.65);
   background: transparent;
@@ -2272,30 +2274,38 @@ body.tora-justified-page-dim .tora-justified-showcase__gallery {
   justify-content: center;
   margin: 0 auto clamp(2.5rem, 4.4vw, 3.45rem);
   max-width: min(100% - 30px, 1110px);
-  row-gap: 0.8rem;
+  row-gap: clamp(0.8rem, calc(var(--tora-portfolio-separator-size) / 5), 1.5rem);
 }
 
 .tora-portfolio-masonry__filter {
   appearance: none;
   background: transparent;
   border: 0;
-  border-right: 1px solid var(--tora-portfolio-separator);
   color: var(--tora-portfolio-filter);
   cursor: pointer;
   display: inline-block;
   font-family: var(--font-open-sans), system-ui, sans-serif;
-  font-size: clamp(1.45rem, 2.1vw, 1.875rem);
+  font-size: var(--tora-portfolio-filter-size);
   font-weight: 300;
   line-height: 1;
   margin: 0;
   padding: 15px 15px 10px 20px;
+  position: relative;
   text-align: center;
   transition: color 280ms ease;
   white-space: nowrap;
 }
 
-.tora-portfolio-masonry__filter:last-child {
-  border-right: 0;
+.tora-portfolio-masonry__filter:not(:last-child)::after {
+  background: var(--tora-portfolio-separator);
+  content: "";
+  height: var(--tora-portfolio-separator-size);
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
 }
 
 .tora-portfolio-masonry__filter:hover,
@@ -2433,12 +2443,16 @@ body.tora-justified-page-dim .tora-justified-showcase__gallery {
   .tora-portfolio-masonry__filters {
     margin-bottom: 2.35rem;
     max-width: min(100% - 30px, 390px);
-    row-gap: 0.9rem;
+    row-gap: 1.25rem;
   }
 
   .tora-portfolio-masonry__filter {
-    font-size: clamp(1.35rem, 7vw, 1.875rem);
+    font-size: min(var(--tora-portfolio-filter-size), 1.875rem);
     padding: 13px 13px 9px 17px;
+  }
+
+  .tora-portfolio-masonry__filter:not(:last-child)::after {
+    height: min(var(--tora-portfolio-separator-size), 70px);
   }
 
   .tora-portfolio-masonry__columns,

@@ -284,6 +284,8 @@ export async function GalleryBlock({
           photoFilters={config.photoFilters}
           filterStyle={filterStyle}
           showOverlayText={block.showOverlayText ?? true}
+          toraPortfolioFilterTextSize={block.toraPortfolioFilterTextSize}
+          toraPortfolioSeparatorSize={block.toraPortfolioSeparatorSize}
           sort={flipRevealSortConfig(block)}
         />
       );

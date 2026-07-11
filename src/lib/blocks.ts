@@ -304,6 +304,8 @@ const GalleryBlock = z.object({
   filterMode: z.enum(["none", "category", "location", "custom"]).default("none"),
   filterStyle: GalleryFilterStyleEnum.default("flip-reveal"),
   showOverlayText: z.boolean().default(true),
+  toraPortfolioFilterTextSize: z.number().int().min(18).max(48).default(30),
+  toraPortfolioSeparatorSize: z.number().int().min(16).max(90).default(55),
   sortMode: GallerySortEnum.default("source"),
   manualOrderPhotoIds: z.array(z.string()).default([]),
   filterSorts: z.array(GalleryFilterSort).default([]),

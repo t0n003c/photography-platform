@@ -36,6 +36,8 @@ interface FlipRevealGalleryProps {
   photoFilters: Record<string, string[]>;
   filterStyle?: FilteredGalleryStyle;
   showOverlayText?: boolean;
+  toraPortfolioFilterTextSize?: number;
+  toraPortfolioSeparatorSize?: number;
   sort?: FlipRevealSortConfig;
 }
 
@@ -110,6 +112,16 @@ function portfolioColumnCount(width: number) {
   return 4;
 }
 
+function clampNumber(
+  value: number | null | undefined,
+  min: number,
+  max: number,
+  fallback: number,
+) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
 function distributePortfolioColumns(
   items: PortfolioMasonryItem[],
   columnCount: number,
@@ -139,6 +151,8 @@ function ToraPortfolioMasonryGallery({
   tabs,
   photoFilters,
   showOverlayText = true,
+  toraPortfolioFilterTextSize,
+  toraPortfolioSeparatorSize,
   sort,
 }: Omit<FlipRevealGalleryProps, "filterStyle">) {
   const initialKey = tabs[0]?.key ?? "all";
@@ -188,6 +202,12 @@ function ToraPortfolioMasonryGallery({
     () => distributePortfolioColumns(visibleItems, columnCount),
     [columnCount, visibleItems],
   );
+  const filterTextSize = clampNumber(toraPortfolioFilterTextSize, 18, 48, 30);
+  const separatorSize = clampNumber(toraPortfolioSeparatorSize, 16, 90, 55);
+  const style = {
+    "--tora-portfolio-filter-size": `${filterTextSize}px`,
+    "--tora-portfolio-separator-size": `${separatorSize}px`,
+  } as React.CSSProperties;
 
   const reduceMotion = React.useCallback(
     () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
@@ -335,7 +355,7 @@ function ToraPortfolioMasonryGallery({
   };
 
   return (
-    <section ref={rootRef} className="tora-portfolio-masonry">
+    <section ref={rootRef} className="tora-portfolio-masonry" style={style}>
       <div
         role="tablist"
         aria-label="Gallery filters"

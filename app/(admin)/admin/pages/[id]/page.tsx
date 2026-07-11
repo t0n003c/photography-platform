@@ -506,6 +506,10 @@ const GALLERY_TORA_JUSTIFIED_DEFAULTS = {
   toraJustifiedScrollOnSelect: true,
   toraJustifiedShowBlurredSideFill: true,
 } as const;
+const GALLERY_TORA_PORTFOLIO_DEFAULTS = {
+  toraPortfolioFilterTextSize: 30,
+  toraPortfolioSeparatorSize: 55,
+} as const;
 const TORA_HEADING_DEFAULT_LABELS: Record<string, string> = {
   "tora-classic": "HEADINGS",
   "tora-urban": "KNOW ME BETTER",
@@ -652,7 +656,7 @@ function makeBlock(type: BlockType): Block {
       textColor: "#2d251d",
       accentColor: "#8b5e34",
     };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", filterStyle: "flip-reveal", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS };
+    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", filterStyle: "flip-reveal", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS, ...GALLERY_TORA_PORTFOLIO_DEFAULTS };
     case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, fullWidthSliderAccentColor: "#f7f7f7", fullWidthSliderDimImages: true, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
     case "quote": return { id, type, text: "" };
     case "infoBlock": return {
@@ -5891,6 +5895,8 @@ function LeafEditor({
     case "gallery": {
       const filterMode = block.filterMode ?? "none";
       const filterStyle = block.filterStyle ?? "flip-reveal";
+      const toraPortfolioFilterTextSize = block.toraPortfolioFilterTextSize ?? 30;
+      const toraPortfolioSeparatorSize = block.toraPortfolioSeparatorSize ?? 55;
       const customFilters = block.customFilters ?? [];
       const sortMode = (block.sortMode ?? "source") as GallerySortMode;
       const manualOrderPhotoIds = block.manualOrderPhotoIds ?? [];
@@ -6318,6 +6324,42 @@ function LeafEditor({
                       : "Show text over photos"}
                   </label>
                 </Field>
+                {filterStyle === "tora-portfolio-masonry" && (
+                  <>
+                    <Field label="Pagination text size">
+                      <Input
+                        type="number"
+                        min={18}
+                        max={48}
+                        value={toraPortfolioFilterTextSize}
+                        onChange={(e) =>
+                          set({
+                            toraPortfolioFilterTextSize: Math.min(
+                              48,
+                              Math.max(18, Number(e.target.value) || 30),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Separator size">
+                      <Input
+                        type="number"
+                        min={16}
+                        max={90}
+                        value={toraPortfolioSeparatorSize}
+                        onChange={(e) =>
+                          set({
+                            toraPortfolioSeparatorSize: Math.min(
+                              90,
+                              Math.max(16, Number(e.target.value) || 55),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                  </>
+                )}
               </div>
               {sortMode === "custom" && (
                 <div className="space-y-2">
