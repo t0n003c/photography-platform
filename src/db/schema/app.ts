@@ -927,3 +927,36 @@ export const contactSubmission = pgTable(
     index("contact_verdict_idx").on(t.spamVerdict),
   ],
 );
+
+// ── §16 Security & traffic events ───────────────────────────────────────────
+export const securityEvent = pgTable(
+  "security_event",
+  {
+    id: text("id").primaryKey(),
+    surface: text("surface", { enum: ["contact", "login", "traffic"] }).notNull(),
+    action: text("action").notNull(),
+    outcome: text("outcome", {
+      enum: ["allowed", "blocked", "spam", "failed", "success", "unknown"],
+    })
+      .notNull()
+      .default("unknown"),
+    ipAddress: text("ip_address"),
+    country: text("country"),
+    userAgent: text("user_agent"),
+    browser: text("browser"),
+    os: text("os"),
+    device: text("device"),
+    referrer: text("referrer"),
+    source: text("source"),
+    path: text("path"),
+    email: text("email"),
+    metadata: jsonb("metadata"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("security_event_created_idx").on(t.createdAt),
+    index("security_event_surface_idx").on(t.surface, t.outcome),
+    index("security_event_ip_idx").on(t.ipAddress),
+    index("security_event_source_idx").on(t.source),
+  ],
+);

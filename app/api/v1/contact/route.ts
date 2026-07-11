@@ -10,6 +10,7 @@ import { enqueueEmail } from "@/src/email/send";
 import { contactNotification } from "@/src/email/templates";
 import { getSiteSettingsRow } from "@/src/db/queries/settings";
 import { captchaConfigured, verifyTurnstile } from "@/src/lib/turnstile";
+import { writeSecurityEvent } from "@/src/lib/security-events";
 import {
   countLinks,
   isBlockedEmailDomain,
@@ -39,18 +40,58 @@ export async function POST(req: Request) {
   const security = normalizeSecurityConfig(settings?.securityConfig);
 
   if (isBlockedIp(ip, security.blockedIps)) {
+    await writeSecurityEvent({
+      req,
+      surface: "contact",
+      action: "contact.blocked",
+      outcome: "blocked",
+      ip,
+      country,
+      metadata: { reason: "ip_block" },
+    });
     return forbidden("Request blocked.");
   }
   if (country && security.blockedCountries.includes(country)) {
+    await writeSecurityEvent({
+      req,
+      surface: "contact",
+      action: "contact.blocked",
+      outcome: "blocked",
+      ip,
+      country,
+      metadata: { reason: "country_block" },
+    });
     return forbidden("Request blocked.");
   }
 
   // Two-tier rate limit: hourly AND daily. Distinct keys so each window's
   // counter + TTL are independent.
   const hourly = await rateLimit(`contact:h:${ip}`, security.contactHourlyLimit, 3600);
-  if (!hourly.ok) return tooMany(hourly.retryAfter);
+  if (!hourly.ok) {
+    await writeSecurityEvent({
+      req,
+      surface: "contact",
+      action: "contact.rate_limited",
+      outcome: "blocked",
+      ip,
+      country,
+      metadata: { window: "hourly", retryAfter: hourly.retryAfter },
+    });
+    return tooMany(hourly.retryAfter);
+  }
   const daily = await rateLimit(`contact:d:${ip}`, security.contactDailyLimit, 86400);
-  if (!daily.ok) return tooMany(daily.retryAfter);
+  if (!daily.ok) {
+    await writeSecurityEvent({
+      req,
+      surface: "contact",
+      action: "contact.rate_limited",
+      outcome: "blocked",
+      ip,
+      country,
+      metadata: { window: "daily", retryAfter: daily.retryAfter },
+    });
+    return tooMany(daily.retryAfter);
+  }
 
   const parsed = await parseJson(req, contactSchema);
   if ("error" in parsed) return parsed.error;
@@ -82,12 +123,11 @@ export async function POST(req: Request) {
     keywordMatches.length > 0,
   ];
   const flagged = spamFlags.some(Boolean);
-  const spamScore = flagged
-    ? Math.min(1, spamFlags.filter(Boolean).length / 3)
-    : 0;
+  const spamScore = flagged ? Math.min(1, spamFlags.filter(Boolean).length / 3) : 0;
 
+  const submissionId = newId();
   await db.insert(contactSubmission).values({
-    id: newId(),
+    id: submissionId,
     name: body.name,
     email: body.email,
     phone: body.phone ?? null,
@@ -109,6 +149,32 @@ export async function POST(req: Request) {
     status: flagged ? "spam" : "new",
     ipAddress: ip,
     userAgent: userAgent(req) ?? null,
+  });
+
+  await writeSecurityEvent({
+    req,
+    surface: "contact",
+    action: "contact.submit",
+    outcome: flagged ? "spam" : "allowed",
+    ip,
+    country,
+    email: body.email,
+    metadata: {
+      submissionId,
+      spamScore,
+      spamVerdict: flagged ? "spam" : "ham",
+      spamSignals: {
+        honeypot,
+        tooFast,
+        captchaRequired,
+        captchaFailed,
+        linkCount,
+        tooManyLinks,
+        emailDomainBlocked,
+        keywordMatches,
+        country,
+      },
+    },
   });
 
   // Notify the studio for genuine (non-spam) inquiries; spam is stored silently.

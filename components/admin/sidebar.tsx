@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   Menu as MenuIcon,
   Inbox,
+  ShieldCheck,
   UserCog,
   Settings,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/admin/design", label: "Design", icon: SlidersHorizontal },
   { href: "/admin/menus", label: "Menus", icon: MenuIcon },
   { href: "/admin/contact", label: "Inbox", icon: Inbox },
+  { href: "/admin/security", label: "Security", icon: ShieldCheck },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/account", label: "Account", icon: UserCog },
 ];
