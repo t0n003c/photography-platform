@@ -135,6 +135,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.worker
+      args:
+        INSTALL_REMOTION_DEPS: "${INSTALL_REMOTION_DEPS:-false}"
     restart: unless-stopped
     # Same env as web — the worker also needs SETTINGS_ENCRYPTION_KEY to decrypt
     # the SMTP password when sending queued email.
