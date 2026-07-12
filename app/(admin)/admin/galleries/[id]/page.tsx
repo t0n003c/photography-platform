@@ -47,6 +47,12 @@ import type { PhotoDTO } from "@/src/db/queries/photos";
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
 type InvitePreviewMode = "content" | "cover" | "none";
+type InviteMessageLayout =
+  | "classic"
+  | "editorial"
+  | "personal"
+  | "proofing"
+  | "private-access";
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
 const DEFAULT_SLIPHOVER_BACKGROUND = "#f3eadb";
@@ -648,6 +654,7 @@ function GalleryInviteEmailModal({
   const [includePassword, setIncludePassword] = useState(Boolean(draft.password));
   const [password, setPassword] = useState(draft.password);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [messageLayout, setMessageLayout] = useState<InviteMessageLayout>("classic");
   const [previewMode, setPreviewMode] = useState<InvitePreviewMode>("content");
   const [preview, setPreview] = useState<GalleryInviteEmailPreview | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -662,6 +669,7 @@ function GalleryInviteEmailModal({
     password: includePassword && password.trim() ? password.trim() : null,
     expiresAt: draft.expiresAt,
     permissions: draft.permissions,
+    messageLayout,
     previewMode,
     send,
   });
@@ -741,6 +749,24 @@ function GalleryInviteEmailModal({
             onChange={(e) => setMessage(e.target.value)}
             rows={4}
           />
+        </Field>
+
+        <Field
+          label="Message layout"
+          htmlFor="invite-email-message-layout"
+          hint="Choose the visual structure for the generated email content."
+        >
+          <Select
+            id="invite-email-message-layout"
+            value={messageLayout}
+            onChange={(e) => setMessageLayout(e.target.value as InviteMessageLayout)}
+          >
+            <option value="classic">Classic invite</option>
+            <option value="editorial">Editorial cover</option>
+            <option value="personal">Personal note</option>
+            <option value="proofing">Proofing focus</option>
+            <option value="private-access">Private access</option>
+          </Select>
         </Field>
 
         <Field

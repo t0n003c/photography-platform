@@ -238,6 +238,34 @@ export function contactNotification(opts: {
 }
 
 // Client invitation to a private gallery (sent on grant creation).
+type GalleryInviteLayout =
+  | "classic"
+  | "editorial"
+  | "personal"
+  | "proofing"
+  | "private-access";
+
+function detailListHtml(rows: string) {
+  return rows
+    ? `<ul style="padding-left:20px;margin:14px 0;color:#39332d">${rows}</ul>`
+    : "";
+}
+
+function primaryCta(url: string, label = "Open your gallery") {
+  return `<p style="margin:22px 0 8px"><a href="${escapeAttr(url)}" style="display:inline-block;background:#111;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:650">${escape(label)}</a></p>`;
+}
+
+function linkFallback(url: string) {
+  return `<p style="color:#766d64;font-size:13px;margin:10px 0 0">Or paste this link into your browser:<br>${escape(url)}</p>`;
+}
+
+function boxedPanel(title: string, body: string) {
+  return `<div style="border:1px solid #e4ddd4;border-radius:16px;background:#fffaf5;padding:16px 18px;margin:18px 0">
+    <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8a8178;font-weight:700">${escape(title)}</div>
+    <div style="margin-top:8px;color:#302a25;font-size:14px">${body}</div>
+  </div>`;
+}
+
 export function galleryInvite(opts: {
   to: string;
   clientName?: string | null;
@@ -249,6 +277,7 @@ export function galleryInvite(opts: {
   previewImages?: { url: string; alt?: string | null }[];
   previewAlt?: string | null;
   isPasswordProtected?: boolean;
+  messageLayout?: GalleryInviteLayout;
   message?: string | null;
   password?: string | null;
   shootDate?: Date | string | null;
@@ -267,6 +296,7 @@ export function galleryInvite(opts: {
     opts.permissions?.download ? "download originals" : null,
   ].filter(Boolean);
   const siteTitle = opts.siteTitle?.trim() || "Photography Platform";
+  const layout = opts.messageLayout ?? "classic";
   const logo = opts.logoUrl
     ? `<img src="${escapeAttr(opts.logoUrl)}" alt="${escapeAttr(siteTitle)}" style="display:block;max-height:44px;max-width:220px;width:auto;height:auto;border:0">`
     : `<div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#111">${escape(siteTitle)}</div>`;
@@ -324,18 +354,60 @@ export function galleryInvite(opts: {
   ]
     .filter(Boolean)
     .join("");
+  const details = detailListHtml(detailRows);
   const message = opts.message?.trim()
     ? `<p style="white-space:pre-wrap">${escape(opts.message.trim())}</p>`
     : "";
+  const title = `<h1 style="margin:0;font-family:Georgia,serif;font-size:31px;line-height:1.12;color:#111">${escape(opts.galleryTitle)}</h1>`;
+  const intro = `<p>${greeting}</p><p>Your gallery <strong>${escape(opts.galleryTitle)}</strong> is ready to view.</p>`;
+  const cta = `${primaryCta(opts.shareUrl)}${linkFallback(opts.shareUrl)}`;
+  const accessPanel = boxedPanel(
+    opts.isPasswordProtected ? "Private access" : "Gallery access",
+    `${details || "Your gallery access is ready."}${cta}`,
+  );
+
+  let content = "";
+  if (layout === "editorial") {
+    content = `${previewCard}
+      <div style="background:#fff;border:1px solid #eee4d9;border-top:0;border-radius:0 0 18px 18px;padding:24px 22px;margin-top:-18px">
+        <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8a8178;margin-bottom:8px">New gallery</div>
+        ${title}
+        ${message || intro}
+        ${details}
+        ${cta}
+      </div>`;
+  } else if (layout === "personal") {
+    content = `<div style="background:#fff;border:1px solid #e6e0d8;border-radius:18px;padding:24px 22px">
+        ${intro}
+        ${message}
+        ${cta}
+      </div>
+      <div style="height:18px"></div>
+      ${previewCard}
+      ${details}`;
+  } else if (layout === "proofing") {
+    content = `${previewCard}
+      ${boxedPanel(
+        "Proofing details",
+        `<p style="margin:0 0 10px">Review your gallery, mark favorites, and follow the available access options.</p>${details}`,
+      )}
+      ${message}
+      ${cta}`;
+  } else if (layout === "private-access") {
+    content = `${previewCard}
+      ${message || intro}
+      ${accessPanel}`;
+  } else {
+    content = `${previewCard}
+      ${intro}
+      ${message}
+      ${details}
+      ${cta}`;
+  }
+
   const body = `
     <div style="padding-bottom:20px">${logo}</div>
-    ${previewCard}
-    <p>${greeting}</p>
-    <p>Your gallery <strong>${escape(opts.galleryTitle)}</strong> is ready to view.</p>
-    ${message}
-    ${detailRows ? `<ul style="padding-left:20px">${detailRows}</ul>` : ""}
-    <p><a href="${escapeAttr(opts.shareUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open your gallery</a></p>
-    <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.shareUrl)}</p>`;
+    ${content}`;
   const textParts = [
     greeting,
     "",

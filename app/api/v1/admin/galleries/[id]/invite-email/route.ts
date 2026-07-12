@@ -29,6 +29,9 @@ const InviteEmailSchema = z.object({
       download: z.boolean().optional(),
     })
     .optional(),
+  messageLayout: z
+    .enum(["classic", "editorial", "personal", "proofing", "private-access"])
+    .default("classic"),
   previewMode: z.enum(["cover", "content", "none"]).default("content"),
   send: z.boolean().default(false),
 });
@@ -165,6 +168,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       : appUrl("/icon.svg"),
     previewImages,
     isPasswordProtected: access.access.requiresPassword,
+    messageLayout: body.messageLayout,
     message: body.message,
     password: body.password,
     shootDate: g.shootDate,
