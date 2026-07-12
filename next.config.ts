@@ -22,11 +22,9 @@ const withPWA = withSerwist({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
-  // Do NOT auto-register the service worker. The PWA SW was caching the admin
-  // app and serving stale code; sw.ts is now a self-destruct worker that
-  // unregisters any previously-installed SW and clears its caches. With
-  // register:false it is never re-registered, so the app runs SW-free (always
-  // fresh). Re-enable a properly-scoped SW later if offline support is wanted.
+  // Do NOT auto-register the service worker. Settings registers it only when an
+  // admin opts into PWA push notifications. app/sw.ts intentionally does not
+  // precache or runtime-cache pages, so admin code remains network-fresh.
   register: false,
 });
 

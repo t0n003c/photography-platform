@@ -43,6 +43,12 @@ const EnvSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
 
+  // Web Push / PWA notifications. VAPID keys are public/private key pairs used
+  // to authenticate this server to browser push services.
+  WEB_PUSH_PUBLIC_KEY: z.string().optional(),
+  WEB_PUSH_PRIVATE_KEY: z.string().optional(),
+  WEB_PUSH_SUBJECT: z.string().optional(),
+
   PAYMENTS_DRIVER: z.enum(["stub", "stripe"]).default("stub"),
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),

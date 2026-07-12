@@ -23,6 +23,7 @@ import type {
   StoreShippingProfile,
 } from "@/src/lib/store-settings";
 import type { SecurityConfig } from "@/src/lib/security-settings";
+import type { NotificationConfig } from "@/src/lib/notification-settings";
 
 // Application tables (DATA-MODEL §4–§15). Drizzle is the source of truth.
 // Conventions: text ULID PKs, timestamptz, money in integer cents, enums typed
@@ -559,6 +560,10 @@ export const siteSettings = pgTable("site_settings", {
     .$type<SecurityConfig>()
     .notNull()
     .default(sql`'{}'::jsonb`),
+  notificationConfig: jsonb("notification_config")
+    .$type<NotificationConfig>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   updatedAt: updatedAt(),
 });
 
@@ -958,5 +963,36 @@ export const securityEvent = pgTable(
     index("security_event_surface_idx").on(t.surface, t.outcome),
     index("security_event_ip_idx").on(t.ipAddress),
     index("security_event_source_idx").on(t.source),
+  ],
+);
+
+// ── §17 PWA push notification subscriptions ────────────────────────────────
+export const pushSubscription = pgTable(
+  "push_subscription",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    endpointHash: text("endpoint_hash").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    expirationTime: timestamp("expiration_time", { withTimezone: true }),
+    userAgent: text("user_agent"),
+    enabled: boolean("enabled").notNull().default(true),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    failureReason: text("failure_reason"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("push_subscription_user_idx").on(t.userId),
+    index("push_subscription_enabled_idx").on(t.enabled),
+    uniqueIndex("push_subscription_endpoint_hash_uniq").on(t.endpointHash),
   ],
 );

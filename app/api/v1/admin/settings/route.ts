@@ -24,6 +24,8 @@ import {
   normalizeSecurityConfig,
   SecurityConfigInputSchema,
 } from "@/src/lib/security-settings";
+import { normalizeNotificationConfig } from "@/src/lib/notification-settings";
+import { webPushStatus } from "@/src/lib/web-push";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,8 @@ export async function GET() {
   const row = await getSiteSettingsRow();
   const paymentSettings = await getStorePaymentSettings();
   const paymentStatus = storePaymentStatus(paymentSettings);
+  const notificationConfig = normalizeNotificationConfig(row?.notificationConfig);
+  const pushStatus = webPushStatus();
   return ok({
     data: {
       siteTitle: row?.siteTitle ?? SETTINGS_DEFAULTS.siteTitle,
@@ -76,8 +80,7 @@ export async function GET() {
         paymentSettings.stripeTaxEnabled ??
         SETTINGS_DEFAULTS.storePayment.stripeTaxEnabled,
       storeInvoiceTaxMode:
-        paymentSettings.invoiceTaxMode ??
-        SETTINGS_DEFAULTS.storePayment.invoiceTaxMode,
+        paymentSettings.invoiceTaxMode ?? SETTINGS_DEFAULTS.storePayment.invoiceTaxMode,
       storeStripeShippingTaxCode:
         paymentSettings.stripeShippingTaxCode ??
         SETTINGS_DEFAULTS.storePayment.stripeShippingTaxCode,
@@ -90,6 +93,10 @@ export async function GET() {
       captchaEnabled: row?.captchaEnabled ?? false,
       captchaConfigured: captchaConfigured(),
       securityConfig: normalizeSecurityConfig(row?.securityConfig),
+      pushNotificationsEnabled: notificationConfig.pushEnabled,
+      pushContactNotificationsEnabled: notificationConfig.contactSubmissions,
+      webPushConfigured: pushStatus.configured,
+      webPushPublicKey: pushStatus.publicKey,
     },
   });
 }
@@ -162,6 +169,8 @@ const PatchSchema = z.object({
   stripeWebhookSecret: z.string().nullable().optional(),
   captchaEnabled: z.boolean().optional(),
   securityConfig: SecurityConfigInputSchema.optional(),
+  pushNotificationsEnabled: z.boolean().optional(),
+  pushContactNotificationsEnabled: z.boolean().optional(),
 });
 
 // PATCH — upsert the singleton settings row. Secrets are encrypted at rest.
@@ -198,6 +207,19 @@ export async function PATCH(req: Request) {
   if (body.securityConfig !== undefined) {
     updates.securityConfig = normalizeSecurityConfig(body.securityConfig);
   }
+  if (
+    body.pushNotificationsEnabled !== undefined ||
+    body.pushContactNotificationsEnabled !== undefined
+  ) {
+    const current = normalizeNotificationConfig(
+      (await getSiteSettingsRow())?.notificationConfig,
+    );
+    updates.notificationConfig = normalizeNotificationConfig({
+      pushEnabled: body.pushNotificationsEnabled ?? current.pushEnabled,
+      contactSubmissions:
+        body.pushContactNotificationsEnabled ?? current.contactSubmissions,
+    });
+  }
   setIf("smtpUser", "smtpUser");
   setIf("storeNotifyEmail", "storeNotifyEmail");
   setIf("storeCheckoutLabel", "storeCheckoutLabel");
@@ -214,7 +236,9 @@ export async function PATCH(req: Request) {
     updates.storeShippingFlatCents = body.storeShippingFlatCents;
   }
   if (body.storeShippingProfiles !== undefined) {
-    updates.storeShippingProfiles = normalizeShippingProfiles(body.storeShippingProfiles);
+    updates.storeShippingProfiles = normalizeShippingProfiles(
+      body.storeShippingProfiles,
+    );
   }
   if (body.storePromoCodes !== undefined) {
     updates.storePromoCodes = normalizePromoCodes(body.storePromoCodes);

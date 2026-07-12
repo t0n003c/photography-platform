@@ -8,14 +8,37 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Self-destruct service worker. A previous Serwist PWA worker was caching the
-// admin app and serving stale code (uploads/edits never reflecting deploys).
-// This worker takes over, deletes all caches, unregisters itself, and reloads
-// open windows so every client recovers to fresh, SW-free code. The app no
-// longer registers a SW (next.config register:false), so this won't re-install.
+interface PushPayload {
+  title?: string;
+  body?: string;
+  url?: string;
+  tag?: string;
+  icon?: string;
+  badge?: string;
+}
 
 // Reference the injected manifest so Serwist's build step is satisfied (unused).
 void self.__SW_MANIFEST;
+
+function parsePushPayload(event: PushEvent): PushPayload {
+  if (!event.data) return {};
+  try {
+    return event.data.json() as PushPayload;
+  } catch {
+    return { body: event.data.text() };
+  }
+}
+
+function sameOriginUrl(path: string | undefined): string {
+  try {
+    const url = new URL(path || "/admin", self.location.origin);
+    return url.origin === self.location.origin
+      ? `${url.pathname}${url.search}${url.hash}`
+      : "/admin";
+  } catch {
+    return "/admin";
+  }
+}
 
 self.addEventListener("install", () => {
   void self.skipWaiting();
@@ -24,26 +47,61 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
+      // Keep the replacement worker cache-free and clear caches left by older
+      // Serwist builds that precached the admin app.
       try {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       } catch {
         /* ignore */
       }
-      try {
-        await self.registration.unregister();
-      } catch {
-        /* ignore */
-      }
-      const clients = await self.clients.matchAll({ type: "window" });
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  const payload = parsePushPayload(event);
+  const title = payload.title || "Photography Platform";
+  const url = sameOriginUrl(payload.url);
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body,
+      icon: payload.icon || "/icon.svg",
+      badge: payload.badge || "/icon.svg",
+      tag: payload.tag,
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const data = event.notification.data as { url?: string } | undefined;
+  const path = sameOriginUrl(data?.url);
+  const targetUrl = new URL(path, self.location.origin).href;
+
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
       for (const client of clients) {
-        const wc = client as WindowClient;
-        try {
-          await wc.navigate(wc.url);
-        } catch {
-          /* ignore */
+        const windowClient = client as WindowClient;
+        if (new URL(windowClient.url).origin !== self.location.origin) continue;
+        if (windowClient.url !== targetUrl) {
+          try {
+            await windowClient.navigate(targetUrl);
+          } catch {
+            /* ignore */
+          }
         }
+        await windowClient.focus();
+        return;
       }
+      await self.clients.openWindow(targetUrl);
     })(),
   );
 });

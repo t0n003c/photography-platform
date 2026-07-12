@@ -1,10 +1,20 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  BellOff,
+  BellRing,
   ChevronDown,
   Loader2,
   Plus,
+  Smartphone,
   Trash2,
   Upload as UploadIcon,
   Send,
@@ -62,7 +72,18 @@ interface SettingsDTO {
     label: string;
   };
   igAccessTokenSet: boolean;
+  pushNotificationsEnabled: boolean;
+  pushContactNotificationsEnabled: boolean;
+  webPushConfigured: boolean;
+  webPushPublicKey: string | null;
 }
+
+type PushDeviceStatus =
+  | "checking"
+  | "unsupported"
+  | "permission-denied"
+  | "subscribed"
+  | "unsubscribed";
 
 function errMsg(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong";
@@ -143,6 +164,30 @@ function newPromoCode(): StorePromoCode {
 
 function normalizeCodeInput(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "").slice(0, 40);
+}
+
+function pushDeviceStatusLabel(status: PushDeviceStatus) {
+  switch (status) {
+    case "checking":
+      return "Checking this device";
+    case "unsupported":
+      return "Not supported on this browser";
+    case "permission-denied":
+      return "Blocked by browser permission";
+    case "subscribed":
+      return "Enabled on this device";
+    case "unsubscribed":
+      return "Not enabled on this device";
+  }
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+  return output;
 }
 
 function paymentStatusFor(settings: {
@@ -248,9 +293,43 @@ export default function SettingsPage() {
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testingPush, setTestingPush] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushDeviceStatus, setPushDeviceStatus] =
+    useState<PushDeviceStatus>("checking");
+  const [pushEndpoint, setPushEndpoint] = useState<string | null>(null);
   const [iconBust, setIconBust] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const timezones = useTimezones();
+
+  const refreshPushDevice = useCallback(async (): Promise<string | null> => {
+    if (typeof window === "undefined") return null;
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
+      setPushDeviceStatus("unsupported");
+      setPushEndpoint(null);
+      return null;
+    }
+    if (Notification.permission === "denied") {
+      setPushDeviceStatus("permission-denied");
+      setPushEndpoint(null);
+      return null;
+    }
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+      const subscription = await registration?.pushManager.getSubscription();
+      setPushEndpoint(subscription?.endpoint ?? null);
+      setPushDeviceStatus(subscription ? "subscribed" : "unsubscribed");
+      return subscription?.endpoint ?? null;
+    } catch {
+      setPushEndpoint(null);
+      setPushDeviceStatus("unsubscribed");
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -269,6 +348,10 @@ export default function SettingsPage() {
       active = false;
     };
   }, [toast]);
+
+  useEffect(() => {
+    if (!loading) void refreshPushDevice();
+  }, [loading, refreshPushDevice]);
 
   const update = <K extends keyof SettingsDTO>(key: K, value: SettingsDTO[K]) =>
     setS((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -333,6 +416,8 @@ export default function SettingsPage() {
         storeStripeShippingTaxCode: s.storeStripeShippingTaxCode,
         stripePublishableKey: s.stripePublishableKey,
         stripeStatementDescriptor: s.stripeStatementDescriptor,
+        pushNotificationsEnabled: s.pushNotificationsEnabled,
+        pushContactNotificationsEnabled: s.pushContactNotificationsEnabled,
       };
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
@@ -421,6 +506,108 @@ export default function SettingsPage() {
       toast(errMsg(err), "error");
     } finally {
       setTesting(false);
+    }
+  };
+
+  const enablePush = async () => {
+    if (!s) return;
+    if (!s.webPushConfigured || !s.webPushPublicKey) {
+      toast(
+        "Web Push is not configured. Add WEB_PUSH_PUBLIC_KEY and WEB_PUSH_PRIVATE_KEY.",
+        "error",
+      );
+      return;
+    }
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
+      setPushDeviceStatus("unsupported");
+      toast("This browser does not support PWA push notifications.", "error");
+      return;
+    }
+
+    setPushBusy(true);
+    try {
+      const permission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushDeviceStatus(
+          permission === "denied" ? "permission-denied" : "unsubscribed",
+        );
+        toast("Browser notification permission was not granted.", "error");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(s.webPushPublicKey),
+        }));
+      await api.post("/api/v1/admin/notifications/push/subscriptions", {
+        ...subscription.toJSON(),
+        endpoint: subscription.endpoint,
+      });
+      setPushEndpoint(subscription.endpoint);
+      setPushDeviceStatus("subscribed");
+      toast("PWA notifications enabled on this device", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+      await refreshPushDevice();
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const disablePush = async () => {
+    setPushBusy(true);
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+      const subscription = await registration?.pushManager.getSubscription();
+      const endpoint = subscription?.endpoint ?? pushEndpoint;
+      if (endpoint) {
+        await api.del("/api/v1/admin/notifications/push/subscriptions", {
+          endpoint,
+        });
+      }
+      if (subscription) await subscription.unsubscribe();
+      setPushEndpoint(null);
+      setPushDeviceStatus("unsubscribed");
+      toast("PWA notifications disabled on this device", "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const sendTestPush = async () => {
+    setTestingPush(true);
+    try {
+      const endpoint = await refreshPushDevice();
+      if (!endpoint) {
+        toast("Enable this device before sending a test push.", "error");
+        return;
+      }
+      const res = await api.post<{ attempted: number; sent: number }>(
+        "/api/v1/admin/notifications/push/test",
+        { endpoint },
+      );
+      toast(
+        res.sent > 0 ? "Test push sent" : "No active subscription found",
+        res.sent > 0 ? "success" : "error",
+      );
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setTestingPush(false);
     }
   };
 
@@ -1276,6 +1463,125 @@ export default function SettingsPage() {
             <span className="text-xs text-[hsl(var(--muted-foreground))]">
               Save first — the test uses your saved settings.
             </span>
+          </div>
+        </div>
+      </SettingsSection>
+
+      {/* Notifications */}
+      <SettingsSection title="Notifications">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={s.pushNotificationsEnabled}
+                onChange={(e) => update("pushNotificationsEnabled", e.target.checked)}
+              />
+              <span>
+                <span className="block font-medium">Enable PWA push alerts</span>
+                <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                  Sends browser/mobile app notifications to subscribed admin devices.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={s.pushContactNotificationsEnabled}
+                disabled={!s.pushNotificationsEnabled}
+                onChange={(e) =>
+                  update("pushContactNotificationsEnabled", e.target.checked)
+                }
+              />
+              <span>
+                <span className="block font-medium">Contact inquiries</span>
+                <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                  Notify subscribed devices when a non-spam contact form arrives.
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <div className="rounded-lg border p-3 text-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--muted))]">
+                  <Smartphone className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium">This device</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {s.webPushConfigured
+                      ? "Subscribe each phone, tablet, or desktop browser separately."
+                      : "Set WEB_PUSH_PUBLIC_KEY and WEB_PUSH_PRIVATE_KEY to enable push."}
+                  </p>
+                </div>
+              </div>
+              <span
+                className={`rounded-full border px-2 py-1 text-xs ${
+                  pushDeviceStatus === "subscribed"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "text-[hsl(var(--muted-foreground))]"
+                }`}
+              >
+                {pushDeviceStatusLabel(pushDeviceStatus)}
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={enablePush}
+                disabled={
+                  pushBusy ||
+                  !s.webPushConfigured ||
+                  pushDeviceStatus === "unsupported" ||
+                  pushDeviceStatus === "permission-denied"
+                }
+              >
+                {pushBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <BellRing className="h-4 w-4" />
+                )}
+                Enable this device
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={disablePush}
+                disabled={pushBusy || pushDeviceStatus !== "subscribed"}
+              >
+                <BellOff className="h-4 w-4" />
+                Disable
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={sendTestPush}
+                disabled={
+                  testingPush ||
+                  !s.webPushConfigured ||
+                  pushDeviceStatus !== "subscribed"
+                }
+              >
+                {testingPush ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                Send test push
+              </Button>
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                Save notification toggles before testing contact alerts.
+              </span>
+            </div>
           </div>
         </div>
       </SettingsSection>

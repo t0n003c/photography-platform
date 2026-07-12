@@ -18,6 +18,7 @@ import {
   matchingKeywords,
   normalizeSecurityConfig,
 } from "@/src/lib/security-settings";
+import { notifyContactSubmissionPush } from "@/src/lib/web-push";
 
 export const dynamic = "force-dynamic";
 
@@ -189,6 +190,11 @@ export async function POST(req: Request) {
         message: body.message,
       }),
     );
+    await notifyContactSubmissionPush({
+      submissionId,
+      name: body.name,
+      subject: body.subject,
+    });
   }
 
   // Always return success so bots can't distinguish spam detection.
