@@ -18,6 +18,7 @@ import {
   matchingKeywords,
   normalizeSecurityConfig,
 } from "@/src/lib/security-settings";
+import { normalizeNotificationConfig } from "@/src/lib/notification-settings";
 import { notifyContactSubmissionPush } from "@/src/lib/web-push";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
   const country = clientCountry(req);
   const settings = await getSiteSettingsRow();
   const security = normalizeSecurityConfig(settings?.securityConfig);
+  const notifications = normalizeNotificationConfig(settings?.notificationConfig);
 
   if (isBlockedIp(ip, security.blockedIps)) {
     await writeSecurityEvent({
@@ -186,8 +188,13 @@ export async function POST(req: Request) {
         to: env.CONTACT_NOTIFY_EMAIL ?? env.EMAIL_FROM,
         name: body.name,
         email: body.email,
+        phone: body.phone,
         subject: body.subject,
         message: body.message,
+        submittedAt: new Date(),
+        adminUrl: new URL("/admin/contact", env.APP_BASE_URL).toString(),
+        subjectTemplate: notifications.contactEmailSubjectTemplate,
+        bodyTemplate: notifications.contactEmailBodyTemplate,
       }),
     );
     await notifyContactSubmissionPush({

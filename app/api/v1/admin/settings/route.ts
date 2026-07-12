@@ -95,6 +95,8 @@ export async function GET() {
       securityConfig: normalizeSecurityConfig(row?.securityConfig),
       pushNotificationsEnabled: notificationConfig.pushEnabled,
       pushContactNotificationsEnabled: notificationConfig.contactSubmissions,
+      contactEmailSubjectTemplate: notificationConfig.contactEmailSubjectTemplate,
+      contactEmailBodyTemplate: notificationConfig.contactEmailBodyTemplate,
       webPushConfigured: pushStatus.configured,
       webPushPublicKey: pushStatus.publicKey,
     },
@@ -171,6 +173,8 @@ const PatchSchema = z.object({
   securityConfig: SecurityConfigInputSchema.optional(),
   pushNotificationsEnabled: z.boolean().optional(),
   pushContactNotificationsEnabled: z.boolean().optional(),
+  contactEmailSubjectTemplate: z.string().max(240).optional(),
+  contactEmailBodyTemplate: z.string().max(4000).optional(),
 });
 
 // PATCH — upsert the singleton settings row. Secrets are encrypted at rest.
@@ -209,7 +213,9 @@ export async function PATCH(req: Request) {
   }
   if (
     body.pushNotificationsEnabled !== undefined ||
-    body.pushContactNotificationsEnabled !== undefined
+    body.pushContactNotificationsEnabled !== undefined ||
+    body.contactEmailSubjectTemplate !== undefined ||
+    body.contactEmailBodyTemplate !== undefined
   ) {
     const current = normalizeNotificationConfig(
       (await getSiteSettingsRow())?.notificationConfig,
@@ -218,6 +224,10 @@ export async function PATCH(req: Request) {
       pushEnabled: body.pushNotificationsEnabled ?? current.pushEnabled,
       contactSubmissions:
         body.pushContactNotificationsEnabled ?? current.contactSubmissions,
+      contactEmailSubjectTemplate:
+        body.contactEmailSubjectTemplate ?? current.contactEmailSubjectTemplate,
+      contactEmailBodyTemplate:
+        body.contactEmailBodyTemplate ?? current.contactEmailBodyTemplate,
     });
   }
   setIf("smtpUser", "smtpUser");

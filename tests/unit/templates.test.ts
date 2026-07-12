@@ -136,6 +136,40 @@ describe("contactNotification", () => {
     });
     expect(msg.html).not.toContain("<script>");
   });
+
+  it("renders custom contact email subject and body placeholders", () => {
+    const msg = contactNotification({
+      to: "admin@example.com",
+      name: "Jane Doe",
+      email: "jane@sender.com",
+      phone: "555-0100",
+      subject: "Portrait session",
+      message: "Can we book next Friday?",
+      submittedAt: new Date("2026-07-12T12:00:00Z"),
+      adminUrl: "https://example.com/admin/contact",
+      subjectTemplate: "Lead from {{name}} — {{subject}}",
+      bodyTemplate:
+        "From {{name}} <{{email}}>\n{{phoneLine}}{{subjectLine}}\n{{message}}\n{{inboxUrl}}",
+    });
+    expect(msg.subject).toBe("Lead from Jane Doe — Portrait session");
+    expect(msg.text ?? "").toContain("Phone: 555-0100");
+    expect(msg.text ?? "").toContain("Subject: Portrait session");
+    expect(msg.text ?? "").toContain("https://example.com/admin/contact");
+  });
+
+  it("escapes custom contact body HTML and strips subject line breaks", () => {
+    const msg = contactNotification({
+      to: "admin@example.com",
+      name: "<script>alert(1)</script>",
+      email: "x@y.com",
+      message: "<img src=x>",
+      subjectTemplate: "New\nlead from {{name}}",
+      bodyTemplate: "{{name}}\n{{message}}",
+    });
+    expect(msg.subject).not.toContain("\n");
+    expect(msg.html).not.toContain("<script>");
+    expect(msg.html).not.toContain("<img");
+  });
 });
 
 describe("galleryInvite", () => {

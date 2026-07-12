@@ -74,6 +74,8 @@ interface SettingsDTO {
   igAccessTokenSet: boolean;
   pushNotificationsEnabled: boolean;
   pushContactNotificationsEnabled: boolean;
+  contactEmailSubjectTemplate: string;
+  contactEmailBodyTemplate: string;
   webPushConfigured: boolean;
   webPushPublicKey: string | null;
 }
@@ -109,6 +111,18 @@ const LOCALES = [
   "vi",
   "ru",
 ];
+
+const DEFAULT_CONTACT_EMAIL_SUBJECT_TEMPLATE = "New inquiry{{subjectSuffix}}";
+const DEFAULT_CONTACT_EMAIL_BODY_TEMPLATE = `Name: {{name}}
+Email: {{email}}
+{{phoneLine}}{{subjectLine}}
+Message:
+{{message}}
+
+Open in admin:
+{{inboxUrl}}`;
+const CONTACT_EMAIL_PLACEHOLDERS =
+  "{{name}}, {{email}}, {{phone}}, {{phoneLine}}, {{subject}}, {{subjectLine}}, {{subjectSuffix}}, {{message}}, {{submittedAt}}, {{inboxUrl}}";
 
 function centsToAmount(cents: number) {
   return (Math.max(0, cents) / 100).toFixed(2);
@@ -293,6 +307,7 @@ export default function SettingsPage() {
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testingContactEmail, setTestingContactEmail] = useState(false);
   const [testingPush, setTestingPush] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushDeviceStatus, setPushDeviceStatus] =
@@ -418,6 +433,8 @@ export default function SettingsPage() {
         stripeStatementDescriptor: s.stripeStatementDescriptor,
         pushNotificationsEnabled: s.pushNotificationsEnabled,
         pushContactNotificationsEnabled: s.pushContactNotificationsEnabled,
+        contactEmailSubjectTemplate: s.contactEmailSubjectTemplate,
+        contactEmailBodyTemplate: s.contactEmailBodyTemplate,
       };
       // Secrets: only send when the admin typed a new value (write-only).
       if (smtpPassword) payload.smtpPassword = smtpPassword;
@@ -506,6 +523,21 @@ export default function SettingsPage() {
       toast(errMsg(err), "error");
     } finally {
       setTesting(false);
+    }
+  };
+
+  const sendTestContactEmail = async () => {
+    setTestingContactEmail(true);
+    try {
+      const res = await api.post<{ sent: boolean; to: string }>(
+        "/api/v1/admin/settings/test-contact-email",
+        {},
+      );
+      toast(`Test contact email sent to ${res.to}`, "success");
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setTestingContactEmail(false);
     }
   };
 
@@ -1502,6 +1534,71 @@ export default function SettingsPage() {
                 </span>
               </span>
             </label>
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Contact email template</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Controls non-spam contact emails. Save before sending a test.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={sendTestContactEmail}
+                  disabled={testingContactEmail}
+                >
+                  {testingContactEmail ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Send test
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    update(
+                      "contactEmailSubjectTemplate",
+                      DEFAULT_CONTACT_EMAIL_SUBJECT_TEMPLATE,
+                    );
+                    update(
+                      "contactEmailBodyTemplate",
+                      DEFAULT_CONTACT_EMAIL_BODY_TEMPLATE,
+                    );
+                  }}
+                >
+                  Reset defaults
+                </Button>
+              </div>
+            </div>
+
+            <Field
+              label="Subject"
+              hint="Line breaks are removed from the final email subject."
+            >
+              <Input
+                value={s.contactEmailSubjectTemplate}
+                maxLength={240}
+                onChange={(e) => update("contactEmailSubjectTemplate", e.target.value)}
+                placeholder={DEFAULT_CONTACT_EMAIL_SUBJECT_TEMPLATE}
+              />
+            </Field>
+            <Field label="Body" hint={`Placeholders: ${CONTACT_EMAIL_PLACEHOLDERS}`}>
+              <Textarea
+                value={s.contactEmailBodyTemplate}
+                maxLength={4000}
+                rows={9}
+                onChange={(e) => update("contactEmailBodyTemplate", e.target.value)}
+                placeholder={DEFAULT_CONTACT_EMAIL_BODY_TEMPLATE}
+              />
+            </Field>
           </div>
 
           <div className="rounded-lg border p-3 text-sm">

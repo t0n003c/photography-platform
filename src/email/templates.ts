@@ -5,6 +5,10 @@ import type {
   AdminInvoiceDTO,
   AdminOrderRefundDTO,
 } from "@/src/db/queries/orders";
+import {
+  DEFAULT_CONTACT_EMAIL_BODY_TEMPLATE,
+  DEFAULT_CONTACT_EMAIL_SUBJECT_TEMPLATE,
+} from "@/src/lib/notification-settings";
 
 function escape(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -16,6 +20,28 @@ function layout(title: string, body: string): string {
     <h2 style="margin:0 0 12px">${escape(title)}</h2>
     ${body}
   </div></body></html>`;
+}
+
+function formatDateTime(value: Date | string | undefined): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("en-US");
+}
+
+function renderTemplate(template: string, tokens: Record<string, string>): string {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key) => {
+    return tokens[key] ?? "";
+  });
+}
+
+function cleanSubject(value: string): string {
+  return (
+    value
+      .replace(/[\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 240) || "New contact inquiry"
+  );
 }
 
 function formatMoney(cents: number, currency: string) {
@@ -145,18 +171,40 @@ export function contactNotification(opts: {
   to: string;
   name: string;
   email: string;
+  phone?: string | null;
   subject?: string | null;
   message: string;
+  submittedAt?: Date | string;
+  adminUrl?: string;
+  subjectTemplate?: string;
+  bodyTemplate?: string;
 }): EmailMessage {
-  const body = `
-    <p><strong>${escape(opts.name)}</strong> &lt;${escape(opts.email)}&gt; wrote:</p>
-    ${opts.subject ? `<p><em>${escape(opts.subject)}</em></p>` : ""}
-    <p style="white-space:pre-wrap">${escape(opts.message)}</p>`;
+  const subject = opts.subject?.trim() ?? "";
+  const phone = opts.phone?.trim() ?? "";
+  const inboxUrl = opts.adminUrl ?? "";
+  const tokens = {
+    name: opts.name,
+    email: opts.email,
+    phone,
+    phoneLine: phone ? `Phone: ${phone}\n` : "",
+    subject,
+    subjectLine: subject ? `Subject: ${subject}\n` : "",
+    subjectSuffix: subject ? `: ${subject}` : "",
+    message: opts.message,
+    submittedAt: formatDateTime(opts.submittedAt),
+    inboxUrl,
+  };
+  const subjectTemplate =
+    opts.subjectTemplate || DEFAULT_CONTACT_EMAIL_SUBJECT_TEMPLATE;
+  const bodyTemplate = opts.bodyTemplate || DEFAULT_CONTACT_EMAIL_BODY_TEMPLATE;
+  const renderedSubject = cleanSubject(renderTemplate(subjectTemplate, tokens));
+  const renderedBody = renderTemplate(bodyTemplate, tokens).trim();
+  const body = `<p style="white-space:pre-wrap">${escape(renderedBody)}</p>`;
   return {
     to: opts.to,
-    subject: `New inquiry${opts.subject ? `: ${opts.subject}` : ""}`,
+    subject: renderedSubject,
     html: layout("New contact inquiry", body),
-    text: `${opts.name} <${opts.email}>\n\n${opts.message}`,
+    text: renderedBody,
     replyTo: opts.email,
   };
 }
@@ -320,17 +368,11 @@ export function storeInvoiceIssued(opts: {
   const greeting = customerName ? `Hi ${escape(customerName)},` : "Hi,";
   const invoiceOrder = adminOrderToConfirmation(opts.order, opts.invoiceUrl);
   invoiceOrder.customerEmail = opts.order.email ?? opts.to;
-  const dueDate = opts.invoice.dueAt
-    ? emailDate(opts.invoice.dueAt)
-    : null;
+  const dueDate = opts.invoice.dueAt ? emailDate(opts.invoice.dueAt) : null;
   const body = `
     <p>${greeting}</p>
     <p>Your invoice <strong>${escape(opts.invoice.number)}</strong> is ready.</p>
-    ${
-      dueDate
-        ? `<p style="color:#666;font-size:13px">Due ${escape(dueDate)}</p>`
-        : ""
-    }
+    ${dueDate ? `<p style="color:#666;font-size:13px">Due ${escape(dueDate)}</p>` : ""}
     <table style="width:100%;border-collapse:collapse;margin:18px 0">
       <thead>
         <tr style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.08em">
