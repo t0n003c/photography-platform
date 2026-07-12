@@ -646,6 +646,7 @@ function GalleryInviteEmailModal({
   );
   const [includePassword, setIncludePassword] = useState(Boolean(draft.password));
   const [password, setPassword] = useState(draft.password);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [preview, setPreview] = useState<GalleryInviteEmailPreview | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [sending, setSending] = useState(false);
@@ -749,12 +750,28 @@ function GalleryInviteEmailModal({
                 : undefined
             }
           >
-            <Input
-              id="invite-email-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Leave blank to omit"
-            />
+            <div className="relative">
+              <Input
+                id="invite-email-password"
+                type={passwordVisible ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Leave blank to omit"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                aria-label={passwordVisible ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[hsl(var(--muted-foreground))] transition hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+                onClick={() => setPasswordVisible((visible) => !visible)}
+              >
+                {passwordVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </Field>
           <label className="flex items-center gap-2 pb-2 text-sm">
             <Input

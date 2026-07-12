@@ -58,20 +58,6 @@ function appUrl(path: string): string {
   return new URL(path, getEnv().APP_BASE_URL).toString();
 }
 
-function choosePreviewVariant(
-  photos: Awaited<ReturnType<typeof getGalleryPhotos>>["photos"],
-) {
-  const variants = photos[0]?.variants ?? [];
-  return (
-    variants.find((v) => v.format === "jpeg" && v.sizeBucket === "large") ??
-    variants.find((v) => v.format === "jpeg" && v.sizeBucket === "medium") ??
-    variants.find((v) => v.sizeBucket === "large") ??
-    variants.find((v) => v.sizeBucket === "medium") ??
-    variants[0] ??
-    null
-  );
-}
-
 // POST - build or send a client-facing gallery invitation email for a newly
 // created/rotated share URL. Raw share tokens are intentionally not stored.
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -143,15 +129,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const settings = await getSiteSettings();
-  const previewVariant = access.access.requiresPassword
-    ? null
-    : choosePreviewVariant((await getGalleryPhotos(id, null, 1)).photos);
-  const previewImageUrl = previewVariant
-    ? (() => {
-        const url = new URL(appUrl(previewVariant.url));
-        url.searchParams.set("t", shareToken);
-        return url.toString();
-      })()
+  const hasPreviewPhoto = (await getGalleryPhotos(id, null, 1)).photos.length > 0;
+  const previewImageUrl = hasPreviewPhoto
+    ? appUrl(`/api/v1/g/${encodeURIComponent(shareToken)}/preview-image`)
     : null;
 
   const email = galleryInvite({
