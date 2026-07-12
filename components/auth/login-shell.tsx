@@ -85,12 +85,14 @@ export function LoginShell({
   const liquidDarkInsetTopOpacity = 0.16 + liquidBlurRatio * 0.12;
   const liquidInsetOutlineOpacity = 0.12 + liquidChromaRatio * 0.14;
   const liquidDarkInsetOutlineOpacity = 0.06 + liquidChromaRatio * 0.1;
+  const liquidOverlayOpacity = 0.1 + liquidStrengthRatio * 0.2;
+  const liquidOverlayDarkOpacity = 0.15 + liquidStrengthRatio * 0.22;
   const liquidPreviewOpacity = 0.18 + liquidStrengthRatio * 0.36;
   const liquidPreviewDarkOpacity = 0.24 + liquidStrengthRatio * 0.34;
-  const liquidPreviewWhiteOpacity = 0.12 + liquidStrengthRatio * 0.18;
-  const liquidPreviewSoftOpacity = 0.1 + liquidStrengthRatio * 0.16;
-  const liquidPreviewBlurOpacity = 0.04 + liquidBlurRatio * 0.1;
-  const liquidPreviewSheenOpacity = 0.03 + liquidStrengthRatio * 0.08;
+  const liquidRefractionWhiteOpacity = 0.12 + liquidStrengthRatio * 0.18;
+  const liquidRefractionSoftOpacity = 0.1 + liquidStrengthRatio * 0.16;
+  const liquidRefractionBlurOpacity = 0.04 + liquidBlurRatio * 0.1;
+  const liquidRefractionSheenOpacity = 0.03 + liquidStrengthRatio * 0.08;
   const background =
     design.backgroundMode === "custom"
       ? design.backgroundColor
@@ -141,15 +143,17 @@ export function LoginShell({
     "--login-liquid-inset-blur": `${Math.round(18 + liquidFallbackRatio * 18)}px`,
     "--login-liquid-inset-outline-opacity": liquidInsetOutlineOpacity.toFixed(3),
     "--login-liquid-dark-inset-outline-opacity": liquidDarkInsetOutlineOpacity.toFixed(3),
+    "--login-liquid-overlay-opacity": liquidOverlayOpacity.toFixed(3),
+    "--login-liquid-overlay-dark-opacity": liquidOverlayDarkOpacity.toFixed(3),
     "--login-liquid-preview-opacity": liquidPreviewOpacity.toFixed(3),
     "--login-liquid-preview-dark-opacity": liquidPreviewDarkOpacity.toFixed(3),
-    "--login-liquid-preview-shift": `${((liquidStrengthRatio - 0.5) * 8).toFixed(2)}px`,
-    "--login-liquid-preview-blur": `${(liquidBlurRatio * 1.2).toFixed(2)}px`,
-    "--login-liquid-preview-white-opacity": liquidPreviewWhiteOpacity.toFixed(3),
-    "--login-liquid-preview-soft-opacity": liquidPreviewSoftOpacity.toFixed(3),
-    "--login-liquid-preview-blur-opacity": liquidPreviewBlurOpacity.toFixed(3),
-    "--login-liquid-preview-sheen-opacity": liquidPreviewSheenOpacity.toFixed(3),
-    "--login-liquid-preview-accent-mix": `${Math.round(18 + liquidChromaRatio * 42)}%`,
+    "--login-liquid-refraction-shift": `${((liquidStrengthRatio - 0.5) * 8).toFixed(2)}px`,
+    "--login-liquid-refraction-blur": `${(liquidBlurRatio * 1.2).toFixed(2)}px`,
+    "--login-liquid-refraction-white-opacity": liquidRefractionWhiteOpacity.toFixed(3),
+    "--login-liquid-refraction-soft-opacity": liquidRefractionSoftOpacity.toFixed(3),
+    "--login-liquid-refraction-blur-opacity": liquidRefractionBlurOpacity.toFixed(3),
+    "--login-liquid-refraction-sheen-opacity": liquidRefractionSheenOpacity.toFixed(3),
+    "--login-liquid-refraction-accent-mix": `${Math.round(18 + liquidChromaRatio * 42)}%`,
     "--login-photo-columns":
       design.photoSide === "left"
         ? `${photoWidth}% ${formWidth}%`
