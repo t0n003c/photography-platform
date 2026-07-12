@@ -13,6 +13,7 @@ import {
   Copy,
   Download,
   Eye,
+  EyeOff,
   GripVertical,
   Heart,
   Loader2,
@@ -865,6 +866,7 @@ function CreateGrantModal({
   const [favorite, setFavorite] = useState(true);
   const [download, setDownload] = useState(false);
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [expiresAt, setExpiresAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -998,12 +1000,27 @@ function CreateGrantModal({
             </label>
           </div>
           <Field label="Password (optional)" htmlFor="grant-password">
-            <Input
-              id="grant-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="grant-password"
+                type={passwordVisible ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                aria-label={passwordVisible ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[hsl(var(--muted-foreground))] transition hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+                onClick={() => setPasswordVisible((visible) => !visible)}
+              >
+                {passwordVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </Field>
           <Field label="Expires at (optional)" htmlFor="grant-expires">
             <Input

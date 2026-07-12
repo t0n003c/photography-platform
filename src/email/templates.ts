@@ -14,12 +14,32 @@ function escape(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function escapeAttr(s: string): string {
+  return escape(s).replace(/"/g, "&quot;");
+}
+
 function layout(title: string, body: string): string {
   return `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.6;color:#111">
   <div style="max-width:520px;margin:0 auto;padding:24px">
     <h2 style="margin:0 0 12px">${escape(title)}</h2>
     ${body}
   </div></body></html>`;
+}
+
+function galleryInviteLayout(preheader: string, body: string): string {
+  return `<!doctype html><html><body style="margin:0;background:#f6f2ec;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;color:#111">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escape(preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f6f2ec">
+    <tr>
+      <td align="center" style="padding:32px 16px">
+        <div style="max-width:640px;margin:0 auto">
+          ${body}
+          <p style="margin:18px 0 0;text-align:center;color:#8a8178;font-size:12px">This message was sent because a gallery was shared with you.</p>
+        </div>
+      </td>
+    </tr>
+  </table>
+  </body></html>`;
 }
 
 function formatDateTime(value: Date | string | undefined): string {
@@ -223,6 +243,11 @@ export function galleryInvite(opts: {
   clientName?: string | null;
   galleryTitle: string;
   shareUrl: string;
+  siteTitle?: string | null;
+  logoUrl?: string | null;
+  previewImageUrl?: string | null;
+  previewAlt?: string | null;
+  isPasswordProtected?: boolean;
   message?: string | null;
   password?: string | null;
   shootDate?: Date | string | null;
@@ -240,6 +265,27 @@ export function galleryInvite(opts: {
     opts.permissions?.favorite ? "favorite photos" : null,
     opts.permissions?.download ? "download originals" : null,
   ].filter(Boolean);
+  const siteTitle = opts.siteTitle?.trim() || "Photography Platform";
+  const logo = opts.logoUrl
+    ? `<img src="${escapeAttr(opts.logoUrl)}" alt="${escapeAttr(siteTitle)}" style="display:block;max-height:44px;max-width:220px;width:auto;height:auto;border:0">`
+    : `<div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#111">${escape(siteTitle)}</div>`;
+  const previewAlt = opts.previewAlt?.trim() || `${opts.galleryTitle} gallery preview`;
+  const previewImage = opts.previewImageUrl
+    ? `<img src="${escapeAttr(opts.previewImageUrl)}" alt="${escapeAttr(previewAlt)}" style="display:block;width:100%;height:auto;border:0">`
+    : `<div style="background:#f4f1ec;padding:46px 24px;text-align:center">
+        <div style="display:inline-block;border:1px solid #d8d2c8;border-radius:999px;padding:6px 12px;color:#6f675d;font-size:12px;letter-spacing:.08em;text-transform:uppercase">${opts.isPasswordProtected ? "Private gallery" : "Gallery preview"}</div>
+        <div style="margin-top:18px;font-size:28px;line-height:1.15;font-family:Georgia,serif;color:#171717">${escape(opts.galleryTitle)}</div>
+      </div>`;
+  const previewCard = `<a href="${escapeAttr(opts.shareUrl)}" style="display:block;text-decoration:none;color:#111">
+    <div style="overflow:hidden;border:1px solid #e6e0d8;border-radius:18px;background:#fff">
+      ${previewImage}
+      <div style="padding:18px 20px">
+        <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8a8178">${opts.isPasswordProtected ? "Password protected" : "Client gallery"}</div>
+        <div style="margin-top:5px;font-size:22px;line-height:1.2;font-family:Georgia,serif;color:#111">${escape(opts.galleryTitle)}</div>
+        <div style="margin-top:10px;color:#6b625a;font-size:14px">Open the gallery page to view the full collection.</div>
+      </div>
+    </div>
+  </a>`;
   const detailRows = [
     shootDate ? `<li><strong>Shoot date:</strong> ${escape(shootDate)}</li>` : "",
     expiresAt ? `<li><strong>Access expires:</strong> ${escape(expiresAt)}</li>` : "",
@@ -254,15 +300,18 @@ export function galleryInvite(opts: {
     ? `<p style="white-space:pre-wrap">${escape(opts.message.trim())}</p>`
     : "";
   const body = `
+    <div style="padding-bottom:20px">${logo}</div>
+    ${previewCard}
     <p>${greeting}</p>
     <p>Your gallery <strong>${escape(opts.galleryTitle)}</strong> is ready to view.</p>
     ${message}
     ${detailRows ? `<ul style="padding-left:20px">${detailRows}</ul>` : ""}
-    <p><a href="${escape(opts.shareUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open your gallery</a></p>
+    <p><a href="${escapeAttr(opts.shareUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open your gallery</a></p>
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.shareUrl)}</p>`;
   const textParts = [
     greeting,
     "",
+    `${siteTitle} sent you a gallery.`,
     `Your gallery "${opts.galleryTitle}" is ready to view.`,
     opts.message?.trim() ? "" : "",
     opts.message?.trim() ? opts.message.trim() : "",
@@ -276,7 +325,7 @@ export function galleryInvite(opts: {
   return {
     to: opts.to,
     subject: `Your gallery: ${opts.galleryTitle}`,
-    html: layout("Your gallery is ready", body),
+    html: galleryInviteLayout(`Your gallery "${opts.galleryTitle}" is ready.`, body),
     text: textParts.join("\n"),
   };
 }
