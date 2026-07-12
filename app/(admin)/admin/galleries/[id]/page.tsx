@@ -46,6 +46,7 @@ import type { PhotoDTO } from "@/src/db/queries/photos";
 
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
+type InvitePreviewMode = "content" | "cover" | "none";
 const DEFAULT_PALMER_BACKGROUND = "#f1f1f1";
 const DEFAULT_PALMER_TEXT = "#313131";
 const DEFAULT_SLIPHOVER_BACKGROUND = "#f3eadb";
@@ -647,6 +648,7 @@ function GalleryInviteEmailModal({
   const [includePassword, setIncludePassword] = useState(Boolean(draft.password));
   const [password, setPassword] = useState(draft.password);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [previewMode, setPreviewMode] = useState<InvitePreviewMode>("content");
   const [preview, setPreview] = useState<GalleryInviteEmailPreview | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [sending, setSending] = useState(false);
@@ -660,6 +662,7 @@ function GalleryInviteEmailModal({
     password: includePassword && password.trim() ? password.trim() : null,
     expiresAt: draft.expiresAt,
     permissions: draft.permissions,
+    previewMode,
     send,
   });
 
@@ -738,6 +741,22 @@ function GalleryInviteEmailModal({
             onChange={(e) => setMessage(e.target.value)}
             rows={4}
           />
+        </Field>
+
+        <Field
+          label="Gallery preview"
+          htmlFor="invite-email-preview-mode"
+          hint="Content preview shows a small image set. Cover image uses the gallery cover when available."
+        >
+          <Select
+            id="invite-email-preview-mode"
+            value={previewMode}
+            onChange={(e) => setPreviewMode(e.target.value as InvitePreviewMode)}
+          >
+            <option value="content">Content preview</option>
+            <option value="cover">Cover image only</option>
+            <option value="none">No image preview</option>
+          </Select>
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">

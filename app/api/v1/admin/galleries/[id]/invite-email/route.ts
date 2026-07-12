@@ -29,6 +29,7 @@ const InviteEmailSchema = z.object({
       download: z.boolean().optional(),
     })
     .optional(),
+  previewMode: z.enum(["cover", "content", "none"]).default("content"),
   send: z.boolean().default(false),
 });
 
@@ -129,10 +130,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const settings = await getSiteSettings();
-  const hasPreviewPhoto = (await getGalleryPhotos(id, null, 1)).photos.length > 0;
-  const previewImageUrl = hasPreviewPhoto
-    ? appUrl(`/api/v1/g/${encodeURIComponent(shareToken)}/preview-image`)
-    : null;
+  const previewPhotos =
+    body.previewMode === "none"
+      ? []
+      : (await getGalleryPhotos(id, null, body.previewMode === "content" ? 5 : 1))
+          .photos;
+  const previewImages =
+    body.previewMode === "none" || previewPhotos.length === 0
+      ? []
+      : body.previewMode === "cover"
+        ? [
+            {
+              url: appUrl(
+                `/api/v1/g/${encodeURIComponent(shareToken)}/preview-image?slot=cover`,
+              ),
+              alt: `${g.title} gallery cover`,
+            },
+          ]
+        : previewPhotos.map((p, index) => ({
+            url: appUrl(
+              `/api/v1/g/${encodeURIComponent(shareToken)}/preview-image?slot=${index}`,
+            ),
+            alt: p.altText ?? p.headline ?? `${g.title} preview ${index + 1}`,
+          }));
 
   const email = galleryInvite({
     to,
@@ -143,8 +163,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     logoUrl: settings.logoStorageKey
       ? appUrl("/api/v1/media/site-logo")
       : appUrl("/icon.svg"),
-    previewImageUrl,
-    previewAlt: g.title,
+    previewImages,
     isPasswordProtected: access.access.requiresPassword,
     message: body.message,
     password: body.password,

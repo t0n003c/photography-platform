@@ -246,6 +246,7 @@ export function galleryInvite(opts: {
   siteTitle?: string | null;
   logoUrl?: string | null;
   previewImageUrl?: string | null;
+  previewImages?: { url: string; alt?: string | null }[];
   previewAlt?: string | null;
   isPasswordProtected?: boolean;
   message?: string | null;
@@ -270,8 +271,35 @@ export function galleryInvite(opts: {
     ? `<img src="${escapeAttr(opts.logoUrl)}" alt="${escapeAttr(siteTitle)}" style="display:block;max-height:44px;max-width:220px;width:auto;height:auto;border:0">`
     : `<div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#111">${escape(siteTitle)}</div>`;
   const previewAlt = opts.previewAlt?.trim() || `${opts.galleryTitle} gallery preview`;
-  const previewImage = opts.previewImageUrl
-    ? `<img src="${escapeAttr(opts.previewImageUrl)}" alt="${escapeAttr(previewAlt)}" style="display:block;width:100%;height:auto;border:0">`
+  const previewImages = (
+    opts.previewImages?.length
+      ? opts.previewImages
+      : opts.previewImageUrl
+        ? [{ url: opts.previewImageUrl, alt: previewAlt }]
+        : []
+  )
+    .filter((image) => image.url.trim())
+    .slice(0, 5);
+  const previewImage = previewImages.length
+    ? previewImages.length === 1
+      ? `<img src="${escapeAttr(previewImages[0]!.url)}" alt="${escapeAttr(previewImages[0]!.alt?.trim() || previewAlt)}" style="display:block;width:100%;height:auto;border:0">`
+      : `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
+          <tr>
+            <td colspan="4" style="padding:0">
+              <img src="${escapeAttr(previewImages[0]!.url)}" alt="${escapeAttr(previewImages[0]!.alt?.trim() || previewAlt)}" style="display:block;width:100%;height:auto;border:0">
+            </td>
+          </tr>
+          <tr>
+            ${previewImages
+              .slice(1)
+              .map(
+                (image) => `<td width="25%" style="padding:4px 2px 0 2px">
+                  <img src="${escapeAttr(image.url)}" alt="${escapeAttr(image.alt?.trim() || previewAlt)}" style="display:block;width:100%;height:auto;border:0">
+                </td>`,
+              )
+              .join("")}
+          </tr>
+        </table>`
     : `<div style="background:#f4f1ec;padding:46px 24px;text-align:center">
         <div style="display:inline-block;border:1px solid #d8d2c8;border-radius:999px;padding:6px 12px;color:#6f675d;font-size:12px;letter-spacing:.08em;text-transform:uppercase">${opts.isPasswordProtected ? "Private gallery" : "Gallery preview"}</div>
         <div style="margin-top:18px;font-size:28px;line-height:1.15;font-family:Georgia,serif;color:#171717">${escape(opts.galleryTitle)}</div>
