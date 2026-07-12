@@ -58,6 +58,29 @@ export function LoginShell({
   const liquidGlassBlur = clampNumber(design.liquidGlassBlur, 0, 12);
   const liquidGlassSaturate = clampNumber(design.liquidGlassSaturate, 1, 2.2);
   const liquidGlassFallbackBlur = clampNumber(design.liquidGlassFallbackBlur, 8, 32);
+  const liquidStrengthRatio = (liquidGlassStrength - 40) / 140;
+  const liquidChromaRatio = liquidGlassChroma / 14;
+  const liquidBlurRatio = liquidGlassBlur / 12;
+  const liquidSaturateRatio = (liquidGlassSaturate - 1) / 1.2;
+  const liquidFallbackRatio = (liquidGlassFallbackBlur - 8) / 24;
+  const liquidSurfaceTopOpacity = 0.42 + liquidBlurRatio * 0.16;
+  const liquidSurfaceFromOpacity = 0.28 + liquidSaturateRatio * 0.14;
+  const liquidSurfaceToOpacity = 0.14 + liquidStrengthRatio * 0.12;
+  const liquidDarkSurfaceTopOpacity = 0.1 + liquidBlurRatio * 0.08;
+  const liquidDarkSurfaceFromOpacity = 0.42 + liquidSaturateRatio * 0.1;
+  const liquidDarkSurfaceToOpacity = 0.5 + liquidStrengthRatio * 0.12;
+  const liquidGlowOpacity = 0.22 + liquidStrengthRatio * 0.1;
+  const liquidDarkGlowOpacity = 0.42 + liquidStrengthRatio * 0.16;
+  const liquidInsetTopOpacity = 0.5 + liquidBlurRatio * 0.16;
+  const liquidDarkInsetTopOpacity = 0.16 + liquidBlurRatio * 0.12;
+  const liquidInsetOutlineOpacity = 0.12 + liquidChromaRatio * 0.14;
+  const liquidDarkInsetOutlineOpacity = 0.06 + liquidChromaRatio * 0.1;
+  const liquidPreviewOpacity = 0.18 + liquidStrengthRatio * 0.36;
+  const liquidPreviewDarkOpacity = 0.24 + liquidStrengthRatio * 0.34;
+  const liquidPreviewWhiteOpacity = 0.12 + liquidStrengthRatio * 0.18;
+  const liquidPreviewSoftOpacity = 0.1 + liquidStrengthRatio * 0.16;
+  const liquidPreviewBlurOpacity = 0.04 + liquidBlurRatio * 0.1;
+  const liquidPreviewSheenOpacity = 0.03 + liquidStrengthRatio * 0.08;
   const background =
     design.backgroundMode === "custom"
       ? design.backgroundColor
@@ -77,6 +100,42 @@ export function LoginShell({
     "--login-liquid-blur": `${liquidGlassBlur}px`,
     "--login-liquid-saturate": liquidGlassSaturate,
     "--login-liquid-fallback-blur": `${liquidGlassFallbackBlur}px`,
+    "--login-liquid-strength-alpha": liquidStrengthRatio.toFixed(3),
+    "--login-liquid-strength-pct": `${Math.round(liquidStrengthRatio * 100)}%`,
+    "--login-liquid-chroma-alpha": liquidChromaRatio.toFixed(3),
+    "--login-liquid-chroma-pct": `${Math.round(liquidChromaRatio * 100)}%`,
+    "--login-liquid-blur-alpha": liquidBlurRatio.toFixed(3),
+    "--login-liquid-saturate-alpha": liquidSaturateRatio.toFixed(3),
+    "--login-liquid-fallback-alpha": liquidFallbackRatio.toFixed(3),
+    "--login-liquid-surface-top-opacity": liquidSurfaceTopOpacity.toFixed(3),
+    "--login-liquid-surface-from-opacity": liquidSurfaceFromOpacity.toFixed(3),
+    "--login-liquid-surface-to-opacity": liquidSurfaceToOpacity.toFixed(3),
+    "--login-liquid-dark-surface-top-opacity": liquidDarkSurfaceTopOpacity.toFixed(3),
+    "--login-liquid-dark-surface-from-opacity": liquidDarkSurfaceFromOpacity.toFixed(3),
+    "--login-liquid-dark-surface-to-opacity": liquidDarkSurfaceToOpacity.toFixed(3),
+    "--login-liquid-border-mix": `${Math.round(10 + liquidChromaRatio * 52)}%`,
+    "--login-liquid-dark-border-mix": `${Math.round(8 + liquidChromaRatio * 42)}%`,
+    "--login-liquid-glow-size": `${Math.round(58 + liquidStrengthRatio * 38)}px`,
+    "--login-liquid-dark-glow-size": `${Math.round(70 + liquidStrengthRatio * 44)}px`,
+    "--login-liquid-glow-opacity": liquidGlowOpacity.toFixed(3),
+    "--login-liquid-dark-glow-opacity": liquidDarkGlowOpacity.toFixed(3),
+    "--login-liquid-rim-width": `${(1 + liquidChromaRatio * 2).toFixed(2)}px`,
+    "--login-liquid-rim-mix": `${Math.round(16 + liquidChromaRatio * 50)}%`,
+    "--login-liquid-dark-rim-mix": `${Math.round(12 + liquidChromaRatio * 50)}%`,
+    "--login-liquid-inset-top-opacity": liquidInsetTopOpacity.toFixed(3),
+    "--login-liquid-dark-inset-top-opacity": liquidDarkInsetTopOpacity.toFixed(3),
+    "--login-liquid-inset-blur": `${Math.round(18 + liquidFallbackRatio * 18)}px`,
+    "--login-liquid-inset-outline-opacity": liquidInsetOutlineOpacity.toFixed(3),
+    "--login-liquid-dark-inset-outline-opacity": liquidDarkInsetOutlineOpacity.toFixed(3),
+    "--login-liquid-preview-opacity": liquidPreviewOpacity.toFixed(3),
+    "--login-liquid-preview-dark-opacity": liquidPreviewDarkOpacity.toFixed(3),
+    "--login-liquid-preview-shift": `${((liquidStrengthRatio - 0.5) * 8).toFixed(2)}px`,
+    "--login-liquid-preview-blur": `${(liquidBlurRatio * 1.2).toFixed(2)}px`,
+    "--login-liquid-preview-white-opacity": liquidPreviewWhiteOpacity.toFixed(3),
+    "--login-liquid-preview-soft-opacity": liquidPreviewSoftOpacity.toFixed(3),
+    "--login-liquid-preview-blur-opacity": liquidPreviewBlurOpacity.toFixed(3),
+    "--login-liquid-preview-sheen-opacity": liquidPreviewSheenOpacity.toFixed(3),
+    "--login-liquid-preview-accent-mix": `${Math.round(18 + liquidChromaRatio * 42)}%`,
     "--login-photo-columns":
       design.photoSide === "left"
         ? `${photoWidth}% ${formWidth}%`
@@ -192,6 +251,8 @@ export function LoginShell({
       className={cn(
         "login-shell relative isolate flex w-full items-center justify-center overflow-hidden px-4 py-12 text-[hsl(var(--foreground))]",
         preview ? "min-h-[560px] rounded-lg border" : "min-h-screen",
+        preview && "login-shell--preview",
+        preview && useLiquidGlass && "login-shell--liquid-preview",
         isReference ? "login-shell--reference" : "bg-[hsl(var(--background))]",
       )}
       style={style}
