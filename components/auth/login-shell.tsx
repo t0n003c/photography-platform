@@ -1,7 +1,11 @@
+"use client";
+
 import { Fingerprint, KeyRound, ShieldCheck } from "lucide-react";
+import { LiquidGlassSurface } from "@/components/effects/liquid-glass-surface";
 import { cn } from "@/src/lib/utils";
 import {
   DEFAULT_LOGIN_DESIGN,
+  resolveLoginCardMaterial,
   type LoginDesignConfig,
 } from "@/src/lib/login-design";
 
@@ -37,13 +41,23 @@ export function LoginShell({
   preview?: boolean;
   photoUrl?: string | null;
 }) {
-  const isReference =
+  const isReferenceLayout =
     design.layout === "gradient-card" || design.layout === "split-photo";
   const isSplit = design.layout === "split-photo";
+  const cardMaterial = resolveLoginCardMaterial(design);
+  const hasGlassMaterial =
+    cardMaterial === "soft-glass" || cardMaterial === "liquid-glass";
+  const useLiquidGlass = cardMaterial === "liquid-glass";
+  const isReference = isReferenceLayout || hasGlassMaterial;
   const resolvedPhotoUrl = photoUrl || design.photoUrl.trim() || null;
   const photoWidth = clampNumber(design.photoWidth, 35, 70);
   const formWidth = 100 - photoWidth;
   const hoverIntensity = clampNumber(design.hoverGlowIntensity, 0, 70);
+  const liquidGlassStrength = clampNumber(design.liquidGlassStrength, 40, 180);
+  const liquidGlassChroma = clampNumber(design.liquidGlassChroma, 0, 14);
+  const liquidGlassBlur = clampNumber(design.liquidGlassBlur, 0, 12);
+  const liquidGlassSaturate = clampNumber(design.liquidGlassSaturate, 1, 2.2);
+  const liquidGlassFallbackBlur = clampNumber(design.liquidGlassFallbackBlur, 8, 32);
   const background =
     design.backgroundMode === "custom"
       ? design.backgroundColor
@@ -58,6 +72,11 @@ export function LoginShell({
     "--login-hover": design.hoverColor,
     "--login-hover-intensity": `${hoverIntensity}%`,
     "--login-hover-size": `${clampNumber(design.hoverGlowSize, 24, 70)}%`,
+    "--login-liquid-strength": liquidGlassStrength,
+    "--login-liquid-chroma": liquidGlassChroma,
+    "--login-liquid-blur": `${liquidGlassBlur}px`,
+    "--login-liquid-saturate": liquidGlassSaturate,
+    "--login-liquid-fallback-blur": `${liquidGlassFallbackBlur}px`,
     "--login-photo-columns":
       design.photoSide === "left"
         ? `${photoWidth}% ${formWidth}%`
@@ -65,6 +84,108 @@ export function LoginShell({
     "--login-photo-position": `${clampNumber(design.photoFocalX, 0, 100)}% ${clampNumber(design.photoFocalY, 0, 100)}%`,
     background,
   } as CSSPropertiesWithVars;
+  const cardClassName = cn(
+    "login-card relative isolate overflow-hidden rounded-xl border bg-[hsl(var(--background))]",
+    isReference ? "login-card--reference rounded-[1.75rem] shadow-inner" : "shadow-sm",
+    cardMaterial === "solid" &&
+      "login-card--solid border-[hsl(var(--border))] bg-[hsl(var(--background))] dark:bg-[hsl(var(--background))]",
+    hasGlassMaterial &&
+      "border-white/40 bg-white/92 dark:border-white/10 dark:bg-neutral-950/88",
+    useLiquidGlass && "login-card--liquid-glass",
+    isSplit && "login-card--split grid",
+  );
+  const cardContent = (
+    <>
+      {isReference && (
+        <div className="login-card-hover-color pointer-events-none absolute inset-0 z-0" />
+      )}
+      {isSplit && (
+        <div
+          className={cn(
+            "relative z-10 min-h-[240px] overflow-hidden bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] lg:min-h-[620px]",
+            !design.showPhotoOnMobile && "hidden lg:block",
+            design.photoSide === "right" && "lg:order-2",
+          )}
+        >
+          {resolvedPhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={resolvedPhotoUrl}
+              alt={design.photoAlt || "Login photograph"}
+              className="h-full w-full object-cover"
+              style={{ objectPosition: "var(--login-photo-position)" }}
+            />
+          ) : (
+            <div className="flex h-full min-h-[240px] items-center justify-center p-8 text-center text-white lg:min-h-[620px]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
+                  {siteName}
+                </p>
+                <p className="mt-4 text-3xl font-semibold leading-tight">
+                  Secure studio access
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="from-black/34 to-black/16 absolute inset-0 bg-gradient-to-t via-black/0" />
+        </div>
+      )}
+      <div
+        className={cn(
+          "relative z-10 flex min-w-0 flex-col",
+          isSplit && "justify-center",
+        )}
+      >
+        <div
+          className={cn(
+            "border-b p-5 text-center",
+            hasGlassMaterial &&
+              "border-white/50 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(255,255,255,0.56))] px-6 py-7 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top,rgba(38,38,38,0.96),rgba(10,10,10,0.58))]",
+            isReferenceLayout && !hasGlassMaterial && "px-6 py-7",
+          )}
+        >
+          {design.showBrand && (
+            <p
+              className={cn(
+                "text-xs font-semibold uppercase tracking-[0.24em] text-[hsl(var(--muted-foreground))]",
+                isReference && "text-[color:var(--login-accent)]",
+              )}
+            >
+              {siteName}
+            </p>
+          )}
+          <h1
+            className={cn(
+              "mt-2 text-xl font-semibold leading-tight",
+              isReference && "text-3xl font-bold tracking-tight",
+            )}
+          >
+            {design.headline}
+          </h1>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-[hsl(var(--muted-foreground))]">
+            {description}
+          </p>
+          {design.showIconRow && (
+            <div className="mt-5 flex justify-center gap-3">
+              {[ShieldCheck, Fingerprint, KeyRound].map((Icon, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full border bg-[hsl(var(--background))] text-[hsl(var(--muted-foreground))] shadow-sm",
+                    hasGlassMaterial &&
+                      "border-white/50 bg-white/80 text-[color:var(--login-accent)] dark:border-white/10 dark:bg-white/10",
+                  )}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className={cn("p-5", isReference && "p-6")}>{children}</div>
+      </div>
+    </>
+  );
 
   return (
     <section
@@ -86,124 +207,62 @@ export function LoginShell({
           "relative z-10 w-full",
           isSplit ? "max-w-5xl" : "max-w-sm",
           isReference &&
-            "rounded-[2rem] border border-white/25 bg-white/82 p-1 shadow-[0_28px_90px_rgb(15_23_42/0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-950/72",
+            "bg-white/82 dark:bg-neutral-950/72 rounded-[2rem] border border-white/25 p-1 shadow-[0_28px_90px_rgb(15_23_42/0.28)] backdrop-blur-2xl dark:border-white/10",
         )}
       >
-        <div
-          className={cn(
-            "login-card relative isolate overflow-hidden rounded-xl border bg-[hsl(var(--background))]",
-            isReference
-              ? "login-card--reference rounded-[1.75rem] border-white/40 bg-white/92 shadow-inner dark:border-white/10 dark:bg-neutral-950/88"
-              : "shadow-sm",
-            isSplit && "login-card--split grid",
-          )}
-          onPointerEnter={isReference ? updateLoginHoverPosition : undefined}
-          onPointerMove={isReference ? updateLoginHoverPosition : undefined}
-        >
-          {isReference && (
-            <div className="login-card-hover-color pointer-events-none absolute inset-0 z-0" />
-          )}
-          {isSplit && (
-            <div
-              className={cn(
-                "relative z-10 min-h-[240px] overflow-hidden bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] lg:min-h-[620px]",
-                !design.showPhotoOnMobile && "hidden lg:block",
-                design.photoSide === "right" && "lg:order-2",
-              )}
-            >
-              {resolvedPhotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={resolvedPhotoUrl}
-                  alt={design.photoAlt || "Login photograph"}
-                  className="h-full w-full object-cover"
-                  style={{ objectPosition: "var(--login-photo-position)" }}
-                />
-              ) : (
-                <div className="flex h-full min-h-[240px] items-center justify-center p-8 text-center text-white lg:min-h-[620px]">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
-                      {siteName}
-                    </p>
-                    <p className="mt-4 text-3xl font-semibold leading-tight">
-                      Secure studio access
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/34 via-black/0 to-black/16" />
-            </div>
-          )}
-          <div
-            className={cn(
-              "relative z-10 flex min-w-0 flex-col",
-              isSplit && "justify-center",
-            )}
+        {useLiquidGlass ? (
+          <LiquidGlassSurface
+            className={cardClassName}
+            options={{
+              scale: -liquidGlassStrength,
+              chroma: liquidGlassChroma,
+              blur: liquidGlassBlur,
+              saturate: liquidGlassSaturate,
+              fallbackBlur: liquidGlassFallbackBlur,
+            }}
+            refreshKey={`${design.layout}:${resolvedPhotoUrl ?? "none"}`}
+            onPointerEnter={isReference ? updateLoginHoverPosition : undefined}
+            onPointerMove={isReference ? updateLoginHoverPosition : undefined}
           >
-            <div
-              className={cn(
-                "border-b p-5 text-center",
-                isReference &&
-                  "border-white/50 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(255,255,255,0.56))] px-6 py-7 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top,rgba(38,38,38,0.96),rgba(10,10,10,0.58))]",
-              )}
-            >
-              {design.showBrand && (
-                <p
-                  className={cn(
-                    "text-xs font-semibold uppercase tracking-[0.24em] text-[hsl(var(--muted-foreground))]",
-                    isReference && "text-[color:var(--login-accent)]",
-                  )}
-                >
-                  {siteName}
-                </p>
-              )}
-              <h1
-                className={cn(
-                  "mt-2 text-xl font-semibold leading-tight",
-                  isReference && "text-3xl font-bold tracking-tight",
-                )}
-              >
-                {design.headline}
-              </h1>
-              <p className="mx-auto mt-2 max-w-xs text-sm text-[hsl(var(--muted-foreground))]">
-                {description}
-              </p>
-              {design.showIconRow && (
-                <div className="mt-5 flex justify-center gap-3">
-                  {[ShieldCheck, Fingerprint, KeyRound].map((Icon, index) => (
-                    <span
-                      key={index}
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full border bg-[hsl(var(--background))] text-[hsl(var(--muted-foreground))] shadow-sm",
-                        isReference &&
-                          "border-white/50 bg-white/80 text-[color:var(--login-accent)] dark:border-white/10 dark:bg-white/10",
-                      )}
-                    >
-                      <Icon className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className={cn("p-5", isReference && "p-6")}>{children}</div>
+            {cardContent}
+          </LiquidGlassSurface>
+        ) : (
+          <div
+            className={cardClassName}
+            onPointerEnter={isReference ? updateLoginHoverPosition : undefined}
+            onPointerMove={isReference ? updateLoginHoverPosition : undefined}
+          >
+            {cardContent}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
 }
 
 export function loginControlClass(design: LoginDesignConfig) {
-  if (design.layout === "simple") return undefined;
+  const cardMaterial = resolveLoginCardMaterial(design);
+  if (design.layout === "simple" && cardMaterial === "solid") return undefined;
+  if (cardMaterial === "liquid-glass") {
+    return "h-11 rounded-xl border-white/45 bg-white/62 shadow-inner backdrop-blur-sm transition focus:bg-white/82 dark:border-white/10 dark:bg-white/10 dark:focus:bg-white/16";
+  }
   return "h-11 rounded-xl border-white/60 bg-white/72 shadow-inner transition focus:bg-white dark:border-white/10 dark:bg-white/10 dark:focus:bg-white/15";
 }
 
 export function loginPrimaryButtonClass(design: LoginDesignConfig) {
-  if (design.layout === "simple") return undefined;
+  const cardMaterial = resolveLoginCardMaterial(design);
+  if (design.layout === "simple" && cardMaterial === "solid") return undefined;
+  if (cardMaterial === "liquid-glass") {
+    return "h-11 rounded-xl bg-white text-neutral-950 shadow-[0_14px_34px_rgb(15_23_42/0.2)] transition-transform hover:-translate-y-0.5 hover:bg-white/92 hover:opacity-100 active:translate-y-0 dark:bg-white dark:text-neutral-950 dark:hover:bg-white/90";
+  }
   return "h-11 rounded-xl bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] text-white shadow-[0_14px_30px_rgb(15_23_42/0.22)] transition-transform hover:-translate-y-0.5 hover:opacity-100 active:translate-y-0";
 }
 
 export function loginSecondaryButtonClass(design: LoginDesignConfig) {
-  if (design.layout === "simple") return undefined;
+  const cardMaterial = resolveLoginCardMaterial(design);
+  if (design.layout === "simple" && cardMaterial === "solid") return undefined;
+  if (cardMaterial === "liquid-glass") {
+    return "h-11 rounded-xl border-white/45 bg-white/30 shadow-sm backdrop-blur hover:bg-white/46 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/16";
+  }
   return "h-11 rounded-xl border-white/60 bg-white/60 shadow-sm backdrop-blur hover:bg-white/82 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15";
 }

@@ -8923,6 +8923,45 @@ main:has(.portfolio-list-tora-full-showcase-slider) .py-4:has(.portfolio-list-to
   animation: login-card-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.login-shell--reference .login-card--solid {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background));
+  box-shadow:
+    0 22px 72px rgb(15 23 42 / 0.18),
+    inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+.login-shell--reference .login-card--liquid-glass {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.48), transparent 44%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.36), rgb(255 255 255 / 0.18));
+  border-color: rgb(255 255 255 / 0.42);
+  box-shadow:
+    0 26px 74px rgb(15 23 42 / 0.28),
+    inset 0 1px 1px rgb(255 255 255 / 0.6),
+    inset 0 -12px 24px rgb(255 255 255 / 0.08),
+    inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.dark .login-shell--reference .login-card--liquid-glass {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.14), transparent 42%),
+    linear-gradient(180deg, rgb(16 16 22 / 0.44), rgb(8 8 12 / 0.58));
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow:
+    0 30px 92px rgb(0 0 0 / 0.52),
+    inset 0 1px 1px rgb(255 255 255 / 0.22),
+    inset 0 -12px 24px rgb(255 255 255 / 0.04),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.login-card--liquid-glass.liquid-glass-fallback {
+  backdrop-filter: blur(var(--login-liquid-fallback-blur, 16px))
+    saturate(var(--login-liquid-saturate, 1.45));
+  -webkit-backdrop-filter: blur(var(--login-liquid-fallback-blur, 16px))
+    saturate(var(--login-liquid-saturate, 1.45));
+}
+
 .login-shell--reference .login-card-hover-color {
   background: radial-gradient(circle at var(--login-hover-x, 50%) var(--login-hover-y, 50%), color-mix(in srgb, var(--login-hover, #f97316) var(--login-hover-intensity, 34%), transparent), transparent var(--login-hover-size, 44%));
   opacity: 0;

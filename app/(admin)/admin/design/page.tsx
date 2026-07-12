@@ -858,7 +858,7 @@ function LoginDesignCard() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Field label="Layout">
                 <Select
                   value={s.layout}
@@ -869,6 +869,22 @@ function LoginDesignCard() {
                   <option value="simple">Simple card</option>
                   <option value="gradient-card">Gradient card</option>
                   <option value="split-photo">Photo + login</option>
+                </Select>
+              </Field>
+              <Field label="Material">
+                <Select
+                  value={s.cardMaterial}
+                  onChange={(e) =>
+                    setS({
+                      ...s,
+                      cardMaterial: e.target.value as LoginDesignConfig["cardMaterial"],
+                    })
+                  }
+                >
+                  <option value="layout-default">Layout default</option>
+                  <option value="solid">Solid</option>
+                  <option value="soft-glass">Soft glass</option>
+                  <option value="liquid-glass">Liquid glass</option>
                 </Select>
               </Field>
               <Field label="Background">
@@ -983,6 +999,81 @@ function LoginDesignCard() {
                 />
               </Field>
             </div>
+
+            {s.cardMaterial === "liquid-glass" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label={`Liquid strength (${s.liquidGlassStrength})`}>
+                    <Input
+                      type="range"
+                      min={40}
+                      max={180}
+                      value={s.liquidGlassStrength}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          liquidGlassStrength: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Prism fringe (${s.liquidGlassChroma})`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={14}
+                      value={s.liquidGlassChroma}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          liquidGlassChroma: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Backdrop blur (${s.liquidGlassBlur}px)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={12}
+                      value={s.liquidGlassBlur}
+                      onChange={(e) =>
+                        setS({ ...s, liquidGlassBlur: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Saturation (${s.liquidGlassSaturate.toFixed(2)}x)`}>
+                    <Input
+                      type="range"
+                      min={1}
+                      max={2.2}
+                      step={0.05}
+                      value={s.liquidGlassSaturate}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          liquidGlassSaturate: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Fallback blur (${s.liquidGlassFallbackBlur}px)`}>
+                    <Input
+                      type="range"
+                      min={8}
+                      max={32}
+                      value={s.liquidGlassFallbackBlur}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          liquidGlassFallbackBlur: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
 
             {s.layout === "split-photo" && (
               <div className="space-y-3 rounded-lg border p-3">

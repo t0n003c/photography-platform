@@ -1,6 +1,11 @@
 export type LoginLayout = "simple" | "gradient-card" | "split-photo";
 export type LoginBackgroundMode = "default" | "soft-gradient" | "custom";
 export type LoginPhotoSide = "left" | "right";
+export type LoginCardMaterial =
+  | "layout-default"
+  | "solid"
+  | "soft-glass"
+  | "liquid-glass";
 
 export interface LoginDesignConfig {
   layout: LoginLayout;
@@ -16,6 +21,12 @@ export interface LoginDesignConfig {
   hoverColor: string;
   hoverGlowSize: number;
   hoverGlowIntensity: number;
+  cardMaterial: LoginCardMaterial;
+  liquidGlassStrength: number;
+  liquidGlassChroma: number;
+  liquidGlassBlur: number;
+  liquidGlassSaturate: number;
+  liquidGlassFallbackBlur: number;
   primaryLabel: string;
   passkeyLabel: string;
   photoId: string | null;
@@ -42,6 +53,12 @@ export const DEFAULT_LOGIN_DESIGN: LoginDesignConfig = {
   hoverColor: "#f97316",
   hoverGlowSize: 44,
   hoverGlowIntensity: 34,
+  cardMaterial: "layout-default",
+  liquidGlassStrength: 96,
+  liquidGlassChroma: 5,
+  liquidGlassBlur: 3,
+  liquidGlassSaturate: 1.45,
+  liquidGlassFallbackBlur: 16,
   primaryLabel: "Sign in",
   passkeyLabel: "Sign in with passkey",
   photoId: null,
@@ -62,12 +79,7 @@ function booleanValue(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
 }
 
-function numberValue(
-  value: unknown,
-  fallback: number,
-  min: number,
-  max: number,
-) {
+function numberValue(value: unknown, fallback: number, min: number, max: number) {
   const parsed =
     typeof value === "number"
       ? value
@@ -129,6 +141,41 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
       0,
       70,
     ),
+    cardMaterial: enumValue(
+      input.cardMaterial,
+      ["layout-default", "solid", "soft-glass", "liquid-glass"] as const,
+      DEFAULT_LOGIN_DESIGN.cardMaterial,
+    ),
+    liquidGlassStrength: numberValue(
+      input.liquidGlassStrength,
+      DEFAULT_LOGIN_DESIGN.liquidGlassStrength,
+      40,
+      180,
+    ),
+    liquidGlassChroma: numberValue(
+      input.liquidGlassChroma,
+      DEFAULT_LOGIN_DESIGN.liquidGlassChroma,
+      0,
+      14,
+    ),
+    liquidGlassBlur: numberValue(
+      input.liquidGlassBlur,
+      DEFAULT_LOGIN_DESIGN.liquidGlassBlur,
+      0,
+      12,
+    ),
+    liquidGlassSaturate: numberValue(
+      input.liquidGlassSaturate,
+      DEFAULT_LOGIN_DESIGN.liquidGlassSaturate,
+      1,
+      2.2,
+    ),
+    liquidGlassFallbackBlur: numberValue(
+      input.liquidGlassFallbackBlur,
+      DEFAULT_LOGIN_DESIGN.liquidGlassFallbackBlur,
+      8,
+      32,
+    ),
     primaryLabel: stringValue(input.primaryLabel, DEFAULT_LOGIN_DESIGN.primaryLabel),
     passkeyLabel: stringValue(input.passkeyLabel, DEFAULT_LOGIN_DESIGN.passkeyLabel),
     photoId: typeof input.photoId === "string" ? input.photoId : null,
@@ -151,15 +198,17 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
       0,
       100,
     ),
-    photoWidth: numberValue(
-      input.photoWidth,
-      DEFAULT_LOGIN_DESIGN.photoWidth,
-      35,
-      70,
-    ),
+    photoWidth: numberValue(input.photoWidth, DEFAULT_LOGIN_DESIGN.photoWidth, 35, 70),
     showPhotoOnMobile: booleanValue(
       input.showPhotoOnMobile,
       DEFAULT_LOGIN_DESIGN.showPhotoOnMobile,
     ),
   };
+}
+
+export function resolveLoginCardMaterial(
+  design: Pick<LoginDesignConfig, "layout" | "cardMaterial">,
+): Exclude<LoginCardMaterial, "layout-default"> {
+  if (design.cardMaterial !== "layout-default") return design.cardMaterial;
+  return design.layout === "simple" ? "solid" : "soft-glass";
 }

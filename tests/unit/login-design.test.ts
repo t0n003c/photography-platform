@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LOGIN_DESIGN,
   normalizeLoginDesign,
+  resolveLoginCardMaterial,
 } from "@/src/lib/login-design";
 
 describe("login design config", () => {
@@ -25,6 +26,12 @@ describe("login design config", () => {
         hoverColor: "#ffaa00",
         hoverGlowSize: 60,
         hoverGlowIntensity: 42,
+        cardMaterial: "liquid-glass",
+        liquidGlassStrength: 130,
+        liquidGlassChroma: 8,
+        liquidGlassBlur: 4,
+        liquidGlassSaturate: 1.65,
+        liquidGlassFallbackBlur: 20,
         primaryLabel: "Enter",
         passkeyLabel: "Use passkey",
         photoId: "photo-login",
@@ -46,6 +53,12 @@ describe("login design config", () => {
       hoverColor: "#ffaa00",
       hoverGlowSize: 60,
       hoverGlowIntensity: 42,
+      cardMaterial: "liquid-glass",
+      liquidGlassStrength: 130,
+      liquidGlassChroma: 8,
+      liquidGlassBlur: 4,
+      liquidGlassSaturate: 1.65,
+      liquidGlassFallbackBlur: 20,
       passkeyLabel: "Use passkey",
       photoId: "photo-login",
       photoUrl: "https://example.com/login.jpg",
@@ -69,6 +82,11 @@ describe("login design config", () => {
       normalizeLoginDesign({
         hoverGlowSize: 200,
         hoverGlowIntensity: -20,
+        liquidGlassStrength: 999,
+        liquidGlassChroma: -2,
+        liquidGlassBlur: 40,
+        liquidGlassSaturate: 9,
+        liquidGlassFallbackBlur: 3,
         photoFocalX: -50,
         photoFocalY: 180,
         photoWidth: 12,
@@ -76,9 +94,35 @@ describe("login design config", () => {
     ).toMatchObject({
       hoverGlowSize: 70,
       hoverGlowIntensity: 0,
+      liquidGlassStrength: 180,
+      liquidGlassChroma: 0,
+      liquidGlassBlur: 12,
+      liquidGlassSaturate: 2.2,
+      liquidGlassFallbackBlur: 8,
       photoFocalX: 0,
       photoFocalY: 100,
       photoWidth: 35,
     });
+  });
+
+  it("resolves layout-default material without changing old configs", () => {
+    expect(
+      resolveLoginCardMaterial({
+        layout: "simple",
+        cardMaterial: "layout-default",
+      }),
+    ).toBe("solid");
+    expect(
+      resolveLoginCardMaterial({
+        layout: "gradient-card",
+        cardMaterial: "layout-default",
+      }),
+    ).toBe("soft-glass");
+    expect(
+      resolveLoginCardMaterial({
+        layout: "split-photo",
+        cardMaterial: "liquid-glass",
+      }),
+    ).toBe("liquid-glass");
   });
 });
