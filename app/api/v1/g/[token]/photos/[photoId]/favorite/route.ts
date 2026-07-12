@@ -1,10 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { db } from "@/src/db/client";
 import { favorite } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import { cookieName, verifyGallerySession } from "@/src/auth/gallery-session";
-import { ok, notFound, forbidden, problem } from "@/src/lib/http";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { ok, notFound } from "@/src/lib/http";
 import { grantAuthorizesPhoto } from "@/src/db/queries/photos";
 import { newId } from "@/src/lib/id";
 import type { Grant } from "@/src/auth/grant";
@@ -19,20 +17,11 @@ async function gate(
   token: string,
   photoId: string,
 ): Promise<{ grant: Grant } | { res: Response }> {
-  const grant = await resolveGrant(token);
-  if (!grant) return { res: notFound() };
-  if (!grant.canView) return { res: forbidden() };
-
-  if (grant.passwordHash) {
-    const cookie = (await cookies()).get(cookieName(grant.id))?.value;
-    if (!verifyGallerySession(cookie, grant.id)) {
-      return {
-        res: problem(401, "GALLERY_LOCKED", "This gallery is password protected."),
-      };
-    }
-  }
-
-  if (!grant.canFavorite) return { res: forbidden() };
+  const resolved = await requireClientGalleryAccess(token, {
+    permission: "favorite",
+  });
+  if ("res" in resolved) return { res: resolved.res };
+  const { grant } = resolved.access;
   if (!(await grantAuthorizesPhoto(grant, photoId))) return { res: notFound() };
   return { grant };
 }

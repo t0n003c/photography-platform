@@ -1,10 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { db } from "@/src/db/client";
 import { download } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import { cookieName, verifyGallerySession } from "@/src/auth/gallery-session";
-import { ok, notFound, forbidden, problem } from "@/src/lib/http";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { ok, notFound } from "@/src/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +13,9 @@ export async function GET(
   ctx: { params: Promise<{ token: string; downloadId: string }> },
 ) {
   const { token, downloadId } = await ctx.params;
-  const grant = await resolveGrant(token);
-  if (!grant) return notFound();
-  if (!grant.canView) return forbidden();
-
-  if (grant.passwordHash) {
-    const cookie = (await cookies()).get(cookieName(grant.id))?.value;
-    if (!verifyGallerySession(cookie, grant.id)) {
-      return problem(401, "GALLERY_LOCKED", "This gallery is password protected.");
-    }
-  }
+  const resolved = await requireClientGalleryAccess(token, { permission: "view" });
+  if ("res" in resolved) return resolved.res;
+  const { grant } = resolved.access;
 
   const rows = await db
     .select()

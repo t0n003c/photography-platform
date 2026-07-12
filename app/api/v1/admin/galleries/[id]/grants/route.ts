@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, isNull, desc } from "drizzle-orm";
+import { and, eq, isNull, desc, sql } from "drizzle-orm";
 import { requireRole } from "@/src/auth/session";
 import { created, notFound, parseJson, ok } from "@/src/lib/http";
 import { clientIp, userAgent } from "@/src/lib/request";
@@ -16,8 +16,8 @@ import { galleryInvite } from "@/src/email/templates";
 export const dynamic = "force-dynamic";
 
 const CreateSchema = z.object({
-  clientId: z.string().optional(),
-  label: z.string().optional(),
+  clientId: z.string().nullable().optional(),
+  label: z.string().nullable().optional(),
   permissions: z
     .object({
       view: z.boolean().optional(),
@@ -25,15 +25,13 @@ const CreateSchema = z.object({
       download: z.boolean().optional(),
     })
     .optional(),
-  password: z.string().min(1).optional(),
-  expiresAt: z.string().datetime().optional(),
+  password: z.string().min(1).nullable().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  sendInvite: z.boolean().default(false),
 });
 
 // GET — list grants for a gallery (token_hash excluded).
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -48,6 +46,7 @@ export async function GET(
       canFavorite: galleryAccessGrant.canFavorite,
       canDownload: galleryAccessGrant.canDownload,
       expiresAt: galleryAccessGrant.expiresAt,
+      hasPassword: sql<boolean>`${galleryAccessGrant.passwordHash} is not null`,
       revokedAt: galleryAccessGrant.revokedAt,
       lastAccessedAt: galleryAccessGrant.lastAccessedAt,
       accessCount: galleryAccessGrant.accessCount,
@@ -63,10 +62,7 @@ export async function GET(
 }
 
 // POST — create a share grant (token shown once).
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -76,7 +72,7 @@ export async function POST(
   const body = parsed.data;
 
   const exists = await db
-    .select({ id: gallery.id, title: gallery.title })
+    .select({ id: gallery.id, title: gallery.title, shootDate: gallery.shootDate })
     .from(gallery)
     .where(and(eq(gallery.id, id), isNull(gallery.deletedAt)))
     .limit(1);
@@ -113,8 +109,7 @@ export async function POST(
 
   const shareUrl = `${getEnv().APP_BASE_URL}/g/${raw}`;
 
-  // Email the client an invite if this grant is bound to one.
-  if (body.clientId) {
+  if (body.sendInvite && body.clientId) {
     const c = await db
       .select({ email: client.email, name: client.name })
       .from(client)
@@ -127,13 +122,33 @@ export async function POST(
           clientName: c[0].name,
           galleryTitle: exists[0]!.title,
           shareUrl,
+          password: body.password,
+          shootDate: exists[0]!.shootDate,
+          expiresAt,
+          permissions: {
+            favorite: body.permissions?.favorite ?? true,
+            download: body.permissions?.download ?? false,
+          },
         }),
       );
     }
   }
 
   return created({
-    grant: { id: grantId, galleryId: id, expiresAt },
+    grant: {
+      id: grantId,
+      galleryId: id,
+      clientId: body.clientId ?? null,
+      label: body.label ?? null,
+      canView: body.permissions?.view ?? true,
+      canFavorite: body.permissions?.favorite ?? true,
+      canDownload: body.permissions?.download ?? false,
+      expiresAt,
+      revokedAt: null,
+      lastAccessedAt: null,
+      accessCount: 0,
+      hasPassword: Boolean(passwordHash),
+    },
     shareUrl,
     tokenShownOnce: true,
   });

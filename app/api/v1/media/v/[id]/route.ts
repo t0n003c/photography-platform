@@ -3,7 +3,7 @@ import { db } from "@/src/db/client";
 import { photo, photoVariant } from "@/src/db/schema";
 import { getStorage } from "@/src/storage";
 import { isPhotoPublic, grantAuthorizesPhoto } from "@/src/db/queries/photos";
-import { resolveGrant } from "@/src/auth/grant";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
 import { getSession } from "@/src/auth/session";
 import { notFound } from "@/src/lib/http";
 
@@ -44,8 +44,12 @@ export async function GET(
     } else {
       // Otherwise require a client-gallery grant token (?t=).
       const token = new URL(req.url).searchParams.get("t") ?? "";
-      const grant = token ? await resolveGrant(token) : null;
-      const authorized = grant ? await grantAuthorizesPhoto(grant, p.id) : false;
+      if (!token) return notFound();
+      const resolved = await requireClientGalleryAccess(token, {
+        permission: "view",
+      });
+      if ("res" in resolved) return resolved.res;
+      const authorized = await grantAuthorizesPhoto(resolved.access.grant, p.id);
       if (!authorized) return notFound(); // do not reveal private existence
       cacheControl = "private, no-store";
     }

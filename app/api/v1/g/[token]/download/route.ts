@@ -1,16 +1,8 @@
 import { z } from "zod";
 import { db } from "@/src/db/client";
 import { download } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import {
-  accepted,
-  ok,
-  notFound,
-  forbidden,
-  problem,
-  tooMany,
-  parseJson,
-} from "@/src/lib/http";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { accepted, ok, notFound, problem, tooMany, parseJson } from "@/src/lib/http";
 import { rateLimit } from "@/src/lib/ratelimit";
 import { clientIp, userAgent } from "@/src/lib/request";
 import { newId } from "@/src/lib/id";
@@ -28,14 +20,13 @@ const bodySchema = z.object({
 
 // POST /api/v1/g/:token/download — downloads are ORIGINAL, full quality.
 // single → an authorized original-file URL; zip → kick off a build of originals.
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ token: string }> },
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
-  const grant = await resolveGrant(token);
-  if (!grant) return notFound();
-  if (!grant.canDownload) return forbidden();
+  const resolved = await requireClientGalleryAccess(token, {
+    permission: "download",
+  });
+  if ("res" in resolved) return resolved.res;
+  const { grant } = resolved.access;
 
   const parsed = await parseJson(req, bodySchema);
   if ("error" in parsed) return parsed.error;
@@ -48,7 +39,11 @@ export async function POST(
     const rl = await rateLimit(`gdl:single:${grant.id}`, 60, 3600);
     if (!rl.ok) return tooMany(rl.retryAfter);
     if (!photoId) {
-      return problem(422, "VALIDATION_ERROR", "photoId is required for single downloads.");
+      return problem(
+        422,
+        "VALIDATION_ERROR",
+        "photoId is required for single downloads.",
+      );
     }
     if (!(await grantAuthorizesPhoto(grant, photoId))) return notFound();
 

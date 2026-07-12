@@ -28,6 +28,14 @@ function formatDateTime(value: Date | string | undefined): string {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("en-US");
 }
 
+function formatDate(value: Date | string | undefined | null): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleDateString("en-US", { dateStyle: "long" });
+}
+
 function renderTemplate(template: string, tokens: Record<string, string>): string {
   return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key) => {
     return tokens[key] ?? "";
@@ -215,18 +223,61 @@ export function galleryInvite(opts: {
   clientName?: string | null;
   galleryTitle: string;
   shareUrl: string;
+  message?: string | null;
+  password?: string | null;
+  shootDate?: Date | string | null;
+  expiresAt?: Date | string | null;
+  permissions?: {
+    favorite?: boolean;
+    download?: boolean;
+  };
 }): EmailMessage {
   const greeting = opts.clientName ? `Hi ${escape(opts.clientName)},` : "Hi,";
+  const shootDate = formatDate(opts.shootDate);
+  const expiresAt = formatDateTime(opts.expiresAt ?? undefined);
+  const permissions = [
+    "view",
+    opts.permissions?.favorite ? "favorite photos" : null,
+    opts.permissions?.download ? "download originals" : null,
+  ].filter(Boolean);
+  const detailRows = [
+    shootDate ? `<li><strong>Shoot date:</strong> ${escape(shootDate)}</li>` : "",
+    expiresAt ? `<li><strong>Access expires:</strong> ${escape(expiresAt)}</li>` : "",
+    permissions.length
+      ? `<li><strong>Access:</strong> ${escape(permissions.join(", "))}</li>`
+      : "",
+    opts.password ? `<li><strong>Password:</strong> ${escape(opts.password)}</li>` : "",
+  ]
+    .filter(Boolean)
+    .join("");
+  const message = opts.message?.trim()
+    ? `<p style="white-space:pre-wrap">${escape(opts.message.trim())}</p>`
+    : "";
   const body = `
     <p>${greeting}</p>
     <p>Your gallery <strong>${escape(opts.galleryTitle)}</strong> is ready to view.</p>
+    ${message}
+    ${detailRows ? `<ul style="padding-left:20px">${detailRows}</ul>` : ""}
     <p><a href="${escape(opts.shareUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open your gallery</a></p>
     <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${escape(opts.shareUrl)}</p>`;
+  const textParts = [
+    greeting,
+    "",
+    `Your gallery "${opts.galleryTitle}" is ready to view.`,
+    opts.message?.trim() ? "" : "",
+    opts.message?.trim() ? opts.message.trim() : "",
+    shootDate ? `Shoot date: ${shootDate}` : "",
+    expiresAt ? `Access expires: ${expiresAt}` : "",
+    permissions.length ? `Access: ${permissions.join(", ")}` : "",
+    opts.password ? `Password: ${opts.password}` : "",
+    "",
+    `Open your gallery: ${opts.shareUrl}`,
+  ].filter((part) => part !== "");
   return {
     to: opts.to,
     subject: `Your gallery: ${opts.galleryTitle}`,
     html: layout("Your gallery is ready", body),
-    text: `${greeting}\n\nYour gallery "${opts.galleryTitle}" is ready: ${opts.shareUrl}`,
+    text: textParts.join("\n"),
   };
 }
 

@@ -1,14 +1,8 @@
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/src/db/client";
-import { gallery } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import {
-  cookieName,
-  issueGallerySession,
-} from "@/src/auth/gallery-session";
+import { loadClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { cookieName, issueGallerySession } from "@/src/auth/gallery-session";
 import { verifyPassword } from "@/src/lib/password";
-import { ok, notFound, problem, tooMany, parseJson } from "@/src/lib/http";
+import { ok, problem, tooMany, parseJson, forbidden } from "@/src/lib/http";
 import { rateLimit } from "@/src/lib/ratelimit";
 import { clientIp } from "@/src/lib/request";
 
@@ -21,10 +15,7 @@ const SESSION_TTL = 3600;
 // POST /api/v1/g/:token/unlock — exchange a gallery/grant password for a
 // short-lived session cookie. Generic errors so we never reveal which token
 // exists or why a password failed (SECURITY.md §7).
-export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ token: string }> },
-) {
+export async function POST(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
 
   // Rate-limit token RESOLUTION (per IP) before any DB lookup, so token
@@ -33,8 +24,10 @@ export async function POST(
   const ipRl = await rateLimit(`gunlock-ip:${ip}`, 30, 900);
   if (!ipRl.ok) return tooMany(ipRl.retryAfter);
 
-  const grant = await resolveGrant(token);
-  if (!grant) return notFound();
+  const resolved = await loadClientGalleryAccess(token);
+  if ("res" in resolved) return resolved.res;
+  const { grant, passwordHash } = resolved.access;
+  if (!grant.canView) return forbidden();
 
   const rl = await rateLimit(`gunlock:${grant.id}:${ip}`, 10, 900);
   if (!rl.ok) return tooMany(rl.retryAfter);
@@ -43,21 +36,10 @@ export async function POST(
   if ("error" in parsed) return parsed.error;
   const { password } = parsed.data;
 
-  // The grant password takes precedence; otherwise fall back to the gallery's.
-  let storedHash = grant.passwordHash;
-  if (!storedHash) {
-    const grows = await db
-      .select({ passwordHash: gallery.passwordHash })
-      .from(gallery)
-      .where(eq(gallery.id, grant.galleryId))
-      .limit(1);
-    storedHash = grows[0]?.passwordHash ?? null;
-  }
-
   // No password set anywhere — nothing to unlock.
-  if (!storedHash) return ok({ unlocked: true });
+  if (!passwordHash) return ok({ unlocked: true });
 
-  const valid = await verifyPassword(password, storedHash);
+  const valid = await verifyPassword(password, passwordHash);
   if (!valid) {
     return problem(401, "INVALID_PASSWORD", "Unable to unlock this gallery.");
   }

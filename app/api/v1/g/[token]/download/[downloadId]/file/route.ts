@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { download } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import { notFound, forbidden, gone, problem } from "@/src/lib/http";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { notFound, gone, problem } from "@/src/lib/http";
 import { getStorage } from "@/src/storage";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +13,11 @@ export async function GET(
   ctx: { params: Promise<{ token: string; downloadId: string }> },
 ) {
   const { token, downloadId } = await ctx.params;
-  const grant = await resolveGrant(token);
-  if (!grant) return notFound();
-  if (!grant.canDownload) return forbidden();
+  const resolved = await requireClientGalleryAccess(token, {
+    permission: "download",
+  });
+  if ("res" in resolved) return resolved.res;
+  const { grant } = resolved.access;
 
   const rows = await db
     .select()

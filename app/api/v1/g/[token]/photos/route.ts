@@ -1,10 +1,8 @@
 import { and, asc, eq, gt, isNull, or } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { db } from "@/src/db/client";
 import { galleryPhoto, photo } from "@/src/db/schema";
-import { resolveGrant } from "@/src/auth/grant";
-import { cookieName, verifyGallerySession } from "@/src/auth/gallery-session";
-import { paginated, notFound, forbidden, problem } from "@/src/lib/http";
+import { requireClientGalleryAccess } from "@/src/auth/client-gallery-access";
+import { paginated } from "@/src/lib/http";
 import { clampLimit, decodeCursor, encodeCursor } from "@/src/lib/cursor";
 import { serializePhotos } from "@/src/db/queries/photos";
 
@@ -12,27 +10,15 @@ export const dynamic = "force-dynamic";
 
 // GET /api/v1/g/:token/photos — keyset-paginated photos for the grant's gallery.
 // Variant URLs carry the share token so the media route can authorize them.
-export async function GET(
-  req: Request,
-  ctx: { params: Promise<{ token: string }> },
-) {
+export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
-  const grant = await resolveGrant(token);
-  if (!grant) return notFound();
-  if (!grant.canView) return forbidden();
-
-  if (grant.passwordHash) {
-    const cookie = (await cookies()).get(cookieName(grant.id))?.value;
-    if (!verifyGallerySession(cookie, grant.id)) {
-      return problem(401, "GALLERY_LOCKED", "This gallery is password protected.");
-    }
-  }
+  const resolved = await requireClientGalleryAccess(token, { permission: "view" });
+  if ("res" in resolved) return resolved.res;
+  const { grant } = resolved.access;
 
   const url = new URL(req.url);
   const limit = clampLimit(url.searchParams.get("limit"));
-  const cur = decodeCursor<{ s: number; id: string }>(
-    url.searchParams.get("cursor"),
-  );
+  const cur = decodeCursor<{ s: number; id: string }>(url.searchParams.get("cursor"));
 
   const rows = await db
     .select({ photo, s: galleryPhoto.sortOrder })

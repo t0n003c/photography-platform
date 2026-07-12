@@ -13,6 +13,7 @@ const PatchSchema = z.object({
   title: z.string().min(1).optional(),
   subtitle: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  shootDate: z.string().datetime().nullable().optional(),
   visibility: z.enum(["public", "private"]).optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
   coverPhotoId: z.string().nullable().optional(),
@@ -32,10 +33,7 @@ async function loadGallery(id: string) {
 }
 
 // GET — gallery detail.
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -45,10 +43,7 @@ export async function GET(
 }
 
 // PATCH — update gallery fields.
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireRole("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -64,6 +59,8 @@ export async function PATCH(
   if (body.title !== undefined) updates.title = body.title;
   if (body.subtitle !== undefined) updates.subtitle = body.subtitle;
   if (body.description !== undefined) updates.description = body.description;
+  if (body.shootDate !== undefined)
+    updates.shootDate = body.shootDate ? new Date(body.shootDate) : null;
   if (body.visibility !== undefined) updates.visibility = body.visibility;
   if (body.status !== undefined) updates.status = body.status;
   if (body.coverPhotoId !== undefined) updates.coverPhotoId = body.coverPhotoId;
@@ -104,10 +101,7 @@ export async function PATCH(
 }
 
 // DELETE — soft delete.
-export async function DELETE(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const a = await requireFreshAuth("admin");
   if (a.error) return a.error;
   const { id } = await ctx.params;
@@ -115,10 +109,7 @@ export async function DELETE(
   const current = await loadGallery(id);
   if (!current) return notFound();
 
-  await db
-    .update(gallery)
-    .set({ deletedAt: new Date() })
-    .where(eq(gallery.id, id));
+  await db.update(gallery).set({ deletedAt: new Date() }).where(eq(gallery.id, id));
 
   await writeAudit({
     actorId: a.session.user.id,

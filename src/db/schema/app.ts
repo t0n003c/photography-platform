@@ -70,6 +70,7 @@ export const gallery = pgTable(
     title: text("title").notNull(),
     subtitle: text("subtitle"),
     description: text("description"),
+    shootDate: timestamp("shoot_date", { withTimezone: true }),
     visibility: text("visibility", { enum: ["public", "private"] })
       .notNull()
       .default("private"),
