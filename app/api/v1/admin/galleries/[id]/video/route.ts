@@ -19,6 +19,8 @@ async function loadGallery(id: string) {
   return rows[0] ?? null;
 }
 
+const requeueableVideoJobStates = new Set(["completed", "failed", "unknown"]);
+
 // GET — current slideshow-video status.
 export async function GET(
   _req: Request,
@@ -66,11 +68,24 @@ export async function POST(
     .update(gallery)
     .set({ videoStatus: "pending" })
     .where(eq(gallery.id, id));
-  await getVideoQueue().add(
-    "render",
-    { galleryId: id },
-    { jobId: `video-${id}` },
-  );
+
+  const videoQueue = getVideoQueue();
+  const jobId = `video-${id}`;
+  const existingJob = await videoQueue.getJob(jobId);
+  let shouldEnqueue = true;
+
+  if (existingJob) {
+    const state = await existingJob.getState();
+    if (requeueableVideoJobStates.has(state)) {
+      await existingJob.remove();
+    } else {
+      shouldEnqueue = false;
+    }
+  }
+
+  if (shouldEnqueue) {
+    await videoQueue.add("render", { galleryId: id }, { jobId });
+  }
 
   await writeAudit({
     actorId: a.session.user.id,
