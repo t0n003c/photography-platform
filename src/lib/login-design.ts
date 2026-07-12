@@ -1,5 +1,5 @@
 export type LoginLayout = "simple" | "gradient-card" | "split-photo";
-export type LoginBackgroundMode = "default" | "soft-gradient" | "custom";
+export type LoginBackgroundMode = "default" | "soft-gradient" | "custom" | "photo";
 export type LoginPhotoSide = "left" | "right";
 export type LoginCardMaterial =
   | "layout-default"
@@ -17,6 +17,12 @@ export interface LoginDesignConfig {
   backgroundColor: string;
   gradientFrom: string;
   gradientTo: string;
+  backgroundPhotoId: string | null;
+  backgroundPhotoUrl: string;
+  backgroundPhotoFocalX: number;
+  backgroundPhotoFocalY: number;
+  backgroundPhotoDim: number;
+  backgroundPhotoBlur: number;
   cardAccent: string;
   hoverColor: string;
   hoverGlowSize: number;
@@ -49,6 +55,12 @@ export const DEFAULT_LOGIN_DESIGN: LoginDesignConfig = {
   backgroundColor: "#f8fafc",
   gradientFrom: "#7c3aed",
   gradientTo: "#06b6d4",
+  backgroundPhotoId: null,
+  backgroundPhotoUrl: "",
+  backgroundPhotoFocalX: 50,
+  backgroundPhotoFocalY: 50,
+  backgroundPhotoDim: 42,
+  backgroundPhotoBlur: 0,
   cardAccent: "#8b5cf6",
   hoverColor: "#f97316",
   hoverGlowSize: 44,
@@ -118,7 +130,7 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
     showIconRow: booleanValue(input.showIconRow, DEFAULT_LOGIN_DESIGN.showIconRow),
     backgroundMode: enumValue(
       input.backgroundMode,
-      ["default", "soft-gradient", "custom"] as const,
+      ["default", "soft-gradient", "custom", "photo"] as const,
       DEFAULT_LOGIN_DESIGN.backgroundMode,
     ),
     backgroundColor: stringValue(
@@ -127,6 +139,36 @@ export function normalizeLoginDesign(value: unknown): LoginDesignConfig {
     ),
     gradientFrom: stringValue(input.gradientFrom, DEFAULT_LOGIN_DESIGN.gradientFrom),
     gradientTo: stringValue(input.gradientTo, DEFAULT_LOGIN_DESIGN.gradientTo),
+    backgroundPhotoId:
+      typeof input.backgroundPhotoId === "string" ? input.backgroundPhotoId : null,
+    backgroundPhotoUrl: stringValue(
+      input.backgroundPhotoUrl,
+      DEFAULT_LOGIN_DESIGN.backgroundPhotoUrl,
+    ),
+    backgroundPhotoFocalX: numberValue(
+      input.backgroundPhotoFocalX,
+      DEFAULT_LOGIN_DESIGN.backgroundPhotoFocalX,
+      0,
+      100,
+    ),
+    backgroundPhotoFocalY: numberValue(
+      input.backgroundPhotoFocalY,
+      DEFAULT_LOGIN_DESIGN.backgroundPhotoFocalY,
+      0,
+      100,
+    ),
+    backgroundPhotoDim: numberValue(
+      input.backgroundPhotoDim,
+      DEFAULT_LOGIN_DESIGN.backgroundPhotoDim,
+      0,
+      85,
+    ),
+    backgroundPhotoBlur: numberValue(
+      input.backgroundPhotoBlur,
+      DEFAULT_LOGIN_DESIGN.backgroundPhotoBlur,
+      0,
+      24,
+    ),
     cardAccent: stringValue(input.cardAccent, DEFAULT_LOGIN_DESIGN.cardAccent),
     hoverColor: stringValue(input.hoverColor, DEFAULT_LOGIN_DESIGN.hoverColor),
     hoverGlowSize: numberValue(

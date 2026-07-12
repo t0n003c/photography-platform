@@ -33,6 +33,7 @@ export function LoginShell({
   children,
   preview = false,
   photoUrl,
+  backgroundPhotoUrl,
 }: {
   design?: LoginDesignConfig;
   siteName: string;
@@ -40,6 +41,7 @@ export function LoginShell({
   children: React.ReactNode;
   preview?: boolean;
   photoUrl?: string | null;
+  backgroundPhotoUrl?: string | null;
 }) {
   const isReferenceLayout =
     design.layout === "gradient-card" || design.layout === "split-photo";
@@ -50,9 +52,15 @@ export function LoginShell({
   const useLiquidGlass = cardMaterial === "liquid-glass";
   const isReference = isReferenceLayout || hasGlassMaterial;
   const resolvedPhotoUrl = photoUrl || design.photoUrl.trim() || null;
+  const resolvedBackgroundPhotoUrl =
+    backgroundPhotoUrl || design.backgroundPhotoUrl.trim() || null;
+  const useBackgroundPhoto =
+    design.backgroundMode === "photo" && Boolean(resolvedBackgroundPhotoUrl);
   const photoWidth = clampNumber(design.photoWidth, 35, 70);
   const formWidth = 100 - photoWidth;
   const hoverIntensity = clampNumber(design.hoverGlowIntensity, 0, 70);
+  const backgroundPhotoDim = clampNumber(design.backgroundPhotoDim, 0, 85);
+  const backgroundPhotoBlur = clampNumber(design.backgroundPhotoBlur, 0, 24);
   const liquidGlassStrength = clampNumber(design.liquidGlassStrength, 40, 180);
   const liquidGlassChroma = clampNumber(design.liquidGlassChroma, 0, 14);
   const liquidGlassBlur = clampNumber(design.liquidGlassBlur, 0, 12);
@@ -84,7 +92,7 @@ export function LoginShell({
   const background =
     design.backgroundMode === "custom"
       ? design.backgroundColor
-      : design.backgroundMode === "soft-gradient" || isReference
+      : design.backgroundMode === "soft-gradient"
         ? `linear-gradient(135deg, ${design.gradientFrom} 0%, ${design.gradientTo} 100%)`
         : undefined;
   const style = {
@@ -95,6 +103,10 @@ export function LoginShell({
     "--login-hover": design.hoverColor,
     "--login-hover-intensity": `${hoverIntensity}%`,
     "--login-hover-size": `${clampNumber(design.hoverGlowSize, 24, 70)}%`,
+    "--login-bg-photo-position": `${clampNumber(design.backgroundPhotoFocalX, 0, 100)}% ${clampNumber(design.backgroundPhotoFocalY, 0, 100)}%`,
+    "--login-bg-photo-dim": (backgroundPhotoDim / 100).toFixed(3),
+    "--login-bg-photo-blur": `${backgroundPhotoBlur}px`,
+    "--login-bg-photo-scale": (1 + backgroundPhotoBlur / 180).toFixed(3),
     "--login-liquid-strength": liquidGlassStrength,
     "--login-liquid-chroma": liquidGlassChroma,
     "--login-liquid-blur": `${liquidGlassBlur}px`,
@@ -253,11 +265,26 @@ export function LoginShell({
         preview ? "min-h-[560px] rounded-lg border" : "min-h-screen",
         preview && "login-shell--preview",
         preview && useLiquidGlass && "login-shell--liquid-preview",
-        isReference ? "login-shell--reference" : "bg-[hsl(var(--background))]",
+        useBackgroundPhoto && "login-shell--photo-background",
+        isReference
+          ? "login-shell--reference bg-[hsl(var(--background))]"
+          : "bg-[hsl(var(--background))]",
       )}
       style={style}
     >
-      {isReference && (
+      {useBackgroundPhoto && (
+        <div className="login-shell-bg-photo" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolvedBackgroundPhotoUrl!}
+            alt=""
+            className="login-shell-bg-photo__image"
+            style={{ objectPosition: "var(--login-bg-photo-position)" }}
+          />
+          <div className="login-shell-bg-photo__overlay" />
+        </div>
+      )}
+      {isReference && !useBackgroundPhoto && (
         <>
           <div className="pointer-events-none absolute left-[8%] top-[12%] h-32 w-32 rounded-full bg-white/20 blur-3xl" />
           <div className="pointer-events-none absolute bottom-[10%] right-[10%] h-40 w-40 rounded-full bg-black/15 blur-3xl" />

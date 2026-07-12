@@ -7,7 +7,7 @@ import { notFound } from "@/src/lib/http";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const [cfg] = await db
     .select()
     .from(pageConfig)
@@ -17,12 +17,14 @@ export async function GET() {
   const login = normalizeLoginDesign(
     (cfg?.config as { login?: unknown } | null)?.login,
   );
-  if (!login.photoId) return notFound();
+  const slot = new URL(request.url).searchParams.get("slot");
+  const photoId = slot === "background" ? login.backgroundPhotoId : login.photoId;
+  if (!photoId) return notFound();
 
   const [pickedPhoto] = await db
     .select()
     .from(photo)
-    .where(eq(photo.id, login.photoId))
+    .where(eq(photo.id, photoId))
     .limit(1);
   if (!pickedPhoto || pickedPhoto.deletedAt) return notFound();
 

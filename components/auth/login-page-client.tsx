@@ -51,10 +51,12 @@ export function LoginPageClient({
   siteName,
   loginDesign,
   loginPhotoUrl,
+  loginBackgroundPhotoUrl,
 }: {
   siteName: string;
   loginDesign: LoginDesignConfig;
   loginPhotoUrl?: string | null;
+  loginBackgroundPhotoUrl?: string | null;
 }) {
   const router = useRouter();
   const session = useSession();
@@ -278,6 +280,7 @@ export function LoginPageClient({
         siteName={siteName}
         description={description}
         photoUrl={loginPhotoUrl}
+        backgroundPhotoUrl={loginBackgroundPhotoUrl}
       >
         <div className="space-y-4">
           {error && (

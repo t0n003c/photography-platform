@@ -897,9 +897,10 @@ function LoginDesignCard() {
                     })
                   }
                 >
-                  <option value="default">Theme background</option>
+                  <option value="default">App theme background</option>
                   <option value="soft-gradient">Soft gradient</option>
                   <option value="custom">Custom color</option>
+                  <option value="photo">Photo</option>
                 </Select>
               </Field>
             </div>
@@ -999,6 +1000,88 @@ function LoginDesignCard() {
                 />
               </Field>
             </div>
+
+            {s.backgroundMode === "photo" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label={`Background crop X (${s.backgroundPhotoFocalX}%)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={s.backgroundPhotoFocalX}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          backgroundPhotoFocalX: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Background crop Y (${s.backgroundPhotoFocalY}%)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={s.backgroundPhotoFocalY}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          backgroundPhotoFocalY: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Background dim (${s.backgroundPhotoDim}%)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={85}
+                      value={s.backgroundPhotoDim}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          backgroundPhotoDim: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`Background blur (${s.backgroundPhotoBlur}px)`}>
+                    <Input
+                      type="range"
+                      min={0}
+                      max={24}
+                      value={s.backgroundPhotoBlur}
+                      onChange={(e) =>
+                        setS({
+                          ...s,
+                          backgroundPhotoBlur: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Custom background photo URL">
+                  <Input
+                    value={s.backgroundPhotoUrl}
+                    onChange={(e) =>
+                      setS({ ...s, backgroundPhotoUrl: e.target.value })
+                    }
+                    placeholder="https://..."
+                  />
+                </Field>
+                <Field label="Background library photo">
+                  <PhotoPicker
+                    photos={photos}
+                    value={s.backgroundPhotoId}
+                    onChange={(backgroundPhotoId) =>
+                      setS({ ...s, backgroundPhotoId })
+                    }
+                    containerClassName="max-h-48"
+                  />
+                </Field>
+              </div>
+            )}
 
             {s.cardMaterial === "liquid-glass" && (
               <div className="space-y-3 rounded-lg border p-3">
@@ -1212,7 +1295,12 @@ function LoginDesignPreview({
   const primaryButtonClass = loginPrimaryButtonClass(s);
   const secondaryButtonClass = loginSecondaryButtonClass(s);
   const pickedPhoto = photos.find((photo) => photo.id === s.photoId);
+  const pickedBackgroundPhoto = photos.find(
+    (photo) => photo.id === s.backgroundPhotoId,
+  );
   const previewPhotoUrl = s.photoUrl.trim() || pickedPhoto?.thumbUrl || null;
+  const previewBackgroundPhotoUrl =
+    s.backgroundPhotoUrl.trim() || pickedBackgroundPhoto?.thumbUrl || null;
 
   return (
     <LoginShell
@@ -1221,6 +1309,7 @@ function LoginDesignPreview({
       description={s.subtitle}
       preview
       photoUrl={previewPhotoUrl}
+      backgroundPhotoUrl={previewBackgroundPhotoUrl}
     >
       <div className="space-y-4">
         <Field label="Email">

@@ -12,12 +12,18 @@ export default async function LoginPage() {
   const loginPhotoUrl =
     loginDesign.photoUrl.trim() ||
     (loginDesign.photoId ? "/api/v1/media/login-photo" : null);
+  const loginBackgroundPhotoUrl =
+    loginDesign.backgroundPhotoUrl.trim() ||
+    (loginDesign.backgroundPhotoId
+      ? "/api/v1/media/login-photo?slot=background"
+      : null);
 
   return (
     <LoginPageClient
       siteName={settings.siteTitle}
       loginDesign={loginDesign}
       loginPhotoUrl={loginPhotoUrl}
+      loginBackgroundPhotoUrl={loginBackgroundPhotoUrl}
     />
   );
 }
