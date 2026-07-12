@@ -6,9 +6,11 @@ import {
   ChevronUp,
   KeyRound,
   Loader2,
+  Monitor,
   Plus,
   Instagram,
   Mail,
+  Smartphone,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -1271,9 +1273,6 @@ function LoginDesignCard() {
           </div>
 
           <div>
-            <p className="mb-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))]">
-              Live preview
-            </p>
             <LoginDesignPreview s={s} siteTitle={siteTitle} photos={photos} />
           </div>
         </div>
@@ -1291,6 +1290,7 @@ function LoginDesignPreview({
   siteTitle: string;
   photos: PhotoOption[];
 }) {
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const inputClass = loginControlClass(s);
   const primaryButtonClass = loginPrimaryButtonClass(s);
   const secondaryButtonClass = loginSecondaryButtonClass(s);
@@ -1303,39 +1303,77 @@ function LoginDesignPreview({
     s.backgroundPhotoUrl.trim() || pickedBackgroundPhoto?.thumbUrl || null;
 
   return (
-    <LoginShell
-      design={s}
-      siteName={siteTitle}
-      description={s.subtitle}
-      preview
-      photoUrl={previewPhotoUrl}
-      backgroundPhotoUrl={previewBackgroundPhotoUrl}
-    >
-      <div className="space-y-4">
-        <Field label="Email">
-          <Input value="owner@example.com" readOnly className={inputClass} />
-        </Field>
-        <Field label="Password">
-          <Input value="••••••••" readOnly className={inputClass} />
-        </Field>
-        <Button type="button" className={`w-full ${primaryButtonClass ?? ""}`}>
-          {s.primaryLabel || "Sign in"}
-        </Button>
-        <div className="flex items-center gap-3 text-xs text-[hsl(var(--muted-foreground))]">
-          <span className="h-px flex-1 bg-[hsl(var(--border))]" />
-          or
-          <span className="h-px flex-1 bg-[hsl(var(--border))]" />
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+          Live preview
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant={device === "desktop" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDevice("desktop")}
+            aria-label="Desktop preview"
+          >
+            <Monitor className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant={device === "mobile" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDevice("mobile")}
+            aria-label="Mobile preview"
+          >
+            <Smartphone className="h-4 w-4" />
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          className={`w-full ${secondaryButtonClass ?? ""}`}
-        >
-          <KeyRound className="h-4 w-4" />
-          {s.passkeyLabel || "Sign in with passkey"}
-        </Button>
       </div>
-    </LoginShell>
+      <div className="overflow-x-auto">
+        <div
+          className="mx-auto transition-[max-width] duration-200"
+          style={{ maxWidth: device === "mobile" ? 390 : "100%" }}
+        >
+          <LoginShell
+            design={s}
+            siteName={siteTitle}
+            description={s.subtitle}
+            preview
+            previewDevice={device}
+            photoUrl={previewPhotoUrl}
+            backgroundPhotoUrl={previewBackgroundPhotoUrl}
+          >
+            <div className="space-y-4">
+              <Field label="Email">
+                <Input value="owner@example.com" readOnly className={inputClass} />
+              </Field>
+              <Field label="Password">
+                <Input value="••••••••" readOnly className={inputClass} />
+              </Field>
+              <Button
+                type="button"
+                className={`w-full ${primaryButtonClass ?? ""}`}
+              >
+                {s.primaryLabel || "Sign in"}
+              </Button>
+              <div className="flex items-center gap-3 text-xs text-[hsl(var(--muted-foreground))]">
+                <span className="h-px flex-1 bg-[hsl(var(--border))]" />
+                or
+                <span className="h-px flex-1 bg-[hsl(var(--border))]" />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className={`w-full ${secondaryButtonClass ?? ""}`}
+              >
+                <KeyRound className="h-4 w-4" />
+                {s.passkeyLabel || "Sign in with passkey"}
+              </Button>
+            </div>
+          </LoginShell>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -8923,6 +8923,20 @@ main:has(.portfolio-list-tora-full-showcase-slider) .py-4:has(.portfolio-list-to
   animation: login-card-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.login-shell--preview-mobile .login-card--split {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.login-shell--preview-mobile .login-card-photo-panel {
+  height: 240px !important;
+  min-height: 240px !important;
+  order: 0 !important;
+}
+
+.login-shell--preview-mobile .login-card-photo-panel--mobile-hidden {
+  display: none !important;
+}
+
 .login-shell-bg-photo {
   position: absolute;
   inset: 0;

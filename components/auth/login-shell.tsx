@@ -32,6 +32,7 @@ export function LoginShell({
   description,
   children,
   preview = false,
+  previewDevice,
   photoUrl,
   backgroundPhotoUrl,
 }: {
@@ -40,6 +41,7 @@ export function LoginShell({
   description: string;
   children: React.ReactNode;
   preview?: boolean;
+  previewDevice?: "desktop" | "mobile";
   photoUrl?: string | null;
   backgroundPhotoUrl?: string | null;
 }) {
@@ -173,8 +175,10 @@ export function LoginShell({
       {isSplit && (
         <div
           className={cn(
-            "relative z-10 min-h-[240px] overflow-hidden bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] lg:min-h-[620px]",
+            "login-card-photo-panel relative z-10 min-h-[240px] overflow-hidden bg-[linear-gradient(135deg,var(--login-from),var(--login-to))] lg:min-h-[620px]",
             !design.showPhotoOnMobile && "hidden lg:block",
+            !design.showPhotoOnMobile &&
+              "login-card-photo-panel--mobile-hidden",
             design.photoSide === "right" && "lg:order-2",
           )}
         >
@@ -264,6 +268,7 @@ export function LoginShell({
         "login-shell relative isolate flex w-full items-center justify-center overflow-hidden px-4 py-12 text-[hsl(var(--foreground))]",
         preview ? "min-h-[560px] rounded-lg border" : "min-h-screen",
         preview && "login-shell--preview",
+        preview && previewDevice === "mobile" && "login-shell--preview-mobile",
         preview && useLiquidGlass && "login-shell--liquid-preview",
         useBackgroundPhoto && "login-shell--photo-background",
         isReference
