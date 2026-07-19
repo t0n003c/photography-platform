@@ -19,13 +19,7 @@ export type GridType =
   | "tora-justified-showcase"
   | "carousel-3d-scroll"
   | "alternative-scroll";
-export type Scope =
-  | "home"
-  | "gallery"
-  | "category"
-  | "location"
-  | "about"
-  | "global";
+export type Scope = "home" | "gallery" | "category" | "location" | "about" | "global";
 
 export type HlOverlay = "minimal" | "editorial" | "centered";
 
@@ -50,12 +44,7 @@ export interface ImageTrailConfig {
   backgroundColor: string;
 }
 
-export type RotatingScrollVariant =
-  | "demo1"
-  | "demo2"
-  | "demo3"
-  | "demo4"
-  | "demo5";
+export type RotatingScrollVariant = "demo1" | "demo2" | "demo3" | "demo4" | "demo5";
 
 export interface RotatingScrollConfig {
   variant: RotatingScrollVariant;
@@ -142,6 +131,8 @@ export interface RenderConfig {
   gridType: GridType;
   spacing: string;
   theme: "light" | "dark" | "auto";
+  /** Discourage casual image saving within the rendered gallery surface. */
+  discourageImageSaving: boolean;
   hero: { enabled?: boolean; headline?: string } | null;
   // Text-overlay style for the horizontal-scroll detail view.
   overlay: HlOverlay;
@@ -229,7 +220,12 @@ function palmerItemSize(value: unknown): PalmerItemSize {
 }
 
 function toraSliphoverLabelSource(value: unknown): ToraSliphoverLabelSource {
-  if (value === "headline" || value === "alt" || value === "caption" || value === "auto") {
+  if (
+    value === "headline" ||
+    value === "alt" ||
+    value === "caption" ||
+    value === "auto"
+  ) {
     return value;
   }
   return "auto";
@@ -239,7 +235,12 @@ function toraJustifiedTitleSource(value: unknown): ToraJustifiedTitleSource {
   return toraSliphoverLabelSource(value);
 }
 
-function boundedNumber(value: unknown, fallback: number, min: number, max: number): number {
+function boundedNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, value));
 }
@@ -281,6 +282,7 @@ export async function resolveRenderConfig(
 ): Promise<RenderConfig> {
   const base = await resolvePageConfig(scope, explicitId ?? undefined);
   const cfgJson = (base?.config ?? {}) as {
+    discourageImageSaving?: boolean;
     hlOverlay?: HlOverlay;
     altUseBackground?: boolean;
     altBackgroundColor?: string;
@@ -347,6 +349,7 @@ export async function resolveRenderConfig(
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
     spacing: base?.spacing ?? "normal",
     theme: (base?.theme as RenderConfig["theme"] | null) ?? "auto",
+    discourageImageSaving: cfgJson.discourageImageSaving === true,
     hero: (base?.hero as RenderConfig["hero"]) ?? null,
     overlay: cfgJson.hlOverlay ?? "minimal",
     alternativeScroll: {
@@ -375,9 +378,7 @@ export async function resolveRenderConfig(
       textColor: cfgJson.diagonalTextColor ?? "#f1f1f1",
       decoColor: cfgJson.diagonalDecoColor ?? "#141414",
       sideText:
-        typeof cfgJson.diagonalSideText === "string"
-          ? cfgJson.diagonalSideText
-          : "",
+        typeof cfgJson.diagonalSideText === "string" ? cfgJson.diagonalSideText : "",
       showSideText: cfgJson.diagonalShowSideText ?? true,
       showDetail: cfgJson.diagonalShowDetail ?? true,
     },
@@ -408,9 +409,7 @@ export async function resolveRenderConfig(
     },
     toraSliphover: {
       useBackground: cfgJson.toraSliphoverUseBackground ?? true,
-      backgroundColor: sliphoverBackgroundColor(
-        cfgJson.toraSliphoverBackgroundColor,
-      ),
+      backgroundColor: sliphoverBackgroundColor(cfgJson.toraSliphoverBackgroundColor),
       labelSource: toraSliphoverLabelSource(cfgJson.toraSliphoverLabelSource),
       labelBackgroundColor: cfgJson.toraSliphoverLabelBackgroundColor ?? "#111111",
       labelTextColor: cfgJson.toraSliphoverLabelTextColor ?? "#f8f3df",
@@ -421,19 +420,13 @@ export async function resolveRenderConfig(
       titleColor: cfgJson.toraJustifiedTitleColor ?? "#f7f7f7",
       accentColor: cfgJson.toraJustifiedAccentColor ?? "#edd8aa",
       titleSource: toraJustifiedTitleSource(cfgJson.toraJustifiedTitleSource),
-      rowHeightFactor: boundedNumber(
-        cfgJson.toraJustifiedRowHeightFactor,
-        7,
-        5,
-        10,
-      ),
+      rowHeightFactor: boundedNumber(cfgJson.toraJustifiedRowHeightFactor, 7, 5, 10),
       desktopGutter: boundedNumber(cfgJson.toraJustifiedDesktopGutter, 25, 0, 60),
       mobileGutter: boundedNumber(cfgJson.toraJustifiedMobileGutter, 15, 0, 40),
       hoverInset: cfgJson.toraJustifiedHoverInset ?? true,
       dimOnLeadHover: cfgJson.toraJustifiedDimOnLeadHover ?? true,
       scrollOnSelect: cfgJson.toraJustifiedScrollOnSelect ?? true,
-      showBlurredSideFill:
-        cfgJson.toraJustifiedShowBlurredSideFill ?? true,
+      showBlurredSideFill: cfgJson.toraJustifiedShowBlurredSideFill ?? true,
     },
   };
 
@@ -455,11 +448,14 @@ export async function resolveRenderConfig(
     gridType: draft.gridType ?? config.gridType,
     spacing: draft.spacing ?? config.spacing,
     theme: draft.theme ?? config.theme,
+    discourageImageSaving:
+      typeof draft.discourageImageSaving === "boolean"
+        ? draft.discourageImageSaving
+        : config.discourageImageSaving,
     hero: draft.hero !== undefined ? draft.hero : config.hero,
     overlay: draft.overlay ?? config.overlay,
     alternativeScroll: {
-      useBackground:
-        draft.altUseBackground ?? config.alternativeScroll.useBackground,
+      useBackground: draft.altUseBackground ?? config.alternativeScroll.useBackground,
       backgroundColor:
         draft.altBackgroundColor ?? config.alternativeScroll.backgroundColor,
       textColor: draft.altTextColor ?? config.alternativeScroll.textColor,
@@ -470,8 +466,7 @@ export async function resolveRenderConfig(
         draft.imgTrailVariant !== undefined
           ? imageTrailVariant(draft.imgTrailVariant)
           : config.imageTrail.variant,
-      useBackground:
-        draft.imgTrailUseBackground ?? config.imageTrail.useBackground,
+      useBackground: draft.imgTrailUseBackground ?? config.imageTrail.useBackground,
       backgroundColor:
         draft.imgTrailBackgroundColor ?? config.imageTrail.backgroundColor,
     },
@@ -481,41 +476,27 @@ export async function resolveRenderConfig(
           ? rotatingScrollVariant(draft.rotatingScrollVariant)
           : config.rotatingScroll.variant,
       useBackground:
-        draft.rotatingScrollUseBackground ??
-        config.rotatingScroll.useBackground,
+        draft.rotatingScrollUseBackground ?? config.rotatingScroll.useBackground,
       backgroundColor:
-        draft.rotatingScrollBackgroundColor ??
-        config.rotatingScroll.backgroundColor,
-      marqueeText:
-        draft.rotatingScrollMarqueeText ??
-        config.rotatingScroll.marqueeText,
+        draft.rotatingScrollBackgroundColor ?? config.rotatingScroll.backgroundColor,
+      marqueeText: draft.rotatingScrollMarqueeText ?? config.rotatingScroll.marqueeText,
     },
     diagonalSlideshow: {
       useBackground:
-        draft.diagonalUseBackground ??
-        config.diagonalSlideshow.useBackground,
+        draft.diagonalUseBackground ?? config.diagonalSlideshow.useBackground,
       backgroundColor:
-        draft.diagonalBackgroundColor ??
-        config.diagonalSlideshow.backgroundColor,
-      textColor:
-        draft.diagonalTextColor ?? config.diagonalSlideshow.textColor,
-      decoColor:
-        draft.diagonalDecoColor ?? config.diagonalSlideshow.decoColor,
-      sideText:
-        draft.diagonalSideText ?? config.diagonalSlideshow.sideText,
-      showSideText:
-        draft.diagonalShowSideText ??
-        config.diagonalSlideshow.showSideText,
-      showDetail:
-        draft.diagonalShowDetail ?? config.diagonalSlideshow.showDetail,
+        draft.diagonalBackgroundColor ?? config.diagonalSlideshow.backgroundColor,
+      textColor: draft.diagonalTextColor ?? config.diagonalSlideshow.textColor,
+      decoColor: draft.diagonalDecoColor ?? config.diagonalSlideshow.decoColor,
+      sideText: draft.diagonalSideText ?? config.diagonalSlideshow.sideText,
+      showSideText: draft.diagonalShowSideText ?? config.diagonalSlideshow.showSideText,
+      showDetail: draft.diagonalShowDetail ?? config.diagonalSlideshow.showDetail,
     },
     depthGallery: {
       useMoodBackground:
-        draft.depthUseMoodBackground ??
-        config.depthGallery.useMoodBackground,
+        draft.depthUseMoodBackground ?? config.depthGallery.useMoodBackground,
       showTrail: draft.depthShowTrail ?? config.depthGallery.showTrail,
-      showParticles:
-        draft.depthShowParticles ?? config.depthGallery.showParticles,
+      showParticles: draft.depthShowParticles ?? config.depthGallery.showParticles,
       labelStyle:
         draft.depthLabelStyle !== undefined
           ? depthLabelStyle(draft.depthLabelStyle)
@@ -529,8 +510,7 @@ export async function resolveRenderConfig(
     },
     infiniteCanvas: {
       backgroundColor:
-        draft.infiniteBackgroundColor ??
-        config.infiniteCanvas.backgroundColor,
+        draft.infiniteBackgroundColor ?? config.infiniteCanvas.backgroundColor,
       fogColor: draft.infiniteFogColor ?? config.infiniteCanvas.fogColor,
       density:
         draft.infiniteDensity !== undefined
@@ -544,8 +524,7 @@ export async function resolveRenderConfig(
         draft.infiniteMovement !== undefined
           ? infiniteMovement(draft.infiniteMovement)
           : config.infiniteCanvas.movement,
-      showControls:
-        draft.infiniteShowControls ?? config.infiniteCanvas.showControls,
+      showControls: draft.infiniteShowControls ?? config.infiniteCanvas.showControls,
       enableKeyboard:
         draft.infiniteEnableKeyboard ?? config.infiniteCanvas.enableKeyboard,
     },
@@ -558,19 +537,16 @@ export async function resolveRenderConfig(
         draft.palmerItemSize !== undefined
           ? palmerItemSize(draft.palmerItemSize)
           : config.palmerDraggable.itemSize,
-      showDetails:
-        draft.palmerShowDetails ?? config.palmerDraggable.showDetails,
+      showDetails: draft.palmerShowDetails ?? config.palmerDraggable.showDetails,
       useCustomColors:
-        draft.palmerUseCustomColors ??
-        config.palmerDraggable.useCustomColors,
+        draft.palmerUseCustomColors ?? config.palmerDraggable.useCustomColors,
       backgroundColor:
         draft.palmerBackgroundColor ?? config.palmerDraggable.backgroundColor,
       textColor: draft.palmerTextColor ?? config.palmerDraggable.textColor,
     },
     toraSliphover: {
       useBackground:
-        draft.toraSliphoverUseBackground ??
-        config.toraSliphover.useBackground,
+        draft.toraSliphoverUseBackground ?? config.toraSliphover.useBackground,
       backgroundColor:
         draft.toraSliphoverBackgroundColor !== undefined
           ? sliphoverBackgroundColor(draft.toraSliphoverBackgroundColor)
@@ -583,20 +559,15 @@ export async function resolveRenderConfig(
         draft.toraSliphoverLabelBackgroundColor ??
         config.toraSliphover.labelBackgroundColor,
       labelTextColor:
-        draft.toraSliphoverLabelTextColor ??
-        config.toraSliphover.labelTextColor,
+        draft.toraSliphoverLabelTextColor ?? config.toraSliphover.labelTextColor,
     },
     toraJustified: {
       useBackground:
-        draft.toraJustifiedUseBackground ??
-        config.toraJustified.useBackground,
+        draft.toraJustifiedUseBackground ?? config.toraJustified.useBackground,
       backgroundColor:
-        draft.toraJustifiedBackgroundColor ??
-        config.toraJustified.backgroundColor,
-      titleColor:
-        draft.toraJustifiedTitleColor ?? config.toraJustified.titleColor,
-      accentColor:
-        draft.toraJustifiedAccentColor ?? config.toraJustified.accentColor,
+        draft.toraJustifiedBackgroundColor ?? config.toraJustified.backgroundColor,
+      titleColor: draft.toraJustifiedTitleColor ?? config.toraJustified.titleColor,
+      accentColor: draft.toraJustifiedAccentColor ?? config.toraJustified.accentColor,
       titleSource:
         draft.toraJustifiedTitleSource !== undefined
           ? toraJustifiedTitleSource(draft.toraJustifiedTitleSource)
@@ -619,14 +590,11 @@ export async function resolveRenderConfig(
         0,
         40,
       ),
-      hoverInset:
-        draft.toraJustifiedHoverInset ?? config.toraJustified.hoverInset,
+      hoverInset: draft.toraJustifiedHoverInset ?? config.toraJustified.hoverInset,
       dimOnLeadHover:
-        draft.toraJustifiedDimOnLeadHover ??
-        config.toraJustified.dimOnLeadHover,
+        draft.toraJustifiedDimOnLeadHover ?? config.toraJustified.dimOnLeadHover,
       scrollOnSelect:
-        draft.toraJustifiedScrollOnSelect ??
-        config.toraJustified.scrollOnSelect,
+        draft.toraJustifiedScrollOnSelect ?? config.toraJustified.scrollOnSelect,
       showBlurredSideFill:
         draft.toraJustifiedShowBlurredSideFill ??
         config.toraJustified.showBlurredSideFill,

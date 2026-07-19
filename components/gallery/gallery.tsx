@@ -55,6 +55,8 @@ interface GalleryLayout {
     | "carousel-3d-scroll"
     | "alternative-scroll";
   spacing?: "tight" | "normal" | "airy" | string | null;
+  /** Discourage casual right-click saving and image dragging. */
+  discourageImageSaving?: boolean;
   /** Carousel only: auto-advance through slides. */
   autoplay?: boolean;
   /** 3D infinite carousel only: colored vs. neutral gradient backdrop. */
@@ -201,6 +203,35 @@ function masonryItemClass(spacing: GalleryLayout["spacing"]): string {
   return MASONRY_ITEM_SPACING.normal;
 }
 
+function ImageSavingGuard({
+  enabled,
+  children,
+}: {
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  if (!enabled) return <>{children}</>;
+
+  const isImageTarget = (target: EventTarget | null) =>
+    typeof Element !== "undefined" &&
+    target instanceof Element &&
+    Boolean(target.closest("img"));
+
+  return (
+    <div
+      className="contents"
+      onContextMenu={(event) => {
+        if (isImageTarget(event.target)) event.preventDefault();
+      }}
+      onDragStart={(event) => {
+        if (isImageTarget(event.target)) event.preventDefault();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function Gallery({
   photos: initialPhotos,
   layout,
@@ -209,9 +240,7 @@ export function Gallery({
   collection,
 }: GalleryProps) {
   const [photos, setPhotos] = React.useState<PhotoDTO[]>(initialPhotos);
-  const [cursor, setCursor] = React.useState<string | null>(
-    initialCursor ?? null,
-  );
+  const [cursor, setCursor] = React.useState<string | null>(initialCursor ?? null);
   const [loading, setLoading] = React.useState(false);
 
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
@@ -258,71 +287,334 @@ export function Gallery({
     onOpen: openAt,
   };
 
-  // The 3D scroll carousel is a standalone full-bleed experience (it has its own
-  // click-to-open preview grid), so it renders on its own — no load-more/lightbox.
-  if (
-    layout.gridType === "carousel-3d-scroll" &&
-    collection &&
-    collection.kind !== "gallery"
-  ) {
-    return (
-      <Carousel3DScroll
-        scenes={[
-          { slug: collection.slug, name: collection.name, kind: collection.kind, photos },
-        ]}
-      />
-    );
-  }
+  const content = (() => {
+    // The 3D scroll carousel is a standalone full-bleed experience (it has its own
+    // click-to-open preview grid), so it renders on its own — no load-more/lightbox.
+    if (
+      layout.gridType === "carousel-3d-scroll" &&
+      collection &&
+      collection.kind !== "gallery"
+    ) {
+      return (
+        <Carousel3DScroll
+          scenes={[
+            {
+              slug: collection.slug,
+              name: collection.name,
+              kind: collection.kind,
+              photos,
+            },
+          ]}
+        />
+      );
+    }
 
-  // Alternative Scroll (Codrops ColumnScroll port): a standalone full-bleed
-  // experience with its own click→content view. Works on any surface (needs only
-  // photos); the collection name, when present, becomes the split heading.
-  if (layout.gridType === "alternative-scroll") {
-    return (
-      <ColumnScroll
-        photos={photos}
-        title={collection?.name}
-        subtitle={collection?.subtitle}
-        useBackground={layout.alternativeScroll?.useBackground}
-        backgroundColor={layout.alternativeScroll?.backgroundColor}
-        textColor={layout.alternativeScroll?.textColor}
-        showText={layout.alternativeScroll?.showText}
-      />
-    );
-  }
-
-  if (layout.gridType === "parallax-ring") {
-    return (
-      <div>
-        <ParallaxRing
+    // Alternative Scroll (Codrops ColumnScroll port): a standalone full-bleed
+    // experience with its own click→content view. Works on any surface (needs only
+    // photos); the collection name, when present, becomes the split heading.
+    if (layout.gridType === "alternative-scroll") {
+      return (
+        <ColumnScroll
           photos={photos}
           title={collection?.name}
           subtitle={collection?.subtitle}
-          onOpen={openAt}
+          useBackground={layout.alternativeScroll?.useBackground}
+          backgroundColor={layout.alternativeScroll?.backgroundColor}
+          textColor={layout.alternativeScroll?.textColor}
+          showText={layout.alternativeScroll?.showText}
         />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
+      );
+    }
 
-  if (layout.gridType === "image-trail") {
+    if (layout.gridType === "parallax-ring") {
+      return (
+        <div>
+          <ParallaxRing
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "image-trail") {
+      return (
+        <div>
+          <ImageTrail
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            variant={layout.imageTrail?.variant}
+            useBackground={layout.imageTrail?.useBackground}
+            backgroundColor={layout.imageTrail?.backgroundColor}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "rotating-scroll") {
+      return (
+        <div>
+          <RotatingScroll
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            variant={layout.rotatingScroll?.variant}
+            useBackground={layout.rotatingScroll?.useBackground}
+            backgroundColor={layout.rotatingScroll?.backgroundColor}
+            marqueeText={layout.rotatingScroll?.marqueeText}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "diagonal-slideshow") {
+      return (
+        <div>
+          <DiagonalSlideshow
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            useBackground={layout.diagonalSlideshow?.useBackground}
+            backgroundColor={layout.diagonalSlideshow?.backgroundColor}
+            textColor={layout.diagonalSlideshow?.textColor}
+            decoColor={layout.diagonalSlideshow?.decoColor}
+            sideText={layout.diagonalSlideshow?.sideText}
+            showSideText={layout.diagonalSlideshow?.showSideText}
+            showDetail={layout.diagonalSlideshow?.showDetail}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "depth-gallery") {
+      return (
+        <div>
+          <DepthGallery
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            useMoodBackground={layout.depthGallery?.useMoodBackground}
+            showTrail={layout.depthGallery?.showTrail}
+            showParticles={layout.depthGallery?.showParticles}
+            labelStyle={layout.depthGallery?.labelStyle}
+            scrollSpeed={layout.depthGallery?.scrollSpeed}
+            backgroundColor={layout.depthGallery?.backgroundColor}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "infinite-canvas") {
+      return (
+        <div>
+          <InfiniteCanvasGallery
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            backgroundColor={layout.infiniteCanvas?.backgroundColor}
+            fogColor={layout.infiniteCanvas?.fogColor}
+            density={layout.infiniteCanvas?.density}
+            imageSize={layout.infiniteCanvas?.imageSize}
+            movement={layout.infiniteCanvas?.movement}
+            showControls={layout.infiniteCanvas?.showControls}
+            enableKeyboard={layout.infiniteCanvas?.enableKeyboard}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "css-glitch") {
+      return (
+        <div>
+          <GlitchHoverGrid
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "palmer-draggable") {
+      return (
+        <div>
+          <PalmerDraggableGrid
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            density={layout.palmerDraggable?.density}
+            itemSize={layout.palmerDraggable?.itemSize}
+            showDetails={layout.palmerDraggable?.showDetails}
+            useCustomColors={layout.palmerDraggable?.useCustomColors}
+            backgroundColor={layout.palmerDraggable?.backgroundColor}
+            textColor={layout.palmerDraggable?.textColor}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "tora-sliphover") {
+      return (
+        <div>
+          <ToraSliphoverGrid
+            photos={photos}
+            onOpen={openAt}
+            useBackground={layout.toraSliphover?.useBackground}
+            backgroundColor={layout.toraSliphover?.backgroundColor}
+            labelSource={layout.toraSliphover?.labelSource}
+            labelBackgroundColor={layout.toraSliphover?.labelBackgroundColor}
+            labelTextColor={layout.toraSliphover?.labelTextColor}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    const grid = (
+      <>
+        {layout.gridType === "masonry" && (
+          <MasonryGrid
+            {...gridProps}
+            itemSpacingClass={masonryItemClass(layout.spacing)}
+          />
+        )}
+        {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
+        {(layout.gridType === "justified" || layout.gridType === "cinematic") && (
+          <JustifiedGrid {...gridProps} />
+        )}
+        {layout.gridType === "carousel" && (
+          <CarouselGrid {...gridProps} autoplay={layout.autoplay} />
+        )}
+        {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
+        {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
+        {layout.gridType === "carousel3d" && (
+          <Carousel3D photos={photos} onOpen={openAt} backdrop={layout.backdrop} />
+        )}
+        {layout.gridType === "horizontal-lenis" && (
+          <HorizontalLenisGrid {...gridProps} overlay={layout.overlay} />
+        )}
+        {layout.gridType === "tora-props-catalog" && (
+          <ToraPropsCatalogGrid
+            photos={photos}
+            onOpen={openAt}
+            useBackground={layout.toraProps?.useBackground}
+            backgroundColor={layout.toraProps?.backgroundColor}
+            captionColor={layout.toraProps?.captionColor}
+            showCaptions={layout.toraProps?.showCaptions}
+            captionSource={layout.toraProps?.captionSource}
+          />
+        )}
+        {layout.gridType === "tora-justified-showcase" && (
+          <ToraJustifiedShowcaseGrid
+            photos={photos}
+            onOpen={openAt}
+            useBackground={layout.toraJustified?.useBackground}
+            backgroundColor={layout.toraJustified?.backgroundColor}
+            titleColor={layout.toraJustified?.titleColor}
+            accentColor={layout.toraJustified?.accentColor}
+            titleSource={layout.toraJustified?.titleSource}
+            rowHeightFactor={layout.toraJustified?.rowHeightFactor}
+            desktopGutter={layout.toraJustified?.desktopGutter}
+            mobileGutter={layout.toraJustified?.mobileGutter}
+            hoverInset={layout.toraJustified?.hoverInset}
+            dimOnLeadHover={layout.toraJustified?.dimOnLeadHover}
+            scrollOnSelect={layout.toraJustified?.scrollOnSelect}
+            showBlurredSideFill={layout.toraJustified?.showBlurredSideFill}
+          />
+        )}
+      </>
+    );
+
     return (
       <div>
-        <ImageTrail
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          variant={layout.imageTrail?.variant}
-          useBackground={layout.imageTrail?.useBackground}
-          backgroundColor={layout.imageTrail?.backgroundColor}
-          onOpen={openAt}
-        />
+        {grid}
+
+        {canLoadMore && (
+          <div className="mt-8 flex justify-center">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loading}
+              aria-busy={loading}
+              className="rounded-md border px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[hsl(var(--muted))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
+            >
+              {loading ? "Loading…" : "Load more"}
+            </button>
+          </div>
+        )}
+
         <Lightbox
           photos={photos}
           index={activeIndex}
@@ -332,258 +624,11 @@ export function Gallery({
         />
       </div>
     );
-  }
-
-  if (layout.gridType === "rotating-scroll") {
-    return (
-      <div>
-        <RotatingScroll
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          variant={layout.rotatingScroll?.variant}
-          useBackground={layout.rotatingScroll?.useBackground}
-          backgroundColor={layout.rotatingScroll?.backgroundColor}
-          marqueeText={layout.rotatingScroll?.marqueeText}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "diagonal-slideshow") {
-    return (
-      <div>
-        <DiagonalSlideshow
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          useBackground={layout.diagonalSlideshow?.useBackground}
-          backgroundColor={layout.diagonalSlideshow?.backgroundColor}
-          textColor={layout.diagonalSlideshow?.textColor}
-          decoColor={layout.diagonalSlideshow?.decoColor}
-          sideText={layout.diagonalSlideshow?.sideText}
-          showSideText={layout.diagonalSlideshow?.showSideText}
-          showDetail={layout.diagonalSlideshow?.showDetail}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "depth-gallery") {
-    return (
-      <div>
-        <DepthGallery
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          useMoodBackground={layout.depthGallery?.useMoodBackground}
-          showTrail={layout.depthGallery?.showTrail}
-          showParticles={layout.depthGallery?.showParticles}
-          labelStyle={layout.depthGallery?.labelStyle}
-          scrollSpeed={layout.depthGallery?.scrollSpeed}
-          backgroundColor={layout.depthGallery?.backgroundColor}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "infinite-canvas") {
-    return (
-      <div>
-        <InfiniteCanvasGallery
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          backgroundColor={layout.infiniteCanvas?.backgroundColor}
-          fogColor={layout.infiniteCanvas?.fogColor}
-          density={layout.infiniteCanvas?.density}
-          imageSize={layout.infiniteCanvas?.imageSize}
-          movement={layout.infiniteCanvas?.movement}
-          showControls={layout.infiniteCanvas?.showControls}
-          enableKeyboard={layout.infiniteCanvas?.enableKeyboard}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "css-glitch") {
-    return (
-      <div>
-        <GlitchHoverGrid
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "palmer-draggable") {
-    return (
-      <div>
-        <PalmerDraggableGrid
-          photos={photos}
-          title={collection?.name}
-          subtitle={collection?.subtitle}
-          density={layout.palmerDraggable?.density}
-          itemSize={layout.palmerDraggable?.itemSize}
-          showDetails={layout.palmerDraggable?.showDetails}
-          useCustomColors={layout.palmerDraggable?.useCustomColors}
-          backgroundColor={layout.palmerDraggable?.backgroundColor}
-          textColor={layout.palmerDraggable?.textColor}
-          onOpen={openAt}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  if (layout.gridType === "tora-sliphover") {
-    return (
-      <div>
-        <ToraSliphoverGrid
-          photos={photos}
-          onOpen={openAt}
-          useBackground={layout.toraSliphover?.useBackground}
-          backgroundColor={layout.toraSliphover?.backgroundColor}
-          labelSource={layout.toraSliphover?.labelSource}
-          labelBackgroundColor={layout.toraSliphover?.labelBackgroundColor}
-          labelTextColor={layout.toraSliphover?.labelTextColor}
-        />
-        <Lightbox
-          photos={photos}
-          index={activeIndex}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onIndexChange={setActiveIndex}
-        />
-      </div>
-    );
-  }
-
-  const grid = (
-    <>
-      {layout.gridType === "masonry" && (
-        <MasonryGrid {...gridProps} itemSpacingClass={masonryItemClass(layout.spacing)} />
-      )}
-      {layout.gridType === "uniform" && <UniformGrid {...gridProps} />}
-      {(layout.gridType === "justified" || layout.gridType === "cinematic") && (
-        <JustifiedGrid {...gridProps} />
-      )}
-      {layout.gridType === "carousel" && (
-        <CarouselGrid {...gridProps} autoplay={layout.autoplay} />
-      )}
-      {layout.gridType === "filmstrip" && <FilmstripGrid {...gridProps} />}
-      {layout.gridType === "mosaic" && <MosaicGrid {...gridProps} />}
-      {layout.gridType === "carousel3d" && (
-        <Carousel3D photos={photos} onOpen={openAt} backdrop={layout.backdrop} />
-      )}
-      {layout.gridType === "horizontal-lenis" && (
-        <HorizontalLenisGrid {...gridProps} overlay={layout.overlay} />
-      )}
-      {layout.gridType === "tora-props-catalog" && (
-        <ToraPropsCatalogGrid
-          photos={photos}
-          onOpen={openAt}
-          useBackground={layout.toraProps?.useBackground}
-          backgroundColor={layout.toraProps?.backgroundColor}
-          captionColor={layout.toraProps?.captionColor}
-          showCaptions={layout.toraProps?.showCaptions}
-          captionSource={layout.toraProps?.captionSource}
-        />
-      )}
-      {layout.gridType === "tora-justified-showcase" && (
-        <ToraJustifiedShowcaseGrid
-          photos={photos}
-          onOpen={openAt}
-          useBackground={layout.toraJustified?.useBackground}
-          backgroundColor={layout.toraJustified?.backgroundColor}
-          titleColor={layout.toraJustified?.titleColor}
-          accentColor={layout.toraJustified?.accentColor}
-          titleSource={layout.toraJustified?.titleSource}
-          rowHeightFactor={layout.toraJustified?.rowHeightFactor}
-          desktopGutter={layout.toraJustified?.desktopGutter}
-          mobileGutter={layout.toraJustified?.mobileGutter}
-          hoverInset={layout.toraJustified?.hoverInset}
-          dimOnLeadHover={layout.toraJustified?.dimOnLeadHover}
-          scrollOnSelect={layout.toraJustified?.scrollOnSelect}
-          showBlurredSideFill={layout.toraJustified?.showBlurredSideFill}
-        />
-      )}
-    </>
-  );
+  })();
 
   return (
-    <div>
-      {grid}
-
-      {canLoadMore && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={loadMore}
-            disabled={loading}
-            aria-busy={loading}
-            className="rounded-md border px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[hsl(var(--muted))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
-          >
-            {loading ? "Loading…" : "Load more"}
-          </button>
-        </div>
-      )}
-
-      <Lightbox
-        photos={photos}
-        index={activeIndex}
-        open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        onIndexChange={setActiveIndex}
-      />
-    </div>
+    <ImageSavingGuard enabled={layout.discourageImageSaving === true}>
+      {content}
+    </ImageSavingGuard>
   );
 }

@@ -43,6 +43,7 @@ export interface PreviewDraft {
   gridType: PreviewGrid;
   spacing: PreviewSpacing;
   theme: PreviewTheme;
+  discourageImageSaving?: boolean;
   hero?: Record<string, unknown>;
   overlay?: PreviewOverlay;
   altUseBackground?: boolean;

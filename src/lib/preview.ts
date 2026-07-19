@@ -24,6 +24,7 @@ export interface PreviewConfig {
     | "alternative-scroll";
   spacing?: string;
   theme?: "light" | "dark" | "auto";
+  discourageImageSaving?: boolean;
   hero?: { enabled?: boolean; headline?: string } | null;
   overlay?: "minimal" | "editorial" | "centered";
   altUseBackground?: boolean;

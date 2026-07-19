@@ -1335,6 +1335,7 @@ function LayoutCard({
   const [gridType, setGridType] = useState<PreviewGrid>("justified");
   const [spacing, setSpacing] = useState<PreviewSpacing>("normal");
   const [theme, setTheme] = useState<PreviewTheme>("auto");
+  const [discourageImageSaving, setDiscourageImageSaving] = useState(false);
   const [overlay, setOverlay] = useState<PreviewOverlay>("minimal");
   const [altUseBackground, setAltUseBackground] = useState(true);
   const [altBackgroundColor, setAltBackgroundColor] = useState("#b7b19f");
@@ -1467,6 +1468,9 @@ function LayoutCard({
           setTheme(cfg.theme);
         const c = (cfg.config ?? {}) as Record<string, unknown>;
         setBaseConfig(c);
+        if (typeof c.discourageImageSaving === "boolean") {
+          setDiscourageImageSaving(c.discourageImageSaving);
+        }
         const o = c.hlOverlay;
         if (o === "minimal" || o === "editorial" || o === "centered") setOverlay(o);
         if (typeof c.altUseBackground === "boolean") {
@@ -1723,6 +1727,7 @@ function LayoutCard({
       const config = {
         ...restConfig,
         hlOverlay: overlay,
+        discourageImageSaving,
         altUseBackground,
         altBackgroundColor,
         altTextColor,
@@ -1876,6 +1881,24 @@ function LayoutCard({
                 <option value="dark">Dark</option>
               </Select>
             </Field>
+            <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+              <Input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4"
+                checked={discourageImageSaving}
+                onChange={(e) => setDiscourageImageSaving(e.target.checked)}
+              />
+              <span>
+                <span className="block font-medium">
+                  Discourage casual image saving
+                </span>
+                <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
+                  Disable the image context menu and dragging in this gallery. This is a
+                  casual deterrent, not a way to prevent screenshots or determined
+                  copying.
+                </span>
+              </span>
+            </label>
             {gridType === "horizontal-lenis" && (
               <Field label="Text overlay">
                 <Select
@@ -2551,6 +2574,7 @@ function LayoutCard({
               gridType,
               spacing,
               theme,
+              discourageImageSaving,
               overlay,
               altUseBackground,
               altBackgroundColor,
