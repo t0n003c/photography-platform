@@ -1,6 +1,8 @@
 import { getSession } from "@/src/auth/session";
 import { resolvePageConfig } from "@/src/db/queries/public";
+import { getSiteSettings } from "@/src/db/queries/settings";
 import { decodePreview, PREVIEW_PARAM } from "@/src/lib/preview";
+import type { ImageSavingOverride } from "@/src/lib/security-settings";
 
 export type GridType =
   | "masonry"
@@ -270,6 +272,24 @@ function sliphoverBackgroundColor(value: unknown): string {
   return value;
 }
 
+function isImageSavingOverride(value: unknown): value is ImageSavingOverride {
+  return value === "inherit" || value === "on" || value === "off";
+}
+
+function resolveImageSaving(
+  override: unknown,
+  legacyOverride: unknown,
+  globalDefault: boolean,
+): boolean {
+  if (override === "on") return true;
+  if (override === "off") return false;
+  // Existing page-configs only have the old boolean field. Preserve an old
+  // explicit opt-in while allowing old false values to inherit the new global
+  // default.
+  if (legacyOverride === true) return true;
+  return globalDefault;
+}
+
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
 
 // Resolves the page-config a public page should render with, applying an
@@ -281,9 +301,13 @@ export async function resolveRenderConfig(
   defaultGrid: GridType,
   options: { allowDraftPreview?: boolean } = {},
 ): Promise<RenderConfig> {
-  const base = await resolvePageConfig(scope, explicitId ?? undefined);
+  const [base, siteSettings] = await Promise.all([
+    resolvePageConfig(scope, explicitId ?? undefined),
+    getSiteSettings(),
+  ]);
   const cfgJson = (base?.config ?? {}) as {
     discourageImageSaving?: boolean;
+    discourageImageSavingMode?: ImageSavingOverride;
     hlOverlay?: HlOverlay;
     altUseBackground?: boolean;
     altBackgroundColor?: string;
@@ -350,7 +374,11 @@ export async function resolveRenderConfig(
     gridType: (base?.gridType as GridType | null) ?? defaultGrid,
     spacing: base?.spacing ?? "normal",
     theme: (base?.theme as RenderConfig["theme"] | null) ?? "auto",
-    discourageImageSaving: cfgJson.discourageImageSaving === true,
+    discourageImageSaving: resolveImageSaving(
+      cfgJson.discourageImageSavingMode,
+      cfgJson.discourageImageSaving,
+      siteSettings.discourageImageSaving,
+    ),
     hero: (base?.hero as RenderConfig["hero"]) ?? null,
     overlay: cfgJson.hlOverlay ?? "minimal",
     alternativeScroll: {
@@ -449,8 +477,13 @@ export async function resolveRenderConfig(
     gridType: draft.gridType ?? config.gridType,
     spacing: draft.spacing ?? config.spacing,
     theme: draft.theme ?? config.theme,
-    discourageImageSaving:
-      typeof draft.discourageImageSaving === "boolean"
+    discourageImageSaving: isImageSavingOverride(draft.discourageImageSavingMode)
+      ? resolveImageSaving(
+          draft.discourageImageSavingMode,
+          undefined,
+          siteSettings.discourageImageSaving,
+        )
+      : typeof draft.discourageImageSaving === "boolean"
         ? draft.discourageImageSaving
         : config.discourageImageSaving,
     hero: draft.hero !== undefined ? draft.hero : config.hero,

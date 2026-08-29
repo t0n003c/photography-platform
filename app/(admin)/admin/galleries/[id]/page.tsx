@@ -43,6 +43,7 @@ import { useStepUp } from "@/components/admin/step-up";
 import { ResponsiveImage } from "@/components/gallery/responsive-image";
 import { api, ApiError } from "@/src/lib/api-client";
 import type { PhotoDTO } from "@/src/db/queries/photos";
+import type { ImageSavingOverride } from "@/src/lib/security-settings";
 
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
@@ -65,6 +66,10 @@ const DEFAULT_TORA_JUSTIFIED_ACCENT = "#edd8aa";
 
 type ToraTextSource = "auto" | "headline" | "alt" | "caption";
 type ToraSliphoverLabelSource = ToraTextSource;
+
+function isImageSavingOverride(value: unknown): value is ImageSavingOverride {
+  return value === "inherit" || value === "on" || value === "off";
+}
 
 function normalizeSliphoverBackground(value: string) {
   const normalized = value.trim().toLowerCase();
@@ -1335,7 +1340,8 @@ function LayoutCard({
   const [gridType, setGridType] = useState<PreviewGrid>("justified");
   const [spacing, setSpacing] = useState<PreviewSpacing>("normal");
   const [theme, setTheme] = useState<PreviewTheme>("auto");
-  const [discourageImageSaving, setDiscourageImageSaving] = useState(false);
+  const [discourageImageSavingMode, setDiscourageImageSavingMode] =
+    useState<ImageSavingOverride>("inherit");
   const [overlay, setOverlay] = useState<PreviewOverlay>("minimal");
   const [altUseBackground, setAltUseBackground] = useState(true);
   const [altBackgroundColor, setAltBackgroundColor] = useState("#b7b19f");
@@ -1469,8 +1475,12 @@ function LayoutCard({
           setTheme(cfg.theme);
         const c = (cfg.config ?? {}) as Record<string, unknown>;
         setBaseConfig(c);
-        if (typeof c.discourageImageSaving === "boolean") {
-          setDiscourageImageSaving(c.discourageImageSaving);
+        if (isImageSavingOverride(c.discourageImageSavingMode)) {
+          setDiscourageImageSavingMode(c.discourageImageSavingMode);
+        } else {
+          setDiscourageImageSavingMode(
+            c.discourageImageSaving === true ? "on" : "inherit",
+          );
         }
         const o = c.hlOverlay;
         if (o === "minimal" || o === "editorial" || o === "centered") setOverlay(o);
@@ -1725,10 +1735,11 @@ function LayoutCard({
     try {
       const restConfig = { ...baseConfig };
       delete restConfig.motionEffect;
+      delete restConfig.discourageImageSaving;
       const config = {
         ...restConfig,
         hlOverlay: overlay,
-        discourageImageSaving,
+        discourageImageSavingMode,
         altUseBackground,
         altBackgroundColor,
         altTextColor,
@@ -1884,24 +1895,23 @@ function LayoutCard({
                 <option value="dark">Dark</option>
               </Select>
             </Field>
-            <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
-              <Input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4"
-                checked={discourageImageSaving}
-                onChange={(e) => setDiscourageImageSaving(e.target.checked)}
-              />
-              <span>
-                <span className="block font-medium">
-                  Discourage casual image saving
-                </span>
-                <span className="mt-1 block text-xs text-[hsl(var(--muted-foreground))]">
-                  Disable the image context menu and dragging in this gallery. This is a
-                  casual deterrent, not a way to prevent screenshots or determined
-                  copying.
-                </span>
-              </span>
-            </label>
+            <Field label="Image saving protection" htmlFor="gallery-image-saving">
+              <Select
+                id="gallery-image-saving"
+                value={discourageImageSavingMode}
+                onChange={(e) =>
+                  setDiscourageImageSavingMode(e.target.value as ImageSavingOverride)
+                }
+              >
+                <option value="inherit">Inherit Security setting</option>
+                <option value="on">Enabled for this gallery</option>
+                <option value="off">Disabled for this gallery</option>
+              </Select>
+              <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                Disables the image context menu and dragging. This is a casual
+                deterrent, not protection against screenshots or determined copying.
+              </p>
+            </Field>
             {gridType === "horizontal-lenis" && (
               <Field label="Text overlay">
                 <Select
@@ -2577,7 +2587,7 @@ function LayoutCard({
               gridType,
               spacing,
               theme,
-              discourageImageSaving,
+              discourageImageSavingMode,
               overlay,
               altUseBackground,
               altBackgroundColor,

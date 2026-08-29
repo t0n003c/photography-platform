@@ -14,6 +14,7 @@ import {
   getPhotoFilterMemberships,
   getPhotoFilterOptions,
 } from "@/src/db/queries/public";
+import { getSiteSettings } from "@/src/db/queries/settings";
 import type { PhotoDTO } from "@/src/db/queries/photos";
 import type { LeafBlock } from "@/src/lib/blocks";
 
@@ -227,9 +228,11 @@ export async function GalleryBlock({
       </Container>
     );
   }
+  const siteSettings = await getSiteSettings();
   const layout = {
     gridType: block.gridType,
     spacing: block.spacing,
+    discourageImageSaving: siteSettings.discourageImageSaving,
     autoplay: block.autoplay,
     backdrop: block.backdrop,
     toraProps: {

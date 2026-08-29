@@ -11,6 +11,7 @@ describe("security settings", () => {
   it("normalizes defaults and clamps numeric limits", () => {
     expect(
       normalizeSecurityConfig({
+        discourageImageSaving: true,
         contactCaptchaEnabled: true,
         contactHourlyLimit: 0,
         contactDailyLimit: 9999,
@@ -20,6 +21,7 @@ describe("security settings", () => {
         blockedEmailDomains: ["@Example.com", "example.com"],
       }),
     ).toMatchObject({
+      discourageImageSaving: true,
       contactCaptchaEnabled: true,
       contactHourlyLimit: 1,
       contactDailyLimit: 500,
@@ -40,12 +42,8 @@ describe("security settings", () => {
 
   it("matches blocked email domains including subdomains", () => {
     expect(isBlockedEmailDomain("person@example.com", ["example.com"])).toBe(true);
-    expect(isBlockedEmailDomain("person@a.example.com", ["example.com"])).toBe(
-      true,
-    );
-    expect(isBlockedEmailDomain("person@notexample.com", ["example.com"])).toBe(
-      false,
-    );
+    expect(isBlockedEmailDomain("person@a.example.com", ["example.com"])).toBe(true);
+    expect(isBlockedEmailDomain("person@notexample.com", ["example.com"])).toBe(false);
   });
 
   it("counts links and keyword matches", () => {

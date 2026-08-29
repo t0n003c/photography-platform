@@ -12,6 +12,7 @@ import {
   type StoreCheckoutSettings,
   type StorePaymentSettings,
 } from "@/src/lib/store-settings";
+import { normalizeSecurityConfig } from "@/src/lib/security-settings";
 
 export const SITE_SETTINGS_ID = "site";
 const CACHE_KEY = "pub:site_settings";
@@ -60,12 +61,14 @@ export interface PublicSiteSettings {
   weekStartsOn: number;
   iconStorageKey: string | null;
   logoStorageKey: string | null;
+  discourageImageSaving: boolean;
 }
 
 // Cached, sanitized settings for rendering (no secrets). Safe to put in Redis.
 export async function getSiteSettings(): Promise<PublicSiteSettings> {
   return cached<PublicSiteSettings>(CACHE_KEY, 300, async () => {
     const row = await getSiteSettingsRow();
+    const security = normalizeSecurityConfig(row?.securityConfig);
     return {
       siteTitle: row?.siteTitle ?? SETTINGS_DEFAULTS.siteTitle,
       tagline: row?.tagline ?? SETTINGS_DEFAULTS.tagline,
@@ -76,6 +79,7 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
       weekStartsOn: row?.weekStartsOn ?? SETTINGS_DEFAULTS.weekStartsOn,
       iconStorageKey: row?.iconStorageKey ?? SETTINGS_DEFAULTS.iconStorageKey,
       logoStorageKey: row?.logoStorageKey ?? SETTINGS_DEFAULTS.logoStorageKey,
+      discourageImageSaving: security.discourageImageSaving,
     };
   });
 }

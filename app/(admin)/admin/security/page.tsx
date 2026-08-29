@@ -254,6 +254,24 @@ function SecurityRulesPanel({
             <input
               type="checkbox"
               className="mt-1"
+              checked={config.discourageImageSaving}
+              onChange={(event) =>
+                onChange("discourageImageSaving", event.target.checked)
+              }
+            />
+            <span>
+              <span className="block font-medium">Discourage casual image saving</span>
+              <span className="block text-xs text-[hsl(var(--muted-foreground))]">
+                Disables right-click menus and image dragging on public photos by
+                default. Individual galleries can inherit, enable, or override this
+                setting.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
               checked={config.contactCaptchaEnabled}
               onChange={(event) =>
                 onChange("contactCaptchaEnabled", event.target.checked)
@@ -453,12 +471,7 @@ function TabButton({
 
 function ContactTable({ rows }: { rows: ContactRow[] }) {
   if (rows.length === 0) {
-    return (
-      <EmptyState
-        title="No contact activity"
-        illustration="security-spam"
-      />
-    );
+    return <EmptyState title="No contact activity" illustration="security-spam" />;
   }
   return (
     <Card>
@@ -538,10 +551,7 @@ function EventTable({
 }) {
   if (rows.length === 0) {
     return (
-      <EmptyState
-        title={`No ${title.toLowerCase()}`}
-        illustration="security-spam"
-      />
+      <EmptyState title={`No ${title.toLowerCase()}`} illustration="security-spam" />
     );
   }
   return (

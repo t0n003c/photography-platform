@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Monitor, Smartphone, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { ImageSavingOverride } from "@/src/lib/security-settings";
 
 export type PreviewGrid =
   | "masonry"
@@ -45,6 +46,7 @@ export interface PreviewDraft {
   spacing: PreviewSpacing;
   theme: PreviewTheme;
   discourageImageSaving?: boolean;
+  discourageImageSavingMode?: ImageSavingOverride;
   hero?: Record<string, unknown>;
   overlay?: PreviewOverlay;
   altUseBackground?: boolean;

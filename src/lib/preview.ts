@@ -4,6 +4,8 @@
 // visitors never see unsaved drafts. Theme is forced via `__theme` (middleware
 // → x-preview-theme header → root layout forcedTheme).
 
+import type { ImageSavingOverride } from "@/src/lib/security-settings";
+
 export interface PreviewConfig {
   gridType?:
     | "masonry"
@@ -26,6 +28,7 @@ export interface PreviewConfig {
   spacing?: string;
   theme?: "light" | "dark" | "auto";
   discourageImageSaving?: boolean;
+  discourageImageSavingMode?: ImageSavingOverride;
   hero?: { enabled?: boolean; headline?: string } | null;
   overlay?: "minimal" | "editorial" | "centered";
   altUseBackground?: boolean;

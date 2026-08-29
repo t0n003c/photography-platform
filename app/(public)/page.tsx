@@ -21,8 +21,7 @@ import { BlockRenderer } from "@/components/blocks/block-renderer";
 export const dynamic = "force-dynamic";
 export const metadata = buildMetadata({ path: "/" });
 
-const GRID_SIZES =
-  "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw";
+const GRID_SIZES = "(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw";
 
 export default async function HomePage({
   searchParams,
@@ -40,14 +39,13 @@ export default async function HomePage({
     );
   }
 
-  const [featured, categories, locations, instagram, config] =
-    await Promise.all([
-      getFeaturedPhotos(13),
-      getPublishedCategories(),
-      getPublishedLocations(),
-      resolveInstagramProvider().then((p) => p.getFeed(6)),
-      resolveRenderConfig("home", null, await searchParams, "justified"),
-    ]);
+  const [featured, categories, locations, instagram, config] = await Promise.all([
+    getFeaturedPhotos(13),
+    getPublishedCategories(),
+    getPublishedLocations(),
+    resolveInstagramProvider().then((p) => p.getFeed(6)),
+    resolveRenderConfig("home", null, await searchParams, "justified"),
+  ]);
 
   const hero = featured[0];
   const rest = featured.slice(1);
@@ -115,6 +113,7 @@ export default async function HomePage({
               layout={{
                 gridType: config.gridType,
                 spacing: config.spacing,
+                discourageImageSaving: config.discourageImageSaving,
                 toraJustified: config.toraJustified,
               }}
             />
@@ -191,9 +190,7 @@ export default async function HomePage({
                 href={item.permalink}
                 target={item.permalink.startsWith("http") ? "_blank" : undefined}
                 rel={
-                  item.permalink.startsWith("http")
-                    ? "noreferrer noopener"
-                    : undefined
+                  item.permalink.startsWith("http") ? "noreferrer noopener" : undefined
                 }
                 className="relative aspect-square overflow-hidden rounded-md bg-[hsl(var(--muted))]"
               >
@@ -218,9 +215,9 @@ export default async function HomePage({
             Photography that lasts
           </h2>
           <p className="mt-3 max-w-2xl text-[hsl(var(--muted-foreground))]">
-            Portraits, events, and the wild places in between — shot and delivered
-            with care. Private client galleries, fine-art prints, and a process
-            built to make working together effortless.
+            Portraits, events, and the wild places in between — shot and delivered with
+            care. Private client galleries, fine-art prints, and a process built to make
+            working together effortless.
           </p>
           <Link
             href="/about"

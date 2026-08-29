@@ -1,6 +1,10 @@
 import { z } from "zod";
 
+export type ImageSavingOverride = "inherit" | "on" | "off";
+
 export interface SecurityConfig {
+  /** Default for public galleries and page-builder gallery blocks. */
+  discourageImageSaving: boolean;
   contactCaptchaEnabled: boolean;
   contactHourlyLimit: number;
   contactDailyLimit: number;
@@ -13,6 +17,7 @@ export interface SecurityConfig {
 }
 
 export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
+  discourageImageSaving: false,
   contactCaptchaEnabled: false,
   contactHourlyLimit: 3,
   contactDailyLimit: 10,
@@ -26,6 +31,7 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
 
 export const SecurityConfigInputSchema = z
   .object({
+    discourageImageSaving: z.boolean().optional(),
     contactCaptchaEnabled: z.boolean().optional(),
     contactHourlyLimit: z.number().int().min(1).max(100).optional(),
     contactDailyLimit: z.number().int().min(1).max(500).optional(),
@@ -90,7 +96,10 @@ function normalizeIpRule(value: string): string | null {
 }
 
 function normalizeCountry(value: string): string | null {
-  const country = value.trim().toUpperCase().replace(/[^A-Z]/g, "");
+  const country = value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
   return country.length === 2 ? country : null;
 }
 
@@ -107,6 +116,10 @@ function normalizeKeyword(value: string): string | null {
 export function normalizeSecurityConfig(value: unknown): SecurityConfig {
   const input = asRecord(value);
   return {
+    discourageImageSaving: booleanValue(
+      input.discourageImageSaving,
+      DEFAULT_SECURITY_CONFIG.discourageImageSaving,
+    ),
     contactCaptchaEnabled: booleanValue(
       input.contactCaptchaEnabled,
       DEFAULT_SECURITY_CONFIG.contactCaptchaEnabled,
@@ -137,10 +150,7 @@ export function normalizeSecurityConfig(value: unknown): SecurityConfig {
     ),
     blockedIps: normalizeList(input.blockedIps, normalizeIpRule),
     blockedCountries: normalizeList(input.blockedCountries, normalizeCountry, 250),
-    blockedEmailDomains: normalizeList(
-      input.blockedEmailDomains,
-      normalizeEmailDomain,
-    ),
+    blockedEmailDomains: normalizeList(input.blockedEmailDomains, normalizeEmailDomain),
     blockedKeywords: normalizeList(input.blockedKeywords, normalizeKeyword),
   };
 }
@@ -191,7 +201,10 @@ export function isBlockedIp(ip: string, rules: string[]): boolean {
 export function isBlockedEmailDomain(email: string, domains: string[]): boolean {
   const at = email.lastIndexOf("@");
   if (at < 0) return false;
-  const domain = email.slice(at + 1).trim().toLowerCase();
+  const domain = email
+    .slice(at + 1)
+    .trim()
+    .toLowerCase();
   if (!domain) return false;
   return domains.some((blocked) => {
     const normalized = blocked.trim().toLowerCase().replace(/^@+/, "");
@@ -205,7 +218,5 @@ export function countLinks(value: string): number {
 
 export function matchingKeywords(value: string, keywords: string[]): string[] {
   const haystack = value.toLowerCase();
-  return keywords.filter((keyword) =>
-    haystack.includes(keyword.trim().toLowerCase()),
-  );
+  return keywords.filter((keyword) => haystack.includes(keyword.trim().toLowerCase()));
 }
