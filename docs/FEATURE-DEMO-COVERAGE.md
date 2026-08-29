@@ -30,6 +30,8 @@ gallery flow, lightboxes, proofing, and map/gallery references.
 | `/demo-about-profile-styles`      | Every About layout, profile photos, contact fields, press/awards/collaborators, optional contact form                                                                  |
 | `/demo-media-interaction-tools`   | Image comparison orientations/aspect ratios/widths, feature carousel counts/radius/autoplay/arrows, book slider sizes/page styles, WebGL distortion, cinematic gallery |
 | `/demo-gallery-block-grids`       | Every Page Builder Gallery grid type, source modes, spacing, carousel autoplay, 3D backdrop, Tora props catalog, Tora justified showcase controls                      |
+| `/demo-color-spectrum-gallery`    | Interactive color matching, result-only spectrum segments, full palette, close matching, and segmented bar style                                                   |
+| `/demo-moodboard-gallery`         | Paper texture, mixed-ratio editorial collage, photo mats, captions, pins, palette rail, annotations, and stable composition                                    |
 | `/demo-gallery-filter-systems`    | Filter tabs by category/location/custom, flip reveal and Tora portfolio masonry, overlay text, sort modes, manual order, pagination/separator sizing                   |
 | `/demo-scroll-showcase-core`      | Scroll showcase cinematic and carousel3d styles                                                                                                                        |
 | `/demo-scroll-panels-variants`    | Scroll panel variants, intro count, row count, tone, align, background/text colors                                                                                     |

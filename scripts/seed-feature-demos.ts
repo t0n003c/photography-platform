@@ -261,6 +261,7 @@ const pageSlugs = [
   "demo-about-profile-styles",
   "demo-media-interaction-tools",
   "demo-gallery-block-grids",
+  "demo-color-spectrum-gallery",
   "demo-moodboard-gallery",
   "demo-gallery-filter-systems",
   "demo-scroll-showcase-core",
@@ -3456,6 +3457,44 @@ async function main() {
   }
 
   {
+    const id = idFactory("demo-color-spectrum");
+    pages.push({
+      id: `${BASE}-page-color-spectrum`,
+      slug: "demo-color-spectrum-gallery",
+      title: "Color Spectrum Gallery",
+      type: "portfolio",
+      theme: "auto",
+      seoDescription:
+        "An interactive color spectrum gallery that reveals closely matching photographs as visitors explore the bar.",
+      blocks: [
+        ...pageIntro(
+          id,
+          "COLOR SPECTRUM",
+          "Color spectrum gallery",
+          "Explore the collection by hue, tonal range, and visual atmosphere. The gallery keeps only color positions with matching photographs in view.",
+          pick(36),
+        ),
+        {
+          id: id(),
+          type: "gallery",
+          ...GALLERY_DEFAULTS,
+          source: "featured",
+          gridType: "color-spectrum",
+          limit: 48,
+          colorSpectrumPalette: "full",
+          colorSpectrumRange: "full",
+          colorSpectrumRangeStart: 0,
+          colorSpectrumRangeEnd: 1,
+          colorSpectrumMatch: "close",
+          colorSpectrumSnapToResults: true,
+          colorSpectrumNeutralMode: "spectrum",
+          colorSpectrumBarStyle: "segments",
+        },
+      ],
+    });
+  }
+
+  {
     const id = idFactory("demo-moodboard");
     pages.push({
       id: `${BASE}-page-moodboard`,
@@ -4352,6 +4391,12 @@ async function main() {
         label: "Gallery Blocks",
         linkType: "page" as const,
         targetId: `${BASE}-page-gallery-blocks`,
+        url: null,
+      },
+      {
+        label: "Color Spectrum",
+        linkType: "page" as const,
+        targetId: `${BASE}-page-color-spectrum`,
         url: null,
       },
       {
