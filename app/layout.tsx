@@ -7,6 +7,7 @@ import {
   Montserrat,
   Open_Sans,
   Space_Grotesk,
+  Caveat,
 } from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -18,13 +19,43 @@ import "./globals.css";
 
 // Self-hosted display fonts for the page builder's heading/subheading blocks.
 // Loaded once here; selectable per block via CSS classes in globals.css.
-const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin", display: "swap" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-cormorant", display: "swap" });
-const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", display: "swap" });
-const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans", display: "swap" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
-const fontVars = `${josefin.variable} ${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${openSans.variable} ${spaceGrotesk.variable}`;
+const josefin = Josefin_Sans({
+  subsets: ["latin"],
+  variable: "--font-josefin",
+  display: "swap",
+});
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+  display: "swap",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
+  display: "swap",
+});
+const fontVars = `${josefin.variable} ${playfair.variable} ${cormorant.variable} ${montserrat.variable} ${openSans.variable} ${spaceGrotesk.variable} ${caveat.variable}`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
@@ -61,7 +92,11 @@ export default async function RootLayout({
   const settings = await getSiteSettings();
   const orgLogo = settings.iconStorageKey ? "/api/v1/media/site-icon" : undefined;
   return (
-    <html lang={settings.locale} className={`${fontVars} no-js`} suppressHydrationWarning>
+    <html
+      lang={settings.locale}
+      className={`${fontVars} no-js`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           nonce={nonce}

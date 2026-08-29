@@ -182,6 +182,20 @@ const GALLERY_DEFAULTS = {
   toraJustifiedDimOnLeadHover: true,
   toraJustifiedScrollOnSelect: true,
   toraJustifiedShowBlurredSideFill: true,
+  moodboardTitle: "Mood board",
+  moodboardEyebrow: "Visual collection",
+  moodboardSubtitle: "A tactile edit for stories, references, and visual direction.",
+  moodboardNoteLeft: "keep it tactile",
+  moodboardNoteRight: "Warm light, quiet frames, and a little room to breathe.",
+  moodboardNoteBottom: "A collected study in image, texture, and tone.",
+  moodboardTheme: "paper",
+  moodboardDensity: "balanced",
+  moodboardFrames: "matte",
+  moodboardPaperTexture: true,
+  moodboardRotations: true,
+  moodboardTornEdges: true,
+  moodboardPins: true,
+  moodboardShowCaptions: true,
 };
 
 const homepageConcepts = [
@@ -247,6 +261,7 @@ const pageSlugs = [
   "demo-about-profile-styles",
   "demo-media-interaction-tools",
   "demo-gallery-block-grids",
+  "demo-moodboard-gallery",
   "demo-gallery-filter-systems",
   "demo-scroll-showcase-core",
   "demo-scroll-panels-variants",
@@ -3441,6 +3456,47 @@ async function main() {
   }
 
   {
+    const id = idFactory("demo-moodboard");
+    pages.push({
+      id: `${BASE}-page-moodboard`,
+      slug: "demo-moodboard-gallery",
+      title: "Moodboard Editorial Collage",
+      type: "portfolio",
+      theme: "auto",
+      seoDescription:
+        "A tactile editorial collage gallery with paper texture, photo mats, annotations, and stable composition.",
+      blocks: [
+        ...pageIntro(
+          id,
+          "MOODBOARD",
+          "Moodboard editorial collage",
+          "A paper-inspired gallery layout for visual references, campaign direction, and image-led storytelling.",
+          pick(18),
+        ),
+        {
+          id: id(),
+          type: "gallery",
+          ...GALLERY_DEFAULTS,
+          source: "featured",
+          gridType: "moodboard",
+          limit: 24,
+          moodboardTitle: "Field notes / Autumn study",
+          moodboardEyebrow: "Visual collection · 2026",
+          moodboardSubtitle:
+            "Warm light, soft edges, and the quiet rhythm between portraits and place.",
+          moodboardNoteLeft: "look for the pause",
+          moodboardNoteRight:
+            "A small collection of frames to guide the next story — tactile, unhurried, and human.",
+          moodboardNoteBottom: "Collected references · Portland / Chicago",
+          moodboardTheme: "paper",
+          moodboardDensity: "balanced",
+          moodboardFrames: "matte",
+        },
+      ],
+    });
+  }
+
+  {
     const id = idFactory("demo-scroll-core");
     pages.push({
       id: `${BASE}-page-scroll-core`,
@@ -4296,6 +4352,12 @@ async function main() {
         label: "Gallery Blocks",
         linkType: "page" as const,
         targetId: `${BASE}-page-gallery-blocks`,
+        url: null,
+      },
+      {
+        label: "Moodboard",
+        linkType: "page" as const,
+        targetId: `${BASE}-page-moodboard`,
         url: null,
       },
       {

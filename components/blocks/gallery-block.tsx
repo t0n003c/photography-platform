@@ -38,6 +38,8 @@ async function loadPhotos(block: GalleryBlockData): Promise<PhotoDTO[]> {
         return block.targetId
           ? (await getGalleryPhotos(block.targetId, null, limit)).photos
           : [];
+      case "custom":
+        return [];
       default:
         return [];
     }
@@ -50,7 +52,9 @@ function selectedTaxonomyFilterKeys(block: GalleryBlockData): string[] {
   if (block.filterMode !== "category" && block.filterMode !== "location") {
     return [];
   }
-  return [...new Set((block.filterSorts ?? []).map((filter) => filter.key).filter(Boolean))];
+  return [
+    ...new Set((block.filterSorts ?? []).map((filter) => filter.key).filter(Boolean)),
+  ];
 }
 
 async function loadSelectedTaxonomyFilterPhotos(
@@ -96,6 +100,12 @@ function customFilterPhotos(block: GalleryBlockData, photoMap: PhotoMap): PhotoD
   return photos;
 }
 
+function customSourcePhotos(block: GalleryBlockData, photoMap: PhotoMap): PhotoDTO[] {
+  return block.sourcePhotoIds
+    .map((photoId) => photoMap.get(photoId))
+    .filter((photo): photo is PhotoDTO => Boolean(photo));
+}
+
 function customFilterConfig(block: GalleryBlockData): {
   tabs: FlipRevealFilterTab[];
   photoFilters: Record<string, string[]>;
@@ -119,17 +129,15 @@ function customFilterConfig(block: GalleryBlockData): {
 
 function flipRevealSortConfig(block: GalleryBlockData): FlipRevealSortConfig {
   const customOrders = new Map(
-    (block.customFilters ?? []).map((filter) => [
-      filter.id,
-      filter.photoIds ?? [],
-    ]),
+    (block.customFilters ?? []).map((filter) => [filter.id, filter.photoIds ?? []]),
   );
   const overrides: FlipRevealSortConfig["overrides"] = {};
   for (const sort of block.filterSorts ?? []) {
     overrides[sort.key] = {
       mode: sort.sortMode ?? "source",
-      photoIds:
-        sort.photoIds?.length ? sort.photoIds : customOrders.get(sort.key) ?? [],
+      photoIds: sort.photoIds?.length
+        ? sort.photoIds
+        : (customOrders.get(sort.key) ?? []),
     };
   }
   return {
@@ -181,8 +189,8 @@ async function taxonomyFilterConfig(
   };
 }
 
-// Renders a gallery from a chosen source. The `effect` (cinematic-3d-scroll)
-// is wired in Phase D; for now it renders the standard responsive grid.
+// Renders a gallery from a chosen source. Interactive presentation styles still
+// receive the same server-selected photo set as the standard grid.
 export async function GalleryBlock({
   block,
   photoMap = new Map(),
@@ -193,9 +201,12 @@ export async function GalleryBlock({
   preview?: boolean;
 }) {
   const photos =
-    block.filterMode === "custom"
-      ? customFilterPhotos(block, photoMap)
-      : (await loadSelectedTaxonomyFilterPhotos(block)) ?? await loadPhotos(block);
+    block.source === "custom"
+      ? customSourcePhotos(block, photoMap)
+      : block.filterMode === "custom"
+        ? customFilterPhotos(block, photoMap)
+        : ((await loadSelectedTaxonomyFilterPhotos(block)) ??
+          (await loadPhotos(block)));
   if (photos.length === 0) {
     // On the live site an empty gallery renders nothing; in the editor preview
     // show why so it's not just a blank spot.
@@ -203,9 +214,11 @@ export async function GalleryBlock({
     const hint =
       block.filterMode === "custom"
         ? "No custom filter photos selected yet."
-        : block.source === "featured"
-        ? "No featured photos yet — assign photos to a published category."
-        : `No photos in the selected ${block.source}${block.targetId ? "" : " (pick a target)"}.`;
+        : block.source === "custom"
+          ? "No custom source photos selected yet."
+          : block.source === "featured"
+            ? "No featured photos yet — assign photos to a published category."
+            : `No photos in the selected ${block.source}${block.targetId ? "" : " (pick a target)"}.`;
     return (
       <Container className="py-8">
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
@@ -240,6 +253,32 @@ export async function GalleryBlock({
       scrollOnSelect: block.toraJustifiedScrollOnSelect,
       showBlurredSideFill: block.toraJustifiedShowBlurredSideFill,
     },
+    colorSpectrum: {
+      palette: block.colorSpectrumPalette,
+      range: block.colorSpectrumRange,
+      rangeStart: block.colorSpectrumRangeStart,
+      rangeEnd: block.colorSpectrumRangeEnd,
+      matchAccuracy: block.colorSpectrumMatch,
+      snapToResults: block.colorSpectrumSnapToResults,
+      neutralMode: block.colorSpectrumNeutralMode,
+      barStyle: block.colorSpectrumBarStyle,
+    },
+    moodboard: {
+      title: block.moodboardTitle,
+      eyebrow: block.moodboardEyebrow,
+      subtitle: block.moodboardSubtitle,
+      noteLeft: block.moodboardNoteLeft,
+      noteRight: block.moodboardNoteRight,
+      noteBottom: block.moodboardNoteBottom,
+      theme: block.moodboardTheme,
+      density: block.moodboardDensity,
+      frames: block.moodboardFrames,
+      paperTexture: block.moodboardPaperTexture,
+      rotations: block.moodboardRotations,
+      tornEdges: block.moodboardTornEdges,
+      pins: block.moodboardPins,
+      showCaptions: block.moodboardShowCaptions,
+    },
   };
 
   // Cinematic 3D scroll is a layout choice (gridType) — it renders full-bleed
@@ -264,6 +303,13 @@ export async function GalleryBlock({
         speed={block.effectSpeed ?? 1}
       />
     );
+  }
+
+  // Color Spectrum is a presentation style that can sit on top of any selected
+  // source, including a custom filter photo set. Keep it ahead of filter tabs so
+  // the visitor gets the color interaction instead of a second filter UI.
+  if (block.gridType === "color-spectrum" || block.gridType === "moodboard") {
+    return <Gallery photos={photos} layout={layout} />;
   }
 
   if (block.filterMode && block.filterMode !== "none") {
@@ -292,11 +338,7 @@ export async function GalleryBlock({
       if (filterStyle === "tora-portfolio-masonry") {
         return gallery;
       }
-      return (
-        <Container className="py-8">
-          {gallery}
-        </Container>
-      );
+      return <Container className="py-8">{gallery}</Container>;
     }
   }
 

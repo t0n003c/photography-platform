@@ -18,7 +18,8 @@ export type GridType =
   | "tora-sliphover"
   | "tora-justified-showcase"
   | "carousel-3d-scroll"
-  | "alternative-scroll";
+  | "alternative-scroll"
+  | "moodboard";
 export type Scope = "home" | "gallery" | "category" | "location" | "about" | "global";
 
 export type HlOverlay = "minimal" | "editorial" | "centered";

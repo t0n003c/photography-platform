@@ -1952,6 +1952,7 @@ html.js .pr-root.is-enhanced {
 /* ── Page-builder heading/subheading font choices ─────────────────────────── */
 .font-josefin { font-family: var(--font-josefin), system-ui, sans-serif; }
 .font-playfair { font-family: var(--font-playfair), Georgia, "Times New Roman", serif; }
+.font-caveat { font-family: var(--font-caveat), "Comic Sans MS", cursive; }
 .font-cormorant { font-family: var(--font-cormorant), Georgia, "Times New Roman", serif; }
 .font-montserrat { font-family: var(--font-montserrat), system-ui, sans-serif; }
 .font-open-sans { font-family: var(--font-open-sans), system-ui, sans-serif; }
@@ -15871,6 +15872,21 @@ main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
   }
 }
 
+@keyframes color-spectrum-gallery-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.color-spectrum-gallery__tile {
+  animation: color-spectrum-gallery-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .team-marquee-track {
     animation: none;
@@ -15895,5 +15911,9 @@ main:has(.palmer-grid) + footer:not(.sticky-site-footer) .footer-copyright {
   .tora-crew-hiring-link span {
     animation: none;
     transition: none;
+  }
+
+  .color-spectrum-gallery__tile {
+    animation: none;
   }
 }

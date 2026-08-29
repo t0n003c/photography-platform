@@ -3,6 +3,68 @@ import { collectPhotoIds, parseBlocks } from "@/src/lib/blocks";
 import { presetBlocks } from "@/src/lib/page-presets";
 
 describe("page builder blocks", () => {
+  it("keeps color spectrum gallery blocks", () => {
+    const blocks = parseBlocks([
+      {
+        id: "color-gallery",
+        type: "gallery",
+        source: "featured",
+        gridType: "color-spectrum",
+      },
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      id: "color-gallery",
+      type: "gallery",
+      gridType: "color-spectrum",
+      source: "featured",
+      limit: 12,
+      colorSpectrumBarStyle: "gradient",
+    });
+  });
+
+  it("defaults moodboard gallery presentation settings", () => {
+    const blocks = parseBlocks([
+      {
+        id: "moodboard-gallery",
+        type: "gallery",
+        source: "featured",
+        gridType: "moodboard",
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      gridType: "moodboard",
+      moodboardTitle: "Mood board",
+      moodboardTheme: "paper",
+      moodboardDensity: "balanced",
+      moodboardFrames: "matte",
+      moodboardPaperTexture: true,
+      moodboardRotations: true,
+      moodboardTornEdges: true,
+      moodboardPins: true,
+      moodboardShowCaptions: true,
+    });
+  });
+
+  it("keeps custom gallery source photo selections", () => {
+    const blocks = parseBlocks([
+      {
+        id: "custom-color-gallery",
+        type: "gallery",
+        source: "custom",
+        sourcePhotoIds: ["photo-a", "photo-b"],
+        gridType: "color-spectrum",
+      },
+    ]);
+
+    expect(blocks[0]).toMatchObject({
+      source: "custom",
+      sourcePhotoIds: ["photo-a", "photo-b"],
+    });
+  });
+
   it("keeps and defaults contact form blocks", () => {
     const blocks = parseBlocks([
       {
@@ -771,7 +833,8 @@ describe("page builder blocks", () => {
             id: "review-1",
             name: "Michael Rodriguez",
             affiliation: "Founder, Techstart",
-            quote: "As a startup founder, I needed a quick way to build a professional-looking product.",
+            quote:
+              "As a startup founder, I needed a quick way to build a professional-looking product.",
             photoId: "photo-retro-1",
           },
         ],

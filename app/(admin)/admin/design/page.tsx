@@ -63,7 +63,8 @@ type GridType =
   | "uniform"
   | "tora-justified-showcase"
   | "carousel-3d-scroll"
-  | "alternative-scroll";
+  | "alternative-scroll"
+  | "moodboard";
 type Spacing = "tight" | "normal" | "airy";
 type Theme = "light" | "dark" | "auto";
 
@@ -372,11 +373,13 @@ function ConfigEditor({
               <option value="carousel-3d-scroll">3D carousel (on scroll)</option>
             )}
             <option value="alternative-scroll">Alternative scroll</option>
+            <option value="moodboard">Moodboard editorial collage</option>
           </Select>
         </Field>
         {/* Standalone reference layouts manage their own spacing. */}
         {gridType !== "alternative-scroll" &&
-          gridType !== "tora-justified-showcase" && (
+          gridType !== "tora-justified-showcase" &&
+          gridType !== "moodboard" && (
           <Field label="Spacing">
             <Select
               value={spacing}

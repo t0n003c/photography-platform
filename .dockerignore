@@ -10,6 +10,7 @@ docs
 .env
 .env*.local
 docker/data
+Video
 coverage
 .DS_Store
 **/*.md

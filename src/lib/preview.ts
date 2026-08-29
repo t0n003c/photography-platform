@@ -21,7 +21,8 @@ export interface PreviewConfig {
     | "tora-sliphover"
     | "tora-justified-showcase"
     | "carousel-3d-scroll"
-    | "alternative-scroll";
+    | "alternative-scroll"
+    | "moodboard";
   spacing?: string;
   theme?: "light" | "dark" | "auto";
   discourageImageSaving?: boolean;

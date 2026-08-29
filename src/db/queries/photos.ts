@@ -33,6 +33,7 @@ export interface PhotoDTO {
   width: number;
   height: number;
   dominantColor: string | null;
+  colorPalette: string[] | null;
   blurhash: string | null;
   lqip: string | null;
   capturedAt: string | null;
@@ -55,6 +56,7 @@ export function serializePhoto(p: PhotoRow, variants: VariantRow[]): PhotoDTO {
     width: p.width,
     height: p.height,
     dominantColor: p.dominantColor,
+    colorPalette: p.colorPalette,
     blurhash: p.blurhash,
     lqip: p.lqip,
     capturedAt: p.captureDate ? p.captureDate.toISOString() : null,

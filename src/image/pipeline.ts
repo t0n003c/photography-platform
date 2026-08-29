@@ -16,6 +16,7 @@ import { MAX_PIXELS } from "@/src/image/validate";
 import { newId } from "@/src/lib/id";
 import { writeAudit } from "@/src/lib/audit";
 import type { ProcessImageJob } from "@/src/queue/jobs/image";
+import { extractColorPalette } from "@/src/image/colors";
 
 function toHex(n: number): string {
   return n.toString(16).padStart(2, "0");
@@ -52,6 +53,7 @@ export async function processImage(data: ProcessImageJob): Promise<void> {
     const stats = await sharp(original).stats();
     const { r, g, b } = stats.dominant;
     const dominantColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    const colorPalette = await extractColorPalette(original);
     const lqip = await generateLqip(original);
 
     // Skip buckets wider than the original (never upscale), keep the smallest.
@@ -112,6 +114,7 @@ export async function processImage(data: ProcessImageJob): Promise<void> {
         height,
         captureDate: ex.captureDate,
         dominantColor,
+        colorPalette,
         lqip,
         exif: {
           make: ex.make ?? null,

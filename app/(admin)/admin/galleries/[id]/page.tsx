@@ -1455,7 +1455,8 @@ function LayoutCard({
           cfg.gridType === "palmer-draggable" ||
           cfg.gridType === "tora-sliphover" ||
           cfg.gridType === "tora-justified-showcase" ||
-          cfg.gridType === "alternative-scroll"
+          cfg.gridType === "alternative-scroll" ||
+          cfg.gridType === "moodboard"
         )
           setGridType(cfg.gridType);
         if (
@@ -1845,6 +1846,7 @@ function LayoutCard({
                 <option value="palmer-draggable">Palmer draggable grid</option>
                 <option value="tora-sliphover">Tora sliphover masonry</option>
                 <option value="alternative-scroll">Alternative scroll</option>
+                <option value="moodboard">Moodboard editorial collage</option>
               </Select>
             </Field>
             {/* The horizontal-scroll & alternative-scroll layouts manage their own spacing. */}
@@ -1859,7 +1861,8 @@ function LayoutCard({
               gridType !== "palmer-draggable" &&
               gridType !== "tora-sliphover" &&
               gridType !== "tora-justified-showcase" &&
-              gridType !== "alternative-scroll" && (
+              gridType !== "alternative-scroll" &&
+              gridType !== "moodboard" && (
                 <Field label="Spacing">
                   <Select
                     value={spacing}

@@ -34,6 +34,7 @@ const CreateSchema = z.object({
       "tora-justified-showcase",
       "carousel-3d-scroll",
       "alternative-scroll",
+      "moodboard",
     ])
     .optional(),
   spacing: z.string().optional(),

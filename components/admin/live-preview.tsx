@@ -20,7 +20,8 @@ export type PreviewGrid =
   | "tora-sliphover"
   | "tora-justified-showcase"
   | "carousel-3d-scroll"
-  | "alternative-scroll";
+  | "alternative-scroll"
+  | "moodboard";
 export type PreviewSpacing = "tight" | "normal" | "airy";
 export type PreviewTheme = "light" | "dark" | "auto";
 

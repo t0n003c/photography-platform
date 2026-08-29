@@ -16,6 +16,8 @@ export const GridEnum = z.enum([
   "horizontal-lenis",
   "tora-props-catalog",
   "tora-justified-showcase",
+  "color-spectrum",
+  "moodboard",
 ]);
 export const SpacingEnum = z.enum(["tight", "normal", "airy"]);
 export const AlignEnum = z.enum(["left", "center", "right"]);
@@ -105,7 +107,9 @@ const PortfolioListItem = z.object({
   id,
   title: z.string().default("Free Feelings"),
   category: z.string().default("Women"),
-  description: z.string().default("A short project description for this portfolio entry."),
+  description: z
+    .string()
+    .default("A short project description for this portfolio entry."),
   linkLabel: z.string().default("Read More"),
   linkHref: z.string().default("#"),
   photoId: z.string().nullable().default(null),
@@ -145,14 +149,18 @@ const AboutLink = z.object({
 const AboutBlock = z.object({
   ...baseBlock,
   type: z.literal("about"),
-  layout: z.enum(["simple", "modern", "classic", "tora-casting", "tora-about-me"]).default("simple"),
+  layout: z
+    .enum(["simple", "modern", "classic", "tora-casting", "tora-about-me"])
+    .default("simple"),
   sectionEyebrow: z.string().default("ABOUT"),
   sectionTitle: z.string().default("SIMPLE"),
   eyebrow: z.string().default(""),
   headline: z.string().default("HI, I'M REFLECTOR"),
-  body: z.string().default(
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in.",
-  ),
+  body: z
+    .string()
+    .default(
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in.",
+    ),
   quote: z.string().default("Cum sociis natoque penatibus et magnis disrient"),
   ctaLabel: z.string().default("learn more"),
   ctaHref: z.string().default("/about"),
@@ -184,9 +192,7 @@ const ImageComparisonBlock = z.object({
   ...baseBlock,
   type: z.literal("imageComparison"),
   title: z.string().default("Before and after"),
-  subtitle: z
-    .string()
-    .default("Drag the handle to compare the two versions."),
+  subtitle: z.string().default("Drag the handle to compare the two versions."),
   leftPhotoId: z.string().nullable().default(null),
   rightPhotoId: z.string().nullable().default(null),
   leftLabel: z.string().default("Before"),
@@ -194,17 +200,7 @@ const ImageComparisonBlock = z.object({
   comparisonOrientation: z.enum(["horizontal", "vertical"]).default("horizontal"),
   initialPosition: z.number().min(5).max(95).default(50),
   aspectRatio: z
-    .enum([
-      "16-9",
-      "3-2",
-      "4-3",
-      "square",
-      "4-5",
-      "portrait",
-      "3-4",
-      "2-3",
-      "9-16",
-    ])
+    .enum(["16-9", "3-2", "4-3", "square", "4-5", "portrait", "3-4", "2-3", "9-16"])
     .default("16-9"),
   width: z.enum(["normal", "wide", "full"]).default("wide"),
   rounded: z.boolean().default(true),
@@ -285,9 +281,42 @@ const ToraPropsCaptionSource = z.enum(["auto", "headline", "alt", "caption"]);
 const GalleryBlock = z.object({
   ...baseBlock,
   type: z.literal("gallery"),
-  source: z.enum(["featured", "category", "location", "gallery"]).default("featured"),
+  source: z
+    .enum(["featured", "category", "location", "gallery", "custom"])
+    .default("featured"),
   targetId: z.string().nullable().default(null),
+  sourcePhotoIds: z.array(z.string()).default([]),
   gridType: GridEnum.default("justified"),
+  colorSpectrumPalette: z
+    .enum(["full", "warm", "cool", "earth", "pastel", "monochrome"])
+    .default("full"),
+  colorSpectrumRange: z
+    .enum(["full", "warm", "nature", "cool", "violet", "custom"])
+    .default("full"),
+  colorSpectrumRangeStart: z.number().min(0).max(1).default(0),
+  colorSpectrumRangeEnd: z.number().min(0).max(1).default(1),
+  colorSpectrumMatch: z
+    .enum(["very-close", "close", "balanced", "broad"])
+    .default("close"),
+  colorSpectrumSnapToResults: z.boolean().default(false),
+  colorSpectrumNeutralMode: z.enum(["spectrum", "button"]).default("spectrum"),
+  colorSpectrumBarStyle: z
+    .enum(["gradient", "segments", "minimal", "chips", "dots", "outline"])
+    .default("gradient"),
+  moodboardTitle: z.string().default("Mood board"),
+  moodboardEyebrow: z.string().default("Visual collection"),
+  moodboardSubtitle: z.string().default(""),
+  moodboardNoteLeft: z.string().default(""),
+  moodboardNoteRight: z.string().default(""),
+  moodboardNoteBottom: z.string().default(""),
+  moodboardTheme: z.enum(["paper", "clean", "dark"]).default("paper"),
+  moodboardDensity: z.enum(["spacious", "balanced", "layered"]).default("balanced"),
+  moodboardFrames: z.enum(["matte", "border", "none"]).default("matte"),
+  moodboardPaperTexture: z.boolean().default(true),
+  moodboardRotations: z.boolean().default(true),
+  moodboardTornEdges: z.boolean().default(true),
+  moodboardPins: z.boolean().default(true),
+  moodboardShowCaptions: z.boolean().default(true),
   spacing: SpacingEnum.default("normal"),
   // Carousel only: auto-advance through the slides (pauses on hover/interaction).
   autoplay: z.boolean().default(false),
@@ -478,8 +507,16 @@ const InfoBlock = z.object({
   style: InfoBlockStyleEnum.default("creative"),
   eyebrow: z.string().default("INTERESTED TO"),
   title: z.string().default("COLLABORATION"),
-  text: z.string().default("Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto."),
-  quote: z.string().default("Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called."),
+  text: z
+    .string()
+    .default(
+      "Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto.",
+    ),
+  quote: z
+    .string()
+    .default(
+      "Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called.",
+    ),
   photoId: z.string().nullable().default(null),
   secondaryPhotoId: z.string().nullable().default(null),
   dimPhoto: z.boolean().default(true),
@@ -503,7 +540,13 @@ const TestimonialsBlock = z.object({
   ...baseBlock,
   type: z.literal("testimonials"),
   layout: z
-    .enum(["slider", "portrait-grid", "retro-carousel", "glass-stack", "tora-gold-urban"])
+    .enum([
+      "slider",
+      "portrait-grid",
+      "retro-carousel",
+      "glass-stack",
+      "tora-gold-urban",
+    ])
     .default("slider"),
   label: z.string().default("Reviews"),
   title: z.string().default("See what all the talk is about!"),
@@ -524,9 +567,7 @@ const TeamMember = z.object({
   role: z.string().default("Role"),
   description: z
     .string()
-    .default(
-      "Share a short bio, specialty, or role description for this team member.",
-    ),
+    .default("Share a short bio, specialty, or role description for this team member."),
   photoId: z.string().nullable().default(null),
   twitterUrl: z.string().default(""),
   facebookUrl: z.string().default(""),
@@ -559,9 +600,7 @@ const TeamBlock = z.object({
   creativeEyebrow: z.string().default("O U R"),
   creativeDescription: z
     .string()
-    .default(
-      "Meet the people behind the images, edits, and client experience.",
-    ),
+    .default("Meet the people behind the images, edits, and client experience."),
   creativeLogo: z.string().default("RAVI"),
   creativeColumns: z.enum(["3", "4"]).default("3"),
   creativeShowCardOutline: z.boolean().default(true),
@@ -576,9 +615,7 @@ const TeamBlock = z.object({
   creativeWebsiteHref: z.string().default("#"),
   marqueeSubtitle: z
     .string()
-    .default(
-      "Meet the people behind the images, edits, and client experience.",
-    ),
+    .default("Meet the people behind the images, edits, and client experience."),
   marqueeSpeed: z.number().default(32),
   marqueePauseOnHover: z.boolean().default(true),
   marqueeShowDecorations: z.boolean().default(true),
@@ -593,9 +630,7 @@ const TeamBlock = z.object({
   marqueeQuotePhotoId: z.string().nullable().default(null),
   orbitSubtitle: z
     .string()
-    .default(
-      "Select a team member from the orbit to learn more about their role.",
-    ),
+    .default("Select a team member from the orbit to learn more about their role."),
   orbitRingCount: z.enum(["auto", "1", "2", "3"]).default("auto"),
   orbitAutoplay: z.boolean().default(true),
   orbitSpeed: z.number().int().min(2000).max(15000).default(5000),
@@ -608,13 +643,11 @@ const TeamBlock = z.object({
   toraCrewShowHiring: z.boolean().default(true),
   toraCrewHiringTitle: z.string().default("WE'RE HIRING"),
   toraCrewHiringHref: z.string().default("#"),
-  toraCrewHiringLinks: z
-    .array(TeamHiringLink)
-    .default([
-      { id: "producer", title: "PRODUCER", subtitle: "STRONG MAN", href: "#" },
-      { id: "stylist", title: "STYLIST", subtitle: "BEAUTY GIRL", href: "#" },
-      { id: "assistant", title: "ASSISTENT", subtitle: "FAST MAN", href: "#" },
-    ]),
+  toraCrewHiringLinks: z.array(TeamHiringLink).default([
+    { id: "producer", title: "PRODUCER", subtitle: "STRONG MAN", href: "#" },
+    { id: "stylist", title: "STYLIST", subtitle: "BEAUTY GIRL", href: "#" },
+    { id: "assistant", title: "ASSISTENT", subtitle: "FAST MAN", href: "#" },
+  ]),
   grayscale: z.boolean().default(true),
   showSocials: z.boolean().default(true),
   members: z.array(TeamMember).default([]),
@@ -692,9 +725,7 @@ const ShopBlock = z.object({
   type: z.literal("shop"),
   style: z.enum(["tora-grid", "tora-coming-soon"]).default("tora-grid"),
   title: z.string().default("SHOP"),
-  body: z
-    .string()
-    .default("Browse prints, digital downloads, and curated bundles."),
+  body: z.string().default("Browse prints, digital downloads, and curated bundles."),
   source: z.enum(["all", "featured", "category"]).default("all"),
   category: z.string().default(""),
   limit: z.number().int().min(1).max(48).default(12),
@@ -709,13 +740,7 @@ const ShopBlock = z.object({
   textColor: z.string().default("#f7f7f7"),
   accentColor: z.string().default("#ddc59f"),
 });
-export const CtaButtonStyleEnum = z.enum([
-  "solid",
-  "pill",
-  "outline",
-  "soft",
-  "link",
-]);
+export const CtaButtonStyleEnum = z.enum(["solid", "pill", "outline", "soft", "link"]);
 const CtaBlock = z.object({
   ...baseBlock,
   type: z.literal("cta"),
@@ -786,7 +811,9 @@ const ContactFormBlock = z.object({
   heading: z.string().default("Get in touch"),
   body: z
     .string()
-    .default("Tell me about your session, event, or print order and I'll be in touch soon."),
+    .default(
+      "Tell me about your session, event, or print order and I'll be in touch soon.",
+    ),
   submitLabel: z.string().default("Send message"),
   align: AlignEnum.default("left"),
   contactHeroPhotoId: z.string().nullable().default(null),
@@ -829,9 +856,7 @@ const SpacerBlock = z.object({
   ...baseBlock,
   type: z.literal("spacer"),
   size: z.enum(["xs", "sm", "md", "lg", "xl", "custom"]).default("md"),
-  mobileSize: z
-    .enum(["same", "xs", "sm", "md", "lg", "xl", "custom"])
-    .default("same"),
+  mobileSize: z.enum(["same", "xs", "sm", "md", "lg", "xl", "custom"]).default("same"),
   customHeight: z.number().min(0).max(640).default(112),
   mobileCustomHeight: z.number().min(0).max(640).default(112),
   backgroundMode: z.enum(["none", "muted", "custom"]).default("none"),
@@ -868,7 +893,10 @@ const LocationIndexBlock = z.object({
   title: z.string().default("By location"),
 });
 const CoordinateString = z
-  .preprocess((value) => (typeof value === "number" ? String(value) : value), z.string())
+  .preprocess(
+    (value) => (typeof value === "number" ? String(value) : value),
+    z.string(),
+  )
   .default("");
 const LocationMapCustomPin = z.object({
   id,
@@ -894,7 +922,9 @@ const LocationMapBlock = z.object({
     .default("Tap a marker to preview the work photographed in each place."),
   locationIds: z.array(z.string()).default([]),
   customPins: z.array(LocationMapCustomPin).default([]),
-  displayMode: z.enum(["interactive", "dotted-network", "route-planning"]).default("interactive"),
+  displayMode: z
+    .enum(["interactive", "dotted-network", "route-planning"])
+    .default("interactive"),
   height: z.enum(["sm", "md", "lg", "screen"]).default("md"),
   mapTheme: z.enum(["auto", "light", "dark", "liberty", "bright"]).default("auto"),
   markerColor: z.string().default("#f43f5e"),
@@ -918,7 +948,9 @@ const LocationMapBlock = z.object({
   routeShowCards: z.boolean().default(true),
   routeShowStopList: z.boolean().default(true),
   routeShowMapLinks: z.boolean().default(true),
-  routeSummaryPosition: z.enum(["top-left", "top-right", "bottom-left", "bottom-right"]).default("top-left"),
+  routeSummaryPosition: z
+    .enum(["top-left", "top-right", "bottom-left", "bottom-right"])
+    .default("top-left"),
   routeSummaryStyle: z.enum(["solid", "glass", "minimal"]).default("solid"),
   routeShowLabels: z.boolean().default(true),
   routeLineColor: z.string().default("#6366f1"),
@@ -949,7 +981,13 @@ const ScrollShowcaseBlock = z.object({
   // OnScrollLayoutFormations-style pinned image assemblies, or Codrops
   // ScrollBasedLayoutAnimations-style FLIP layout morphs.
   style: z
-    .enum(["cinematic", "carousel3d", "scrollPanels", "layoutFormations", "scrollLayouts"])
+    .enum([
+      "cinematic",
+      "carousel3d",
+      "scrollPanels",
+      "layoutFormations",
+      "scrollLayouts",
+    ])
     .default("cinematic"),
   // ScrollPanels-only: which Codrops demo motion family to emulate.
   scrollPanelsVariant: z
@@ -970,20 +1008,14 @@ const ScrollShowcaseBlock = z.object({
   scrollPanelsIntroHeading: z.string().default("Selected Stories").optional(),
   scrollPanelsIntroText: z
     .string()
-    .default("Scroll through featured collections, places, and small visual fragments from the archive.")
+    .default(
+      "Scroll through featured collections, places, and small visual fragments from the archive.",
+    )
     .optional(),
   scrollPanelsShowcaseHeading: z.string().default("Selected Work").optional(),
   // LayoutFormations-only: which Codrops formation family to use.
   layoutFormationsVariant: z
-    .enum([
-      "rise",
-      "columns",
-      "zoomed",
-      "reveal",
-      "tilted",
-      "depth",
-      "sidePivot",
-    ])
+    .enum(["rise", "columns", "zoomed", "reveal", "tilted", "depth", "sidePivot"])
     .default("rise")
     .optional(),
   // LayoutFormations-only: horizontal position of the top label block.
@@ -1023,12 +1055,7 @@ const InstagramBlock = z.object({
   title: z.string().default("From the field"),
   count: z.number().int().min(1).max(12).default(6),
 });
-export const FaqStyleEnum = z.enum([
-  "accordion",
-  "list",
-  "cards",
-  "bordered",
-]);
+export const FaqStyleEnum = z.enum(["accordion", "list", "cards", "bordered"]);
 const FaqItem = z.object({
   q: z.string().default(""),
   a: z.string().default(""),
@@ -1190,14 +1217,14 @@ export function collectPhotoIds(blocks: Block[]): string[] {
       if (b.style === "tora-contacts-reference" && b.contactHeroPhotoId) {
         ids.push(b.contactHeroPhotoId);
       }
-      if (
-        b.style === "tora-contacts-reference" ||
-        b.style === "tora-images-form"
-      ) {
+      if (b.style === "tora-contacts-reference" || b.style === "tora-images-form") {
         ids.push(...b.contactImagePhotoIds);
       }
     }
     if (b.type === "logos") ids.push(...b.photoIds);
+    if (b.type === "gallery" && b.source === "custom") {
+      ids.push(...b.sourcePhotoIds);
+    }
     if (b.type === "gallery" && b.filterMode === "custom") {
       for (const filter of b.customFilters) ids.push(...filter.photoIds);
     }

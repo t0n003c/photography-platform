@@ -52,7 +52,8 @@ export default async function GalleryPage({
     layout.gridType === "css-glitch" ||
     layout.gridType === "palmer-draggable" ||
     layout.gridType === "tora-sliphover" ||
-    layout.gridType === "tora-justified-showcase";
+    layout.gridType === "tora-justified-showcase" ||
+    layout.gridType === "moodboard";
 
   return (
     <Container

@@ -28,7 +28,21 @@ import { GlitchHoverGrid } from "./glitch-hover-grid";
 import { PalmerDraggableGrid } from "./palmer-draggable-grid";
 import { Carousel3DScroll } from "@/components/blocks/carousel-3d-scroll";
 import { ColumnScroll } from "@/components/blocks/column-scroll";
+import { ColorSpectrumGallery } from "./color-spectrum-gallery";
+import {
+  MoodboardGallery,
+  type MoodboardDensity,
+  type MoodboardFrames,
+  type MoodboardTheme,
+} from "./moodboard-gallery";
 import { Lightbox } from "./lightbox";
+import type {
+  ColorSpectrumMatchAccuracy,
+  ColorSpectrumBarStyle,
+  ColorSpectrumNeutralMode,
+  ColorSpectrumPalette,
+  ColorSpectrumRange,
+} from "@/src/lib/color-spectrum";
 
 interface GalleryLayout {
   gridType:
@@ -53,7 +67,9 @@ interface GalleryLayout {
     | "tora-sliphover"
     | "tora-justified-showcase"
     | "carousel-3d-scroll"
-    | "alternative-scroll";
+    | "alternative-scroll"
+    | "moodboard"
+    | "color-spectrum";
   spacing?: "tight" | "normal" | "airy" | string | null;
   /** Discourage casual right-click saving and image dragging. */
   discourageImageSaving?: boolean;
@@ -157,6 +173,34 @@ interface GalleryLayout {
     captionColor?: string;
     showCaptions?: boolean;
     captionSource?: ToraPropsCaptionSource;
+  };
+  /** Color Spectrum gallery presentation and matching controls. */
+  colorSpectrum?: {
+    palette?: ColorSpectrumPalette;
+    range?: ColorSpectrumRange;
+    rangeStart?: number;
+    rangeEnd?: number;
+    matchAccuracy?: ColorSpectrumMatchAccuracy;
+    snapToResults?: boolean;
+    neutralMode?: ColorSpectrumNeutralMode;
+    barStyle?: ColorSpectrumBarStyle;
+  };
+  /** Editorial collage presentation controls. */
+  moodboard?: {
+    title?: string | null;
+    eyebrow?: string | null;
+    subtitle?: string | null;
+    noteLeft?: string | null;
+    noteRight?: string | null;
+    noteBottom?: string | null;
+    theme?: MoodboardTheme;
+    density?: MoodboardDensity;
+    frames?: MoodboardFrames;
+    paperTexture?: boolean;
+    rotations?: boolean;
+    tornEdges?: boolean;
+    pins?: boolean;
+    showCaptions?: boolean;
   };
 }
 
@@ -333,6 +377,66 @@ export function Gallery({
             photos={photos}
             title={collection?.name}
             subtitle={collection?.subtitle}
+            onOpen={openAt}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "color-spectrum") {
+      return (
+        <div>
+          <ColorSpectrumGallery
+            photos={photos}
+            title={collection?.name}
+            subtitle={collection?.subtitle}
+            onOpen={openAt}
+            palette={layout.colorSpectrum?.palette}
+            range={layout.colorSpectrum?.range}
+            rangeStart={layout.colorSpectrum?.rangeStart}
+            rangeEnd={layout.colorSpectrum?.rangeEnd}
+            matchAccuracy={layout.colorSpectrum?.matchAccuracy}
+            snapToResults={layout.colorSpectrum?.snapToResults}
+            neutralMode={layout.colorSpectrum?.neutralMode}
+            barStyle={layout.colorSpectrum?.barStyle}
+          />
+          <Lightbox
+            photos={photos}
+            index={activeIndex}
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setActiveIndex}
+          />
+        </div>
+      );
+    }
+
+    if (layout.gridType === "moodboard") {
+      return (
+        <div>
+          <MoodboardGallery
+            photos={photos}
+            title={collection?.name ?? layout.moodboard?.title}
+            subtitle={collection?.subtitle ?? layout.moodboard?.subtitle}
+            eyebrow={layout.moodboard?.eyebrow}
+            noteLeft={layout.moodboard?.noteLeft}
+            noteRight={layout.moodboard?.noteRight}
+            noteBottom={layout.moodboard?.noteBottom}
+            theme={layout.moodboard?.theme}
+            density={layout.moodboard?.density}
+            frames={layout.moodboard?.frames}
+            paperTexture={layout.moodboard?.paperTexture}
+            rotations={layout.moodboard?.rotations}
+            tornEdges={layout.moodboard?.tornEdges}
+            pins={layout.moodboard?.pins}
+            showCaptions={layout.moodboard?.showCaptions}
             onOpen={openAt}
           />
           <Lightbox

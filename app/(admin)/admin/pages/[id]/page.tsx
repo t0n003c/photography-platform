@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -26,7 +33,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/src/lib/api-client";
-import { BLOCK_LABELS, type Block, type BlockType, type LeafBlock } from "@/src/lib/blocks";
+import {
+  BLOCK_LABELS,
+  type Block,
+  type BlockType,
+  type LeafBlock,
+} from "@/src/lib/blocks";
 import { PhotoPicker, type PhotoOption } from "@/components/admin/photo-picker";
 import { FocalPointPicker } from "@/components/admin/focal-point-picker";
 import {
@@ -48,6 +60,31 @@ interface PageRow {
   seoDescription: string | null;
 }
 
+interface AdminPhotoPage {
+  data: PhotoDTO[];
+  page: {
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+}
+
+async function loadAllAdminPhotos(): Promise<PhotoDTO[]> {
+  const allPhotos: PhotoDTO[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const params = new URLSearchParams({ limit: "200" });
+    if (cursor) params.set("cursor", cursor);
+    const response = await api.get<AdminPhotoPage>(
+      `/api/v1/admin/photos?${params.toString()}`,
+    );
+    allPhotos.push(...response.data);
+    cursor = response.page.hasMore ? response.page.nextCursor : null;
+  } while (cursor);
+
+  return allPhotos;
+}
+
 interface Opt {
   id: string;
   label: string;
@@ -59,7 +96,7 @@ function errMsg(err: unknown): string {
 }
 
 function normalizeContactFormStyle(style: string | undefined) {
-  return style === "minimal" ? "stacked" : style ?? "stacked";
+  return style === "minimal" ? "stacked" : (style ?? "stacked");
 }
 
 function swapAt<T>(arr: T[], i: number, j: number): T[] {
@@ -124,11 +161,7 @@ function BoundedNumberInput({
         const nextDraft = e.target.value;
         setDraft(nextDraft);
         const nextValue = Number(nextDraft);
-        if (
-          Number.isFinite(nextValue) &&
-          nextValue >= min &&
-          nextValue <= max
-        ) {
+        if (Number.isFinite(nextValue) && nextValue >= min && nextValue <= max) {
           onValueChange(Math.round(nextValue));
         }
       }}
@@ -148,7 +181,9 @@ function BoundedNumberInput({
 // Scroll the live-preview iframe to a block and briefly highlight it. The iframe
 // is same-origin, so we can reach into its document by the block's data-id.
 function locateInPreview(blockId: string) {
-  const iframe = document.getElementById("page-preview-iframe") as HTMLIFrameElement | null;
+  const iframe = document.getElementById(
+    "page-preview-iframe",
+  ) as HTMLIFrameElement | null;
   const el = iframe?.contentDocument?.querySelector<HTMLElement>(
     `[data-block-id="${blockId}"]`,
   );
@@ -205,8 +240,7 @@ function makeInfoBlockTab(index = 0) {
   return {
     id: newBlockId(),
     title: titles[index % titles.length],
-    text:
-      "Floral Design is a full-service wedding and special event planning company with takes care of your floral, design and logistics needs.\n\nOur office is located in San Francisco, CA. Our goal, besides ensuring a flawless and magical event for you, is to make your planning.",
+    text: "Floral Design is a full-service wedding and special event planning company with takes care of your floral, design and logistics needs.\n\nOur office is located in San Francisco, CA. Our goal, besides ensuring a flawless and magical event for you, is to make your planning.",
     photoId: null,
     accentPhotoId: null,
   };
@@ -217,8 +251,7 @@ function makeInfoBlockAccordionItem(index = 0) {
   return {
     id: newBlockId(),
     title: titles[index % titles.length],
-    text:
-      "Alienum phaedrum torquatos nec eu, vis detraxit periculis ex, nihil eros expetendis in mei.",
+    text: "Alienum phaedrum torquatos nec eu, vis detraxit periculis ex, nihil eros expetendis in mei.",
   };
 }
 
@@ -251,14 +284,34 @@ function makeBookSliderPage(index = 0) {
 
 function makePortfolioListItem(index = 0) {
   const examples = [
-    ["Free Feelings", "Women", "A quiet portrait story with soft motion and intimate color."],
-    ["Purple of Mendy", "Women", "A saturated editorial frame built around movement and mood."],
+    [
+      "Free Feelings",
+      "Women",
+      "A quiet portrait story with soft motion and intimate color.",
+    ],
+    [
+      "Purple of Mendy",
+      "Women",
+      "A saturated editorial frame built around movement and mood.",
+    ],
     ["Behind you", "Women", "A small cinematic project with a warm low-light palette."],
-    ["On the top", "Women", "A breezy outdoor story shaped by sky, gesture, and silhouette."],
-    ["Under water", "Friendship", "A playful session with bright color and graphic composition."],
+    [
+      "On the top",
+      "Women",
+      "A breezy outdoor story shaped by sky, gesture, and silhouette.",
+    ],
+    [
+      "Under water",
+      "Friendship",
+      "A playful session with bright color and graphic composition.",
+    ],
     ["Derek stopped", "Man", "A close portrait study with restrained atmosphere."],
     ["Another life", "Hugs", "An affectionate collection focused on connection."],
-    ["Alisa's Fairy Tail", "Women", "A whimsical portrait sequence with a storybook edge."],
+    [
+      "Alisa's Fairy Tail",
+      "Women",
+      "A whimsical portrait sequence with a storybook edge.",
+    ],
   ];
   const [title, category, description] = examples[index % examples.length];
   return {
@@ -371,9 +424,17 @@ function makePricingPlan(index = 0) {
         makePricingFeature("Up to 3 Blog posts"),
         makePricingFeature("Up to 3 Transcriptions"),
         makePricingFeature("Up to 3 Posts stored"),
-        makePricingFeature("Markdown support", "Export content in Markdown format", false),
+        makePricingFeature(
+          "Markdown support",
+          "Export content in Markdown format",
+          false,
+        ),
         makePricingFeature("Community support", "Get answers to your questions"),
-        makePricingFeature("AI powered suggestions", "Get up to 100 AI powered suggestions", false),
+        makePricingFeature(
+          "AI powered suggestions",
+          "Get up to 100 AI powered suggestions",
+          false,
+        ),
       ],
     },
     {
@@ -392,10 +453,16 @@ function makePricingPlan(index = 0) {
         makePricingFeature("Up to 500 Blog Posts"),
         makePricingFeature("Up to 500 Transcriptions"),
         makePricingFeature("Up to 500 Posts stored"),
-        makePricingFeature("Unlimited Markdown support", "Export content in Markdown format"),
+        makePricingFeature(
+          "Unlimited Markdown support",
+          "Export content in Markdown format",
+        ),
         makePricingFeature("SEO optimization tools"),
         makePricingFeature("Priority support", "Get 24/7 chat support", false),
-        makePricingFeature("AI powered suggestions", "Get up to 500 AI powered suggestions"),
+        makePricingFeature(
+          "AI powered suggestions",
+          "Get up to 500 AI powered suggestions",
+        ),
       ],
     },
     {
@@ -417,7 +484,10 @@ function makePricingPlan(index = 0) {
         makePricingFeature("Unlimited Markdown support"),
         makePricingFeature("SEO optimization tools", "Advanced SEO optimization tools"),
         makePricingFeature("Priority support", "Get 24/7 chat support"),
-        makePricingFeature("AI powered suggestions", "Get up to 500 AI powered suggestions"),
+        makePricingFeature(
+          "AI powered suggestions",
+          "Get up to 500 AI powered suggestions",
+        ),
       ],
     },
   ];
@@ -601,411 +671,557 @@ function toraHeadingDefaultLabel(style: string | undefined) {
 function makeBlock(type: BlockType): Block {
   const id = newBlockId();
   switch (type) {
-    case "heading": return {
-      id,
-      type,
-      text: "Heading",
-      level: 2,
-      align: "left",
-      font: "sans",
-      spacing: "normal",
-      headingStyle: "default",
-      label: "",
-      body: "",
-      linkHref: "",
-      ctaLabel: "GET IN TOUCH",
-      ctaHref: "#",
-      markText: "R",
-    };
-    case "subheading": return { id, type, text: "Subheading", align: "left", font: "sans", spacing: "normal" };
-    case "richtext": return { id, type, text: "", align: "left", font: "sans", size: "base" };
-    case "image": return { id, type, photoId: null, width: "normal", rounded: true };
-    case "portfolioList": return {
-      id,
-      type,
-      style: "modern",
-      eyebrow: "PORTFOLIO LIST",
-      title: "MODERN",
-      body: "",
-      items: Array.from({ length: 8 }, (_, index) => makePortfolioListItem(index)),
-      backgroundColor: "#242625",
-      textColor: "#f8f3df",
-      accentColor: "#d8c98d",
-      showBackground: true,
-    };
-    case "about": return {
-      id,
-      type,
-      layout: "simple",
-      sectionEyebrow: "ABOUT",
-      sectionTitle: "SIMPLE",
-      eyebrow: "",
-      headline: "HI, I'M REFLECTOR",
-      body:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices. Ut mollis vel felis in sollicitudin.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in. Nam ac nunc sed dui semper vestibulum nec in nisi.",
-      quote: "Cum sociis natoque penatibus et magnis disrient",
-      ctaLabel: "learn more",
-      ctaHref: "/about",
-      primaryPhotoId: null,
-      secondaryPhotoId: null,
-      tertiaryPhotoId: null,
-      contactTitle: "CONTACT",
-      address: "231 Main Street Chicago, IL",
-      phoneLabel: "Ph:",
-      phoneNumber: "3122299000",
-      facebookUrl: "",
-      twitterUrl: "",
-      instagramUrl: "",
-      pressTitle: "PRESS",
-      pressLinks: [
-        makeAboutLink("Shoot Beyond like never before", "#"),
-        makeAboutLink("Shoot Beyond like never before", "#"),
-        makeAboutLink("How to make best photo", "#"),
-      ],
-      awardsTitle: "AWARDS",
-      awardLinks: [
-        makeAboutLink("International Photography Award", "#"),
-        makeAboutLink("The Good Design Award", "#"),
-      ],
-      collaboratorsTitle: "COLLABORATORS",
-      collaboratorsText:
-        "The New York Times, Apple, Wired, Cosmopolitan, The Atlantic, The Undefeated, Fast Company, Washington Post, Slate, Texas Monthly Magazine, Red Music Academy, LA Magazine.",
-      showContactForm: true,
-      contactFormTitle: "CONTACT ME",
-      submitLabel: "Send",
-    };
-    case "imageComparison": return {
-      id,
-      type,
-      title: "Before and after",
-      subtitle: "Drag the handle to compare the two versions.",
-      leftPhotoId: null,
-      rightPhotoId: null,
-      leftLabel: "Before",
-      rightLabel: "After",
-      comparisonOrientation: "horizontal",
-      initialPosition: 50,
-      aspectRatio: "16-9",
-      width: "wide",
-      rounded: true,
-      showcaseBackground: true,
-      backgroundColor: "#f4f4f5",
-      handleColor: "#ffffff",
-    };
-    case "featureCarousel": return {
-      id,
-      type,
-      headline: "Edit Your Photos on the Go",
-      highlightText: "Photos",
-      highlightFrom: "#3b82f6",
-      highlightTo: "#a855f7",
-      subtitle: "Use all our AI-powered photo editing tools on your phone, available for all iOS and Android.",
-      photoIds: [],
-      autoplay: false,
-      autoplayMs: 4500,
-      showArrows: true,
-      desktopVisibleCount: "3",
-      imageRadius: "xl",
-      primaryLabel: "",
-      primaryHref: "",
-      secondaryLabel: "",
-      secondaryHref: "",
-    };
-    case "bookSlider": return {
-      id,
-      type,
-      title: "Studio Lookbook",
-      subtitle: "Click or drag the pages to browse this editorial-style book.",
-      coverTitle: "Lookbook",
-      coverSubtitle: "A curated story in motion",
-      coverPhotoId: null,
-      pages: [makeBookSliderPage(0), makeBookSliderPage(1), makeBookSliderPage(2)],
-      size: "standard",
-      pageStyle: "soft",
-      paperTexture: true,
-      showcaseBackground: true,
-      showControls: true,
-      showPageNumbers: true,
-      shadowStrength: 0.45,
-      backgroundColor: "#f7f1e8",
-      textColor: "#2d251d",
-      accentColor: "#8b5e34",
-    };
-    case "gallery": return { id, type, source: "featured", targetId: null, gridType: "justified", spacing: "normal", autoplay: false, backdrop: "color", limit: 12, effect: "none", effectSpeed: 1, filterMode: "none", filterStyle: "flip-reveal", showOverlayText: true, sortMode: "source", manualOrderPhotoIds: [], filterSorts: [], customFilters: [], ...GALLERY_TORA_PROPS_DEFAULTS, ...GALLERY_TORA_JUSTIFIED_DEFAULTS, ...GALLERY_TORA_PORTFOLIO_DEFAULTS };
-    case "banner": return { id, type, source: "featured", photoId: null, photoIds: [], slides: [], minimalSliderAutoplay: false, minimalSliderAutoplayMs: 4500, fullWidthSliderAccentColor: "#f7f7f7", fullWidthSliderDimImages: true, eyebrow: "", typewriterWords: "", headline: "", subhead: "", height: "tall", overlay: "auto", layout: "bottom-left", focalX: 50, focalY: 50, zoom: 1, headlineFont: "sans", headlineSize: "lg", headlineTracking: "normal", headlineCase: "normal", buttonStyle: "solid", effect: "none", prismaVideoUrl: "", prismaShowAsterisk: true, agencyVideoUrl: "", agencyAccentText: "" };
-    case "quote": return { id, type, text: "" };
-    case "infoBlock": return {
-      id,
-      type,
-      style: "creative",
-      eyebrow: "INTERESTED TO",
-      title: "COLLABORATION",
-      text:
-        "Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto.",
-      quote:
-        "Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called.",
-      photoId: null,
-      secondaryPhotoId: null,
-      dimPhoto: true,
-      creativeTextLayout: "split",
-      creativePhotoSize: "60",
-      creativePhotoRatio: "auto",
-      infoListTextPosition: "left",
-      buttonLabel: "LET'S CONNECT",
-      buttonHref: "#",
-      tabs: [makeInfoBlockTab(0), makeInfoBlockTab(1), makeInfoBlockTab(2), makeInfoBlockTab(3)],
-      accordionItems: [
-        makeInfoBlockAccordionItem(0),
-        makeInfoBlockAccordionItem(1),
-        makeInfoBlockAccordionItem(2),
-      ],
-    };
-    case "testimonials": return {
-      id,
-      type,
-      layout: "slider",
-      label: "Reviews",
-      title: "See what all the talk is about!",
-      subtitle: "Transformative client experience from all around the globe",
-      gridPanel: true,
-      gridColumns: "3",
-      glassShowcaseBackground: true,
-      glassShowcaseBackgroundColor: "#0d1324",
-      autoplay: false,
-      showThumbnails: true,
-      items: [
-        makeTestimonialItem(),
-        {
-          id: newBlockId(),
-          name: "Jacob Jose",
-          affiliation: "New York Times",
-          quote: "The delivery was thoughtful, fast, and beautifully edited. It felt effortless from start to finish.",
-          photoId: null,
-        },
-        {
-          id: newBlockId(),
-          name: "Elara Sands",
-          affiliation: "Behance",
-          quote: "The attention to detail was immaculate. Every frame carried the mood we hoped for.",
-          photoId: null,
-        },
-      ],
-    };
-    case "team": return {
-      id,
-      type,
-      title: "",
-      layout: "showcase",
-      cardPosition: "alternate",
-      showCardArrow: true,
-      creativeEyebrow: "O U R",
-      creativeDescription: "Meet the people behind the images, edits, and client experience.",
-      creativeLogo: "RAVI",
-      creativeColumns: "3",
-      creativeShowCardOutline: true,
-      creativeCtaLabel: "REGISTER NOW",
-      creativeCtaHref: "#",
-      creativeShowMainSocials: true,
-      creativeTwitterUrl: "#",
-      creativeFacebookUrl: "#",
-      creativeInstagramUrl: "#",
-      creativeYoutubeUrl: "#",
-      creativeWebsiteLabel: "www.website.com",
-      creativeWebsiteHref: "#",
-      marqueeSubtitle: "Meet the people behind the images, edits, and client experience.",
-      marqueeSpeed: 32,
-      marqueePauseOnHover: true,
-      marqueeShowDecorations: true,
-      marqueeShowQuote: true,
-      marqueeQuote:
-        "The care, communication, and delivery from this team made the entire experience feel effortless.",
-      marqueeQuoteAuthor: "Natalia Kara",
-      marqueeQuoteRole: "Studio client",
-      marqueeQuotePhotoId: null,
-      orbitSubtitle: "Select a team member from the orbit to learn more about their role.",
-      orbitRingCount: "auto",
-      orbitAutoplay: true,
-      orbitSpeed: 5000,
-      orbitPauseOnHover: true,
-      orbitShowDots: true,
-      orbitShowIconAccents: true,
-      orbitButtonLabel: "Connect",
-      orbitButtonHref: "#",
-      toraCrewEyebrow: "MEET US",
-      toraCrewShowHiring: true,
-      toraCrewHiringTitle: "WE'RE HIRING",
-      toraCrewHiringHref: "#",
-      toraCrewHiringLinks: Array.from({ length: 3 }, (_, index) =>
-        makeTeamHiringLink(index),
-      ),
-      grayscale: true,
-      showSocials: true,
-      members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
-    };
-    case "pricing": return {
-      id,
-      type,
-      style: "standard",
-      eyebrow: "",
-      heading: "Plans that Scale with You",
-      description: "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
-      currency: "$",
-      defaultFrequency: "monthly",
-      showBillingToggle: true,
-      theme: "auto",
-      showHighlightEffect: true,
-      pricingSliderBackgroundPhotoId: null,
-      pricingSliderOverlayOpacity: 0.5,
-      pricingSliderHeadingSize: "reference",
-      pricingSliderEyebrowSize: "reference",
-      pricingSliderAutoplay: true,
-      pricingSliderAutoplayMs: 5000,
-      pricingSliderTransitionMs: 1500,
-      castingImageRatio: "reference",
-      plans: [makePricingPlan(0), makePricingPlan(1), makePricingPlan(2)],
-    };
-    case "shop": return {
-      id,
-      type,
-      style: "tora-grid",
-      title: "SHOP",
-      body: "Browse prints, digital downloads, and curated bundles.",
-      source: "all",
-      category: "",
-      limit: 12,
-      showSidebar: true,
-      showSearch: true,
-      showTagCloud: true,
-      showSorting: true,
-      showSaleBadge: true,
-      showPrices: true,
-      theme: "auto",
-      backgroundColor: "#252626",
-      textColor: "#f7f7f7",
-      accentColor: "#ddc59f",
-    };
-    case "cta": return { id, type, headline: "", buttonLabel: "Get in touch", buttonHref: "/contact", buttonStyle: "pill" };
-    case "customLink": return {
-      id,
-      type,
-      layout: "link-row",
-      items: [makeCustomLinkItem(0), makeCustomLinkItem(1), makeCustomLinkItem(2)],
-      buttonLabel: "More stories",
-      buttonHref: "#",
-      showBackground: false,
-      backgroundColor: "#252626",
-      textColor: "#f8f3df",
-      accentColor: "#d8c98d",
-    };
-    case "contactForm": return {
-      id,
-      type,
-      style: "stacked",
-      eyebrow: "Contact",
-      heading: "Get in touch",
-      body: "Tell me about your session, event, or print order and I'll be in touch soon.",
-      submitLabel: "Send message",
-      align: "left",
-      contactHeroPhotoId: null,
-      contactHeroTitle: "CONTACTS",
-      contactHeroOverlayOpacity: 0.45,
-      contactInfoEyebrow: "CONTACT",
-      contactInfoHeading: "CONTACT INFO",
-      contactInfoIntro: "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
-      contactInfoItems: [makeContactInfoItem(0), makeContactInfoItem(1)],
-      contactImageEyebrow: "CONTACT",
-      contactImageHeading: "IMAGES WITH FORM",
-      contactSocialLinks: [
-        makeContactSocialLink(0),
-        makeContactSocialLink(1),
-        makeContactSocialLink(2),
-      ],
-      contactImagePhotoIds: [],
-      contactSideCaption: "Designed by © REFLECTOR Studio. All Right Reserved 2019",
-    };
-    case "spacer": return {
-      id,
-      type,
-      size: "md",
-      mobileSize: "same",
-      customHeight: 112,
-      mobileCustomHeight: 112,
-      backgroundMode: "none",
-      backgroundColor: "#f4f4f5",
-      backgroundWidth: "full",
-    };
-    case "divider": return makeDividerBlock(id);
-    case "categoryIndex": return { id, type, title: "By category" };
-    case "locationIndex": return { id, type, title: "By location" };
-    case "locationMap": return {
-      id,
-      type,
-      title: "Explore locations",
-      subtitle: "Tap a marker to preview the work photographed in each place.",
-      locationIds: [],
-      customPins: [],
-      displayMode: "interactive",
-      height: "md",
-      mapTheme: "auto",
-      markerColor: "#f43f5e",
-      showLabels: true,
-      showControls: true,
-      popupMode: "click",
-      networkConnectionMode: "ordered",
-      networkConnections: [],
-      networkLineColor: "#0ea5e9",
-      networkDotColor: "#f43f5e",
-      networkMapDotColor: "#94a3b8",
-      networkAnimationSeconds: 3.2,
-      networkShowLabels: true,
-      routeStyle: "planning",
-      routeProvider: "osrm",
-      routeTravelMode: "driving",
-      routePointIds: [],
-      routeStartId: "",
-      routeEndId: "",
-      routeShowAlternatives: true,
-      routeShowCards: true,
-      routeShowStopList: true,
-      routeShowMapLinks: true,
-      routeSummaryPosition: "top-left",
-      routeSummaryStyle: "solid",
-      routeShowLabels: true,
-      routeLineColor: "#6366f1",
-      routeInactiveLineColor: "#94a3b8",
-      routeStartColor: "#22c55e",
-      routeEndColor: "#ef4444",
-    };
-    case "scrollShowcase": return {
-      id,
-      type,
-      title: "",
-      categoryIds: [],
-      limit: 6,
-      clusterCount: 4,
-      showTitles: true,
-      style: "cinematic",
-      scrollLayoutsVariant: "row",
-      scrollLayoutsPhotoCount: 9,
-      scrollLayoutsHeading: "Scroll layout morphs",
-      scrollLayoutsIntroText: "Pinned image layouts morph between editorial compositions as you scroll.",
-    };
-    case "instagram": return { id, type, title: "From the field", count: 6 };
-    case "faq": return { id, type, title: "Frequently asked questions", style: "accordion", align: "left", items: [{ q: "Your question?", a: "Your answer." }] };
-    case "logos": return {
-      id,
-      type,
-      title: "As featured in",
-      eyebrow: TORA_CLIENT_WALL_DEFAULT_EYEBROW,
-      intro: "",
-      style: "row",
-      grayscale: true,
-      size: "md",
-      spacing: "normal",
-      photoIds: [],
-    };
-    case "columns": return { id, type, gap: "normal", columns: [[], []], colAlign: ["top", "top"], justify: "fill" };
-    default: return makeDividerBlock(id);
+    case "heading":
+      return {
+        id,
+        type,
+        text: "Heading",
+        level: 2,
+        align: "left",
+        font: "sans",
+        spacing: "normal",
+        headingStyle: "default",
+        label: "",
+        body: "",
+        linkHref: "",
+        ctaLabel: "GET IN TOUCH",
+        ctaHref: "#",
+        markText: "R",
+      };
+    case "subheading":
+      return {
+        id,
+        type,
+        text: "Subheading",
+        align: "left",
+        font: "sans",
+        spacing: "normal",
+      };
+    case "richtext":
+      return { id, type, text: "", align: "left", font: "sans", size: "base" };
+    case "image":
+      return { id, type, photoId: null, width: "normal", rounded: true };
+    case "portfolioList":
+      return {
+        id,
+        type,
+        style: "modern",
+        eyebrow: "PORTFOLIO LIST",
+        title: "MODERN",
+        body: "",
+        items: Array.from({ length: 8 }, (_, index) => makePortfolioListItem(index)),
+        backgroundColor: "#242625",
+        textColor: "#f8f3df",
+        accentColor: "#d8c98d",
+        showBackground: true,
+      };
+    case "about":
+      return {
+        id,
+        type,
+        layout: "simple",
+        sectionEyebrow: "ABOUT",
+        sectionTitle: "SIMPLE",
+        eyebrow: "",
+        headline: "HI, I'M REFLECTOR",
+        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam leo sem, feugiat ut tincidunt a, vulputate sed mauris. Proin fringilla risus ut gravida ultrices. Ut mollis vel felis in sollicitudin.\n\nUt ac quam ante. Curabitur sollicitudin scelerisque est, eu commodo libero ornare in. Nam ac nunc sed dui semper vestibulum nec in nisi.",
+        quote: "Cum sociis natoque penatibus et magnis disrient",
+        ctaLabel: "learn more",
+        ctaHref: "/about",
+        primaryPhotoId: null,
+        secondaryPhotoId: null,
+        tertiaryPhotoId: null,
+        contactTitle: "CONTACT",
+        address: "231 Main Street Chicago, IL",
+        phoneLabel: "Ph:",
+        phoneNumber: "3122299000",
+        facebookUrl: "",
+        twitterUrl: "",
+        instagramUrl: "",
+        pressTitle: "PRESS",
+        pressLinks: [
+          makeAboutLink("Shoot Beyond like never before", "#"),
+          makeAboutLink("Shoot Beyond like never before", "#"),
+          makeAboutLink("How to make best photo", "#"),
+        ],
+        awardsTitle: "AWARDS",
+        awardLinks: [
+          makeAboutLink("International Photography Award", "#"),
+          makeAboutLink("The Good Design Award", "#"),
+        ],
+        collaboratorsTitle: "COLLABORATORS",
+        collaboratorsText:
+          "The New York Times, Apple, Wired, Cosmopolitan, The Atlantic, The Undefeated, Fast Company, Washington Post, Slate, Texas Monthly Magazine, Red Music Academy, LA Magazine.",
+        showContactForm: true,
+        contactFormTitle: "CONTACT ME",
+        submitLabel: "Send",
+      };
+    case "imageComparison":
+      return {
+        id,
+        type,
+        title: "Before and after",
+        subtitle: "Drag the handle to compare the two versions.",
+        leftPhotoId: null,
+        rightPhotoId: null,
+        leftLabel: "Before",
+        rightLabel: "After",
+        comparisonOrientation: "horizontal",
+        initialPosition: 50,
+        aspectRatio: "16-9",
+        width: "wide",
+        rounded: true,
+        showcaseBackground: true,
+        backgroundColor: "#f4f4f5",
+        handleColor: "#ffffff",
+      };
+    case "featureCarousel":
+      return {
+        id,
+        type,
+        headline: "Edit Your Photos on the Go",
+        highlightText: "Photos",
+        highlightFrom: "#3b82f6",
+        highlightTo: "#a855f7",
+        subtitle:
+          "Use all our AI-powered photo editing tools on your phone, available for all iOS and Android.",
+        photoIds: [],
+        autoplay: false,
+        autoplayMs: 4500,
+        showArrows: true,
+        desktopVisibleCount: "3",
+        imageRadius: "xl",
+        primaryLabel: "",
+        primaryHref: "",
+        secondaryLabel: "",
+        secondaryHref: "",
+      };
+    case "bookSlider":
+      return {
+        id,
+        type,
+        title: "Studio Lookbook",
+        subtitle: "Click or drag the pages to browse this editorial-style book.",
+        coverTitle: "Lookbook",
+        coverSubtitle: "A curated story in motion",
+        coverPhotoId: null,
+        pages: [makeBookSliderPage(0), makeBookSliderPage(1), makeBookSliderPage(2)],
+        size: "standard",
+        pageStyle: "soft",
+        paperTexture: true,
+        showcaseBackground: true,
+        showControls: true,
+        showPageNumbers: true,
+        shadowStrength: 0.45,
+        backgroundColor: "#f7f1e8",
+        textColor: "#2d251d",
+        accentColor: "#8b5e34",
+      };
+    case "gallery":
+      return {
+        id,
+        type,
+        source: "featured",
+        targetId: null,
+        sourcePhotoIds: [],
+        gridType: "justified",
+        colorSpectrumPalette: "full",
+        colorSpectrumRange: "full",
+        colorSpectrumRangeStart: 0,
+        colorSpectrumRangeEnd: 1,
+        colorSpectrumMatch: "close",
+        colorSpectrumSnapToResults: false,
+        colorSpectrumNeutralMode: "spectrum",
+        colorSpectrumBarStyle: "gradient",
+        moodboardTitle: "Mood board",
+        moodboardEyebrow: "Visual collection",
+        moodboardSubtitle: "",
+        moodboardNoteLeft: "",
+        moodboardNoteRight: "",
+        moodboardNoteBottom: "",
+        moodboardTheme: "paper",
+        moodboardDensity: "balanced",
+        moodboardFrames: "matte",
+        moodboardPaperTexture: true,
+        moodboardRotations: true,
+        moodboardTornEdges: true,
+        moodboardPins: true,
+        moodboardShowCaptions: true,
+        spacing: "normal",
+        autoplay: false,
+        backdrop: "color",
+        limit: 12,
+        effect: "none",
+        effectSpeed: 1,
+        filterMode: "none",
+        filterStyle: "flip-reveal",
+        showOverlayText: true,
+        sortMode: "source",
+        manualOrderPhotoIds: [],
+        filterSorts: [],
+        customFilters: [],
+        ...GALLERY_TORA_PROPS_DEFAULTS,
+        ...GALLERY_TORA_JUSTIFIED_DEFAULTS,
+        ...GALLERY_TORA_PORTFOLIO_DEFAULTS,
+      };
+    case "banner":
+      return {
+        id,
+        type,
+        source: "featured",
+        photoId: null,
+        photoIds: [],
+        slides: [],
+        minimalSliderAutoplay: false,
+        minimalSliderAutoplayMs: 4500,
+        fullWidthSliderAccentColor: "#f7f7f7",
+        fullWidthSliderDimImages: true,
+        eyebrow: "",
+        typewriterWords: "",
+        headline: "",
+        subhead: "",
+        height: "tall",
+        overlay: "auto",
+        layout: "bottom-left",
+        focalX: 50,
+        focalY: 50,
+        zoom: 1,
+        headlineFont: "sans",
+        headlineSize: "lg",
+        headlineTracking: "normal",
+        headlineCase: "normal",
+        buttonStyle: "solid",
+        effect: "none",
+        prismaVideoUrl: "",
+        prismaShowAsterisk: true,
+        agencyVideoUrl: "",
+        agencyAccentText: "",
+      };
+    case "quote":
+      return { id, type, text: "" };
+    case "infoBlock":
+      return {
+        id,
+        type,
+        style: "creative",
+        eyebrow: "INTERESTED TO",
+        title: "COLLABORATION",
+        text: "Place Seed was days doesn't void is living whales let waters without lights unto, you whose kind fourth Years place likeness years shall I bring them upon form, don't unto.",
+        quote:
+          "Forth seasons fill have. Yielding them and. Itself, moveth replenish Bearing fruit. Brougd living called.",
+        photoId: null,
+        secondaryPhotoId: null,
+        dimPhoto: true,
+        creativeTextLayout: "split",
+        creativePhotoSize: "60",
+        creativePhotoRatio: "auto",
+        infoListTextPosition: "left",
+        buttonLabel: "LET'S CONNECT",
+        buttonHref: "#",
+        tabs: [
+          makeInfoBlockTab(0),
+          makeInfoBlockTab(1),
+          makeInfoBlockTab(2),
+          makeInfoBlockTab(3),
+        ],
+        accordionItems: [
+          makeInfoBlockAccordionItem(0),
+          makeInfoBlockAccordionItem(1),
+          makeInfoBlockAccordionItem(2),
+        ],
+      };
+    case "testimonials":
+      return {
+        id,
+        type,
+        layout: "slider",
+        label: "Reviews",
+        title: "See what all the talk is about!",
+        subtitle: "Transformative client experience from all around the globe",
+        gridPanel: true,
+        gridColumns: "3",
+        glassShowcaseBackground: true,
+        glassShowcaseBackgroundColor: "#0d1324",
+        autoplay: false,
+        showThumbnails: true,
+        items: [
+          makeTestimonialItem(),
+          {
+            id: newBlockId(),
+            name: "Jacob Jose",
+            affiliation: "New York Times",
+            quote:
+              "The delivery was thoughtful, fast, and beautifully edited. It felt effortless from start to finish.",
+            photoId: null,
+          },
+          {
+            id: newBlockId(),
+            name: "Elara Sands",
+            affiliation: "Behance",
+            quote:
+              "The attention to detail was immaculate. Every frame carried the mood we hoped for.",
+            photoId: null,
+          },
+        ],
+      };
+    case "team":
+      return {
+        id,
+        type,
+        title: "",
+        layout: "showcase",
+        cardPosition: "alternate",
+        showCardArrow: true,
+        creativeEyebrow: "O U R",
+        creativeDescription:
+          "Meet the people behind the images, edits, and client experience.",
+        creativeLogo: "RAVI",
+        creativeColumns: "3",
+        creativeShowCardOutline: true,
+        creativeCtaLabel: "REGISTER NOW",
+        creativeCtaHref: "#",
+        creativeShowMainSocials: true,
+        creativeTwitterUrl: "#",
+        creativeFacebookUrl: "#",
+        creativeInstagramUrl: "#",
+        creativeYoutubeUrl: "#",
+        creativeWebsiteLabel: "www.website.com",
+        creativeWebsiteHref: "#",
+        marqueeSubtitle:
+          "Meet the people behind the images, edits, and client experience.",
+        marqueeSpeed: 32,
+        marqueePauseOnHover: true,
+        marqueeShowDecorations: true,
+        marqueeShowQuote: true,
+        marqueeQuote:
+          "The care, communication, and delivery from this team made the entire experience feel effortless.",
+        marqueeQuoteAuthor: "Natalia Kara",
+        marqueeQuoteRole: "Studio client",
+        marqueeQuotePhotoId: null,
+        orbitSubtitle:
+          "Select a team member from the orbit to learn more about their role.",
+        orbitRingCount: "auto",
+        orbitAutoplay: true,
+        orbitSpeed: 5000,
+        orbitPauseOnHover: true,
+        orbitShowDots: true,
+        orbitShowIconAccents: true,
+        orbitButtonLabel: "Connect",
+        orbitButtonHref: "#",
+        toraCrewEyebrow: "MEET US",
+        toraCrewShowHiring: true,
+        toraCrewHiringTitle: "WE'RE HIRING",
+        toraCrewHiringHref: "#",
+        toraCrewHiringLinks: Array.from({ length: 3 }, (_, index) =>
+          makeTeamHiringLink(index),
+        ),
+        grayscale: true,
+        showSocials: true,
+        members: Array.from({ length: 6 }, (_, index) => makeTeamMember(index)),
+      };
+    case "pricing":
+      return {
+        id,
+        type,
+        style: "standard",
+        eyebrow: "",
+        heading: "Plans that Scale with You",
+        description:
+          "Whether you're just starting out or growing fast, our flexible pricing has you covered - with no hidden costs.",
+        currency: "$",
+        defaultFrequency: "monthly",
+        showBillingToggle: true,
+        theme: "auto",
+        showHighlightEffect: true,
+        pricingSliderBackgroundPhotoId: null,
+        pricingSliderOverlayOpacity: 0.5,
+        pricingSliderHeadingSize: "reference",
+        pricingSliderEyebrowSize: "reference",
+        pricingSliderAutoplay: true,
+        pricingSliderAutoplayMs: 5000,
+        pricingSliderTransitionMs: 1500,
+        castingImageRatio: "reference",
+        plans: [makePricingPlan(0), makePricingPlan(1), makePricingPlan(2)],
+      };
+    case "shop":
+      return {
+        id,
+        type,
+        style: "tora-grid",
+        title: "SHOP",
+        body: "Browse prints, digital downloads, and curated bundles.",
+        source: "all",
+        category: "",
+        limit: 12,
+        showSidebar: true,
+        showSearch: true,
+        showTagCloud: true,
+        showSorting: true,
+        showSaleBadge: true,
+        showPrices: true,
+        theme: "auto",
+        backgroundColor: "#252626",
+        textColor: "#f7f7f7",
+        accentColor: "#ddc59f",
+      };
+    case "cta":
+      return {
+        id,
+        type,
+        headline: "",
+        buttonLabel: "Get in touch",
+        buttonHref: "/contact",
+        buttonStyle: "pill",
+      };
+    case "customLink":
+      return {
+        id,
+        type,
+        layout: "link-row",
+        items: [makeCustomLinkItem(0), makeCustomLinkItem(1), makeCustomLinkItem(2)],
+        buttonLabel: "More stories",
+        buttonHref: "#",
+        showBackground: false,
+        backgroundColor: "#252626",
+        textColor: "#f8f3df",
+        accentColor: "#d8c98d",
+      };
+    case "contactForm":
+      return {
+        id,
+        type,
+        style: "stacked",
+        eyebrow: "Contact",
+        heading: "Get in touch",
+        body: "Tell me about your session, event, or print order and I'll be in touch soon.",
+        submitLabel: "Send message",
+        align: "left",
+        contactHeroPhotoId: null,
+        contactHeroTitle: "CONTACTS",
+        contactHeroOverlayOpacity: 0.45,
+        contactInfoEyebrow: "CONTACT",
+        contactInfoHeading: "CONTACT INFO",
+        contactInfoIntro: "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
+        contactInfoItems: [makeContactInfoItem(0), makeContactInfoItem(1)],
+        contactImageEyebrow: "CONTACT",
+        contactImageHeading: "IMAGES WITH FORM",
+        contactSocialLinks: [
+          makeContactSocialLink(0),
+          makeContactSocialLink(1),
+          makeContactSocialLink(2),
+        ],
+        contactImagePhotoIds: [],
+        contactSideCaption: "Designed by © REFLECTOR Studio. All Right Reserved 2019",
+      };
+    case "spacer":
+      return {
+        id,
+        type,
+        size: "md",
+        mobileSize: "same",
+        customHeight: 112,
+        mobileCustomHeight: 112,
+        backgroundMode: "none",
+        backgroundColor: "#f4f4f5",
+        backgroundWidth: "full",
+      };
+    case "divider":
+      return makeDividerBlock(id);
+    case "categoryIndex":
+      return { id, type, title: "By category" };
+    case "locationIndex":
+      return { id, type, title: "By location" };
+    case "locationMap":
+      return {
+        id,
+        type,
+        title: "Explore locations",
+        subtitle: "Tap a marker to preview the work photographed in each place.",
+        locationIds: [],
+        customPins: [],
+        displayMode: "interactive",
+        height: "md",
+        mapTheme: "auto",
+        markerColor: "#f43f5e",
+        showLabels: true,
+        showControls: true,
+        popupMode: "click",
+        networkConnectionMode: "ordered",
+        networkConnections: [],
+        networkLineColor: "#0ea5e9",
+        networkDotColor: "#f43f5e",
+        networkMapDotColor: "#94a3b8",
+        networkAnimationSeconds: 3.2,
+        networkShowLabels: true,
+        routeStyle: "planning",
+        routeProvider: "osrm",
+        routeTravelMode: "driving",
+        routePointIds: [],
+        routeStartId: "",
+        routeEndId: "",
+        routeShowAlternatives: true,
+        routeShowCards: true,
+        routeShowStopList: true,
+        routeShowMapLinks: true,
+        routeSummaryPosition: "top-left",
+        routeSummaryStyle: "solid",
+        routeShowLabels: true,
+        routeLineColor: "#6366f1",
+        routeInactiveLineColor: "#94a3b8",
+        routeStartColor: "#22c55e",
+        routeEndColor: "#ef4444",
+      };
+    case "scrollShowcase":
+      return {
+        id,
+        type,
+        title: "",
+        categoryIds: [],
+        limit: 6,
+        clusterCount: 4,
+        showTitles: true,
+        style: "cinematic",
+        scrollLayoutsVariant: "row",
+        scrollLayoutsPhotoCount: 9,
+        scrollLayoutsHeading: "Scroll layout morphs",
+        scrollLayoutsIntroText:
+          "Pinned image layouts morph between editorial compositions as you scroll.",
+      };
+    case "instagram":
+      return { id, type, title: "From the field", count: 6 };
+    case "faq":
+      return {
+        id,
+        type,
+        title: "Frequently asked questions",
+        style: "accordion",
+        align: "left",
+        items: [{ q: "Your question?", a: "Your answer." }],
+      };
+    case "logos":
+      return {
+        id,
+        type,
+        title: "As featured in",
+        eyebrow: TORA_CLIENT_WALL_DEFAULT_EYEBROW,
+        intro: "",
+        style: "row",
+        grayscale: true,
+        size: "md",
+        spacing: "normal",
+        photoIds: [],
+      };
+    case "columns":
+      return {
+        id,
+        type,
+        gap: "normal",
+        columns: [[], []],
+        colAlign: ["top", "top"],
+        justify: "fill",
+      };
+    default:
+      return makeDividerBlock(id);
   }
 }
 
@@ -1017,33 +1233,43 @@ export default function PageEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<PhotoOption[]>([]);
-  const [targets, setTargets] = useState<Record<string, Opt[]>>({ category: [], location: [], gallery: [] });
+  const [targets, setTargets] = useState<Record<string, Opt[]>>({
+    category: [],
+    location: [],
+    gallery: [],
+  });
   const [settingsOpen, setSettingsOpen] = useState(true);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       api.get<{ data: PageRow }>(`/api/v1/admin/pages/${id}`),
-      api.get<{ data: PhotoDTO[] }>("/api/v1/admin/photos?limit=80").catch(() => ({ data: [] as PhotoDTO[] })),
+      loadAllAdminPhotos().catch(() => [] as PhotoDTO[]),
       api
-        .get<{ data: { id: string; name: string; photoCount?: number }[] }>("/api/v1/admin/categories")
+        .get<{
+          data: { id: string; name: string; photoCount?: number }[];
+        }>("/api/v1/admin/categories")
         .catch(() => ({ data: [] })),
-      api.get<{ data: { id: string; name: string; photoCount?: number }[] }>("/api/v1/admin/locations").catch(() => ({ data: [] })),
-      api.get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries").catch(() => ({ data: [] })),
+      api
+        .get<{
+          data: { id: string; name: string; photoCount?: number }[];
+        }>("/api/v1/admin/locations")
+        .catch(() => ({ data: [] })),
+      api
+        .get<{ data: { id: string; title: string }[] }>("/api/v1/admin/galleries")
+        .catch(() => ({ data: [] })),
     ])
       .then(([p, ph, cats, locs, gals]) => {
         if (!active) return;
         setPage(p.data);
         setBlocks(Array.isArray(p.data.blocks) ? (p.data.blocks as Block[]) : []);
         setPhotos(
-          ph.data.map((p) => {
+          ph.map((p) => {
             const webp = p.variants
               .filter((v) => v.format === "webp")
               .sort((a, b) => a.width - b.width);
             const thumb =
-              webp.find((v) => v.sizeBucket === "thumb") ??
-              webp[0] ??
-              p.variants[0];
+              webp.find((v) => v.sizeBucket === "thumb") ?? webp[0] ?? p.variants[0];
             return {
               id: p.id,
               label: p.altText || "Untitled photo",
@@ -1052,8 +1278,16 @@ export default function PageEditor() {
           }),
         );
         setTargets({
-          category: cats.data.map((c) => ({ id: c.id, label: c.name, photoCount: c.photoCount ?? 0 })),
-          location: locs.data.map((l) => ({ id: l.id, label: l.name, photoCount: l.photoCount ?? 0 })),
+          category: cats.data.map((c) => ({
+            id: c.id,
+            label: c.name,
+            photoCount: c.photoCount ?? 0,
+          })),
+          location: locs.data.map((l) => ({
+            id: l.id,
+            label: l.name,
+            photoCount: l.photoCount ?? 0,
+          })),
           gallery: gals.data.map((g) => ({ id: g.id, label: g.title })),
         });
       })
@@ -1064,7 +1298,8 @@ export default function PageEditor() {
     };
   }, [id, toast]);
 
-  const patch = (p: Partial<PageRow>) => setPage((prev) => (prev ? { ...prev, ...p } : prev));
+  const patch = (p: Partial<PageRow>) =>
+    setPage((prev) => (prev ? { ...prev, ...p } : prev));
   const updateBlock = (i: number, b: Block) =>
     setBlocks((prev) => prev.map((x, idx) => (idx === i ? b : x)));
   const moveBlock = (i: number, dir: -1 | 1) =>
@@ -1075,7 +1310,8 @@ export default function PageEditor() {
       [next[i], next[j]] = [next[j], next[i]];
       return next;
     });
-  const removeBlock = (i: number) => setBlocks((prev) => prev.filter((_, idx) => idx !== i));
+  const removeBlock = (i: number) =>
+    setBlocks((prev) => prev.filter((_, idx) => idx !== i));
   const addBlock = (type: BlockType) => setBlocks((prev) => [...prev, makeBlock(type)]);
 
   const save = async () => {
@@ -1113,14 +1349,18 @@ export default function PageEditor() {
       <div className="flex flex-wrap items-center justify-between gap-2 lg:flex-none">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h1 className="min-w-0 break-words text-xl font-semibold">{page.title}</h1>
-          <Badge tone={page.status === "published" ? "green" : "neutral"}>{page.status}</Badge>
+          <Badge tone={page.status === "published" ? "green" : "neutral"}>
+            {page.status}
+          </Badge>
           {page.isHome && <Badge tone="blue">Home</Badge>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => patch({ status: page.status === "published" ? "draft" : "published" })}
+            onClick={() =>
+              patch({ status: page.status === "published" ? "draft" : "published" })
+            }
           >
             {page.status === "published" ? "Set draft" : "Mark published"}
           </Button>
@@ -1154,15 +1394,23 @@ export default function PageEditor() {
               <CardContent className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Title">
-                    <Input value={page.title} onChange={(e) => patch({ title: e.target.value })} />
+                    <Input
+                      value={page.title}
+                      onChange={(e) => patch({ title: e.target.value })}
+                    />
                   </Field>
                   <Field label="URL slug">
-                    <Input value={page.slug} onChange={(e) => patch({ slug: e.target.value })} />
+                    <Input
+                      value={page.slug}
+                      onChange={(e) => patch({ slug: e.target.value })}
+                    />
                   </Field>
                   <Field label="Theme">
                     <Select
                       value={page.theme ?? "auto"}
-                      onChange={(e) => patch({ theme: e.target.value as PageRow["theme"] })}
+                      onChange={(e) =>
+                        patch({ theme: e.target.value as PageRow["theme"] })
+                      }
                     >
                       <option value="auto">Auto</option>
                       <option value="light">Light</option>
@@ -1303,7 +1551,9 @@ function BlockCard({
   const [open, setOpen] = useState(false);
   const hidden = block.hidden ?? false;
   return (
-    <div className={`min-w-0 rounded-lg border ${hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
+    <div
+      className={`min-w-0 rounded-lg border ${hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}
+    >
       <div className="flex flex-wrap items-center gap-2 px-3 py-2">
         <button
           type="button"
@@ -1329,25 +1579,57 @@ function BlockCard({
         >
           {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
-        <button type="button" aria-label="Locate in preview" title="Locate in preview" disabled={hidden} onClick={() => locateInPreview(block.id)} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] disabled:opacity-30">
+        <button
+          type="button"
+          aria-label="Locate in preview"
+          title="Locate in preview"
+          disabled={hidden}
+          onClick={() => locateInPreview(block.id)}
+          className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+        >
           <Crosshair className="h-4 w-4" />
         </button>
-        <button type="button" aria-label="Move up" onClick={onUp} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+        <button
+          type="button"
+          aria-label="Move up"
+          onClick={onUp}
+          className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+        >
           <ChevronUp className="h-4 w-4" />
         </button>
-        <button type="button" aria-label="Move down" onClick={onDown} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+        <button
+          type="button"
+          aria-label="Move down"
+          onClick={onDown}
+          className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+        >
           <ChevronDown className="h-4 w-4" />
         </button>
-        <button type="button" aria-label="Delete" onClick={onRemove} className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+        <button
+          type="button"
+          aria-label="Delete"
+          onClick={onRemove}
+          className="p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+        >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {open && (
         <div className="border-t p-3">
           {block.type === "columns" ? (
-            <ColumnsEditor block={block} photos={photos} targets={targets} onChange={onChange} />
+            <ColumnsEditor
+              block={block}
+              photos={photos}
+              targets={targets}
+              onChange={onChange}
+            />
           ) : (
-            <LeafEditor block={block} photos={photos} targets={targets} onChange={onChange} />
+            <LeafEditor
+              block={block}
+              photos={photos}
+              targets={targets}
+              onChange={onChange}
+            />
           )}
         </div>
       )}
@@ -1480,14 +1762,24 @@ function ColumnsEditor({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Field label="Gap">
-          <Select value={block.gap} onChange={(e) => onChange({ ...block, gap: e.target.value as typeof block.gap })}>
+          <Select
+            value={block.gap}
+            onChange={(e) =>
+              onChange({ ...block, gap: e.target.value as typeof block.gap })
+            }
+          >
             <option value="tight">Tight</option>
             <option value="normal">Normal</option>
             <option value="airy">Airy</option>
           </Select>
         </Field>
         <Field label="Distribute">
-          <Select value={block.justify ?? "fill"} onChange={(e) => onChange({ ...block, justify: e.target.value as typeof block.justify })}>
+          <Select
+            value={block.justify ?? "fill"}
+            onChange={(e) =>
+              onChange({ ...block, justify: e.target.value as typeof block.justify })
+            }
+          >
             <option value="fill">Fill width</option>
             <option value="center">Center</option>
             <option value="spread">Spread</option>
@@ -1496,13 +1788,24 @@ function ColumnsEditor({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onChange({ ...block, columns: [...block.columns, []], colAlign: [...colAlign, "top"] })}
+          onClick={() =>
+            onChange({
+              ...block,
+              columns: [...block.columns, []],
+              colAlign: [...colAlign, "top"],
+            })
+          }
           disabled={block.columns.length >= 4}
         >
           <Plus className="h-4 w-4" /> Column
         </Button>
       </div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${block.columns.length}, minmax(0,1fr))` }}>
+      <div
+        className="grid gap-3"
+        style={{
+          gridTemplateColumns: `repeat(${block.columns.length}, minmax(0,1fr))`,
+        }}
+      >
         {block.columns.map((col, ci) => (
           <div
             key={ci}
@@ -1553,7 +1856,11 @@ function ColumnsEditor({
                   type="button"
                   aria-label="Remove column"
                   onClick={() =>
-                    onChange({ ...block, columns: block.columns.filter((_, idx) => idx !== ci), colAlign: colAlign.filter((_, idx) => idx !== ci) })
+                    onChange({
+                      ...block,
+                      columns: block.columns.filter((_, idx) => idx !== ci),
+                      colAlign: colAlign.filter((_, idx) => idx !== ci),
+                    })
                   }
                   className="hover:text-[hsl(var(--foreground))]"
                 >
@@ -1564,7 +1871,12 @@ function ColumnsEditor({
             {alignCol === ci && (
               <div className="rounded border bg-[hsl(var(--muted))] p-2">
                 <Field label="Vertical align">
-                  <Select value={alignOf(ci)} onChange={(e) => setAlign(ci, e.target.value as "top" | "center" | "bottom")}>
+                  <Select
+                    value={alignOf(ci)}
+                    onChange={(e) =>
+                      setAlign(ci, e.target.value as "top" | "center" | "bottom")
+                    }
+                  >
                     <option value="top">Top</option>
                     <option value="center">Center</option>
                     <option value="bottom">Bottom</option>
@@ -1573,7 +1885,10 @@ function ColumnsEditor({
               </div>
             )}
             {col.map((leaf, li) => (
-              <div key={leaf.id} className={`rounded border p-2 ${leaf.hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}>
+              <div
+                key={leaf.id}
+                className={`rounded border p-2 ${leaf.hidden ? "bg-[hsl(var(--muted))]/45 opacity-75" : ""}`}
+              >
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs">
                     {BLOCK_LABELS[leaf.type]}
@@ -1593,7 +1908,12 @@ function ColumnsEditor({
                           block.columns.map((c, idx) =>
                             idx === ci
                               ? c.map((x, k) =>
-                                  k === li ? ({ ...x, hidden: !(x.hidden ?? false) } as LeafBlock) : x,
+                                  k === li
+                                    ? ({
+                                        ...x,
+                                        hidden: !(x.hidden ?? false),
+                                      } as LeafBlock)
+                                    : x,
                                 )
                               : c,
                           ),
@@ -1601,7 +1921,11 @@ function ColumnsEditor({
                       }
                       className="p-0.5 hover:text-[hsl(var(--foreground))]"
                     >
-                      {leaf.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      {leaf.hidden ? (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
                     </button>
                     <button
                       type="button"
@@ -1625,7 +1949,11 @@ function ColumnsEditor({
                       type="button"
                       aria-label="Remove"
                       onClick={() =>
-                        setColumns(block.columns.map((c, idx) => (idx === ci ? c.filter((_, k) => k !== li) : c)))
+                        setColumns(
+                          block.columns.map((c, idx) =>
+                            idx === ci ? c.filter((_, k) => k !== li) : c,
+                          ),
+                        )
                       }
                       className="p-0.5 hover:text-[hsl(var(--foreground))]"
                     >
@@ -1638,7 +1966,13 @@ function ColumnsEditor({
                   photos={photos}
                   targets={targets}
                   onChange={(nb) =>
-                    setColumns(block.columns.map((c, idx) => (idx === ci ? c.map((x, k) => (k === li ? (nb as LeafBlock) : x)) : c)))
+                    setColumns(
+                      block.columns.map((c, idx) =>
+                        idx === ci
+                          ? c.map((x, k) => (k === li ? (nb as LeafBlock) : x))
+                          : c,
+                      ),
+                    )
                   }
                 />
               </div>
@@ -1649,12 +1983,16 @@ function ColumnsEditor({
               onChange={(e) => {
                 if (!e.target.value) return;
                 const nb = makeBlock(e.target.value as BlockType) as LeafBlock;
-                setColumns(block.columns.map((c, idx) => (idx === ci ? [...c, nb] : c)));
+                setColumns(
+                  block.columns.map((c, idx) => (idx === ci ? [...c, nb] : c)),
+                );
                 e.target.value = "";
               }}
             >
               <option value="">+ Add…</option>
-              {(["heading", "subheading", "richtext", "image", "quote"] as BlockType[]).map((t) => (
+              {(
+                ["heading", "subheading", "richtext", "image", "quote"] as BlockType[]
+              ).map((t) => (
                 <option key={t} value={t}>
                   {BLOCK_LABELS[t]}
                 </option>
@@ -1781,17 +2119,20 @@ function LeafEditor({
   targets: Record<string, Opt[]>;
   onChange: (b: LeafBlock) => void;
 }) {
-  const set = (patch: Partial<LeafBlock>) => onChange({ ...block, ...patch } as LeafBlock);
+  const set = (patch: Partial<LeafBlock>) =>
+    onChange({ ...block, ...patch } as LeafBlock);
   switch (block.type) {
     case "heading": {
       const headingStyle = block.headingStyle ?? "default";
       const isToraHeading = headingStyle !== "default";
-      const needsLabel = headingStyle === "tora-classic" || headingStyle === "tora-urban";
+      const needsLabel =
+        headingStyle === "tora-classic" || headingStyle === "tora-urban";
       const needsBody =
         headingStyle === "tora-creative" ||
         headingStyle === "tora-simple" ||
         headingStyle === "tora-urban";
-      const needsCta = headingStyle === "tora-creative" || headingStyle === "tora-simple";
+      const needsCta =
+        headingStyle === "tora-creative" || headingStyle === "tora-simple";
       const updateHeadingStyle = (nextStyle: typeof block.headingStyle) => {
         const nextHeadingStyle = nextStyle ?? "default";
         const nextLabel = toraHeadingDefaultLabel(nextHeadingStyle);
@@ -1815,7 +2156,10 @@ function LeafEditor({
         <div className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Text">
-              <Input value={block.text} onChange={(e) => set({ text: e.target.value })} />
+              <Input
+                value={block.text}
+                onChange={(e) => set({ text: e.target.value })}
+              />
             </Field>
             <Field label="Style">
               <Select
@@ -1834,16 +2178,31 @@ function LeafEditor({
               </Select>
             </Field>
             <Field label="Level">
-              <Select value={String(block.level)} onChange={(e) => set({ level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 })}>
-                <option value="1">H1</option><option value="2">H2</option><option value="3">H3</option>
-                <option value="4">H4</option><option value="5">H5</option><option value="6">H6</option>
+              <Select
+                value={String(block.level)}
+                onChange={(e) =>
+                  set({ level: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 })
+                }
+              >
+                <option value="1">H1</option>
+                <option value="2">H2</option>
+                <option value="3">H3</option>
+                <option value="4">H4</option>
+                <option value="5">H5</option>
+                <option value="6">H6</option>
               </Select>
             </Field>
             <AlignField value={block.align} onChange={(align) => set({ align })} />
             {!isToraHeading && (
-              <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+              <FontField
+                value={block.font ?? "sans"}
+                onChange={(font) => set({ font })}
+              />
             )}
-            <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
+            <SpacingField
+              value={block.spacing ?? "normal"}
+              onChange={(spacing) => set({ spacing })}
+            />
           </div>
 
           {isToraHeading && (
@@ -1910,9 +2269,14 @@ function LeafEditor({
     case "subheading":
       return (
         <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Text"><Input value={block.text} onChange={(e) => set({ text: e.target.value })} /></Field>
+          <Field label="Text">
+            <Input value={block.text} onChange={(e) => set({ text: e.target.value })} />
+          </Field>
           <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
-          <SpacingField value={block.spacing ?? "normal"} onChange={(spacing) => set({ spacing })} />
+          <SpacingField
+            value={block.spacing ?? "normal"}
+            onChange={(spacing) => set({ spacing })}
+          />
           <AlignField value={block.align} onChange={(align) => set({ align })} />
         </div>
       );
@@ -1920,12 +2284,22 @@ function LeafEditor({
       return (
         <div className="space-y-2">
           <Field label="Text (blank line = new paragraph)">
-            <Textarea rows={4} value={block.text} onChange={(e) => set({ text: e.target.value })} />
+            <Textarea
+              rows={4}
+              value={block.text}
+              onChange={(e) => set({ text: e.target.value })}
+            />
           </Field>
           <div className="grid gap-2 sm:grid-cols-3">
-            <FontField value={block.font ?? "sans"} onChange={(font) => set({ font })} />
+            <FontField
+              value={block.font ?? "sans"}
+              onChange={(font) => set({ font })}
+            />
             <Field label="Size">
-              <Select value={block.size ?? "base"} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
+              <Select
+                value={block.size ?? "base"}
+                onChange={(e) => set({ size: e.target.value as typeof block.size })}
+              >
                 <option value="sm">Small</option>
                 <option value="base">Normal</option>
                 <option value="lg">Large</option>
@@ -1939,8 +2313,15 @@ function LeafEditor({
     case "quote":
       return (
         <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Quote"><Input value={block.text} onChange={(e) => set({ text: e.target.value })} /></Field>
-          <Field label="Attribution"><Input value={block.cite ?? ""} onChange={(e) => set({ cite: e.target.value })} /></Field>
+          <Field label="Quote">
+            <Input value={block.text} onChange={(e) => set({ text: e.target.value })} />
+          </Field>
+          <Field label="Attribution">
+            <Input
+              value={block.cite ?? ""}
+              onChange={(e) => set({ cite: e.target.value })}
+            />
+          </Field>
         </div>
       );
     case "infoBlock": {
@@ -1984,11 +2365,13 @@ function LeafEditor({
         normalizedInfoStyle === "simple" ||
         normalizedInfoStyle === "modern";
       const usesText =
-        normalizedInfoStyle !== "quote" &&
-        normalizedInfoStyle !== "accordion";
-      const usesQuote = normalizedInfoStyle === "quote" || normalizedInfoStyle === "modern";
+        normalizedInfoStyle !== "quote" && normalizedInfoStyle !== "accordion";
+      const usesQuote =
+        normalizedInfoStyle === "quote" || normalizedInfoStyle === "modern";
       const updateTab = (index: number, patch: Partial<(typeof tabs)[number]>) => {
-        set({ tabs: tabs.map((item, i) => (i === index ? { ...item, ...patch } : item)) });
+        set({
+          tabs: tabs.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+        });
       };
       const updateAccordionItem = (
         index: number,
@@ -2047,7 +2430,9 @@ function LeafEditor({
             <Field label="Style">
               <Select
                 value={normalizedInfoStyle}
-                onChange={(e) => updateInfoStyle(e.target.value as typeof normalizedInfoStyle)}
+                onChange={(e) =>
+                  updateInfoStyle(e.target.value as typeof normalizedInfoStyle)
+                }
               >
                 <option value="creative">Creative</option>
                 <option value="simpleText">Simple text</option>
@@ -2070,7 +2455,8 @@ function LeafEditor({
                     set({
                       style: "creative",
                       creativeTextLayout: nextLayout,
-                      ...(nextLayout === "reference" && creativeTextLayout !== "reference"
+                      ...(nextLayout === "reference" &&
+                      creativeTextLayout !== "reference"
                         ? { dimPhoto: false }
                         : {}),
                     });
@@ -2139,32 +2525,52 @@ function LeafEditor({
               </Field>
             )}
             {usesEyebrow && (
-              <Field label={normalizedInfoStyle === "tabs" ? "Intro heading" : "Small label"}>
-                <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
+              <Field
+                label={normalizedInfoStyle === "tabs" ? "Intro heading" : "Small label"}
+              >
+                <Input
+                  value={block.eyebrow}
+                  onChange={(e) => set({ eyebrow: e.target.value })}
+                />
               </Field>
             )}
             {usesTitle && (
               <Field label="Title">
-                <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+                <Input
+                  value={block.title}
+                  onChange={(e) => set({ title: e.target.value })}
+                />
               </Field>
             )}
             {usesQuote && (
               <Field label="Quote">
-                <Textarea rows={3} value={block.quote} onChange={(e) => set({ quote: e.target.value })} />
+                <Textarea
+                  rows={3}
+                  value={block.quote}
+                  onChange={(e) => set({ quote: e.target.value })}
+                />
               </Field>
             )}
           </div>
 
           {usesText && (
             <Field label="Text">
-              <Textarea rows={4} value={block.text} onChange={(e) => set({ text: e.target.value })} />
+              <Textarea
+                rows={4}
+                value={block.text}
+                onChange={(e) => set({ text: e.target.value })}
+              />
             </Field>
           )}
 
           {needsPhoto && (
             <>
               <Field label="Image">
-                <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
+                <PhotoPicker
+                  photos={photos}
+                  value={block.photoId ?? null}
+                  onChange={(pid) => set({ photoId: pid })}
+                />
               </Field>
               {showsPhotoDimming && (
                 <Field label="Photo dimming">
@@ -2183,17 +2589,27 @@ function LeafEditor({
 
           {normalizedInfoStyle === "modern" && (
             <Field label="Signature image">
-              <PhotoPicker photos={photos} value={block.secondaryPhotoId ?? null} onChange={(pid) => set({ secondaryPhotoId: pid })} />
+              <PhotoPicker
+                photos={photos}
+                value={block.secondaryPhotoId ?? null}
+                onChange={(pid) => set({ secondaryPhotoId: pid })}
+              />
             </Field>
           )}
 
           {usesButton && (
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Button label">
-                <Input value={block.buttonLabel} onChange={(e) => set({ buttonLabel: e.target.value })} />
+                <Input
+                  value={block.buttonLabel}
+                  onChange={(e) => set({ buttonLabel: e.target.value })}
+                />
               </Field>
               <Field label="Button link">
-                <Input value={block.buttonHref} onChange={(e) => set({ buttonHref: e.target.value })} />
+                <Input
+                  value={block.buttonHref}
+                  onChange={(e) => set({ buttonHref: e.target.value })}
+                />
               </Field>
             </div>
           )}
@@ -2205,28 +2621,74 @@ function LeafEditor({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium">Tab {index + 1}</span>
                     <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
-                      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => set({ tabs: swapAt(tabs, index, index - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Move down" disabled={index === tabs.length - 1} onClick={() => set({ tabs: swapAt(tabs, index, index + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Remove" onClick={() => set({ tabs: tabs.filter((_, i) => i !== index) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                      <button
+                        type="button"
+                        aria-label="Move up"
+                        disabled={index === 0}
+                        onClick={() => set({ tabs: swapAt(tabs, index, index - 1) })}
+                        className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Move down"
+                        disabled={index === tabs.length - 1}
+                        onClick={() => set({ tabs: swapAt(tabs, index, index + 1) })}
+                        className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove"
+                        onClick={() =>
+                          set({ tabs: tabs.filter((_, i) => i !== index) })
+                        }
+                        className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Field label="Title">
-                      <Input value={item.title} onChange={(e) => updateTab(index, { title: e.target.value })} />
+                      <Input
+                        value={item.title}
+                        onChange={(e) => updateTab(index, { title: e.target.value })}
+                      />
                     </Field>
                     <Field label="Text">
-                      <Textarea rows={3} value={item.text} onChange={(e) => updateTab(index, { text: e.target.value })} />
+                      <Textarea
+                        rows={3}
+                        value={item.text}
+                        onChange={(e) => updateTab(index, { text: e.target.value })}
+                      />
                     </Field>
                   </div>
                   <Field label="Main image">
-                    <PhotoPicker photos={photos} value={item.photoId ?? null} onChange={(pid) => updateTab(index, { photoId: pid })} containerClassName="max-h-44" />
+                    <PhotoPicker
+                      photos={photos}
+                      value={item.photoId ?? null}
+                      onChange={(pid) => updateTab(index, { photoId: pid })}
+                      containerClassName="max-h-44"
+                    />
                   </Field>
                   <Field label="Accent image">
-                    <PhotoPicker photos={photos} value={item.accentPhotoId ?? null} onChange={(pid) => updateTab(index, { accentPhotoId: pid })} containerClassName="max-h-44" />
+                    <PhotoPicker
+                      photos={photos}
+                      value={item.accentPhotoId ?? null}
+                      onChange={(pid) => updateTab(index, { accentPhotoId: pid })}
+                      containerClassName="max-h-44"
+                    />
                   </Field>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={() => set({ tabs: [...tabs, makeInfoBlockTab(tabs.length)] })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => set({ tabs: [...tabs, makeInfoBlockTab(tabs.length)] })}
+              >
                 <Plus className="h-4 w-4" /> Tab
               </Button>
             </div>
@@ -2239,20 +2701,79 @@ function LeafEditor({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium">Row {index + 1}</span>
                     <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
-                      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => set({ accordionItems: swapAt(accordionItems, index, index - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Move down" disabled={index === accordionItems.length - 1} onClick={() => set({ accordionItems: swapAt(accordionItems, index, index + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label="Remove" onClick={() => set({ accordionItems: accordionItems.filter((_, i) => i !== index) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                      <button
+                        type="button"
+                        aria-label="Move up"
+                        disabled={index === 0}
+                        onClick={() =>
+                          set({
+                            accordionItems: swapAt(accordionItems, index, index - 1),
+                          })
+                        }
+                        className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Move down"
+                        disabled={index === accordionItems.length - 1}
+                        onClick={() =>
+                          set({
+                            accordionItems: swapAt(accordionItems, index, index + 1),
+                          })
+                        }
+                        className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove"
+                        onClick={() =>
+                          set({
+                            accordionItems: accordionItems.filter(
+                              (_, i) => i !== index,
+                            ),
+                          })
+                        }
+                        className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                   <Field label="Title">
-                    <Input value={item.title} onChange={(e) => updateAccordionItem(index, { title: e.target.value })} />
+                    <Input
+                      value={item.title}
+                      onChange={(e) =>
+                        updateAccordionItem(index, { title: e.target.value })
+                      }
+                    />
                   </Field>
                   <Field label="Text">
-                    <Textarea rows={3} value={item.text} onChange={(e) => updateAccordionItem(index, { text: e.target.value })} />
+                    <Textarea
+                      rows={3}
+                      value={item.text}
+                      onChange={(e) =>
+                        updateAccordionItem(index, { text: e.target.value })
+                      }
+                    />
                   </Field>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={() => set({ accordionItems: [...accordionItems, makeInfoBlockAccordionItem(accordionItems.length)] })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  set({
+                    accordionItems: [
+                      ...accordionItems,
+                      makeInfoBlockAccordionItem(accordionItems.length),
+                    ],
+                  })
+                }
+              >
                 <Plus className="h-4 w-4" /> Row
               </Button>
             </div>
@@ -2263,14 +2784,9 @@ function LeafEditor({
     case "testimonials": {
       const items = block.items ?? [];
       const testimonialLayout = block.layout ?? "slider";
-      const updateItem = (
-        index: number,
-        patch: Partial<(typeof items)[number]>,
-      ) => {
+      const updateItem = (index: number, patch: Partial<(typeof items)[number]>) => {
         set({
-          items: items.map((item, i) =>
-            i === index ? { ...item, ...patch } : item,
-          ),
+          items: items.map((item, i) => (i === index ? { ...item, ...patch } : item)),
         });
       };
       return (
@@ -2279,9 +2795,7 @@ function LeafEditor({
             <Field label="Layout">
               <Select
                 value={testimonialLayout}
-                onChange={(e) =>
-                  set({ layout: e.target.value as typeof block.layout })
-                }
+                onChange={(e) => set({ layout: e.target.value as typeof block.layout })}
               >
                 <option value="slider">Slider</option>
                 <option value="portrait-grid">Portrait cards grid</option>
@@ -2500,9 +3014,7 @@ function LeafEditor({
                         <Textarea
                           rows={4}
                           value={item.quote}
-                          onChange={(e) =>
-                            updateItem(index, { quote: e.target.value })
-                          }
+                          onChange={(e) => updateItem(index, { quote: e.target.value })}
                         />
                       </Field>
                     </div>
@@ -2568,9 +3080,7 @@ function LeafEditor({
             <Field label="Team layout">
               <Select
                 value={block.layout ?? "showcase"}
-                onChange={(e) =>
-                  set({ layout: e.target.value as typeof block.layout })
-                }
+                onChange={(e) => set({ layout: e.target.value as typeof block.layout })}
               >
                 <option value="showcase">Showcase list</option>
                 <option value="memberCards">Editorial member cards</option>
@@ -2611,9 +3121,7 @@ function LeafEditor({
                   <input
                     type="checkbox"
                     checked={block.creativeShowMainSocials ?? true}
-                    onChange={(e) =>
-                      set({ creativeShowMainSocials: e.target.checked })
-                    }
+                    onChange={(e) => set({ creativeShowMainSocials: e.target.checked })}
                   />
                   Show website and icons
                 </label>
@@ -2623,7 +3131,9 @@ function LeafEditor({
                 <Select
                   value={block.orbitRingCount ?? "auto"}
                   onChange={(e) =>
-                    set({ orbitRingCount: e.target.value as typeof block.orbitRingCount })
+                    set({
+                      orbitRingCount: e.target.value as typeof block.orbitRingCount,
+                    })
                   }
                 >
                   <option value="auto">Auto by team size</option>
@@ -2804,9 +3314,7 @@ function LeafEditor({
                     <input
                       type="checkbox"
                       checked={block.orbitShowIconAccents ?? true}
-                      onChange={(e) =>
-                        set({ orbitShowIconAccents: e.target.checked })
-                      }
+                      onChange={(e) => set({ orbitShowIconAccents: e.target.checked })}
                     />
                     Show card accents
                   </label>
@@ -2846,8 +3354,7 @@ function LeafEditor({
                     value={block.creativeColumns ?? "3"}
                     onChange={(e) =>
                       set({
-                        creativeColumns: e.target
-                          .value as typeof block.creativeColumns,
+                        creativeColumns: e.target.value as typeof block.creativeColumns,
                       })
                     }
                   >
@@ -2872,9 +3379,7 @@ function LeafEditor({
                     <Textarea
                       rows={3}
                       value={block.creativeDescription ?? ""}
-                      onChange={(e) =>
-                        set({ creativeDescription: e.target.value })
-                      }
+                      onChange={(e) => set({ creativeDescription: e.target.value })}
                     />
                   </Field>
                 </div>
@@ -2893,9 +3398,7 @@ function LeafEditor({
                 <Field label="Website label">
                   <Input
                     value={block.creativeWebsiteLabel ?? ""}
-                    onChange={(e) =>
-                      set({ creativeWebsiteLabel: e.target.value })
-                    }
+                    onChange={(e) => set({ creativeWebsiteLabel: e.target.value })}
                   />
                 </Field>
                 <Field label="Website link">
@@ -2919,9 +3422,7 @@ function LeafEditor({
                 <Field label="Instagram URL">
                   <Input
                     value={block.creativeInstagramUrl ?? ""}
-                    onChange={(e) =>
-                      set({ creativeInstagramUrl: e.target.value })
-                    }
+                    onChange={(e) => set({ creativeInstagramUrl: e.target.value })}
                   />
                 </Field>
                 <Field label="YouTube URL">
@@ -3145,7 +3646,9 @@ function LeafEditor({
                       variant="ghost"
                       size="icon"
                       disabled={index === 0}
-                      onClick={() => set({ members: swapAt(members, index, index - 1) })}
+                      onClick={() =>
+                        set({ members: swapAt(members, index, index - 1) })
+                      }
                       aria-label="Move member up"
                       className="h-8 w-8"
                     >
@@ -3156,7 +3659,9 @@ function LeafEditor({
                       variant="ghost"
                       size="icon"
                       disabled={index === members.length - 1}
-                      onClick={() => set({ members: swapAt(members, index, index + 1) })}
+                      onClick={() =>
+                        set({ members: swapAt(members, index, index + 1) })
+                      }
                       aria-label="Move member down"
                       className="h-8 w-8"
                     >
@@ -3272,14 +3777,9 @@ function LeafEditor({
     }
     case "pricing": {
       const plans = block.plans ?? [];
-      const updatePlan = (
-        index: number,
-        patch: Partial<(typeof plans)[number]>,
-      ) => {
+      const updatePlan = (index: number, patch: Partial<(typeof plans)[number]>) => {
         set({
-          plans: plans.map((plan, i) =>
-            i === index ? { ...plan, ...patch } : plan,
-          ),
+          plans: plans.map((plan, i) => (i === index ? { ...plan, ...patch } : plan)),
         });
       };
       const updateFeature = (
@@ -3363,13 +3863,9 @@ function LeafEditor({
                 <option value="tora-simple">Tora simple banner</option>
                 <option value="tora-with-media">Tora with media</option>
                 <option value="tora-image-background">Tora image background</option>
-                <option value="tora-price-list-style-1">
-                  Tora price list style 1
-                </option>
+                <option value="tora-price-list-style-1">Tora price list style 1</option>
                 <option value="tora-pricing-slider">Tora pricing slider</option>
-                <option value="tora-price-list-style-3">
-                  Tora price list style 3
-                </option>
+                <option value="tora-price-list-style-3">Tora price list style 3</option>
                 <option value="tora-casting-services">Tora casting services</option>
               </Select>
             </Field>
@@ -3411,8 +3907,8 @@ function LeafEditor({
                   value={block.castingImageRatio ?? "reference"}
                   onChange={(e) =>
                     set({
-                      castingImageRatio:
-                        e.target.value as typeof block.castingImageRatio,
+                      castingImageRatio: e.target
+                        .value as typeof block.castingImageRatio,
                     })
                   }
                 >
@@ -3474,9 +3970,8 @@ function LeafEditor({
                         value={block.pricingSliderHeadingSize ?? "reference"}
                         onChange={(e) =>
                           set({
-                            pricingSliderHeadingSize:
-                              e.target
-                                .value as typeof block.pricingSliderHeadingSize,
+                            pricingSliderHeadingSize: e.target
+                              .value as typeof block.pricingSliderHeadingSize,
                           })
                         }
                       >
@@ -3491,9 +3986,8 @@ function LeafEditor({
                         value={block.pricingSliderEyebrowSize ?? "reference"}
                         onChange={(e) =>
                           set({
-                            pricingSliderEyebrowSize:
-                              e.target
-                                .value as typeof block.pricingSliderEyebrowSize,
+                            pricingSliderEyebrowSize: e.target
+                              .value as typeof block.pricingSliderEyebrowSize,
                           })
                         }
                       >
@@ -3689,7 +4183,8 @@ function LeafEditor({
                   {isCastingServices && (
                     <div className="sm:col-span-2 lg:col-span-3">
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        This style uses the offering name, subtitle, feature lines, and image. Prices and buttons stay saved but are hidden.
+                        This style uses the offering name, subtitle, feature lines, and
+                        image. Prices and buttons stay saved but are hidden.
                       </p>
                     </div>
                   )}
@@ -3700,13 +4195,17 @@ function LeafEditor({
                           isCastingServices ? "" : "lg:grid-cols-2"
                         }`}
                       >
-                        <Field label={isCastingServices ? "Offering image" : "Plan image / background"}>
+                        <Field
+                          label={
+                            isCastingServices
+                              ? "Offering image"
+                              : "Plan image / background"
+                          }
+                        >
                           <PhotoPicker
                             photos={photos}
                             value={plan.photoId ?? null}
-                            onChange={(photoId) =>
-                              updatePlan(planIndex, { photoId })
-                            }
+                            onChange={(photoId) => updatePlan(planIndex, { photoId })}
                             containerClassName="max-h-48"
                           />
                         </Field>
@@ -3972,7 +4471,9 @@ function LeafEditor({
               <Input
                 value={block.category}
                 onChange={(e) => set({ category: e.target.value })}
-                disabled={block.source !== "category" || block.style === "tora-coming-soon"}
+                disabled={
+                  block.source !== "category" || block.style === "tora-coming-soon"
+                }
                 placeholder="Sunset"
               />
             </Field>
@@ -3989,7 +4490,10 @@ function LeafEditor({
               />
             </Field>
             <Field label="Title">
-              <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+              <Input
+                value={block.title}
+                onChange={(e) => set({ title: e.target.value })}
+              />
             </Field>
             <Field label="Theme">
               <Select
@@ -4044,7 +4548,9 @@ function LeafEditor({
                   <input
                     type="checkbox"
                     checked={Boolean(block[key as keyof typeof block])}
-                    onChange={(e) => set({ [key]: e.target.checked } as Partial<LeafBlock>)}
+                    onChange={(e) =>
+                      set({ [key]: e.target.checked } as Partial<LeafBlock>)
+                    }
                   />
                   {label}
                 </label>
@@ -4056,12 +4562,37 @@ function LeafEditor({
     case "cta":
       return (
         <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Headline"><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
-          <Field label="Body"><Input value={block.body ?? ""} onChange={(e) => set({ body: e.target.value })} /></Field>
-          <Field label="Button label"><Input value={block.buttonLabel} onChange={(e) => set({ buttonLabel: e.target.value })} /></Field>
-          <Field label="Button link"><Input value={block.buttonHref} onChange={(e) => set({ buttonHref: e.target.value })} /></Field>
+          <Field label="Headline">
+            <Input
+              value={block.headline}
+              onChange={(e) => set({ headline: e.target.value })}
+            />
+          </Field>
+          <Field label="Body">
+            <Input
+              value={block.body ?? ""}
+              onChange={(e) => set({ body: e.target.value })}
+            />
+          </Field>
+          <Field label="Button label">
+            <Input
+              value={block.buttonLabel}
+              onChange={(e) => set({ buttonLabel: e.target.value })}
+            />
+          </Field>
+          <Field label="Button link">
+            <Input
+              value={block.buttonHref}
+              onChange={(e) => set({ buttonHref: e.target.value })}
+            />
+          </Field>
           <Field label="Button style">
-            <Select value={block.buttonStyle ?? "pill"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
+            <Select
+              value={block.buttonStyle ?? "pill"}
+              onChange={(e) =>
+                set({ buttonStyle: e.target.value as typeof block.buttonStyle })
+              }
+            >
               <option value="solid">Solid</option>
               <option value="pill">Pill</option>
               <option value="outline">Outline</option>
@@ -4073,10 +4604,7 @@ function LeafEditor({
       );
     case "customLink": {
       const items = block.items ?? [];
-      const updateItem = (
-        index: number,
-        patch: Partial<(typeof items)[number]>,
-      ) => {
+      const updateItem = (index: number, patch: Partial<(typeof items)[number]>) => {
         set({
           items: items.map((item, itemIndex) =>
             itemIndex === index ? { ...item, ...patch } : item,
@@ -4090,7 +4618,9 @@ function LeafEditor({
               <Field label="Style">
                 <Select
                   value={block.layout ?? "link-row"}
-                  onChange={(e) => set({ layout: e.target.value as typeof block.layout })}
+                  onChange={(e) =>
+                    set({ layout: e.target.value as typeof block.layout })
+                  }
                 >
                   <option value="link-row">Link row</option>
                   <option value="center-button">Centered button</option>
@@ -4155,7 +4685,9 @@ function LeafEditor({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => set({ items: [...items, makeCustomLinkItem(items.length)] })}
+                  onClick={() =>
+                    set({ items: [...items, makeCustomLinkItem(items.length)] })
+                  }
                 >
                   <Plus className="h-4 w-4" />
                   Add link
@@ -4194,7 +4726,11 @@ function LeafEditor({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => set({ items: items.filter((_, itemIndex) => itemIndex !== index) })}
+                        onClick={() =>
+                          set({
+                            items: items.filter((_, itemIndex) => itemIndex !== index),
+                          })
+                        }
                         aria-label="Remove link"
                         className="h-8 w-8"
                       >
@@ -4211,7 +4747,9 @@ function LeafEditor({
                       <Field label="Subtitle">
                         <Input
                           value={item.subtitle ?? ""}
-                          onChange={(e) => updateItem(index, { subtitle: e.target.value })}
+                          onChange={(e) =>
+                            updateItem(index, { subtitle: e.target.value })
+                          }
                         />
                       </Field>
                       <Field label="Link">
@@ -4236,8 +4774,10 @@ function LeafEditor({
       const currentStyle = normalizeContactFormStyle(block.style);
       const usesContactsReference =
         isCombinedContactsReference || isContactInfoReference || isImagesFormReference;
-      const showContactInfoSettings = isCombinedContactsReference || isContactInfoReference;
-      const showImagesFormSettings = isCombinedContactsReference || isImagesFormReference;
+      const showContactInfoSettings =
+        isCombinedContactsReference || isContactInfoReference;
+      const showImagesFormSettings =
+        isCombinedContactsReference || isImagesFormReference;
       const contactInfoItems = block.contactInfoItems ?? [];
       const contactSocialLinks = block.contactSocialLinks ?? [];
       const contactImagePhotoIds = block.contactImagePhotoIds ?? [];
@@ -4267,23 +4807,24 @@ function LeafEditor({
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Form style">
                 <Select
-                value={currentStyle}
-                onChange={(e) => {
-                  const style = e.target.value as typeof block.style;
-                  const nextIsCombinedContactsReference = style === "tora-contacts-reference";
-                  const nextIsContactInfoReference = style === "tora-contact-info";
-                  const nextIsImagesFormReference = style === "tora-images-form";
-                  const nextUsesContactsReference =
-                    nextIsCombinedContactsReference ||
-                    nextIsContactInfoReference ||
-                    nextIsImagesFormReference;
-                  const nextUsesContactInfo =
-                    nextIsCombinedContactsReference || nextIsContactInfoReference;
-                  const nextUsesImagesForm =
-                    nextIsCombinedContactsReference || nextIsImagesFormReference;
-                  set({
-                    style,
-                    ...(style === "tora-contact"
+                  value={currentStyle}
+                  onChange={(e) => {
+                    const style = e.target.value as typeof block.style;
+                    const nextIsCombinedContactsReference =
+                      style === "tora-contacts-reference";
+                    const nextIsContactInfoReference = style === "tora-contact-info";
+                    const nextIsImagesFormReference = style === "tora-images-form";
+                    const nextUsesContactsReference =
+                      nextIsCombinedContactsReference ||
+                      nextIsContactInfoReference ||
+                      nextIsImagesFormReference;
+                    const nextUsesContactInfo =
+                      nextIsCombinedContactsReference || nextIsContactInfoReference;
+                    const nextUsesImagesForm =
+                      nextIsCombinedContactsReference || nextIsImagesFormReference;
+                    set({
+                      style,
+                      ...(style === "tora-contact"
                         ? {
                             eyebrow: block.eyebrow === "Contact" ? "" : block.eyebrow,
                             heading:
@@ -4319,26 +4860,34 @@ function LeafEditor({
                             align: "center",
                             ...(nextIsCombinedContactsReference
                               ? {
-                                  contactHeroTitle: block.contactHeroTitle || "CONTACTS",
-                                  contactHeroOverlayOpacity: block.contactHeroOverlayOpacity ?? 0.45,
+                                  contactHeroTitle:
+                                    block.contactHeroTitle || "CONTACTS",
+                                  contactHeroOverlayOpacity:
+                                    block.contactHeroOverlayOpacity ?? 0.45,
                                 }
                               : {}),
                             ...(nextUsesContactInfo
                               ? {
-                                  contactInfoEyebrow: block.contactInfoEyebrow || "CONTACT",
-                                  contactInfoHeading: block.contactInfoHeading || "CONTACT INFO",
+                                  contactInfoEyebrow:
+                                    block.contactInfoEyebrow || "CONTACT",
+                                  contactInfoHeading:
+                                    block.contactInfoHeading || "CONTACT INFO",
                                   contactInfoIntro:
                                     block.contactInfoIntro ||
                                     "IF YOU NEED TO MESSAGE US, PLEASE FILL OUT THE FORM BELLOW",
                                   contactInfoItems:
                                     contactInfoItems.length > 0
                                       ? contactInfoItems
-                                      : [makeContactInfoItem(0), makeContactInfoItem(1)],
+                                      : [
+                                          makeContactInfoItem(0),
+                                          makeContactInfoItem(1),
+                                        ],
                                 }
                               : {}),
                             ...(nextUsesImagesForm
                               ? {
-                                  contactImageEyebrow: block.contactImageEyebrow || "CONTACT",
+                                  contactImageEyebrow:
+                                    block.contactImageEyebrow || "CONTACT",
                                   contactImageHeading:
                                     block.contactImageHeading || "IMAGES WITH FORM",
                                   contactSocialLinks:
@@ -4357,7 +4906,7 @@ function LeafEditor({
                               : {}),
                           }
                         : {}),
-                  });
+                    });
                   }}
                 >
                   <option value="stacked">Stacked intro</option>
@@ -4378,7 +4927,10 @@ function LeafEditor({
               )}
               {!isContactInfoReference && (
                 <Field label="Submit button">
-                  <Input value={block.submitLabel} onChange={(e) => set({ submitLabel: e.target.value })} />
+                  <Input
+                    value={block.submitLabel}
+                    onChange={(e) => set({ submitLabel: e.target.value })}
+                  />
                 </Field>
               )}
             </div>
@@ -4402,7 +4954,9 @@ function LeafEditor({
                         max={0.85}
                         step={0.05}
                         value={block.contactHeroOverlayOpacity ?? 0.45}
-                        onChange={(e) => set({ contactHeroOverlayOpacity: Number(e.target.value) })}
+                        onChange={(e) =>
+                          set({ contactHeroOverlayOpacity: Number(e.target.value) })
+                        }
                       />
                     </Field>
                   </div>
@@ -4454,7 +5008,15 @@ function LeafEditor({
                               variant="ghost"
                               size="icon"
                               disabled={index === 0}
-                              onClick={() => set({ contactInfoItems: swapAt(contactInfoItems, index, index - 1) })}
+                              onClick={() =>
+                                set({
+                                  contactInfoItems: swapAt(
+                                    contactInfoItems,
+                                    index,
+                                    index - 1,
+                                  ),
+                                })
+                              }
                               aria-label="Move contact item up"
                               className="h-8 w-8"
                             >
@@ -4465,7 +5027,15 @@ function LeafEditor({
                               variant="ghost"
                               size="icon"
                               disabled={index === contactInfoItems.length - 1}
-                              onClick={() => set({ contactInfoItems: swapAt(contactInfoItems, index, index + 1) })}
+                              onClick={() =>
+                                set({
+                                  contactInfoItems: swapAt(
+                                    contactInfoItems,
+                                    index,
+                                    index + 1,
+                                  ),
+                                })
+                              }
                               aria-label="Move contact item down"
                               className="h-8 w-8"
                             >
@@ -4475,7 +5045,13 @@ function LeafEditor({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              onClick={() => set({ contactInfoItems: contactInfoItems.filter((_, itemIndex) => itemIndex !== index) })}
+                              onClick={() =>
+                                set({
+                                  contactInfoItems: contactInfoItems.filter(
+                                    (_, itemIndex) => itemIndex !== index,
+                                  ),
+                                })
+                              }
                               aria-label="Remove contact item"
                               className="h-8 w-8"
                             >
@@ -4487,26 +5063,34 @@ function LeafEditor({
                           <Field label="Title">
                             <Input
                               value={item.title ?? ""}
-                              onChange={(e) => updateInfoItem(index, { title: e.target.value })}
+                              onChange={(e) =>
+                                updateInfoItem(index, { title: e.target.value })
+                              }
                             />
                           </Field>
                           <Field label="Phone">
                             <Input
                               value={item.phone ?? ""}
-                              onChange={(e) => updateInfoItem(index, { phone: e.target.value })}
+                              onChange={(e) =>
+                                updateInfoItem(index, { phone: e.target.value })
+                              }
                             />
                           </Field>
                         </div>
                         <Field label="Address">
                           <Input
                             value={item.address ?? ""}
-                            onChange={(e) => updateInfoItem(index, { address: e.target.value })}
+                            onChange={(e) =>
+                              updateInfoItem(index, { address: e.target.value })
+                            }
                           />
                         </Field>
                         <Field label="Phone link">
                           <Input
                             value={item.href ?? ""}
-                            onChange={(e) => updateInfoItem(index, { href: e.target.value })}
+                            onChange={(e) =>
+                              updateInfoItem(index, { href: e.target.value })
+                            }
                             placeholder="tel:+13122299000"
                           />
                         </Field>
@@ -4516,7 +5100,14 @@ function LeafEditor({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => set({ contactInfoItems: [...contactInfoItems, makeContactInfoItem(contactInfoItems.length)] })}
+                      onClick={() =>
+                        set({
+                          contactInfoItems: [
+                            ...contactInfoItems,
+                            makeContactInfoItem(contactInfoItems.length),
+                          ],
+                        })
+                      }
                     >
                       Add contact item
                     </Button>
@@ -4532,13 +5123,17 @@ function LeafEditor({
                         <Field label="Small label">
                           <Input
                             value={block.contactImageEyebrow ?? ""}
-                            onChange={(e) => set({ contactImageEyebrow: e.target.value })}
+                            onChange={(e) =>
+                              set({ contactImageEyebrow: e.target.value })
+                            }
                           />
                         </Field>
                         <Field label="Heading">
                           <Input
                             value={block.contactImageHeading ?? ""}
-                            onChange={(e) => set({ contactImageHeading: e.target.value })}
+                            onChange={(e) =>
+                              set({ contactImageHeading: e.target.value })
+                            }
                           />
                         </Field>
                       </div>
@@ -4572,17 +5167,24 @@ function LeafEditor({
                   <SettingsGroup title="Social links">
                     <div className="space-y-2">
                       {contactSocialLinks.map((item, index) => (
-                        <div key={item.id} className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]">
+                        <div
+                          key={item.id}
+                          className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]"
+                        >
                           <Field label="Label">
                             <Input
                               value={item.label ?? ""}
-                              onChange={(e) => updateSocialLink(index, { label: e.target.value })}
+                              onChange={(e) =>
+                                updateSocialLink(index, { label: e.target.value })
+                              }
                             />
                           </Field>
                           <Field label="Link">
                             <Input
                               value={item.href ?? ""}
-                              onChange={(e) => updateSocialLink(index, { href: e.target.value })}
+                              onChange={(e) =>
+                                updateSocialLink(index, { href: e.target.value })
+                              }
                             />
                           </Field>
                           <div className="flex items-end gap-1">
@@ -4591,7 +5193,15 @@ function LeafEditor({
                               variant="ghost"
                               size="icon"
                               disabled={index === 0}
-                              onClick={() => set({ contactSocialLinks: swapAt(contactSocialLinks, index, index - 1) })}
+                              onClick={() =>
+                                set({
+                                  contactSocialLinks: swapAt(
+                                    contactSocialLinks,
+                                    index,
+                                    index - 1,
+                                  ),
+                                })
+                              }
                               aria-label="Move social link up"
                               className="h-8 w-8"
                             >
@@ -4602,7 +5212,15 @@ function LeafEditor({
                               variant="ghost"
                               size="icon"
                               disabled={index === contactSocialLinks.length - 1}
-                              onClick={() => set({ contactSocialLinks: swapAt(contactSocialLinks, index, index + 1) })}
+                              onClick={() =>
+                                set({
+                                  contactSocialLinks: swapAt(
+                                    contactSocialLinks,
+                                    index,
+                                    index + 1,
+                                  ),
+                                })
+                              }
                               aria-label="Move social link down"
                               className="h-8 w-8"
                             >
@@ -4612,7 +5230,13 @@ function LeafEditor({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              onClick={() => set({ contactSocialLinks: contactSocialLinks.filter((_, itemIndex) => itemIndex !== index) })}
+                              onClick={() =>
+                                set({
+                                  contactSocialLinks: contactSocialLinks.filter(
+                                    (_, itemIndex) => itemIndex !== index,
+                                  ),
+                                })
+                              }
                               aria-label="Remove social link"
                               className="h-8 w-8"
                             >
@@ -4625,7 +5249,14 @@ function LeafEditor({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => set({ contactSocialLinks: [...contactSocialLinks, makeContactSocialLink(contactSocialLinks.length)] })}
+                        onClick={() =>
+                          set({
+                            contactSocialLinks: [
+                              ...contactSocialLinks,
+                              makeContactSocialLink(contactSocialLinks.length),
+                            ],
+                          })
+                        }
                       >
                         Add social link
                       </Button>
@@ -4638,20 +5269,33 @@ function LeafEditor({
             <>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Field label="Top label">
-                  <Input value={block.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} />
+                  <Input
+                    value={block.eyebrow}
+                    onChange={(e) => set({ eyebrow: e.target.value })}
+                  />
                 </Field>
                 <Field label="Heading">
-                  <Input value={block.heading} onChange={(e) => set({ heading: e.target.value })} />
+                  <Input
+                    value={block.heading}
+                    onChange={(e) => set({ heading: e.target.value })}
+                  />
                 </Field>
               </div>
               <Field label="Intro text">
-                <Textarea rows={3} value={block.body} onChange={(e) => set({ body: e.target.value })} />
+                <Textarea
+                  rows={3}
+                  value={block.body}
+                  onChange={(e) => set({ body: e.target.value })}
+                />
               </Field>
             </>
           )}
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             Messages submit to the existing contact inbox. Manage received messages in{" "}
-            <Link href="/admin/contact" className="underline underline-offset-2">Inbox</Link>.
+            <Link href="/admin/contact" className="underline underline-offset-2">
+              Inbox
+            </Link>
+            .
           </p>
         </div>
       );
@@ -4660,22 +5304,33 @@ function LeafEditor({
       return (
         <div className="grid gap-2 sm:grid-cols-2">
           <Field label="Photo">
-            <PhotoPicker photos={photos} value={block.photoId ?? null} onChange={(pid) => set({ photoId: pid })} />
+            <PhotoPicker
+              photos={photos}
+              value={block.photoId ?? null}
+              onChange={(pid) => set({ photoId: pid })}
+            />
           </Field>
           <Field label="Width">
-            <Select value={block.width} onChange={(e) => set({ width: e.target.value as typeof block.width })}>
-              <option value="normal">Normal</option><option value="wide">Wide</option><option value="full">Full</option>
+            <Select
+              value={block.width}
+              onChange={(e) => set({ width: e.target.value as typeof block.width })}
+            >
+              <option value="normal">Normal</option>
+              <option value="wide">Wide</option>
+              <option value="full">Full</option>
             </Select>
           </Field>
-          <Field label="Caption"><Input value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} /></Field>
+          <Field label="Caption">
+            <Input
+              value={block.caption ?? ""}
+              onChange={(e) => set({ caption: e.target.value })}
+            />
+          </Field>
         </div>
       );
     case "portfolioList": {
       const items = block.items ?? [];
-      const updateItem = (
-        index: number,
-        patch: Partial<(typeof items)[number]>,
-      ) => {
+      const updateItem = (index: number, patch: Partial<(typeof items)[number]>) => {
         set({
           items: items.map((item, itemIndex) =>
             itemIndex === index ? { ...item, ...patch } : item,
@@ -4703,47 +5358,51 @@ function LeafEditor({
                           ? "FEATURED GALLERIES"
                           : next === "tora-parallax-showcase"
                             ? "PARALLAX SHOWCASE"
-                          : next === "tora-full-showcase-slider"
-                            ? ""
-                          : next === "tora-models-masonry"
-                            ? "OUR MODELS"
-                          : next === "tora-wedding-stories"
-                            ? ""
-                          : next === "category-cards"
-                          ? "CATEGORY LIST"
-                          : next === "distortion"
-                            ? "DISTORTION STYLE"
-                            : next === "animated-masonry"
-                              ? "MASONRY STYLE"
-                              : next === "mix-masonry"
-                                ? "MIX MASONRY"
-                        : "MODERN",
+                            : next === "tora-full-showcase-slider"
+                              ? ""
+                              : next === "tora-models-masonry"
+                                ? "OUR MODELS"
+                                : next === "tora-wedding-stories"
+                                  ? ""
+                                  : next === "category-cards"
+                                    ? "CATEGORY LIST"
+                                    : next === "distortion"
+                                      ? "DISTORTION STYLE"
+                                      : next === "animated-masonry"
+                                        ? "MASONRY STYLE"
+                                        : next === "mix-masonry"
+                                          ? "MIX MASONRY"
+                                          : "MODERN",
                       eyebrow:
                         next === "tora-models-masonry"
                           ? "CHECK OUT"
                           : next === "tora-full-showcase-slider"
                             ? ""
-                          : next === "tora-wedding-stories"
-                            ? ""
-                            : block.eyebrow,
+                            : next === "tora-wedding-stories"
+                              ? ""
+                              : block.eyebrow,
                       backgroundColor:
-                        next === "tora-models-masonry" || next === "tora-wedding-stories"
-                          || next === "tora-full-showcase-slider"
+                        next === "tora-models-masonry" ||
+                        next === "tora-wedding-stories" ||
+                        next === "tora-full-showcase-slider"
                           ? "#252626"
                           : block.backgroundColor,
                       textColor:
-                        next === "tora-models-masonry" || next === "tora-wedding-stories"
-                          || next === "tora-full-showcase-slider"
+                        next === "tora-models-masonry" ||
+                        next === "tora-wedding-stories" ||
+                        next === "tora-full-showcase-slider"
                           ? "#f8f3df"
                           : block.textColor,
                       accentColor:
-                        next === "tora-models-masonry" || next === "tora-wedding-stories"
-                          || next === "tora-full-showcase-slider"
+                        next === "tora-models-masonry" ||
+                        next === "tora-wedding-stories" ||
+                        next === "tora-full-showcase-slider"
                           ? "#d8c98d"
                           : block.accentColor,
                       body:
-                        next === "tora-models-masonry" || next === "tora-wedding-stories"
-                          || next === "tora-full-showcase-slider"
+                        next === "tora-models-masonry" ||
+                        next === "tora-wedding-stories" ||
+                        next === "tora-full-showcase-slider"
                           ? ""
                           : block.body,
                     });
@@ -4756,7 +5415,9 @@ function LeafEditor({
                   <option value="mix-masonry">Mix masonry</option>
                   <option value="tora-progress-slider">Tora progress slider</option>
                   <option value="tora-parallax-showcase">Tora parallax showcase</option>
-                  <option value="tora-full-showcase-slider">Tora full showcase slider</option>
+                  <option value="tora-full-showcase-slider">
+                    Tora full showcase slider
+                  </option>
                   <option value="tora-models-masonry">Tora models masonry</option>
                   <option value="tora-wedding-stories">Tora wedding stories</option>
                 </Select>
@@ -4810,15 +5471,17 @@ function LeafEditor({
                 />
               </Field>
             </div>
-            {!isToraModelsMasonry && !isToraWeddingStories && !isToraFullShowcaseSlider && (
-              <Field label="Intro text">
-                <Textarea
-                  rows={2}
-                  value={block.body ?? ""}
-                  onChange={(e) => set({ body: e.target.value })}
-                />
-              </Field>
-            )}
+            {!isToraModelsMasonry &&
+              !isToraWeddingStories &&
+              !isToraFullShowcaseSlider && (
+                <Field label="Intro text">
+                  <Textarea
+                    rows={2}
+                    value={block.body ?? ""}
+                    onChange={(e) => set({ body: e.target.value })}
+                  />
+                </Field>
+              )}
           </SettingsGroup>
 
           <SettingsGroup title="Portfolio items">
@@ -4827,7 +5490,9 @@ function LeafEditor({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => set({ items: [...items, makePortfolioListItem(items.length)] })}
+                onClick={() =>
+                  set({ items: [...items, makePortfolioListItem(items.length)] })
+                }
               >
                 <Plus className="h-4 w-4" />
                 Add item
@@ -4885,7 +5550,9 @@ function LeafEditor({
                       variant="ghost"
                       size="icon"
                       onClick={() =>
-                        set({ items: items.filter((_, itemIndex) => itemIndex !== index) })
+                        set({
+                          items: items.filter((_, itemIndex) => itemIndex !== index),
+                        })
                       }
                       aria-label="Remove item"
                       className="h-8 w-8"
@@ -4893,7 +5560,11 @@ function LeafEditor({
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className={supportsHoverPhoto ? "grid gap-3 lg:grid-cols-2" : "grid gap-3"}>
+                  <div
+                    className={
+                      supportsHoverPhoto ? "grid gap-3 lg:grid-cols-2" : "grid gap-3"
+                    }
+                  >
                     <Field label="Cover photo">
                       <PhotoPicker
                         photos={photos}
@@ -4907,7 +5578,9 @@ function LeafEditor({
                         <PhotoPicker
                           photos={photos}
                           value={item.hoverPhotoId ?? null}
-                          onChange={(photoId) => updateItem(index, { hoverPhotoId: photoId })}
+                          onChange={(photoId) =>
+                            updateItem(index, { hoverPhotoId: photoId })
+                          }
                           containerClassName="max-h-52"
                         />
                       </Field>
@@ -4924,7 +5597,9 @@ function LeafEditor({
                       <Field label="Category">
                         <Input
                           value={item.category ?? ""}
-                          onChange={(e) => updateItem(index, { category: e.target.value })}
+                          onChange={(e) =>
+                            updateItem(index, { category: e.target.value })
+                          }
                         />
                       </Field>
                     )}
@@ -4934,7 +5609,9 @@ function LeafEditor({
                           <Textarea
                             rows={2}
                             value={item.description ?? ""}
-                            onChange={(e) => updateItem(index, { description: e.target.value })}
+                            onChange={(e) =>
+                              updateItem(index, { description: e.target.value })
+                            }
                           />
                         </Field>
                       </div>
@@ -4943,14 +5620,18 @@ function LeafEditor({
                       <Field label="Link label">
                         <Input
                           value={item.linkLabel ?? ""}
-                          onChange={(e) => updateItem(index, { linkLabel: e.target.value })}
+                          onChange={(e) =>
+                            updateItem(index, { linkLabel: e.target.value })
+                          }
                         />
                       </Field>
                     )}
                     <Field label="Link URL">
                       <Input
                         value={item.linkHref ?? ""}
-                        onChange={(e) => updateItem(index, { linkHref: e.target.value })}
+                        onChange={(e) =>
+                          updateItem(index, { linkHref: e.target.value })
+                        }
                       />
                     </Field>
                   </div>
@@ -4977,9 +5658,7 @@ function LeafEditor({
       ) => {
         const links = key === "pressLinks" ? pressLinks : awardLinks;
         set({
-          [key]: links.map((link, i) =>
-            i === index ? { ...link, ...patch } : link,
-          ),
+          [key]: links.map((link, i) => (i === index ? { ...link, ...patch } : link)),
         } as Partial<LeafBlock>);
       };
       const removeLink = (key: "pressLinks" | "awardLinks", index: number) => {
@@ -4990,10 +5669,16 @@ function LeafEditor({
         const links = key === "pressLinks" ? pressLinks : awardLinks;
         set({ [key]: [...links, makeAboutLink("Link", "#")] } as Partial<LeafBlock>);
       };
-      const renderLinks = (key: "pressLinks" | "awardLinks", links: typeof pressLinks) => (
+      const renderLinks = (
+        key: "pressLinks" | "awardLinks",
+        links: typeof pressLinks,
+      ) => (
         <div className="space-y-2">
           {links.map((link, index) => (
-            <div key={link.id} className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]">
+            <div
+              key={link.id}
+              className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_1fr_auto]"
+            >
               <Input
                 value={link.label}
                 onChange={(e) => updateLink(key, index, { label: e.target.value })}
@@ -5047,9 +5732,9 @@ function LeafEditor({
                             ? "CLASSIC"
                             : isToraAboutMe
                               ? ""
-                            : next === "tora-casting"
-                              ? ""
-                              : "SIMPLE",
+                              : next === "tora-casting"
+                                ? ""
+                                : "SIMPLE",
                       sectionEyebrow: isToraAboutMe ? "" : block.sectionEyebrow,
                       headline:
                         next === "modern"
@@ -5058,9 +5743,9 @@ function LeafEditor({
                             ? "GET TO KNOW ME BETTER"
                             : isToraAboutMe
                               ? "ABOUT ME"
-                            : next === "tora-casting"
-                              ? "CASTING"
-                              : "HI, I'M REFLECTOR",
+                              : next === "tora-casting"
+                                ? "CASTING"
+                                : "HI, I'M REFLECTOR",
                       eyebrow: next === "classic" ? "GET TO KNOW ME" : "",
                       body: isToraAboutMe
                         ? "We are fine-art, campaign & portrait film photographers from Oregon, with a special love for natural light, medium format film cameras & redheads with freckles. I am interested in the details about your wedding, your ceremony & reception venues, your vision, your dress, your colours and anything else you would like to share with me."
@@ -5070,13 +5755,16 @@ function LeafEditor({
                           ? "CONTACT US"
                           : isToraAboutMe
                             ? ""
-                          : next === "tora-casting"
-                            ? ""
-                            : "learn more",
+                            : next === "tora-casting"
+                              ? ""
+                              : "learn more",
                       ctaHref: isToraAboutMe ? "" : block.ctaHref,
-                      facebookUrl: isToraAboutMe && !block.facebookUrl ? "#" : block.facebookUrl,
-                      twitterUrl: isToraAboutMe && !block.twitterUrl ? "#" : block.twitterUrl,
-                      instagramUrl: isToraAboutMe && !block.instagramUrl ? "#" : block.instagramUrl,
+                      facebookUrl:
+                        isToraAboutMe && !block.facebookUrl ? "#" : block.facebookUrl,
+                      twitterUrl:
+                        isToraAboutMe && !block.twitterUrl ? "#" : block.twitterUrl,
+                      instagramUrl:
+                        isToraAboutMe && !block.instagramUrl ? "#" : block.instagramUrl,
                       showContactForm: isToraAboutMe ? true : block.showContactForm,
                       submitLabel: isToraAboutMe ? "Send" : block.submitLabel,
                     });
@@ -5161,7 +5849,13 @@ function LeafEditor({
 
           <SettingsGroup title="Photos">
             <div className="grid gap-3 sm:grid-cols-3">
-              <Field label={layout === "classic" || layout === "tora-casting" ? "Photo 1" : "Portrait photo"}>
+              <Field
+                label={
+                  layout === "classic" || layout === "tora-casting"
+                    ? "Photo 1"
+                    : "Portrait photo"
+                }
+              >
                 <PhotoPicker
                   photos={photos}
                   value={block.primaryPhotoId ?? null}
@@ -5193,7 +5887,9 @@ function LeafEditor({
           </SettingsGroup>
 
           {(layout === "modern" || layout === "tora-about-me") && (
-            <SettingsGroup title={layout === "tora-about-me" ? "About me details" : "Modern details"}>
+            <SettingsGroup
+              title={layout === "tora-about-me" ? "About me details" : "Modern details"}
+            >
               <div className="grid gap-2 sm:grid-cols-2">
                 <Field label="Contact title">
                   <Input
@@ -5338,7 +6034,8 @@ function LeafEditor({
                 value={block.comparisonOrientation ?? "horizontal"}
                 onChange={(e) =>
                   set({
-                    comparisonOrientation: e.target.value as typeof block.comparisonOrientation,
+                    comparisonOrientation: e.target
+                      .value as typeof block.comparisonOrientation,
                   })
                 }
               >
@@ -5531,7 +6228,12 @@ function LeafEditor({
                 step={100}
                 value={block.autoplayMs ?? 4500}
                 onChange={(e) =>
-                  set({ autoplayMs: Math.max(1200, Math.min(12000, pxInput(e.target.value))) })
+                  set({
+                    autoplayMs: Math.max(
+                      1200,
+                      Math.min(12000, pxInput(e.target.value)),
+                    ),
+                  })
                 }
               />
             </Field>
@@ -5661,10 +6363,7 @@ function LeafEditor({
     }
     case "bookSlider": {
       const pages = block.pages ?? [];
-      const updatePage = (
-        index: number,
-        patch: Partial<(typeof pages)[number]>,
-      ) => {
+      const updatePage = (index: number, patch: Partial<(typeof pages)[number]>) => {
         set({
           pages: pages.map((page, pageIndex) =>
             pageIndex === index ? { ...page, ...patch } : page,
@@ -5821,7 +6520,9 @@ function LeafEditor({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => set({ pages: [...pages, makeBookSliderPage(pages.length)] })}
+                  onClick={() =>
+                    set({ pages: [...pages, makeBookSliderPage(pages.length)] })
+                  }
                 >
                   <Plus className="mr-1 h-4 w-4" />
                   Add page
@@ -5885,7 +6586,9 @@ function LeafEditor({
                         variant="ghost"
                         size="icon"
                         onClick={() =>
-                          set({ pages: pages.filter((_, pageIndex) => pageIndex !== index) })
+                          set({
+                            pages: pages.filter((_, pageIndex) => pageIndex !== index),
+                          })
                         }
                         aria-label="Remove page"
                         className="h-8 w-8"
@@ -5972,24 +6675,28 @@ function LeafEditor({
       const filterStyle = block.filterStyle ?? "flip-reveal";
       const toraPortfolioFilterTextSize = block.toraPortfolioFilterTextSize ?? 30;
       const toraPortfolioSeparatorSize = block.toraPortfolioSeparatorSize ?? 55;
+      const isColorSpectrum = block.gridType === "color-spectrum";
+      const isMoodboard = block.gridType === "moodboard";
       const customFilters = block.customFilters ?? [];
+      const sourcePhotoIds = block.sourcePhotoIds ?? [];
       const sortMode = (block.sortMode ?? "source") as GallerySortMode;
       const manualOrderPhotoIds = block.manualOrderPhotoIds ?? [];
       const filterSorts = block.filterSorts ?? [];
       const automaticFilterOptions =
         filterMode === "category"
-          ? targets.category ?? []
+          ? (targets.category ?? [])
           : filterMode === "location"
-          ? targets.location ?? []
-          : [];
-      const automaticFilterKeys = new Set(automaticFilterOptions.map((option) => option.id));
+            ? (targets.location ?? [])
+            : [];
+      const automaticFilterKeys = new Set(
+        automaticFilterOptions.map((option) => option.id),
+      );
       const automaticFilterSorts = filterSorts.filter((sort) =>
         automaticFilterKeys.has(sort.key),
       );
       const filterSortFor = (key: string) =>
         filterSorts.find((sort) => sort.key === key);
-      const setFilterSorts = (next: typeof filterSorts) =>
-        set({ filterSorts: next });
+      const setFilterSorts = (next: typeof filterSorts) => set({ filterSorts: next });
       const updateFilterSort = (
         key: string,
         patch: Partial<(typeof filterSorts)[number]>,
@@ -6039,29 +6746,69 @@ function LeafEditor({
             : [...current, photoId],
         });
       };
+      const toggleSourcePhoto = (photoId: string) =>
+        set({ sourcePhotoIds: toggleManualPhoto(sourcePhotoIds, photoId) });
       return (
         <div className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
             {filterMode !== "custom" && (
               <Field label="Source">
-                <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source, targetId: null })}>
-                  <option value="featured">Featured</option><option value="category">Category</option>
-                  <option value="location">Location</option><option value="gallery">Gallery</option>
+                <Select
+                  value={block.source}
+                  onChange={(e) =>
+                    set({
+                      source: e.target.value as typeof block.source,
+                      targetId: null,
+                    })
+                  }
+                >
+                  <option value="featured">Featured</option>
+                  <option value="category">Category</option>
+                  <option value="location">Location</option>
+                  <option value="gallery">Gallery</option>
+                  <option value="custom">Custom</option>
                 </Select>
               </Field>
             )}
-            {filterMode !== "custom" && block.source !== "featured" && (
-              <Field label="Target">
-                <Select value={block.targetId ?? ""} onChange={(e) => set({ targetId: e.target.value || null })}>
-                  <option value="">Select…</option>
-                  {(targets[block.source] ?? []).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                </Select>
-              </Field>
+            {filterMode !== "custom" &&
+              block.source !== "featured" &&
+              block.source !== "custom" && (
+                <Field label="Target">
+                  <Select
+                    value={block.targetId ?? ""}
+                    onChange={(e) => set({ targetId: e.target.value || null })}
+                  >
+                    <option value="">Select…</option>
+                    {(targets[block.source] ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            {filterMode !== "custom" && block.source === "custom" && (
+              <div className="sm:col-span-2">
+                <Field label="Source photos">
+                  <PhotoPicker
+                    photos={photos}
+                    selectedIds={sourcePhotoIds}
+                    onToggle={toggleSourcePhoto}
+                    containerClassName="max-h-60"
+                  />
+                </Field>
+                <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                  Choose the photos this gallery can display. The Color Spectrum style
+                  will filter this set by match quality.
+                </p>
+              </div>
             )}
             <Field label="Filter tabs">
               <Select
                 value={filterMode}
-                onChange={(e) => set({ filterMode: e.target.value as typeof block.filterMode })}
+                onChange={(e) =>
+                  set({ filterMode: e.target.value as typeof block.filterMode })
+                }
               >
                 <option value="none">Off</option>
                 <option value="category">By category</option>
@@ -6069,9 +6816,13 @@ function LeafEditor({
                 <option value="custom">Custom</option>
               </Select>
             </Field>
-            {filterMode !== "custom" && (
+            {filterMode !== "custom" && block.source !== "custom" && (
               <Field label="Max photos">
-                <Input type="number" value={block.limit} onChange={(e) => set({ limit: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={block.limit}
+                  onChange={(e) => set({ limit: Number(e.target.value) })}
+                />
               </Field>
             )}
             {filterMode === "none" && (
@@ -6087,7 +6838,21 @@ function LeafEditor({
                       });
                     }}
                   >
-                    <option value="masonry">Masonry</option><option value="justified">Justified</option><option value="tora-justified-showcase">Tora justified showcase</option><option value="uniform">Uniform</option><option value="carousel">Carousel</option><option value="filmstrip">Filmstrip</option><option value="mosaic">Mosaic</option><option value="carousel3d">3D infinite carousel</option><option value="horizontal-lenis">Horizontal scroll</option><option value="cinematic">Cinematic 3D scroll</option><option value="tora-props-catalog">Tora props catalog</option>
+                    <option value="masonry">Masonry</option>
+                    <option value="justified">Justified</option>
+                    <option value="tora-justified-showcase">
+                      Tora justified showcase
+                    </option>
+                    <option value="uniform">Uniform</option>
+                    <option value="carousel">Carousel</option>
+                    <option value="filmstrip">Filmstrip</option>
+                    <option value="mosaic">Mosaic</option>
+                    <option value="carousel3d">3D infinite carousel</option>
+                    <option value="horizontal-lenis">Horizontal scroll</option>
+                    <option value="cinematic">Cinematic 3D scroll</option>
+                    <option value="tora-props-catalog">Tora props catalog</option>
+                    <option value="color-spectrum">Color Spectrum gallery</option>
+                    <option value="moodboard">Moodboard editorial collage</option>
                   </Select>
                 </Field>
                 {/* The 3D infinite carousel and cinematic 3D scroll manage their own
@@ -6095,16 +6860,29 @@ function LeafEditor({
                 {block.gridType !== "carousel3d" &&
                   block.gridType !== "cinematic" &&
                   block.gridType !== "tora-props-catalog" &&
-                  block.gridType !== "tora-justified-showcase" && (
-                  <Field label="Spacing">
-                    <Select value={block.spacing} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
-                      <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
-                    </Select>
-                  </Field>
-                )}
+                  block.gridType !== "tora-justified-showcase" &&
+                  block.gridType !== "moodboard" && (
+                    <Field label="Spacing">
+                      <Select
+                        value={block.spacing}
+                        onChange={(e) =>
+                          set({ spacing: e.target.value as typeof block.spacing })
+                        }
+                      >
+                        <option value="tight">Tight</option>
+                        <option value="normal">Normal</option>
+                        <option value="airy">Airy</option>
+                      </Select>
+                    </Field>
+                  )}
                 {block.gridType === "carousel3d" && (
                   <Field label="Backdrop">
-                    <Select value={block.backdrop ?? "color"} onChange={(e) => set({ backdrop: e.target.value as typeof block.backdrop })}>
+                    <Select
+                      value={block.backdrop ?? "color"}
+                      onChange={(e) =>
+                        set({ backdrop: e.target.value as typeof block.backdrop })
+                      }
+                    >
                       <option value="color">Color (from photo)</option>
                       <option value="neutral">Neutral (no color)</option>
                     </Select>
@@ -6147,7 +6925,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraPropsShowCaptions ?? true}
-                          onChange={(e) => set({ toraPropsShowCaptions: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraPropsShowCaptions: e.target.checked })
+                          }
                         />
                         Show below each photo
                       </label>
@@ -6157,8 +6937,8 @@ function LeafEditor({
                         value={block.toraPropsCaptionSource ?? "auto"}
                         onChange={(e) =>
                           set({
-                            toraPropsCaptionSource:
-                              e.target.value as typeof block.toraPropsCaptionSource,
+                            toraPropsCaptionSource: e.target
+                              .value as typeof block.toraPropsCaptionSource,
                           })
                         }
                         disabled={block.toraPropsShowCaptions === false}
@@ -6182,7 +6962,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraPropsShowBackground ?? true}
-                          onChange={(e) => set({ toraPropsShowBackground: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraPropsShowBackground: e.target.checked })
+                          }
                         />
                         Show showroom band
                       </label>
@@ -6191,7 +6973,9 @@ function LeafEditor({
                       <Input
                         type="color"
                         value={block.toraPropsBackgroundColor ?? "#252626"}
-                        onChange={(e) => set({ toraPropsBackgroundColor: e.target.value })}
+                        onChange={(e) =>
+                          set({ toraPropsBackgroundColor: e.target.value })
+                        }
                         disabled={block.toraPropsShowBackground === false}
                       />
                     </Field>
@@ -6204,8 +6988,8 @@ function LeafEditor({
                         value={block.toraJustifiedTitleSource ?? "auto"}
                         onChange={(e) =>
                           set({
-                            toraJustifiedTitleSource:
-                              e.target.value as typeof block.toraJustifiedTitleSource,
+                            toraJustifiedTitleSource: e.target
+                              .value as typeof block.toraJustifiedTitleSource,
                           })
                         }
                       >
@@ -6219,14 +7003,18 @@ function LeafEditor({
                       <Input
                         type="color"
                         value={block.toraJustifiedTitleColor ?? "#f7f7f7"}
-                        onChange={(e) => set({ toraJustifiedTitleColor: e.target.value })}
+                        onChange={(e) =>
+                          set({ toraJustifiedTitleColor: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Accent color">
                       <Input
                         type="color"
                         value={block.toraJustifiedAccentColor ?? "#edd8aa"}
-                        onChange={(e) => set({ toraJustifiedAccentColor: e.target.value })}
+                        onChange={(e) =>
+                          set({ toraJustifiedAccentColor: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Background">
@@ -6234,7 +7022,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraJustifiedUseBackground ?? true}
-                          onChange={(e) => set({ toraJustifiedUseBackground: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraJustifiedUseBackground: e.target.checked })
+                          }
                         />
                         Use background color
                       </label>
@@ -6243,7 +7033,9 @@ function LeafEditor({
                       <Input
                         type="color"
                         value={block.toraJustifiedBackgroundColor ?? "#252626"}
-                        onChange={(e) => set({ toraJustifiedBackgroundColor: e.target.value })}
+                        onChange={(e) =>
+                          set({ toraJustifiedBackgroundColor: e.target.value })
+                        }
                         disabled={block.toraJustifiedUseBackground === false}
                       />
                     </Field>
@@ -6307,7 +7099,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraJustifiedHoverInset ?? true}
-                          onChange={(e) => set({ toraJustifiedHoverInset: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraJustifiedHoverInset: e.target.checked })
+                          }
                         />
                         Clip and fade on hover
                       </label>
@@ -6317,7 +7111,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraJustifiedDimOnLeadHover ?? true}
-                          onChange={(e) => set({ toraJustifiedDimOnLeadHover: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraJustifiedDimOnLeadHover: e.target.checked })
+                          }
                         />
                         Dim surrounding page
                       </label>
@@ -6327,7 +7123,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.toraJustifiedScrollOnSelect ?? true}
-                          onChange={(e) => set({ toraJustifiedScrollOnSelect: e.target.checked })}
+                          onChange={(e) =>
+                            set({ toraJustifiedScrollOnSelect: e.target.checked })
+                          }
                         />
                         Scroll back to lead image
                       </label>
@@ -6350,10 +7148,280 @@ function LeafEditor({
                 )}
               </>
             )}
+            {isColorSpectrum && (
+              <>
+                <Field label="Spectrum style">
+                  <Select
+                    value={block.colorSpectrumPalette ?? "full"}
+                    onChange={(e) =>
+                      set({
+                        colorSpectrumPalette: e.target
+                          .value as typeof block.colorSpectrumPalette,
+                      })
+                    }
+                  >
+                    <option value="full">Full spectrum</option>
+                    <option value="warm">Warm colors</option>
+                    <option value="cool">Cool colors</option>
+                    <option value="earth">Earth tones</option>
+                    <option value="pastel">Pastels</option>
+                    <option value="monochrome">Monochrome</option>
+                  </Select>
+                </Field>
+                <Field label="Neutral tones">
+                  <Select
+                    value={block.colorSpectrumNeutralMode ?? "spectrum"}
+                    onChange={(e) =>
+                      set({
+                        colorSpectrumNeutralMode: e.target
+                          .value as typeof block.colorSpectrumNeutralMode,
+                      })
+                    }
+                  >
+                    <option value="spectrum">Part of spectrum</option>
+                    <option value="button">Separate button</option>
+                  </Select>
+                </Field>
+                <Field label="Spectrum bar style">
+                  <Select
+                    value={block.colorSpectrumBarStyle ?? "gradient"}
+                    onChange={(e) =>
+                      set({
+                        colorSpectrumBarStyle: e.target
+                          .value as typeof block.colorSpectrumBarStyle,
+                      })
+                    }
+                  >
+                    <option value="gradient">Smooth gradient</option>
+                    <option value="segments">Segmented swatches</option>
+                    <option value="minimal">Minimal line</option>
+                    <option value="chips">Color chips</option>
+                    <option value="dots">Color dots</option>
+                    <option value="outline">Outlined spectrum</option>
+                  </Select>
+                </Field>
+                <Field label="Color range">
+                  <Select
+                    value={block.colorSpectrumRange ?? "full"}
+                    onChange={(e) =>
+                      set({
+                        colorSpectrumRange: e.target
+                          .value as typeof block.colorSpectrumRange,
+                      })
+                    }
+                  >
+                    <option value="full">Full range</option>
+                    <option value="warm">Warm range</option>
+                    <option value="nature">Nature range</option>
+                    <option value="cool">Cool range</option>
+                    <option value="violet">Violet range</option>
+                    <option value="custom">Custom range</option>
+                  </Select>
+                </Field>
+                {block.colorSpectrumRange === "custom" && (
+                  <>
+                    <Field label="Range start">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={block.colorSpectrumRangeStart ?? 0}
+                          onChange={(e) =>
+                            set({ colorSpectrumRangeStart: Number(e.target.value) })
+                          }
+                          className="w-full accent-[hsl(var(--primary))]"
+                        />
+                        <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                          {Math.round((block.colorSpectrumRangeStart ?? 0) * 100)}%
+                        </span>
+                      </div>
+                    </Field>
+                    <Field label="Range end">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={block.colorSpectrumRangeEnd ?? 1}
+                          onChange={(e) =>
+                            set({ colorSpectrumRangeEnd: Number(e.target.value) })
+                          }
+                          className="w-full accent-[hsl(var(--primary))]"
+                        />
+                        <span className="w-10 text-right text-xs tabular-nums text-[hsl(var(--muted-foreground))]">
+                          {Math.round((block.colorSpectrumRangeEnd ?? 1) * 100)}%
+                        </span>
+                      </div>
+                    </Field>
+                  </>
+                )}
+                <Field label="Match accuracy">
+                  <Select
+                    value={block.colorSpectrumMatch ?? "close"}
+                    onChange={(e) =>
+                      set({
+                        colorSpectrumMatch: e.target
+                          .value as typeof block.colorSpectrumMatch,
+                      })
+                    }
+                  >
+                    <option value="very-close">Very close</option>
+                    <option value="close">Close</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="broad">Broad</option>
+                  </Select>
+                </Field>
+                <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={block.colorSpectrumSnapToResults ?? false}
+                    onChange={(e) =>
+                      set({ colorSpectrumSnapToResults: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-border accent-[hsl(var(--primary))]"
+                  />
+                  Only allow colors with photo results
+                </label>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] sm:col-span-2">
+                  The bar follows the selected style and range. Tighter matching keeps
+                  only photos whose representative palette is close to the
+                  visitor&apos;s selection. When this option is on, clicks and keyboard
+                  navigation snap to the nearest color that has results.
+                </p>
+              </>
+            )}
+            {isMoodboard && (
+              <>
+                <Field label="Moodboard title">
+                  <Input
+                    value={block.moodboardTitle ?? "Mood board"}
+                    onChange={(e) => set({ moodboardTitle: e.target.value })}
+                  />
+                </Field>
+                <Field label="Eyebrow">
+                  <Input
+                    value={block.moodboardEyebrow ?? "Visual collection"}
+                    onChange={(e) => set({ moodboardEyebrow: e.target.value })}
+                  />
+                </Field>
+                <Field label="Subtitle">
+                  <Textarea
+                    value={block.moodboardSubtitle ?? ""}
+                    onChange={(e) => set({ moodboardSubtitle: e.target.value })}
+                    rows={2}
+                  />
+                </Field>
+                <Field label="Left handwritten note">
+                  <Input
+                    value={block.moodboardNoteLeft ?? ""}
+                    onChange={(e) => set({ moodboardNoteLeft: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </Field>
+                <Field label="Right note card">
+                  <Textarea
+                    value={block.moodboardNoteRight ?? ""}
+                    onChange={(e) => set({ moodboardNoteRight: e.target.value })}
+                    rows={2}
+                    placeholder="Optional"
+                  />
+                </Field>
+                <Field label="Bottom caption">
+                  <Input
+                    value={block.moodboardNoteBottom ?? ""}
+                    onChange={(e) => set({ moodboardNoteBottom: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </Field>
+                <Field label="Surface">
+                  <Select
+                    value={block.moodboardTheme ?? "paper"}
+                    onChange={(e) =>
+                      set({ moodboardTheme: e.target.value as typeof block.moodboardTheme })
+                    }
+                  >
+                    <option value="paper">Warm paper</option>
+                    <option value="clean">Clean white</option>
+                    <option value="dark">Dark paper</option>
+                  </Select>
+                </Field>
+                <Field label="Collage density">
+                  <Select
+                    value={block.moodboardDensity ?? "balanced"}
+                    onChange={(e) =>
+                      set({ moodboardDensity: e.target.value as typeof block.moodboardDensity })
+                    }
+                  >
+                    <option value="spacious">Spacious · 6 featured</option>
+                    <option value="balanced">Balanced · 8 featured</option>
+                    <option value="layered">Layered · 10 featured</option>
+                  </Select>
+                </Field>
+                <Field label="Photo frames">
+                  <Select
+                    value={block.moodboardFrames ?? "matte"}
+                    onChange={(e) =>
+                      set({ moodboardFrames: e.target.value as typeof block.moodboardFrames })
+                    }
+                  >
+                    <option value="matte">White photo mats</option>
+                    <option value="border">Fine borders</option>
+                    <option value="none">No frame</option>
+                  </Select>
+                </Field>
+                <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+                  {[
+                    ["moodboardPaperTexture", "Paper texture"],
+                    ["moodboardRotations", "Slight photo rotations"],
+                    ["moodboardTornEdges", "Torn paper edges"],
+                    ["moodboardPins", "Photo pins"],
+                    ["moodboardShowCaptions", "Photo captions"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(block[key as keyof typeof block])}
+                        onChange={(e) => set({ [key]: e.target.checked })}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] sm:col-span-2">
+                  The collage is deterministic, so each photo keeps a stable editorial
+                  position. Additional photos remain available in the clean thumbnail
+                  strip below the featured composition.
+                </p>
+              </>
+            )}
           </div>
           {filterMode !== "none" && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Presentation">
+                  <Select
+                    value={isColorSpectrum ? "color-spectrum" : "filter-tabs"}
+                    onChange={(e) => {
+                      if (e.target.value === "color-spectrum") {
+                        set({ gridType: "color-spectrum" });
+                      } else if (isColorSpectrum) {
+                        set({ gridType: "justified" });
+                      }
+                    }}
+                  >
+                    <option value="filter-tabs">Filter tabs</option>
+                    <option value="color-spectrum">Color Spectrum gallery</option>
+                  </Select>
+                </Field>
+                {isColorSpectrum && (
+                  <p className="self-end pb-2 text-xs text-[hsl(var(--muted-foreground))]">
+                    Visitors can explore every selected photo through one continuous
+                    color spectrum, including tonal shades.
+                  </p>
+                )}
                 <Field label="Filter style">
                   <Select
                     value={filterStyle}
@@ -6364,7 +7432,9 @@ function LeafEditor({
                     }
                   >
                     <option value="flip-reveal">Flip reveal</option>
-                    <option value="tora-portfolio-masonry">Tora portfolio masonry</option>
+                    <option value="tora-portfolio-masonry">
+                      Tora portfolio masonry
+                    </option>
                   </Select>
                 </Field>
                 <Field label="Default sort">
@@ -6537,7 +7607,8 @@ function LeafEditor({
                     onClick={() => {
                       const available =
                         automaticFilterOptions.find(
-                          (option) => !filterSorts.some((sort) => sort.key === option.id),
+                          (option) =>
+                            !filterSorts.some((sort) => sort.key === option.id),
                         ) ?? automaticFilterOptions[0];
                       if (!available) return;
                       updateFilterSort(available.id, { sortMode: "source" });
@@ -6560,7 +7631,9 @@ function LeafEditor({
                       <Field label={`Custom tab ${index + 1}`}>
                         <Input
                           value={filter.label ?? ""}
-                          onChange={(e) => updateFilter(index, { label: e.target.value })}
+                          onChange={(e) =>
+                            updateFilter(index, { label: e.target.value })
+                          }
                         />
                       </Field>
                     </div>
@@ -6600,7 +7673,7 @@ function LeafEditor({
                       </Select>
                     </Field>
                   </div>
-                  {((filterSortFor(filter.id)?.sortMode ?? sortMode) === "custom") && (
+                  {(filterSortFor(filter.id)?.sortMode ?? sortMode) === "custom" && (
                     <div className="mt-2">
                       <PhotoOrderList
                         photos={photos}
@@ -6680,7 +7753,8 @@ function LeafEditor({
           patch.overlay = block.overlay === "none" ? "none" : "auto";
           patch.effect = "none";
         } else if (layout === "toramochie-wedding-studio") {
-          patch.headline = block.headline.trim() || "Welcome to Reflector Wedding Photography!";
+          patch.headline =
+            block.headline.trim() || "Welcome to Reflector Wedding Photography!";
           patch.subhead =
             block.subhead.trim() ||
             "We're a team, based in South of France, documenting elopements & weddings all across Europe and overseas! And we can't wait to hear from you!";
@@ -6758,27 +7832,45 @@ function LeafEditor({
       const cfg = (
         <>
           <Field label={isToraMultiPhoto ? "Images source" : "Image source"}>
-            <Select value={block.source} onChange={(e) => set({ source: e.target.value as typeof block.source })}>
+            <Select
+              value={block.source}
+              onChange={(e) => set({ source: e.target.value as typeof block.source })}
+            >
               <option value="featured">Latest featured</option>
-              <option value="photo">{isToraMultiPhoto ? "Selected photos" : "Specific photo"}</option>
+              <option value="photo">
+                {isToraMultiPhoto ? "Selected photos" : "Specific photo"}
+              </option>
             </Select>
           </Field>
           {isSpecialHero ? (
             <Field label="Background overlay">
-              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
+              <Select
+                value={block.overlay ?? "auto"}
+                onChange={(e) =>
+                  set({ overlay: e.target.value as typeof block.overlay })
+                }
+              >
                 <option value="auto">Soft darken</option>
                 <option value="none">None</option>
                 <option value="dark">Strong darken</option>
               </Select>
             </Field>
-          ) : !isSpecialHero && !isToraSlider && (
-            <Field label="Darken image">
-              <Select value={block.overlay ?? "auto"} onChange={(e) => set({ overlay: e.target.value as typeof block.overlay })}>
-                <option value="auto">Auto (only behind text)</option>
-                <option value="none">None</option>
-                <option value="dark">Always darken</option>
-              </Select>
-            </Field>
+          ) : (
+            !isSpecialHero &&
+            !isToraSlider && (
+              <Field label="Darken image">
+                <Select
+                  value={block.overlay ?? "auto"}
+                  onChange={(e) =>
+                    set({ overlay: e.target.value as typeof block.overlay })
+                  }
+                >
+                  <option value="auto">Auto (only behind text)</option>
+                  <option value="none">None</option>
+                  <option value="dark">Always darken</option>
+                </Select>
+              </Field>
+            )
           )}
           {layoutField}
         </>
@@ -6830,9 +7922,19 @@ function LeafEditor({
               />
             </Field>
           )}
-          <Field label={isAgency ? "Headline line 1" : "Headline"}><Input value={block.headline} onChange={(e) => set({ headline: e.target.value })} /></Field>
+          <Field label={isAgency ? "Headline line 1" : "Headline"}>
+            <Input
+              value={block.headline}
+              onChange={(e) => set({ headline: e.target.value })}
+            />
+          </Field>
           {!isToraOnlyImage && (
-            <Field label="Subhead"><Input value={block.subhead} onChange={(e) => set({ subhead: e.target.value })} /></Field>
+            <Field label="Subhead">
+              <Input
+                value={block.subhead}
+                onChange={(e) => set({ subhead: e.target.value })}
+              />
+            </Field>
           )}
           {isToraWall && (
             <Field label="Typed words">
@@ -6855,44 +7957,96 @@ function LeafEditor({
           {!isSpecialHero && !isToraOnlyImage && (
             <>
               <Field label="Headline font">
-                <Select value={block.headlineFont ?? "sans"} onChange={(e) => set({ headlineFont: e.target.value as typeof block.headlineFont })}>
-                  <option value="sans">Sans</option><option value="serif">Serif</option>
+                <Select
+                  value={block.headlineFont ?? "sans"}
+                  onChange={(e) =>
+                    set({ headlineFont: e.target.value as typeof block.headlineFont })
+                  }
+                >
+                  <option value="sans">Sans</option>
+                  <option value="serif">Serif</option>
                 </Select>
               </Field>
               <Field label="Headline size">
-                <Select value={block.headlineSize ?? "lg"} onChange={(e) => set({ headlineSize: e.target.value as typeof block.headlineSize })}>
-                  <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="xl">Extra large</option>
+                <Select
+                  value={block.headlineSize ?? "lg"}
+                  onChange={(e) =>
+                    set({ headlineSize: e.target.value as typeof block.headlineSize })
+                  }
+                >
+                  <option value="sm">Small</option>
+                  <option value="md">Medium</option>
+                  <option value="lg">Large</option>
+                  <option value="xl">Extra large</option>
                 </Select>
               </Field>
               <Field label="Letter spacing">
-                <Select value={block.headlineTracking ?? "normal"} onChange={(e) => set({ headlineTracking: e.target.value as typeof block.headlineTracking })}>
-                  <option value="normal">Normal</option><option value="wide">Wide</option><option value="widest">Widest</option>
+                <Select
+                  value={block.headlineTracking ?? "normal"}
+                  onChange={(e) =>
+                    set({
+                      headlineTracking: e.target.value as typeof block.headlineTracking,
+                    })
+                  }
+                >
+                  <option value="normal">Normal</option>
+                  <option value="wide">Wide</option>
+                  <option value="widest">Widest</option>
                 </Select>
               </Field>
               <Field label="Headline case">
-                <Select value={block.headlineCase ?? "normal"} onChange={(e) => set({ headlineCase: e.target.value as typeof block.headlineCase })}>
-                  <option value="normal">As typed</option><option value="upper">UPPERCASE</option>
+                <Select
+                  value={block.headlineCase ?? "normal"}
+                  onChange={(e) =>
+                    set({ headlineCase: e.target.value as typeof block.headlineCase })
+                  }
+                >
+                  <option value="normal">As typed</option>
+                  <option value="upper">UPPERCASE</option>
                 </Select>
               </Field>
             </>
           )}
           {!isToraOnlyImage && (
             <>
-              <Field label="Button label"><Input value={block.ctaLabel ?? ""} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
-              <Field label="Button link"><Input value={block.ctaHref ?? ""} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
+              <Field label="Button label">
+                <Input
+                  value={block.ctaLabel ?? ""}
+                  onChange={(e) => set({ ctaLabel: e.target.value })}
+                />
+              </Field>
+              <Field label="Button link">
+                <Input
+                  value={block.ctaHref ?? ""}
+                  onChange={(e) => set({ ctaHref: e.target.value })}
+                />
+              </Field>
             </>
           )}
           {!isSpecialHero && !isToraOnlyImage && (
             <Field label="Button style">
-              <Select value={block.buttonStyle ?? "solid"} onChange={(e) => set({ buttonStyle: e.target.value as typeof block.buttonStyle })}>
-                <option value="solid">Solid</option><option value="pill">Pill</option><option value="outline">Outline</option><option value="link">Text link</option>
+              <Select
+                value={block.buttonStyle ?? "solid"}
+                onChange={(e) =>
+                  set({ buttonStyle: e.target.value as typeof block.buttonStyle })
+                }
+              >
+                <option value="solid">Solid</option>
+                <option value="pill">Pill</option>
+                <option value="outline">Outline</option>
+                <option value="link">Text link</option>
               </Select>
             </Field>
           )}
           {!isToraOnlyImage && (
             <Field label="Height">
-              <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
-                <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+              <Select
+                value={block.height}
+                onChange={(e) => set({ height: e.target.value as typeof block.height })}
+              >
+                <option value="short">Short</option>
+                <option value="tall">Tall</option>
+                <option value="full">Full</option>
               </Select>
             </Field>
           )}
@@ -6930,7 +8084,10 @@ function LeafEditor({
             </div>
           ) : (
             <Field label="Effect">
-              <Select value={block.effect} onChange={(e) => set({ effect: e.target.value as typeof block.effect })}>
+              <Select
+                value={block.effect}
+                onChange={(e) => set({ effect: e.target.value as typeof block.effect })}
+              >
                 <option value="none">None</option>
                 <option value="ken-burns">Ken Burns (slow zoom)</option>
                 <option value="reveal">Load reveal</option>
@@ -6945,12 +8102,21 @@ function LeafEditor({
       if (isToraSlider) {
         return (
           <div className="space-y-4">
-            <SettingsGroup title={isToraFullWidthSlider ? "Full width slider" : "Minimal slider"}>
+            <SettingsGroup
+              title={isToraFullWidthSlider ? "Full width slider" : "Minimal slider"}
+            >
               <div className="grid gap-2 sm:grid-cols-2">
                 {layoutField}
                 <Field label="Height">
-                  <Select value={block.height} onChange={(e) => set({ height: e.target.value as typeof block.height })}>
-                    <option value="short">Short</option><option value="tall">Tall</option><option value="full">Full</option>
+                  <Select
+                    value={block.height}
+                    onChange={(e) =>
+                      set({ height: e.target.value as typeof block.height })
+                    }
+                  >
+                    <option value="short">Short</option>
+                    <option value="tall">Tall</option>
+                    <option value="full">Full</option>
                   </Select>
                 </Field>
                 <Field label="Autoplay">
@@ -6989,7 +8155,9 @@ function LeafEditor({
                       <Input
                         type="color"
                         value={block.fullWidthSliderAccentColor ?? "#f7f7f7"}
-                        onChange={(e) => set({ fullWidthSliderAccentColor: e.target.value })}
+                        onChange={(e) =>
+                          set({ fullWidthSliderAccentColor: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Slide dimming">
@@ -6997,7 +8165,9 @@ function LeafEditor({
                         <input
                           type="checkbox"
                           checked={block.fullWidthSliderDimImages ?? true}
-                          onChange={(e) => set({ fullWidthSliderDimImages: e.target.checked })}
+                          onChange={(e) =>
+                            set({ fullWidthSliderDimImages: e.target.checked })
+                          }
                         />
                         Dim slide photos
                       </label>
@@ -7050,7 +8220,9 @@ function LeafEditor({
                           variant="ghost"
                           size="icon"
                           disabled={index === 0}
-                          onClick={() => set({ slides: swapAt(bannerSlides, index, index - 1) })}
+                          onClick={() =>
+                            set({ slides: swapAt(bannerSlides, index, index - 1) })
+                          }
                           aria-label="Move slide up"
                           className="h-8 w-8"
                         >
@@ -7061,7 +8233,9 @@ function LeafEditor({
                           variant="ghost"
                           size="icon"
                           disabled={index === bannerSlides.length - 1}
-                          onClick={() => set({ slides: swapAt(bannerSlides, index, index + 1) })}
+                          onClick={() =>
+                            set({ slides: swapAt(bannerSlides, index, index + 1) })
+                          }
                           aria-label="Move slide down"
                           className="h-8 w-8"
                         >
@@ -7073,7 +8247,9 @@ function LeafEditor({
                           size="icon"
                           onClick={() =>
                             set({
-                              slides: bannerSlides.filter((_, slideIndex) => slideIndex !== index),
+                              slides: bannerSlides.filter(
+                                (_, slideIndex) => slideIndex !== index,
+                              ),
                             })
                           }
                           aria-label="Remove slide"
@@ -7087,7 +8263,9 @@ function LeafEditor({
                           <PhotoPicker
                             photos={photos}
                             value={slide.photoId ?? null}
-                            onChange={(photoId) => updateBannerSlide(index, { photoId })}
+                            onChange={(photoId) =>
+                              updateBannerSlide(index, { photoId })
+                            }
                             containerClassName="max-h-52"
                           />
                         </Field>
@@ -7096,7 +8274,9 @@ function LeafEditor({
                             <Field label="Subtitle">
                               <Input
                                 value={slide.subtitle ?? ""}
-                                onChange={(e) => updateBannerSlide(index, { subtitle: e.target.value })}
+                                onChange={(e) =>
+                                  updateBannerSlide(index, { subtitle: e.target.value })
+                                }
                                 placeholder="for couples"
                               />
                             </Field>
@@ -7104,23 +8284,37 @@ function LeafEditor({
                           <Field label="Headline">
                             <Input
                               value={slide.headline ?? ""}
-                              onChange={(e) => updateBannerSlide(index, { headline: e.target.value })}
-                              placeholder={isToraFullWidthSlider ? "London's portraits" : "Another way"}
+                              onChange={(e) =>
+                                updateBannerSlide(index, { headline: e.target.value })
+                              }
+                              placeholder={
+                                isToraFullWidthSlider
+                                  ? "London's portraits"
+                                  : "Another way"
+                              }
                             />
                           </Field>
                           {!isToraFullWidthSlider && (
                             <Field label="Button label">
                               <Input
                                 value={slide.buttonLabel ?? ""}
-                                onChange={(e) => updateBannerSlide(index, { buttonLabel: e.target.value })}
+                                onChange={(e) =>
+                                  updateBannerSlide(index, {
+                                    buttonLabel: e.target.value,
+                                  })
+                                }
                                 placeholder="Read More"
                               />
                             </Field>
                           )}
-                          <Field label={isToraFullWidthSlider ? "Title link" : "Button link"}>
+                          <Field
+                            label={isToraFullWidthSlider ? "Title link" : "Button link"}
+                          >
                             <Input
                               value={slide.buttonHref ?? ""}
-                              onChange={(e) => updateBannerSlide(index, { buttonHref: e.target.value })}
+                              onChange={(e) =>
+                                updateBannerSlide(index, { buttonHref: e.target.value })
+                              }
                               placeholder="#"
                             />
                           </Field>
@@ -7266,9 +8460,7 @@ function LeafEditor({
             <Field label="Desktop height">
               <Select
                 value={block.size}
-                onChange={(e) =>
-                  set({ size: e.target.value as typeof block.size })
-                }
+                onChange={(e) => set({ size: e.target.value as typeof block.size })}
               >
                 <option value="xs">Extra small</option>
                 <option value="sm">Small</option>
@@ -7301,9 +8493,7 @@ function LeafEditor({
                   min={0}
                   max={640}
                   value={block.customHeight ?? 112}
-                  onChange={(e) =>
-                    set({ customHeight: pxInput(e.target.value) })
-                  }
+                  onChange={(e) => set({ customHeight: pxInput(e.target.value) })}
                 />
               </Field>
             )}
@@ -7314,9 +8504,7 @@ function LeafEditor({
                   min={0}
                   max={640}
                   value={block.mobileCustomHeight ?? 112}
-                  onChange={(e) =>
-                    set({ mobileCustomHeight: pxInput(e.target.value) })
-                  }
+                  onChange={(e) => set({ mobileCustomHeight: pxInput(e.target.value) })}
                 />
               </Field>
             )}
@@ -7365,14 +8553,20 @@ function LeafEditor({
       );
     case "categoryIndex":
     case "locationIndex":
-      return <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>;
+      return (
+        <Field label="Title">
+          <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
+        </Field>
+      );
     case "locationMap": {
       const locs = targets.location ?? [];
       const chosen = block.locationIds ?? [];
       const pins = block.customPins ?? [];
       const unchosen = locs.filter((loc) => !chosen.includes(loc.id));
-      const labelOf = (id: string) => locs.find((loc) => loc.id === id)?.label ?? "(removed)";
-      const photoCountOf = (id: string) => locs.find((loc) => loc.id === id)?.photoCount ?? 0;
+      const labelOf = (id: string) =>
+        locs.find((loc) => loc.id === id)?.label ?? "(removed)";
+      const photoCountOf = (id: string) =>
+        locs.find((loc) => loc.id === id)?.photoCount ?? 0;
       const locationOptionLabel = (loc: Opt) =>
         `${loc.label} (${loc.photoCount ?? 0} ${(loc.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
       const shownLocationIds = chosen.length > 0 ? chosen : locs.map((loc) => loc.id);
@@ -7388,7 +8582,9 @@ function LeafEditor({
       ];
       const connections = block.networkConnections ?? [];
       const routePointIds = block.routePointIds ?? [];
-      const routeStopOptions = pointOptions.filter((point) => !routePointIds.includes(point.id));
+      const routeStopOptions = pointOptions.filter(
+        (point) => !routePointIds.includes(point.id),
+      );
       const planningStopOptions = pointOptions.filter(
         (point) =>
           !routePointIds.includes(point.id) &&
@@ -7417,378 +8613,541 @@ function LeafEditor({
               title="Map content"
               description="Mix published taxonomy locations with one-off custom pins."
             >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Title">
-                <Input value={block.title} onChange={(e) => set({ title: e.target.value })} />
-              </Field>
-              <Field label="Subtitle">
-                <Input value={block.subtitle} onChange={(e) => set({ subtitle: e.target.value })} />
-              </Field>
-            </div>
-            <div className="space-y-2 rounded-md border p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                  Taxonomy locations
-                </p>
-                {chosen.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Title">
+                  <Input
+                    value={block.title}
+                    onChange={(e) => set({ title: e.target.value })}
+                  />
+                </Field>
+                <Field label="Subtitle">
+                  <Input
+                    value={block.subtitle}
+                    onChange={(e) => set({ subtitle: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <div className="space-y-2 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                    Taxonomy locations
+                  </p>
+                  {chosen.length > 0 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => set({ locationIds: [] })}
+                    >
+                      Use all
+                    </Button>
+                  )}
+                </div>
+                {chosen.length === 0 ? (
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    Showing all mapped published locations.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {chosen.map((id) => (
+                      <div
+                        key={id}
+                        className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
+                      >
+                        <span className="min-w-0 truncate">
+                          {labelOf(id)} ({photoCountOf(id)})
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            set({ locationIds: chosen.filter((x) => x !== id) })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {unchosen.length > 0 && (
+                  <Select
+                    value=""
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      set({ locationIds: [...chosen, e.target.value] });
+                    }}
+                  >
+                    <option value="">+ Add specific location...</option>
+                    {unchosen.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {locationOptionLabel(loc)}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                      Custom pins
+                    </p>
+                    <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                      Add one-off coordinates with an optional photo cover and link.
+                    </p>
+                  </div>
                   <Button
                     type="button"
                     size="sm"
-                    variant="ghost"
-                    onClick={() => set({ locationIds: [] })}
+                    onClick={() =>
+                      set({ customPins: [...pins, makeLocationMapPin(pins.length)] })
+                    }
                   >
-                    Use all
+                    Add pin
                   </Button>
+                </div>
+                {pins.length === 0 ? (
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    No custom pins yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {pins.map((pin, index) => (
+                      <div
+                        key={pin.id}
+                        className="space-y-3 rounded-lg bg-[hsl(var(--muted))]/55 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-medium">
+                            {pin.title || `Custom pin ${index + 1}`}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={index === 0}
+                              onClick={() =>
+                                set({ customPins: swapAt(pins, index, index - 1) })
+                              }
+                              aria-label="Move pin up"
+                              className="h-8 w-8"
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={index === pins.length - 1}
+                              onClick={() =>
+                                set({ customPins: swapAt(pins, index, index + 1) })
+                              }
+                              aria-label="Move pin down"
+                              className="h-8 w-8"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                set({
+                                  customPins: pins.filter(
+                                    (_, pinIndex) => pinIndex !== index,
+                                  ),
+                                })
+                              }
+                              aria-label="Remove pin"
+                              className="h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Field label="Pin title">
+                            <Input
+                              value={pin.title}
+                              onChange={(e) =>
+                                updatePin(index, { title: e.target.value })
+                              }
+                            />
+                          </Field>
+                          <Field label="Subtitle / label">
+                            <Input
+                              value={pin.subtitle}
+                              onChange={(e) =>
+                                updatePin(index, { subtitle: e.target.value })
+                              }
+                              placeholder="Venue, city, or short note"
+                            />
+                          </Field>
+                          <Field label="Latitude">
+                            <Input
+                              type="number"
+                              step="any"
+                              min={-90}
+                              max={90}
+                              value={pin.lat}
+                              onChange={(e) =>
+                                updatePin(index, { lat: e.target.value })
+                              }
+                              placeholder="34.0522"
+                            />
+                          </Field>
+                          <Field label="Longitude">
+                            <Input
+                              type="number"
+                              step="any"
+                              min={-180}
+                              max={180}
+                              value={pin.lng}
+                              onChange={(e) =>
+                                updatePin(index, { lng: e.target.value })
+                              }
+                              placeholder="-118.2437"
+                            />
+                          </Field>
+                          <Field label="Link label">
+                            <Input
+                              value={pin.linkLabel}
+                              onChange={(e) =>
+                                updatePin(index, { linkLabel: e.target.value })
+                              }
+                              placeholder="Open"
+                            />
+                          </Field>
+                          <Field label="Link URL">
+                            <Input
+                              value={pin.linkHref}
+                              onChange={(e) =>
+                                updatePin(index, { linkHref: e.target.value })
+                              }
+                              placeholder="/contact or https://..."
+                            />
+                          </Field>
+                        </div>
+                        <Field label="Optional cover photo">
+                          <PhotoPicker
+                            photos={photos}
+                            value={pin.photoId ?? null}
+                            onChange={(photoId) => updatePin(index, { photoId })}
+                            containerClassName="max-h-44"
+                          />
+                        </Field>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              {chosen.length === 0 ? (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Showing all mapped published locations.
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  {chosen.map((id) => (
-                    <div
-                      key={id}
-                      className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
-                    >
-                      <span className="min-w-0 truncate">
-                        {labelOf(id)} ({photoCountOf(id)})
-                      </span>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => set({ locationIds: chosen.filter((x) => x !== id) })}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {unchosen.length > 0 && (
-                <Select
-                  value=""
-                  onChange={(e) => {
-                    if (!e.target.value) return;
-                    set({ locationIds: [...chosen, e.target.value] });
-                  }}
-                >
-                  <option value="">+ Add specific location...</option>
-                  {unchosen.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {locationOptionLabel(loc)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </div>
-            <div className="space-y-3 rounded-md border p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                    Custom pins
-                  </p>
-                  <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                    Add one-off coordinates with an optional photo cover and link.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() =>
-                    set({ customPins: [...pins, makeLocationMapPin(pins.length)] })
-                  }
-                >
-                  Add pin
-                </Button>
-              </div>
-              {pins.length === 0 ? (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  No custom pins yet.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {pins.map((pin, index) => (
-                    <div key={pin.id} className="space-y-3 rounded-lg bg-[hsl(var(--muted))]/55 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium">
-                          {pin.title || `Custom pin ${index + 1}`}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={index === 0}
-                            onClick={() => set({ customPins: swapAt(pins, index, index - 1) })}
-                            aria-label="Move pin up"
-                            className="h-8 w-8"
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={index === pins.length - 1}
-                            onClick={() => set({ customPins: swapAt(pins, index, index + 1) })}
-                            aria-label="Move pin down"
-                            className="h-8 w-8"
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              set({ customPins: pins.filter((_, pinIndex) => pinIndex !== index) })
-                            }
-                            aria-label="Remove pin"
-                            className="h-8 w-8"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Field label="Pin title">
-                          <Input
-                            value={pin.title}
-                            onChange={(e) => updatePin(index, { title: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Subtitle / label">
-                          <Input
-                            value={pin.subtitle}
-                            onChange={(e) => updatePin(index, { subtitle: e.target.value })}
-                            placeholder="Venue, city, or short note"
-                          />
-                        </Field>
-                        <Field label="Latitude">
-                          <Input
-                            type="number"
-                            step="any"
-                            min={-90}
-                            max={90}
-                            value={pin.lat}
-                            onChange={(e) => updatePin(index, { lat: e.target.value })}
-                            placeholder="34.0522"
-                          />
-                        </Field>
-                        <Field label="Longitude">
-                          <Input
-                            type="number"
-                            step="any"
-                            min={-180}
-                            max={180}
-                            value={pin.lng}
-                            onChange={(e) => updatePin(index, { lng: e.target.value })}
-                            placeholder="-118.2437"
-                          />
-                        </Field>
-                        <Field label="Link label">
-                          <Input
-                            value={pin.linkLabel}
-                            onChange={(e) => updatePin(index, { linkLabel: e.target.value })}
-                            placeholder="Open"
-                          />
-                        </Field>
-                        <Field label="Link URL">
-                          <Input
-                            value={pin.linkHref}
-                            onChange={(e) => updatePin(index, { linkHref: e.target.value })}
-                            placeholder="/contact or https://..."
-                          />
-                        </Field>
-                      </div>
-                      <Field label="Optional cover photo">
-                        <PhotoPicker
-                          photos={photos}
-                          value={pin.photoId ?? null}
-                          onChange={(photoId) => updatePin(index, { photoId })}
-                          containerClassName="max-h-44"
-                        />
-                      </Field>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
             </SettingsGroup>
           </div>
 
           <div className="order-1">
             <SettingsGroup title="Map appearance">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Display mode">
-                <Select
-                  value={block.displayMode ?? "interactive"}
-                  onChange={(e) => set({ displayMode: e.target.value as typeof block.displayMode })}
-                >
-                  <option value="interactive">Interactive marker map</option>
-                  <option value="route-planning">Route planning map</option>
-                  <option value="dotted-network">Dotted network map</option>
-                </Select>
-              </Field>
-            </div>
-            {(block.displayMode ?? "interactive") === "interactive" ? (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Height">
-                    <Select
-                      value={block.height}
-                      onChange={(e) => set({ height: e.target.value as typeof block.height })}
-                    >
-                      <option value="sm">Small</option>
-                      <option value="md">Medium</option>
-                      <option value="lg">Large</option>
-                      <option value="screen">Almost full screen</option>
-                    </Select>
-                  </Field>
-                  <Field label="Basemap style">
-                    <Select
-                      value={block.mapTheme}
-                      onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
-                    >
-                      <option value="auto">Auto light/dark</option>
-                      <option value="light">Light Positron</option>
-                      <option value="dark">Dark</option>
-                      <option value="liberty">Liberty</option>
-                      <option value="bright">Bright</option>
-                    </Select>
-                  </Field>
-                  <Field label="Marker color">
-                    <Input
-                      type="color"
-                      value={block.markerColor}
-                      onChange={(e) => set({ markerColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Popup behavior">
-                    <Select
-                      value={block.popupMode}
-                      onChange={(e) => set({ popupMode: e.target.value as typeof block.popupMode })}
-                    >
-                      <option value="click">Click marker</option>
-                      <option value="hover">Hover marker</option>
-                    </Select>
-                  </Field>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.showLabels}
-                      onChange={(e) => set({ showLabels: e.target.checked })}
-                    />
-                    Show marker labels
-                  </label>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.showControls}
-                      onChange={(e) => set({ showControls: e.target.checked })}
-                    />
-                    Show map controls
-                  </label>
-                </div>
-              </>
-            ) : (block.displayMode ?? "interactive") === "route-planning" ? (
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  <Field label="Route style">
-                    <Select
-                      value={block.routeStyle ?? "planning"}
-                      onChange={(e) => set({ routeStyle: e.target.value as typeof block.routeStyle })}
-                    >
-                      <option value="planning">Route planning</option>
-                      <option value="basic">Basic numbered route</option>
-                    </Select>
-                  </Field>
-                  <Field label="Height">
-                    <Select
-                      value={block.height}
-                      onChange={(e) => set({ height: e.target.value as typeof block.height })}
-                    >
-                      <option value="sm">Small</option>
-                      <option value="md">Medium</option>
-                      <option value="lg">Large</option>
-                      <option value="screen">Almost full screen</option>
-                    </Select>
-                  </Field>
-                  <Field label="Basemap style">
-                    <Select
-                      value={block.mapTheme}
-                      onChange={(e) => set({ mapTheme: e.target.value as typeof block.mapTheme })}
-                    >
-                      <option value="auto">Auto light/dark</option>
-                      <option value="light">Light Positron</option>
-                      <option value="dark">Dark</option>
-                      <option value="liberty">Liberty</option>
-                      <option value="bright">Bright</option>
-                    </Select>
-                  </Field>
-                  <Field label="Route provider">
-                    <Select
-                      value={block.routeProvider ?? "osrm"}
-                      onChange={(e) => set({ routeProvider: e.target.value as typeof block.routeProvider })}
-                    >
-                      <option value="osrm">OSRM route</option>
-                      <option value="straight">Estimated path only</option>
-                    </Select>
-                  </Field>
-                  <Field label="Travel mode">
-                    <Select
-                      value={block.routeTravelMode ?? "driving"}
-                      onChange={(e) => set({ routeTravelMode: e.target.value as typeof block.routeTravelMode })}
-                      disabled={(block.routeProvider ?? "osrm") !== "osrm"}
-                    >
-                      <option value="driving">Driving</option>
-                      <option value="walking">Walking</option>
-                      <option value="cycling">Cycling</option>
-                    </Select>
-                  </Field>
-                </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Display mode">
+                  <Select
+                    value={block.displayMode ?? "interactive"}
+                    onChange={(e) =>
+                      set({ displayMode: e.target.value as typeof block.displayMode })
+                    }
+                  >
+                    <option value="interactive">Interactive marker map</option>
+                    <option value="route-planning">Route planning map</option>
+                    <option value="dotted-network">Dotted network map</option>
+                  </Select>
+                </Field>
+              </div>
+              {(block.displayMode ?? "interactive") === "interactive" ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Height">
+                      <Select
+                        value={block.height}
+                        onChange={(e) =>
+                          set({ height: e.target.value as typeof block.height })
+                        }
+                      >
+                        <option value="sm">Small</option>
+                        <option value="md">Medium</option>
+                        <option value="lg">Large</option>
+                        <option value="screen">Almost full screen</option>
+                      </Select>
+                    </Field>
+                    <Field label="Basemap style">
+                      <Select
+                        value={block.mapTheme}
+                        onChange={(e) =>
+                          set({ mapTheme: e.target.value as typeof block.mapTheme })
+                        }
+                      >
+                        <option value="auto">Auto light/dark</option>
+                        <option value="light">Light Positron</option>
+                        <option value="dark">Dark</option>
+                        <option value="liberty">Liberty</option>
+                        <option value="bright">Bright</option>
+                      </Select>
+                    </Field>
+                    <Field label="Marker color">
+                      <Input
+                        type="color"
+                        value={block.markerColor}
+                        onChange={(e) => set({ markerColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Popup behavior">
+                      <Select
+                        value={block.popupMode}
+                        onChange={(e) =>
+                          set({ popupMode: e.target.value as typeof block.popupMode })
+                        }
+                      >
+                        <option value="click">Click marker</option>
+                        <option value="hover">Hover marker</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.showLabels}
+                        onChange={(e) => set({ showLabels: e.target.checked })}
+                      />
+                      Show marker labels
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.showControls}
+                        onChange={(e) => set({ showControls: e.target.checked })}
+                      />
+                      Show map controls
+                    </label>
+                  </div>
+                </>
+              ) : (block.displayMode ?? "interactive") === "route-planning" ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <Field label="Route style">
+                      <Select
+                        value={block.routeStyle ?? "planning"}
+                        onChange={(e) =>
+                          set({ routeStyle: e.target.value as typeof block.routeStyle })
+                        }
+                      >
+                        <option value="planning">Route planning</option>
+                        <option value="basic">Basic numbered route</option>
+                      </Select>
+                    </Field>
+                    <Field label="Height">
+                      <Select
+                        value={block.height}
+                        onChange={(e) =>
+                          set({ height: e.target.value as typeof block.height })
+                        }
+                      >
+                        <option value="sm">Small</option>
+                        <option value="md">Medium</option>
+                        <option value="lg">Large</option>
+                        <option value="screen">Almost full screen</option>
+                      </Select>
+                    </Field>
+                    <Field label="Basemap style">
+                      <Select
+                        value={block.mapTheme}
+                        onChange={(e) =>
+                          set({ mapTheme: e.target.value as typeof block.mapTheme })
+                        }
+                      >
+                        <option value="auto">Auto light/dark</option>
+                        <option value="light">Light Positron</option>
+                        <option value="dark">Dark</option>
+                        <option value="liberty">Liberty</option>
+                        <option value="bright">Bright</option>
+                      </Select>
+                    </Field>
+                    <Field label="Route provider">
+                      <Select
+                        value={block.routeProvider ?? "osrm"}
+                        onChange={(e) =>
+                          set({
+                            routeProvider: e.target.value as typeof block.routeProvider,
+                          })
+                        }
+                      >
+                        <option value="osrm">OSRM route</option>
+                        <option value="straight">Estimated path only</option>
+                      </Select>
+                    </Field>
+                    <Field label="Travel mode">
+                      <Select
+                        value={block.routeTravelMode ?? "driving"}
+                        onChange={(e) =>
+                          set({
+                            routeTravelMode: e.target
+                              .value as typeof block.routeTravelMode,
+                          })
+                        }
+                        disabled={(block.routeProvider ?? "osrm") !== "osrm"}
+                      >
+                        <option value="driving">Driving</option>
+                        <option value="walking">Walking</option>
+                        <option value="cycling">Cycling</option>
+                      </Select>
+                    </Field>
+                  </div>
 
-                {(block.routeStyle ?? "planning") === "planning" ? (
-                  <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
-                    <Field label="Start point">
-                      <Select
-                        value={block.routeStartId ?? ""}
-                        onChange={(e) => set({ routeStartId: e.target.value })}
-                      >
-                        <option value="">First mapped point</option>
-                        {pointOptions.map((point) => (
-                          <option key={point.id} value={point.id}>
-                            {point.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    <Field label="End point">
-                      <Select
-                        value={block.routeEndId ?? ""}
-                        onChange={(e) => set({ routeEndId: e.target.value })}
-                      >
-                        <option value="">Last mapped point</option>
-                        {pointOptions.map((point) => (
-                          <option key={point.id} value={point.id}>
-                            {point.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    <div className="space-y-3 sm:col-span-2">
-                      <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                          Stops between
-                        </p>
-                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                          Add optional waypoints between the start and end.
-                        </p>
+                  {(block.routeStyle ?? "planning") === "planning" ? (
+                    <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
+                      <Field label="Start point">
+                        <Select
+                          value={block.routeStartId ?? ""}
+                          onChange={(e) => set({ routeStartId: e.target.value })}
+                        >
+                          <option value="">First mapped point</option>
+                          {pointOptions.map((point) => (
+                            <option key={point.id} value={point.id}>
+                              {point.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </Field>
+                      <Field label="End point">
+                        <Select
+                          value={block.routeEndId ?? ""}
+                          onChange={(e) => set({ routeEndId: e.target.value })}
+                        >
+                          <option value="">Last mapped point</option>
+                          {pointOptions.map((point) => (
+                            <option key={point.id} value={point.id}>
+                              {point.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </Field>
+                      <div className="space-y-3 sm:col-span-2">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                            Stops between
+                          </p>
+                          <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                            Add optional waypoints between the start and end.
+                          </p>
+                        </div>
+                        {routePointIds.length > 0 && (
+                          <div className="space-y-1.5">
+                            {routePointIds.map((id, index) => (
+                              <div
+                                key={`${id}-${index}`}
+                                className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
+                              >
+                                <span className="min-w-0 truncate">
+                                  {index + 1}.{" "}
+                                  {pointOptions.find((point) => point.id === id)
+                                    ?.label ?? "(removed)"}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={index === 0}
+                                    onClick={() =>
+                                      set({
+                                        routePointIds: swapAt(
+                                          routePointIds,
+                                          index,
+                                          index - 1,
+                                        ),
+                                      })
+                                    }
+                                    aria-label="Move stop up"
+                                    className="h-8 w-8"
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={index === routePointIds.length - 1}
+                                    onClick={() =>
+                                      set({
+                                        routePointIds: swapAt(
+                                          routePointIds,
+                                          index,
+                                          index + 1,
+                                        ),
+                                      })
+                                    }
+                                    aria-label="Move stop down"
+                                    className="h-8 w-8"
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      set({
+                                        routePointIds: routePointIds.filter(
+                                          (_, stopIndex) => stopIndex !== index,
+                                        ),
+                                      })
+                                    }
+                                    aria-label="Remove stop"
+                                    className="h-8 w-8"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {planningStopOptions.length > 0 ? (
+                          <Select
+                            value=""
+                            onChange={(e) => {
+                              if (!e.target.value) return;
+                              set({
+                                routePointIds: [...routePointIds, e.target.value],
+                              });
+                            }}
+                          >
+                            <option value="">+ Add stop between...</option>
+                            {planningStopOptions.map((point) => (
+                              <option key={point.id} value={point.id}>
+                                {point.label}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : (
+                          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                            Add more mapped locations or custom pins to use them as
+                            stops.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                            Route stops
+                          </p>
+                          <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                            Leave blank to use every mapped point in order.
+                          </p>
+                        </div>
                       </div>
                       {routePointIds.length > 0 && (
                         <div className="space-y-1.5">
@@ -7798,7 +9157,9 @@ function LeafEditor({
                               className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
                             >
                               <span className="min-w-0 truncate">
-                                {index + 1}. {pointOptions.find((point) => point.id === id)?.label ?? "(removed)"}
+                                {index + 1}.{" "}
+                                {pointOptions.find((point) => point.id === id)?.label ??
+                                  "(removed)"}
                               </span>
                               <div className="flex items-center gap-1">
                                 <Button
@@ -7806,8 +9167,16 @@ function LeafEditor({
                                   variant="ghost"
                                   size="icon"
                                   disabled={index === 0}
-                                  onClick={() => set({ routePointIds: swapAt(routePointIds, index, index - 1) })}
-                                  aria-label="Move stop up"
+                                  onClick={() =>
+                                    set({
+                                      routePointIds: swapAt(
+                                        routePointIds,
+                                        index,
+                                        index - 1,
+                                      ),
+                                    })
+                                  }
+                                  aria-label="Move route stop up"
                                   className="h-8 w-8"
                                 >
                                   <ChevronUp className="h-4 w-4" />
@@ -7817,8 +9186,16 @@ function LeafEditor({
                                   variant="ghost"
                                   size="icon"
                                   disabled={index === routePointIds.length - 1}
-                                  onClick={() => set({ routePointIds: swapAt(routePointIds, index, index + 1) })}
-                                  aria-label="Move stop down"
+                                  onClick={() =>
+                                    set({
+                                      routePointIds: swapAt(
+                                        routePointIds,
+                                        index,
+                                        index + 1,
+                                      ),
+                                    })
+                                  }
+                                  aria-label="Move route stop down"
                                   className="h-8 w-8"
                                 >
                                   <ChevronDown className="h-4 w-4" />
@@ -7828,9 +9205,13 @@ function LeafEditor({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() =>
-                                    set({ routePointIds: routePointIds.filter((_, stopIndex) => stopIndex !== index) })
+                                    set({
+                                      routePointIds: routePointIds.filter(
+                                        (_, stopIndex) => stopIndex !== index,
+                                      ),
+                                    })
                                   }
-                                  aria-label="Remove stop"
+                                  aria-label="Remove route stop"
                                   className="h-8 w-8"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -7840,7 +9221,7 @@ function LeafEditor({
                           ))}
                         </div>
                       )}
-                      {planningStopOptions.length > 0 ? (
+                      {routeStopOptions.length > 0 && (
                         <Select
                           value=""
                           onChange={(e) => {
@@ -7848,365 +9229,310 @@ function LeafEditor({
                             set({ routePointIds: [...routePointIds, e.target.value] });
                           }}
                         >
-                          <option value="">+ Add stop between...</option>
-                          {planningStopOptions.map((point) => (
+                          <option value="">+ Add route stop...</option>
+                          {routeStopOptions.map((point) => (
                             <option key={point.id} value={point.id}>
                               {point.label}
                             </option>
                           ))}
                         </Select>
-                      ) : (
-                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                          Add more mapped locations or custom pins to use them as stops.
-                        </p>
                       )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3 rounded-md border p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                          Route stops
-                        </p>
-                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                          Leave blank to use every mapped point in order.
-                        </p>
-                      </div>
-                    </div>
-                    {routePointIds.length > 0 && (
-                      <div className="space-y-1.5">
-                        {routePointIds.map((id, index) => (
-                          <div
-                            key={`${id}-${index}`}
-                            className="flex items-center justify-between gap-2 rounded-md bg-[hsl(var(--muted))] px-2 py-1.5 text-sm"
-                          >
-                            <span className="min-w-0 truncate">
-                              {index + 1}. {pointOptions.find((point) => point.id === id)?.label ?? "(removed)"}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disabled={index === 0}
-                                onClick={() => set({ routePointIds: swapAt(routePointIds, index, index - 1) })}
-                                aria-label="Move route stop up"
-                                className="h-8 w-8"
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disabled={index === routePointIds.length - 1}
-                                onClick={() => set({ routePointIds: swapAt(routePointIds, index, index + 1) })}
-                                aria-label="Move route stop down"
-                                className="h-8 w-8"
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  set({ routePointIds: routePointIds.filter((_, stopIndex) => stopIndex !== index) })
-                                }
-                                aria-label="Remove route stop"
-                                className="h-8 w-8"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {routeStopOptions.length > 0 && (
-                      <Select
-                        value=""
-                        onChange={(e) => {
-                          if (!e.target.value) return;
-                          set({ routePointIds: [...routePointIds, e.target.value] });
-                        }}
-                      >
-                        <option value="">+ Add route stop...</option>
-                        {routeStopOptions.map((point) => (
-                          <option key={point.id} value={point.id}>
-                            {point.label}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Active route color">
-                    <Input
-                      type="color"
-                      value={block.routeLineColor ?? "#6366f1"}
-                      onChange={(e) => set({ routeLineColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Other route color">
-                    <Input
-                      type="color"
-                      value={block.routeInactiveLineColor ?? "#94a3b8"}
-                      onChange={(e) => set({ routeInactiveLineColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Start marker">
-                    <Input
-                      type="color"
-                      value={block.routeStartColor ?? "#22c55e"}
-                      onChange={(e) => set({ routeStartColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="End marker">
-                    <Input
-                      type="color"
-                      value={block.routeEndColor ?? "#ef4444"}
-                      onChange={(e) => set({ routeEndColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Stop marker">
-                    <Input
-                      type="color"
-                      value={block.markerColor}
-                      onChange={(e) => set({ markerColor: e.target.value })}
-                    />
-                  </Field>
-                </div>
-
-                <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Summary position">
-                    <Select
-                      value={block.routeSummaryPosition ?? "top-left"}
-                      onChange={(e) => set({ routeSummaryPosition: e.target.value as typeof block.routeSummaryPosition })}
-                    >
-                      <option value="top-left">Top left</option>
-                      <option value="top-right">Top right</option>
-                      <option value="bottom-left">Bottom left</option>
-                      <option value="bottom-right">Bottom right</option>
-                    </Select>
-                  </Field>
-                  <Field label="Summary style">
-                    <Select
-                      value={block.routeSummaryStyle ?? "solid"}
-                      onChange={(e) => set({ routeSummaryStyle: e.target.value as typeof block.routeSummaryStyle })}
-                    >
-                      <option value="solid">Solid</option>
-                      <option value="glass">Glass</option>
-                      <option value="minimal">Minimal</option>
-                    </Select>
-                  </Field>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.routeShowCards ?? true}
-                      onChange={(e) => set({ routeShowCards: e.target.checked })}
-                    />
-                    Show route option buttons
-                  </label>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.routeShowStopList ?? true}
-                      onChange={(e) => set({ routeShowStopList: e.target.checked })}
-                    />
-                    Show numbered stop list
-                  </label>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.routeShowMapLinks ?? true}
-                      onChange={(e) => set({ routeShowMapLinks: e.target.checked })}
-                    />
-                    Show map app links
-                  </label>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.routeShowLabels ?? true}
-                      onChange={(e) => set({ routeShowLabels: e.target.checked })}
-                    />
-                    Show point labels
-                  </label>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.showControls}
-                      onChange={(e) => set({ showControls: e.target.checked })}
-                    />
-                    Show map controls
-                  </label>
-                  {(block.routeStyle ?? "planning") === "planning" && (
-                    <label className="flex h-9 items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={block.routeShowAlternatives ?? true}
-                        onChange={(e) => set({ routeShowAlternatives: e.target.checked })}
-                        disabled={(block.routeProvider ?? "osrm") !== "osrm"}
-                      />
-                      Show OSRM alternatives
-                    </label>
                   )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Connection mode">
-                    <Select
-                      value={block.networkConnectionMode ?? "ordered"}
-                      onChange={(e) =>
-                        set({ networkConnectionMode: e.target.value as typeof block.networkConnectionMode })
-                      }
-                    >
-                      <option value="ordered">Connect pins in order</option>
-                      <option value="hub">First pin as hub</option>
-                      <option value="manual">Manual connections</option>
-                    </Select>
-                  </Field>
-                  <Field label="Line color">
-                    <Input
-                      type="color"
-                      value={block.networkLineColor ?? "#0ea5e9"}
-                      onChange={(e) => set({ networkLineColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Pin color">
-                    <Input
-                      type="color"
-                      value={block.networkDotColor ?? "#f43f5e"}
-                      onChange={(e) => set({ networkDotColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Map dot color">
-                    <Input
-                      type="color"
-                      value={block.networkMapDotColor ?? "#94a3b8"}
-                      onChange={(e) => set({ networkMapDotColor: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Animation seconds">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={12}
-                      step={0.1}
-                      value={block.networkAnimationSeconds ?? 3.2}
-                      onChange={(e) =>
-                        set({
-                          networkAnimationSeconds: Math.max(
-                            1,
-                            Math.min(12, Number(e.target.value) || 3.2),
-                          ),
-                        })
-                      }
-                    />
-                  </Field>
-                  <label className="flex h-9 items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={block.networkShowLabels ?? true}
-                      onChange={(e) => set({ networkShowLabels: e.target.checked })}
-                    />
-                    Show city labels
-                  </label>
-                </div>
-                {(block.networkConnectionMode ?? "ordered") === "manual" && (
-                  <div className="space-y-3 rounded-md border p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                          Manual connections
-                        </p>
-                        <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                          Choose which pins should be connected by animated arcs.
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={pointOptions.length < 2}
-                        onClick={() =>
+
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="Active route color">
+                      <Input
+                        type="color"
+                        value={block.routeLineColor ?? "#6366f1"}
+                        onChange={(e) => set({ routeLineColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Other route color">
+                      <Input
+                        type="color"
+                        value={block.routeInactiveLineColor ?? "#94a3b8"}
+                        onChange={(e) =>
+                          set({ routeInactiveLineColor: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Start marker">
+                      <Input
+                        type="color"
+                        value={block.routeStartColor ?? "#22c55e"}
+                        onChange={(e) => set({ routeStartColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="End marker">
+                      <Input
+                        type="color"
+                        value={block.routeEndColor ?? "#ef4444"}
+                        onChange={(e) => set({ routeEndColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Stop marker">
+                      <Input
+                        type="color"
+                        value={block.markerColor}
+                        onChange={(e) => set({ markerColor: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="Summary position">
+                      <Select
+                        value={block.routeSummaryPosition ?? "top-left"}
+                        onChange={(e) =>
                           set({
-                            networkConnections: [
-                              ...connections,
-                              makeLocationMapConnection(pointOptions[0]?.id ?? "", pointOptions[1]?.id ?? ""),
-                            ],
+                            routeSummaryPosition: e.target
+                              .value as typeof block.routeSummaryPosition,
                           })
                         }
                       >
-                        Add connection
-                      </Button>
-                    </div>
-                    {pointOptions.length < 2 ? (
-                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        Add at least two mapped locations or custom pins to create a connection.
-                      </p>
-                    ) : connections.length === 0 ? (
-                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        No manual connections yet.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {connections.map((connection, index) => (
-                          <div key={connection.id} className="grid gap-2 rounded-md bg-[hsl(var(--muted))]/55 p-2 sm:grid-cols-[1fr_1fr_auto]">
-                            <Field label="From">
-                              <Select
-                                value={connection.startId}
-                                onChange={(e) => updateConnection(index, { startId: e.target.value })}
-                              >
-                                {pointOptions.map((point) => (
-                                  <option key={point.id} value={point.id}>
-                                    {point.label}
-                                  </option>
-                                ))}
-                              </Select>
-                            </Field>
-                            <Field label="To">
-                              <Select
-                                value={connection.endId}
-                                onChange={(e) => updateConnection(index, { endId: e.target.value })}
-                              >
-                                {pointOptions.map((point) => (
-                                  <option key={point.id} value={point.id}>
-                                    {point.label}
-                                  </option>
-                                ))}
-                              </Select>
-                            </Field>
-                            <div className="flex items-end">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  set({
-                                    networkConnections: connections.filter(
-                                      (_, connectionIndex) => connectionIndex !== index,
-                                    ),
-                                  })
-                                }
-                                aria-label="Remove connection"
-                                className="h-9 w-9"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                        <option value="top-left">Top left</option>
+                        <option value="top-right">Top right</option>
+                        <option value="bottom-left">Bottom left</option>
+                        <option value="bottom-right">Bottom right</option>
+                      </Select>
+                    </Field>
+                    <Field label="Summary style">
+                      <Select
+                        value={block.routeSummaryStyle ?? "solid"}
+                        onChange={(e) =>
+                          set({
+                            routeSummaryStyle: e.target
+                              .value as typeof block.routeSummaryStyle,
+                          })
+                        }
+                      >
+                        <option value="solid">Solid</option>
+                        <option value="glass">Glass</option>
+                        <option value="minimal">Minimal</option>
+                      </Select>
+                    </Field>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.routeShowCards ?? true}
+                        onChange={(e) => set({ routeShowCards: e.target.checked })}
+                      />
+                      Show route option buttons
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.routeShowStopList ?? true}
+                        onChange={(e) => set({ routeShowStopList: e.target.checked })}
+                      />
+                      Show numbered stop list
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.routeShowMapLinks ?? true}
+                        onChange={(e) => set({ routeShowMapLinks: e.target.checked })}
+                      />
+                      Show map app links
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.routeShowLabels ?? true}
+                        onChange={(e) => set({ routeShowLabels: e.target.checked })}
+                      />
+                      Show point labels
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.showControls}
+                        onChange={(e) => set({ showControls: e.target.checked })}
+                      />
+                      Show map controls
+                    </label>
+                    {(block.routeStyle ?? "planning") === "planning" && (
+                      <label className="flex h-9 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={block.routeShowAlternatives ?? true}
+                          onChange={(e) =>
+                            set({ routeShowAlternatives: e.target.checked })
+                          }
+                          disabled={(block.routeProvider ?? "osrm") !== "osrm"}
+                        />
+                        Show OSRM alternatives
+                      </label>
                     )}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="Connection mode">
+                      <Select
+                        value={block.networkConnectionMode ?? "ordered"}
+                        onChange={(e) =>
+                          set({
+                            networkConnectionMode: e.target
+                              .value as typeof block.networkConnectionMode,
+                          })
+                        }
+                      >
+                        <option value="ordered">Connect pins in order</option>
+                        <option value="hub">First pin as hub</option>
+                        <option value="manual">Manual connections</option>
+                      </Select>
+                    </Field>
+                    <Field label="Line color">
+                      <Input
+                        type="color"
+                        value={block.networkLineColor ?? "#0ea5e9"}
+                        onChange={(e) => set({ networkLineColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Pin color">
+                      <Input
+                        type="color"
+                        value={block.networkDotColor ?? "#f43f5e"}
+                        onChange={(e) => set({ networkDotColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Map dot color">
+                      <Input
+                        type="color"
+                        value={block.networkMapDotColor ?? "#94a3b8"}
+                        onChange={(e) => set({ networkMapDotColor: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Animation seconds">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={12}
+                        step={0.1}
+                        value={block.networkAnimationSeconds ?? 3.2}
+                        onChange={(e) =>
+                          set({
+                            networkAnimationSeconds: Math.max(
+                              1,
+                              Math.min(12, Number(e.target.value) || 3.2),
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={block.networkShowLabels ?? true}
+                        onChange={(e) => set({ networkShowLabels: e.target.checked })}
+                      />
+                      Show city labels
+                    </label>
+                  </div>
+                  {(block.networkConnectionMode ?? "ordered") === "manual" && (
+                    <div className="space-y-3 rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                            Manual connections
+                          </p>
+                          <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                            Choose which pins should be connected by animated arcs.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={pointOptions.length < 2}
+                          onClick={() =>
+                            set({
+                              networkConnections: [
+                                ...connections,
+                                makeLocationMapConnection(
+                                  pointOptions[0]?.id ?? "",
+                                  pointOptions[1]?.id ?? "",
+                                ),
+                              ],
+                            })
+                          }
+                        >
+                          Add connection
+                        </Button>
+                      </div>
+                      {pointOptions.length < 2 ? (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          Add at least two mapped locations or custom pins to create a
+                          connection.
+                        </p>
+                      ) : connections.length === 0 ? (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                          No manual connections yet.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {connections.map((connection, index) => (
+                            <div
+                              key={connection.id}
+                              className="grid gap-2 rounded-md bg-[hsl(var(--muted))]/55 p-2 sm:grid-cols-[1fr_1fr_auto]"
+                            >
+                              <Field label="From">
+                                <Select
+                                  value={connection.startId}
+                                  onChange={(e) =>
+                                    updateConnection(index, { startId: e.target.value })
+                                  }
+                                >
+                                  {pointOptions.map((point) => (
+                                    <option key={point.id} value={point.id}>
+                                      {point.label}
+                                    </option>
+                                  ))}
+                                </Select>
+                              </Field>
+                              <Field label="To">
+                                <Select
+                                  value={connection.endId}
+                                  onChange={(e) =>
+                                    updateConnection(index, { endId: e.target.value })
+                                  }
+                                >
+                                  {pointOptions.map((point) => (
+                                    <option key={point.id} value={point.id}>
+                                      {point.label}
+                                    </option>
+                                  ))}
+                                </Select>
+                              </Field>
+                              <div className="flex items-end">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    set({
+                                      networkConnections: connections.filter(
+                                        (_, connectionIndex) =>
+                                          connectionIndex !== index,
+                                      ),
+                                    })
+                                  }
+                                  aria-label="Remove connection"
+                                  className="h-9 w-9"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </SettingsGroup>
           </div>
         </div>
@@ -8218,8 +9544,10 @@ function LeafEditor({
       // it — the editor loads stored blocks without applying schema defaults.
       const chosen = block.categoryIds ?? [];
       const unchosen = cats.filter((c) => !chosen.includes(c.id));
-      const labelOf = (cid: string) => cats.find((c) => c.id === cid)?.label ?? "(removed)";
-      const photoCountOf = (cid: string) => cats.find((c) => c.id === cid)?.photoCount ?? 0;
+      const labelOf = (cid: string) =>
+        cats.find((c) => c.id === cid)?.label ?? "(removed)";
+      const photoCountOf = (cid: string) =>
+        cats.find((c) => c.id === cid)?.photoCount ?? 0;
       const categoryOptionLabel = (c: Opt) =>
         `${c.label} (${c.photoCount ?? 0} ${(c.photoCount ?? 0) === 1 ? "photo" : "photos"})`;
       const auto = chosen.length === 0;
@@ -8236,9 +9564,7 @@ function LeafEditor({
           ? 18
           : (block.layoutFormationsPhotoCount ?? 12);
       const layoutFormationPhotoCount =
-        layoutFormationVariant === "zoomed"
-          ? 9
-          : storedLayoutFormationPhotoCount;
+        layoutFormationVariant === "zoomed" ? 9 : storedLayoutFormationPhotoCount;
       const scrollLayoutsVariant = block.scrollLayoutsVariant ?? "row";
       const scrollLayoutsFixedCounts: Record<string, number> = {
         row: 7,
@@ -8266,7 +9592,10 @@ function LeafEditor({
           >
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Showcase style">
-                <Select value={block.style ?? "cinematic"} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+                <Select
+                  value={block.style ?? "cinematic"}
+                  onChange={(e) => set({ style: e.target.value as typeof block.style })}
+                >
                   <option value="cinematic">Cinematic wipe</option>
                   <option value="carousel3d">3D carousel (on scroll)</option>
                   <option value="scrollPanels">Scroll panels</option>
@@ -8275,15 +9604,25 @@ function LeafEditor({
                 </Select>
               </Field>
               <Field label="Category title display">
-                <Select value={block.showTitles ? "yes" : "no"} onChange={(e) => set({ showTitles: e.target.value === "yes" })}>
+                <Select
+                  value={block.showTitles ? "yes" : "no"}
+                  onChange={(e) => set({ showTitles: e.target.value === "yes" })}
+                >
                   <option value="yes">Show category names</option>
                   <option value="no">Hide category names</option>
                 </Select>
               </Field>
               {auto && (
                 <Field label="Max categories">
-                  <Select value={String(block.limit)} onChange={(e) => set({ limit: Number(e.target.value) })}>
-                    {[3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
+                  <Select
+                    value={String(block.limit)}
+                    onChange={(e) => set({ limit: Number(e.target.value) })}
+                  >
+                    {[3, 4, 5, 6, 8, 10, 12].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
                   </Select>
                 </Field>
               )}
@@ -8307,7 +9646,12 @@ function LeafEditor({
                   <Field label="Text position">
                     <Select
                       value={block.scrollPanelsIntroAlign ?? "left"}
-                      onChange={(e) => set({ scrollPanelsIntroAlign: e.target.value as typeof block.scrollPanelsIntroAlign })}
+                      onChange={(e) =>
+                        set({
+                          scrollPanelsIntroAlign: e.target
+                            .value as typeof block.scrollPanelsIntroAlign,
+                        })
+                      }
                     >
                       <option value="left">Left side</option>
                       <option value="center">Middle</option>
@@ -8318,7 +9662,9 @@ function LeafEditor({
                     <Textarea
                       rows={2}
                       value={block.scrollPanelsIntroHeading ?? "Selected Stories"}
-                      onChange={(e) => set({ scrollPanelsIntroHeading: e.target.value })}
+                      onChange={(e) =>
+                        set({ scrollPanelsIntroHeading: e.target.value })
+                      }
                     />
                   </Field>
                   <Field label="Supporting text">
@@ -8335,7 +9681,9 @@ function LeafEditor({
                     <Textarea
                       rows={2}
                       value={block.scrollPanelsShowcaseHeading ?? "Selected Work"}
-                      onChange={(e) => set({ scrollPanelsShowcaseHeading: e.target.value })}
+                      onChange={(e) =>
+                        set({ scrollPanelsShowcaseHeading: e.target.value })
+                      }
                     />
                   </Field>
                 </div>
@@ -8349,11 +9697,17 @@ function LeafEditor({
                   <Field label="Demo variant">
                     <Select
                       value={
-                        block.scrollPanelsVariant === "zoom" || block.scrollPanelsVariant === "brightness"
+                        block.scrollPanelsVariant === "zoom" ||
+                        block.scrollPanelsVariant === "brightness"
                           ? "demo4"
-                          : block.scrollPanelsVariant ?? "classic"
+                          : (block.scrollPanelsVariant ?? "classic")
                       }
-                      onChange={(e) => set({ scrollPanelsVariant: e.target.value as typeof block.scrollPanelsVariant })}
+                      onChange={(e) =>
+                        set({
+                          scrollPanelsVariant: e.target
+                            .value as typeof block.scrollPanelsVariant,
+                        })
+                      }
                     >
                       <option value="classic">Classic columns</option>
                       <option value="scatter">Scatter outward</option>
@@ -8364,23 +9718,40 @@ function LeafEditor({
                   <Field label="Intro photo count">
                     <Select
                       value={String(block.scrollPanelsIntroCount ?? 12)}
-                      onChange={(e) => set({ scrollPanelsIntroCount: Number(e.target.value) })}
+                      onChange={(e) =>
+                        set({ scrollPanelsIntroCount: Number(e.target.value) })
+                      }
                     >
-                      {[6, 9, 12, 15, 18, 21, 24].map((n) => <option key={n} value={n}>{n}</option>)}
+                      {[6, 9, 12, 15, 18, 21, 24].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
                     </Select>
                   </Field>
                   <Field label="Photos per collection row">
                     <Select
                       value={String(block.scrollPanelsRowCount ?? 5)}
-                      onChange={(e) => set({ scrollPanelsRowCount: Number(e.target.value) })}
+                      onChange={(e) =>
+                        set({ scrollPanelsRowCount: Number(e.target.value) })
+                      }
                     >
-                      {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
                     </Select>
                   </Field>
                   <Field label="Photo tone">
                     <Select
                       value={block.scrollPanelsTone ?? "color"}
-                      onChange={(e) => set({ scrollPanelsTone: e.target.value as typeof block.scrollPanelsTone })}
+                      onChange={(e) =>
+                        set({
+                          scrollPanelsTone: e.target
+                            .value as typeof block.scrollPanelsTone,
+                        })
+                      }
                     >
                       <option value="color">Full color</option>
                       <option value="grayscale">Reveal from black and white</option>
@@ -8397,7 +9768,9 @@ function LeafEditor({
                   <Field label="Background mode">
                     <Select
                       value={useScrollPanelsBackground ? "yes" : "no"}
-                      onChange={(e) => set({ scrollPanelsUseBackground: e.target.value === "yes" })}
+                      onChange={(e) =>
+                        set({ scrollPanelsUseBackground: e.target.value === "yes" })
+                      }
                     >
                       <option value="yes">Use custom background</option>
                       <option value="no">Use page background</option>
@@ -8409,7 +9782,9 @@ function LeafEditor({
                         <Input
                           type="color"
                           value={block.scrollPanelsBackground ?? "#f4f0e8"}
-                          onChange={(e) => set({ scrollPanelsBackground: e.target.value })}
+                          onChange={(e) =>
+                            set({ scrollPanelsBackground: e.target.value })
+                          }
                           className="h-10 p-1"
                         />
                       </Field>
@@ -8417,7 +9792,9 @@ function LeafEditor({
                         <Input
                           type="color"
                           value={block.scrollPanelsTextColor ?? "#171717"}
-                          onChange={(e) => set({ scrollPanelsTextColor: e.target.value })}
+                          onChange={(e) =>
+                            set({ scrollPanelsTextColor: e.target.value })
+                          }
                           className="h-10 p-1"
                         />
                       </Field>
@@ -8452,8 +9829,8 @@ function LeafEditor({
                       value={block.layoutFormationsHeaderAlign ?? "left"}
                       onChange={(e) =>
                         set({
-                          layoutFormationsHeaderAlign:
-                            e.target.value as typeof block.layoutFormationsHeaderAlign,
+                          layoutFormationsHeaderAlign: e.target
+                            .value as typeof block.layoutFormationsHeaderAlign,
                         })
                       }
                     >
@@ -8474,8 +9851,8 @@ function LeafEditor({
                     <Select
                       value={layoutFormationVariant}
                       onChange={(e) => {
-                        const nextVariant =
-                          e.target.value as typeof block.layoutFormationsVariant;
+                        const nextVariant = e.target
+                          .value as typeof block.layoutFormationsVariant;
                         set({
                           layoutFormationsVariant: nextVariant,
                           ...(nextVariant === "zoomed"
@@ -8553,7 +9930,8 @@ function LeafEditor({
                     <Select
                       value={scrollLayoutsVariant}
                       onChange={(e) => {
-                        const nextVariant = e.target.value as typeof block.scrollLayoutsVariant;
+                        const nextVariant = e.target
+                          .value as typeof block.scrollLayoutsVariant;
                         const fixedCounts: Record<string, number> = {
                           row: 7,
                           breakout: 9,
@@ -8567,7 +9945,9 @@ function LeafEditor({
                         set({
                           scrollLayoutsVariant: nextVariant,
                           scrollLayoutsPhotoCount:
-                            nextVariant === "tiny" ? 80 : fixedCounts[nextVariant ?? "row"] ?? 9,
+                            nextVariant === "tiny"
+                              ? 80
+                              : (fixedCounts[nextVariant ?? "row"] ?? 9),
                         });
                       }}
                     >
@@ -8585,10 +9965,14 @@ function LeafEditor({
                   <Field label="Photos per layout">
                     <Select
                       value={String(scrollLayoutsPhotoCount)}
-                      onChange={(e) => set({ scrollLayoutsPhotoCount: Number(e.target.value) })}
+                      onChange={(e) =>
+                        set({ scrollLayoutsPhotoCount: Number(e.target.value) })
+                      }
                     >
                       {scrollLayoutsPhotoOptions.map((n) => (
-                        <option key={n} value={n}>{n}</option>
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
                       ))}
                     </Select>
                   </Field>
@@ -8611,7 +9995,9 @@ function LeafEditor({
                   <Field label="Background mode">
                     <Select
                       value={useScrollLayoutsBackground ? "yes" : "no"}
-                      onChange={(e) => set({ scrollLayoutsUseBackground: e.target.value === "yes" })}
+                      onChange={(e) =>
+                        set({ scrollLayoutsUseBackground: e.target.value === "yes" })
+                      }
                     >
                       <option value="yes">Use custom background</option>
                       <option value="no">Use page background</option>
@@ -8623,7 +10009,9 @@ function LeafEditor({
                         <Input
                           type="color"
                           value={block.scrollLayoutsBackground ?? "#131417"}
-                          onChange={(e) => set({ scrollLayoutsBackground: e.target.value })}
+                          onChange={(e) =>
+                            set({ scrollLayoutsBackground: e.target.value })
+                          }
                           className="h-10 p-1"
                         />
                       </Field>
@@ -8631,7 +10019,9 @@ function LeafEditor({
                         <Input
                           type="color"
                           value={block.scrollLayoutsTextColor ?? "#ffffff"}
-                          onChange={(e) => set({ scrollLayoutsTextColor: e.target.value })}
+                          onChange={(e) =>
+                            set({ scrollLayoutsTextColor: e.target.value })
+                          }
                           className="h-10 p-1"
                         />
                       </Field>
@@ -8642,7 +10032,11 @@ function LeafEditor({
             </>
           ) : (
             <SettingsGroup
-              title={block.style === "carousel3d" ? "3D carousel content" : "Cinematic panel content"}
+              title={
+                block.style === "carousel3d"
+                  ? "3D carousel content"
+                  : "Cinematic panel content"
+              }
               description="These styles use each category as a scroll-driven panel."
             >
               <div className="grid gap-2 sm:grid-cols-2">
@@ -8654,8 +10048,14 @@ function LeafEditor({
                   />
                 </Field>
                 <Field label="Images per panel">
-                  <Select value={String(block.clusterCount)} onChange={(e) => set({ clusterCount: Number(e.target.value) })}>
-                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                  <Select
+                    value={String(block.clusterCount)}
+                    onChange={(e) => set({ clusterCount: Number(e.target.value) })}
+                  >
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
                   </Select>
                 </Field>
               </div>
@@ -8670,29 +10070,69 @@ function LeafEditor({
               <div className="space-y-1.5">
                 {chosen.length === 0 ? (
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    Showing all published categories automatically, up to the max category count.
+                    Showing all published categories automatically, up to the max
+                    category count.
                   </p>
                 ) : (
                   chosen.map((cid, i) => (
-                    <div key={cid} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
+                    <div
+                      key={cid}
+                      className="flex items-center justify-between gap-2 rounded border px-2 py-1.5"
+                    >
                       <span className="truncate text-sm">
                         {i + 1}. {labelOf(cid)}
                         <span className="ml-1 text-xs text-[hsl(var(--muted-foreground))]">
-                          ({photoCountOf(cid)} {photoCountOf(cid) === 1 ? "photo" : "photos"})
+                          ({photoCountOf(cid)}{" "}
+                          {photoCountOf(cid) === 1 ? "photo" : "photos"})
                         </span>
                       </span>
                       <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
-                        <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                        <button type="button" aria-label="Move down" disabled={i === chosen.length - 1} onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                        <button type="button" aria-label="Remove" onClick={() => set({ categoryIds: chosen.filter((x) => x !== cid) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                        <button
+                          type="button"
+                          aria-label="Move up"
+                          disabled={i === 0}
+                          onClick={() => set({ categoryIds: swapAt(chosen, i, i - 1) })}
+                          className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Move down"
+                          disabled={i === chosen.length - 1}
+                          onClick={() => set({ categoryIds: swapAt(chosen, i, i + 1) })}
+                          className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Remove"
+                          onClick={() =>
+                            set({ categoryIds: chosen.filter((x) => x !== cid) })
+                          }
+                          className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   ))
                 )}
                 {unchosen.length > 0 && (
-                  <Select value="" onChange={(e) => e.target.value && set({ categoryIds: [...chosen, e.target.value] })}>
+                  <Select
+                    value=""
+                    onChange={(e) =>
+                      e.target.value &&
+                      set({ categoryIds: [...chosen, e.target.value] })
+                    }
+                  >
                     <option value="">＋ Add category…</option>
-                    {unchosen.map((c) => <option key={c.id} value={c.id}>{categoryOptionLabel(c)}</option>)}
+                    {unchosen.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {categoryOptionLabel(c)}
+                      </option>
+                    ))}
                   </Select>
                 )}
               </div>
@@ -8700,8 +10140,13 @@ function LeafEditor({
           </SettingsGroup>
 
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Each category becomes a full-screen panel or formation using its photos and name. Categories with no photos are skipped. Manage covers + which categories are published in{" "}
-            <Link href="/admin/categories" className="underline underline-offset-2">Categories</Link>.
+            Each category becomes a full-screen panel or formation using its photos and
+            name. Categories with no photos are skipped. Manage covers + which
+            categories are published in{" "}
+            <Link href="/admin/categories" className="underline underline-offset-2">
+              Categories
+            </Link>
+            .
           </p>
         </div>
       );
@@ -8710,13 +10155,26 @@ function LeafEditor({
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Title"><Input value={block.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-            <Field label="Count"><Input type="number" value={block.count} onChange={(e) => set({ count: Number(e.target.value) })} /></Field>
+            <Field label="Title">
+              <Input
+                value={block.title}
+                onChange={(e) => set({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="Count">
+              <Input
+                type="number"
+                value={block.count}
+                onChange={(e) => set({ count: Number(e.target.value) })}
+              />
+            </Field>
           </div>
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             Shows your Instagram feed once connected in{" "}
-            <Link href="/admin/settings" className="underline underline-offset-2">Settings → Integrations</Link>.
-            Until then it falls back to your most recent library photos.
+            <Link href="/admin/settings" className="underline underline-offset-2">
+              Settings → Integrations
+            </Link>
+            . Until then it falls back to your most recent library photos.
           </p>
         </div>
       );
@@ -8724,9 +10182,17 @@ function LeafEditor({
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-3">
-            <Field label="Title (optional)"><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label="Title (optional)">
+              <Input
+                value={block.title ?? ""}
+                onChange={(e) => set({ title: e.target.value })}
+              />
+            </Field>
             <Field label="Style">
-              <Select value={block.style} onChange={(e) => set({ style: e.target.value as typeof block.style })}>
+              <Select
+                value={block.style}
+                onChange={(e) => set({ style: e.target.value as typeof block.style })}
+              >
                 <option value="accordion">Accordion</option>
                 <option value="list">List</option>
                 <option value="cards">Cards</option>
@@ -8741,16 +10207,66 @@ function LeafEditor({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">Q{i + 1}</span>
                   <div className="flex items-center gap-0.5 text-[hsl(var(--muted-foreground))]">
-                    <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => set({ items: swapAt(block.items, i, i - 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                    <button type="button" aria-label="Move down" disabled={i === block.items.length - 1} onClick={() => set({ items: swapAt(block.items, i, i + 1) })} className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                    <button type="button" aria-label="Remove" onClick={() => set({ items: block.items.filter((_, k) => k !== i) })} className="p-0.5 hover:text-[hsl(var(--foreground))]"><Trash2 className="h-3 w-3" /></button>
+                    <button
+                      type="button"
+                      aria-label="Move up"
+                      disabled={i === 0}
+                      onClick={() => set({ items: swapAt(block.items, i, i - 1) })}
+                      className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Move down"
+                      disabled={i === block.items.length - 1}
+                      onClick={() => set({ items: swapAt(block.items, i, i + 1) })}
+                      className="p-0.5 hover:text-[hsl(var(--foreground))] disabled:opacity-30"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Remove"
+                      onClick={() =>
+                        set({ items: block.items.filter((_, k) => k !== i) })
+                      }
+                      className="p-0.5 hover:text-[hsl(var(--foreground))]"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
                   </div>
                 </div>
-                <Input placeholder="Question" value={it.q} onChange={(e) => set({ items: block.items.map((x, k) => (k === i ? { ...x, q: e.target.value } : x)) })} />
-                <Textarea rows={2} placeholder="Answer" value={it.a} onChange={(e) => set({ items: block.items.map((x, k) => (k === i ? { ...x, a: e.target.value } : x)) })} />
+                <Input
+                  placeholder="Question"
+                  value={it.q}
+                  onChange={(e) =>
+                    set({
+                      items: block.items.map((x, k) =>
+                        k === i ? { ...x, q: e.target.value } : x,
+                      ),
+                    })
+                  }
+                />
+                <Textarea
+                  rows={2}
+                  placeholder="Answer"
+                  value={it.a}
+                  onChange={(e) =>
+                    set({
+                      items: block.items.map((x, k) =>
+                        k === i ? { ...x, a: e.target.value } : x,
+                      ),
+                    })
+                  }
+                />
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={() => set({ items: [...block.items, { q: "", a: "" }] })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => set({ items: [...block.items, { q: "", a: "" }] })}
+            >
               <Plus className="h-4 w-4" /> Question
             </Button>
           </div>
@@ -8778,9 +10294,17 @@ function LeafEditor({
       return (
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label={isToraClientWall ? "Heading" : "Title (optional)"}><Input value={block.title ?? ""} onChange={(e) => set({ title: e.target.value })} /></Field>
+            <Field label={isToraClientWall ? "Heading" : "Title (optional)"}>
+              <Input
+                value={block.title ?? ""}
+                onChange={(e) => set({ title: e.target.value })}
+              />
+            </Field>
             <Field label="Style">
-              <Select value={block.style} onChange={(e) => updateLogoStyle(e.target.value as typeof block.style)}>
+              <Select
+                value={block.style}
+                onChange={(e) => updateLogoStyle(e.target.value as typeof block.style)}
+              >
                 <option value="row">Row</option>
                 <option value="grid">Grid</option>
                 <option value="marquee">Marquee (scrolling)</option>
@@ -8789,10 +10313,19 @@ function LeafEditor({
             </Field>
             {isToraClientWall && (
               <>
-                <Field label="Small label"><Input value={block.eyebrow ?? ""} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
+                <Field label="Small label">
+                  <Input
+                    value={block.eyebrow ?? ""}
+                    onChange={(e) => set({ eyebrow: e.target.value })}
+                  />
+                </Field>
                 <div className="sm:col-span-2">
                   <Field label="Intro text">
-                    <Textarea rows={3} value={block.intro ?? ""} onChange={(e) => set({ intro: e.target.value })} />
+                    <Textarea
+                      rows={3}
+                      value={block.intro ?? ""}
+                      onChange={(e) => set({ intro: e.target.value })}
+                    />
                   </Field>
                 </div>
               </>
@@ -8800,19 +10333,35 @@ function LeafEditor({
             {!isToraClientWall && (
               <>
                 <Field label="Size">
-                  <Select value={block.size} onChange={(e) => set({ size: e.target.value as typeof block.size })}>
-                    <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+                  <Select
+                    value={block.size}
+                    onChange={(e) => set({ size: e.target.value as typeof block.size })}
+                  >
+                    <option value="sm">Small</option>
+                    <option value="md">Medium</option>
+                    <option value="lg">Large</option>
                   </Select>
                 </Field>
                 <Field label="Spacing">
-                  <Select value={block.spacing ?? "normal"} onChange={(e) => set({ spacing: e.target.value as typeof block.spacing })}>
-                    <option value="tighter">Tighter</option><option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+                  <Select
+                    value={block.spacing ?? "normal"}
+                    onChange={(e) =>
+                      set({ spacing: e.target.value as typeof block.spacing })
+                    }
+                  >
+                    <option value="tighter">Tighter</option>
+                    <option value="tight">Tight</option>
+                    <option value="normal">Normal</option>
+                    <option value="airy">Airy</option>
                   </Select>
                 </Field>
               </>
             )}
             <Field label="Color">
-              <Select value={block.grayscale ? "mono" : "color"} onChange={(e) => set({ grayscale: e.target.value === "mono" })}>
+              <Select
+                value={block.grayscale ? "mono" : "color"}
+                onChange={(e) => set({ grayscale: e.target.value === "mono" })}
+              >
                 <option value="mono">Grayscale (color on hover)</option>
                 <option value="color">Full color</option>
               </Select>
@@ -8822,7 +10371,13 @@ function LeafEditor({
             <PhotoPicker
               photos={photos}
               selectedIds={block.photoIds}
-              onToggle={(pid) => set({ photoIds: block.photoIds.includes(pid) ? block.photoIds.filter((x) => x !== pid) : [...block.photoIds, pid] })}
+              onToggle={(pid) =>
+                set({
+                  photoIds: block.photoIds.includes(pid)
+                    ? block.photoIds.filter((x) => x !== pid)
+                    : [...block.photoIds, pid],
+                })
+              }
             />
           </Field>
         </div>
@@ -8835,9 +10390,7 @@ function LeafEditor({
             <Field label="Style">
               <Select
                 value={block.style ?? "solid"}
-                onChange={(e) =>
-                  set({ style: e.target.value as typeof block.style })
-                }
+                onChange={(e) => set({ style: e.target.value as typeof block.style })}
               >
                 <option value="solid">Solid</option>
                 <option value="dashed">Dashed</option>
@@ -8863,9 +10416,7 @@ function LeafEditor({
             <Field label="Width">
               <Select
                 value={block.width ?? "content"}
-                onChange={(e) =>
-                  set({ width: e.target.value as typeof block.width })
-                }
+                onChange={(e) => set({ width: e.target.value as typeof block.width })}
               >
                 <option value="content">Content</option>
                 <option value="narrow">Narrow</option>
@@ -8899,9 +10450,7 @@ function LeafEditor({
                     min={0}
                     max={240}
                     value={block.customSpacingTop ?? 32}
-                    onChange={(e) =>
-                      set({ customSpacingTop: pxInput(e.target.value) })
-                    }
+                    onChange={(e) => set({ customSpacingTop: pxInput(e.target.value) })}
                   />
                 </Field>
                 <Field label="Space below">
@@ -8979,18 +10528,35 @@ function LeafEditor({
   }
 }
 
-function AlignField({ value, onChange }: { value: "left" | "center" | "right"; onChange: (v: "left" | "center" | "right") => void }) {
+function AlignField({
+  value,
+  onChange,
+}: {
+  value: "left" | "center" | "right";
+  onChange: (v: "left" | "center" | "right") => void;
+}) {
   return (
     <Field label="Align">
-      <Select value={value} onChange={(e) => onChange(e.target.value as "left" | "center" | "right")}>
-        <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+      <Select
+        value={value}
+        onChange={(e) => onChange(e.target.value as "left" | "center" | "right")}
+      >
+        <option value="left">Left</option>
+        <option value="center">Center</option>
+        <option value="right">Right</option>
       </Select>
     </Field>
   );
 }
 
 type FontValue = "sans" | "serif" | "playfair" | "cormorant" | "montserrat" | "grotesk";
-function FontField({ value, onChange }: { value: FontValue; onChange: (v: FontValue) => void }) {
+function FontField({
+  value,
+  onChange,
+}: {
+  value: FontValue;
+  onChange: (v: FontValue) => void;
+}) {
   return (
     <Field label="Font">
       <Select value={value} onChange={(e) => onChange(e.target.value as FontValue)}>
@@ -9006,11 +10572,19 @@ function FontField({ value, onChange }: { value: FontValue; onChange: (v: FontVa
 }
 
 type SpaceValue = "tight" | "normal" | "airy";
-function SpacingField({ value, onChange }: { value: SpaceValue; onChange: (v: SpaceValue) => void }) {
+function SpacingField({
+  value,
+  onChange,
+}: {
+  value: SpaceValue;
+  onChange: (v: SpaceValue) => void;
+}) {
   return (
     <Field label="Spacing">
       <Select value={value} onChange={(e) => onChange(e.target.value as SpaceValue)}>
-        <option value="tight">Tight</option><option value="normal">Normal</option><option value="airy">Airy</option>
+        <option value="tight">Tight</option>
+        <option value="normal">Normal</option>
+        <option value="airy">Airy</option>
       </Select>
     </Field>
   );
@@ -9030,9 +10604,7 @@ function PreviewPane({
   const { toast } = useToast();
   const [device, setDevice] = useState<"desktop" | "mobile">(() => {
     if (typeof window === "undefined") return "desktop";
-    return window.matchMedia("(max-width: 767px)").matches
-      ? "mobile"
-      : "desktop";
+    return window.matchMedia("(max-width: 767px)").matches ? "mobile" : "desktop";
   });
   const [manualDevice, setManualDevice] = useState(false);
   const [bust, setBust] = useState(0);
@@ -9106,7 +10678,9 @@ function PreviewPane({
   return (
     <div className="min-w-0 space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">Live preview</span>
+        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+          Live preview
+        </span>
         <div className="flex flex-wrap items-center justify-end gap-1">
           <Button
             type="button"
@@ -9132,20 +10706,35 @@ function PreviewPane({
           >
             <Smartphone className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={pushDraft} aria-label="Refresh">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={pushDraft}
+            aria-label="Refresh"
+          >
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <a href={`/${slug}`} target="_blank" rel="noreferrer noopener" className="inline-flex h-8 items-center rounded-md border px-2 text-xs">
+          <a
+            href={`/${slug}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex h-8 items-center rounded-md border px-2 text-xs"
+          >
             <ExternalLink className="mr-1 h-3.5 w-3.5" /> Open
           </a>
         </div>
       </div>
-      <div ref={paneRef} className="min-w-0 overflow-hidden rounded-lg border bg-[hsl(var(--muted))] lg:flex-none">
+      <div
+        ref={paneRef}
+        className="min-w-0 overflow-hidden rounded-lg border bg-[hsl(var(--muted))] lg:flex-none"
+      >
         {(() => {
           const baseW = device === "mobile" ? 390 : 1440;
           const baseH = device === "mobile" ? 844 : 900;
           const scale = paneWidth > 0 ? Math.min(1, paneWidth / baseW) : 1;
-          const visH = device === "mobile" ? baseH * scale : Math.min(640, baseH * scale);
+          const visH =
+            device === "mobile" ? baseH * scale : Math.min(640, baseH * scale);
           return (
             <div className="mx-auto" style={{ width: baseW * scale, height: visH }}>
               <iframe

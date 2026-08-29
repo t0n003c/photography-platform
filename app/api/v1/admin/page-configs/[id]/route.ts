@@ -29,6 +29,7 @@ const PatchSchema = z.object({
       "tora-justified-showcase",
       "carousel-3d-scroll",
       "alternative-scroll",
+      "moodboard",
     ])
     .nullable()
     .optional(),
